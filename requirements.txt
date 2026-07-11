@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+celery[redis]>=5.4
+redis>=4.5
+chromadb>=0.5
+openai>=1.30
+python-dotenv>=1.0
+pydantic>=2.7
+requests>=2.32
+jieba>=0.42

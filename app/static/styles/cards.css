@@ -1,0 +1,93 @@
+/* 卡片组件动画和特殊样式 */
+
+/* 抽卡入场动画 */
+@keyframes cardDraw {
+    from {
+        opacity: 0;
+        transform: translateY(30px) rotateY(15deg) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) rotateY(0) scale(1);
+    }
+}
+
+.card:nth-child(1) { animation: cardDraw 0.3s ease-out 0s both; }
+.card:nth-child(2) { animation: cardDraw 0.3s ease-out 0.1s both; }
+.card:nth-child(3) { animation: cardDraw 0.3s ease-out 0.2s both; }
+.card:nth-child(4) { animation: cardDraw 0.3s ease-out 0.3s both; }
+.card:nth-child(5) { animation: cardDraw 0.3s ease-out 0.4s both; }
+
+/* 卡片选中脉冲 */
+@keyframes cardPulse {
+    0% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(78, 204, 163, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0); }
+}
+.card.selected { animation: cardPulse 0.5s ease-out; }
+
+/* 卡片详情展开 */
+.card-detail-enter-active { animation: slideDown 0.2s ease-out; }
+@keyframes slideDown {
+    from { max-height: 0; opacity: 0; }
+    to { max-height: 500px; opacity: 1; }
+}
+
+/* 重抽按钮动画 */
+@keyframes shuffleSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(180deg); }
+}
+.shuffling { animation: shuffleSpin 0.4s ease-in-out; }
+
+/* 灵感库侧边栏 */
+.inspiration-sidebar {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: 300px;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 500;
+    overflow-y: auto;
+}
+.inspiration-sidebar.open { transform: translateX(0); }
+
+/* 热点图渐变 */
+.heat-0 { background: transparent; }
+.heat-1 { background: rgba(78, 204, 163, 0.05); }
+.heat-2 { background: rgba(255, 212, 96, 0.08); }
+.heat-3 { background: rgba(255, 140, 66, 0.10); }
+.heat-4 { background: rgba(255, 71, 87, 0.12); }
+.heat-5 { background: rgba(255, 71, 87, 0.18); }
+
+/* 时间线 */
+.timeline { padding: 12px; position: relative; }
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+}
+.timeline-event {
+    position: relative;
+    padding: 6px 0 6px 36px;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+.timeline-event::before {
+    content: '';
+    position: absolute;
+    left: 16px; top: 10px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+}
+.timeline-event.important::before { background: var(--accent); border-color: var(--accent); }
+.timeline-event .event-chapter {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}

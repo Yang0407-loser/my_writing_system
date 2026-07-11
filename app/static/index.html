@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多智能体写作系统 v0.9</title>
+<script type="importmap">{"imports":{"vue":"https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js"}}</script>
+<link rel="stylesheet" href="/static/styles/base.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="header">
+    <h1>多智能体写作系统 <span class="badge draft">v0.9</span></h1>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="tb-btn tb-purple" @click="showCards=true;wizardStep=0;currentStep=''">🎴 抽卡</button>
+      <button class="tb-btn tb-blue" @click="showInspiration=true;loadInspirations()">💡 灵感</button>
+      <button class="tb-btn tb-green" @click="showStyle=true">🎨 风格</button>
+      <button class="tb-btn tb-cyan" @click="openCharModal(null)">👤 角色</button>
+      <button class="tb-btn tb-yellow" @click="showRulesModal=true">📋 规则</button>
+      <button class="tb-btn tb-orange" @click="showForeshadow=true">🔮 伏笔</button>
+      <button class="tb-btn tb-teal" @click="showDialogue=true">💬 对话</button>
+      <button class="tb-btn tb-pink" @click="showReview=true;loadReviewResults()">✅ 审阅</button>
+      <button class="tb-btn tb-red" @click="showMap=true;loadMap()">🗺 地图</button>
+      <button class="tb-btn tb-gold" @click="showFactions=true;loadFactions()">🏛 势力</button>
+      <button class="tb-btn tb-pink" @click="openRelationForm(null)">💞 关系</button>
+	      <button class="tb-btn tb-indigo" @click="showSubplot=true;loadSubplots()">📖 支线</button>
+      <button class="tb-btn tb-lime" @click="showItems=true;loadItems()">🎒 物品</button>
+      <button class="tb-btn tb-amber" @click="showTimeline=true;loadTimeline()">📊 经历</button>
+      <button class="tb-btn tb-slate" @click="showAIDetect=true;autoFillDetectText()">🔍 AI检测</button>
+      <span style="width:1px;height:20px;background:var(--border)"></span>
+      <button class="btn btn-primary btn-sm" @click="resetAll">新写作</button>
+          <button class="btn btn-outline btn-sm" @click="showHistory=true;loadHistory()" style="margin-left:4px">📜 历史</button>
+    </div>
+  </div>
+
+  <!-- ═══ FLOWCHART ═══ -->
+  <div class="flowchart-bar" :class="{collapsed:flowchartCollapsed}" v-if="nodeStates.length">
+    <span class="flowchart-toggle" @click="flowchartCollapsed=!flowchartCollapsed">{{flowchartCollapsed?'▶':'▼'}}</span>
+    <div class="flowchart-nodes" v-if="!flowchartCollapsed">
+      <template v-for="(node,i) in nodeStates" :key="node.id">
+        <div class="flow-node" :class="node.status" @click="selectedNodeId=selectedNodeId===node.id?null:node.id">
+          <span class="node-icon">{{node.icon}}</span><span class="node-label">{{node.label}}</span>
+          <div v-if="selectedNodeId===node.id" class="flow-detail-panel" @click.stop>
+            <h4>{{node.label}}</h4>
+            <template v-if="node.id==='style'&&node.status!=='waiting'"><div v-if="styleProfile?.style_brief">{{styleProfile.style_brief}}</div></template>
+            <template v-if="node.id==='outline'&&node.status!=='waiting'"><div v-for="s in outline" style="font-size:10px;padding:2px 0"><b style="color:var(--purple)">{{s.title}}</b> <span style="color:var(--muted)">({{subtreeWords(s)}}字)</span></div>
+              <div v-if="awaitingConfirm&&confirmPhase==='outline'" style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-success btn-sm" @click.stop="sendDecisionFn('approve')">批准大纲</button><button class="btn btn-outline btn-sm" @click.stop="sendDecisionFn('revise',prompt('修改意见：')||'')">修订</button></div></template>
+            <template v-if="node.id==='writing'"><div v-if="node.status==='waiting'">等待写作...</div><div v-else>进度: {{totalDraftWords}}/{{globalWordLimit}}字</div>
+              <div v-if="awaitingConfirm&&confirmPhase==='section'" style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-success btn-sm" @click.stop="sendDecisionFn('approve')">继续</button><button class="btn btn-danger btn-sm" @click.stop="stopWriting">停止</button></div></template>
+            <template v-if="node.id==='review'"><div v-if="node.status==='completed'">审阅完成</div></template>
+          </div>
+        </div>
+        <div v-if="i<nodeStates.length-1" class="flow-connector" :class="node.status"></div>
+      </template>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT PANEL -->
+    <aside class="panel panel-left" :class="{collapsed:sideCollapsed.left}" :style="{width:sideCollapsed.left?'36px':leftPanelWidth+'px'}">
+      <div class="panel-header"><h3 v-if="!sideCollapsed.left">大纲编辑器</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.left=!sideCollapsed.left" :title="sideCollapsed.left?'展开左侧栏':'收起左侧栏'">{{sideCollapsed.left?'▶':'◀'}}</button></div><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" @click="collapseAll">⊟</button><button class="btn btn-outline btn-sm" @click="expandAll">⊞</button><button class="btn btn-outline btn-sm" @click="queueAll" title="全部加入队列" style="color:var(--gold)">🟡</button><button class="btn btn-outline btn-sm" @click="dequeueAll" title="全部移出队列">⚪</button><button class="btn btn-outline btn-sm" @click="addRootSection">+卷</button><button class="btn btn-outline btn-sm" @click="showImportModal=true">📥</button><button class="btn btn-outline btn-sm" @click="saveOutlineFn" title="保存大纲">💾</button><button class="btn btn-outline btn-sm" @click="showOutlineVersions=true;loadOutlineVersions()" title="历史大纲">📋</button><button class="btn btn-outline btn-sm" @click="undoDeleteFn" title="撤销删除" :disabled="undoCount<=0">↩<span v-if="undoCount>0" style="font-size:9px;vertical-align:super">{{undoCount}}</span></button></div>
+      <div class="panel-body">
+        <template v-for="item in flatTreeItems" :key="item.node.id">
+          <div class="tree-row" :class="[(item.node.children&&item.node.children.length)?'branch':'leaf',selectedNodeId===item.node.id?'selected':'',item.node.locked?'locked':'']" :style="{paddingLeft:Math.max(0,(item.level-1)*16+4)+'px'}" @contextmenu.prevent="openInjectMenu($event, item.node)" @click="scrollToOutlineNode(item.node)">
+            <span class="tree-btn" @click="moveTreeNode(item.node,-1)" title="上移">▲</span><span class="tree-btn" @click="moveTreeNode(item.node,1)" title="下移">▼</span>
+            <span v-if="item.node.children&&item.node.children.length" class="tree-arrow" @click="item.node.collapsed=!item.node.collapsed">{{item.node.collapsed?'▶':'▼'}}</span>
+            <span v-else class="tree-arrow" style="visibility:hidden">▶</span>
+            <input class="tree-title" :class="'level-'+Math.min(item.level,4)" v-model="item.node.title" @focus="selectedNodeId=item.node.id">
+            <span v-if="!item.node.children?.length" class="tree-btn" @click="aiFillKeyPoints(item.node)" :title="item.node.key_points?.length?'AI重新生成要点':'AI填充要点'" :style="{opacity:fillingKeyPoints?0.5:1}">{{fillingKeyPoints?'⏳':'🤖'}}</span>
+            <span v-if="!item.node.children?.length" class="tree-btn" @click="toggleLeafStatus(item.node)" :title="leafStatusTitle(item.node.status)" :style="{color:leafStatusColor(item.node.status),fontSize:'12px'}">{{leafStatusIcon(item.node.status)}}</span>
+            <span class="tree-btn" @click="addChildNode(item.node)" title="添加子节点">+</span>
+            <span class="tree-btn" @click="toggleLockNode(item.node)" :title="item.node.locked?'解锁':'锁定'">{{item.node.locked?'🔒':'🔓'}}</span>
+            <span class="tree-btn" @click="showSplitPopup=showSplitPopup===item.node.id?null:item.node.id" title="AI拆分">🤖</span>
+            <span class="tree-del" @click="removeTreeNode(item.node)" title="删除">✕</span>
+            <input v-if="!item.node.children?.length" class="tree-words" type="number" v-model.number="item.node.target_words" @focus="selectedNodeId=item.node.id">
+            <span v-else class="tree-words" style="border-color:transparent;background:transparent;color:var(--muted)">{{subtreeWords(item.node)}}</span>
+            <!-- Key Points / Description editor -->
+            <div v-if="showDescEdit===item.node.id&&!item.node.children?.length" class="split-popup" style="position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--gold-dim);border-radius:8px;padding:8px;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+              <div style="font-size:10px;color:var(--gold);margin-bottom:4px">编辑要点（逗号分隔，每点10字内）</div>
+              <input v-model="editingKeyPoints" @keyup.enter="saveKeyPoints(item.node)" placeholder="主角突破金丹, 古剑觉醒, 遭遇北冥追兵" style="font-size:10px;margin-bottom:4px">
+              <div style="font-size:10px;color:var(--gold);margin-bottom:4px">梗概（30字内）</div>
+              <input v-model="editingDesc" @keyup.enter="saveKeyPoints(item.node)" placeholder="主角在绝灵谷中突破境界..." style="font-size:10px;margin-bottom:6px">
+              <button class="btn btn-primary btn-sm" @click="saveKeyPoints(item.node)" style="width:100%">保存</button>
+            </div>
+            <div v-if="showSplitPopup===item.node.id" class="split-popup" style="position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+              <label style="font-size:10px;color:var(--muted)">拆分为 <input type="number" v-model.number="splitNumChildren" min="2" max="10" style="width:50px"> 个子节点</label>
+              <input v-model="splitRequirement" placeholder="拆分要求（可选）" style="font-size:10px;margin:4px 0">
+              <button class="btn btn-primary btn-sm" @click="aiSplitNodeFn(item.node)" :disabled="aiSplitting">{{aiSplitting?'拆分中...':'确认拆分'}}</button>
+            </div>
+            <!-- Injection context menu -->
+            <div v-if="injectMenu.node===item.node" class="inject-popup" :style="{position:'absolute',top:'100%',right:0,zIndex:21,background:'var(--panel)',border:'1px solid var(--gold-dim)',borderRadius:'8px',padding:'10px',minWidth:'320px',maxWidth:'520px',boxShadow:'0 4px 20px rgba(0,0,0,0.4)'}">
+              <div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-family:var(--font-display)">{{item.node.title}}</div>
+              <!-- 剧情抽卡按钮 -->
+              <div v-if="!plotCards.length||plotCardNode!==item.node" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+                <button class="btn btn-outline btn-sm" @click.stop="drawPlotCard('next_station',item.node)" :disabled="drawingPlotCard" style="font-size:10px">🗺 下一站</button>
+                <button class="btn btn-outline btn-sm" @click.stop="drawPlotCard('meet_character',item.node)" :disabled="drawingPlotCard" style="font-size:10px">👤 遇人</button>
+                <button class="btn btn-outline btn-sm" @click.stop="drawPlotCard('conflict',item.node)" :disabled="drawingPlotCard" style="font-size:10px">⚔ 冲突</button>
+                <button class="btn btn-outline btn-sm" @click.stop="drawPlotCard('opportunity',item.node)" :disabled="drawingPlotCard" style="font-size:10px">🎁 机遇</button>
+              </div>
+              <!-- 剧情抽卡结果（绑定到当前节点） -->
+              <div v-if="plotCards.length&&plotCardNode===item.node" style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                  <span style="font-size:10px;font-weight:600;color:var(--gold)">🎴 {{({next_station:'下一站',meet_character:'遇人',conflict:'冲突',opportunity:'机遇'})[plotCardSubType]||'剧情'}}方案 ({{plotCards.length}})</span>
+                  <button class="btn btn-outline btn-sm" @click.stop="drawPlotCard(plotCardSubType,plotCardNode)" :disabled="drawingPlotCard" style="font-size:8px;padding:0 4px">🔄</button>
+                  <button class="btn btn-outline btn-sm" @click.stop="clearPlotCards()" style="font-size:8px;padding:0 4px;margin-left:auto">✕</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;max-height:45vh;overflow-y:auto">
+                  <div v-for="(c,i) in plotCards" style="background:var(--surface-1);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:10px">
+                    <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
+                      <span style="font-weight:600;font-size:11px">{{c.title||'方案'+(i+1)}}</span>
+                      <span v-if="c.quality_score" style="font-size:8px;color:var(--gold)">★{{c.quality_score}}</span>
+                    </div>
+                    <!-- next_station: 地点信息 -->
+                    <div v-if="plotCardSubType==='next_station'&&c.content" style="font-size:10px;color:var(--muted);line-height:1.4">
+                      <div v-if="c.content.location_name">📍 <b>{{c.content.location_name}}</b> <span style="font-size:9px;color:var(--accent)">[{{c.content.location_type||'区域'}}]</span></div>
+                      <div v-if="c.content.atmosphere" style="margin-top:2px">🌫 {{c.content.atmosphere}}</div>
+                      <div v-if="c.content.description" style="margin-top:2px">{{c.content.description.slice(0,100)}}</div>
+                      <div v-if="c.content.key_encounter" style="margin-top:2px;color:var(--gold)">⚡ {{c.content.key_encounter}}</div>
+                    </div>
+                    <!-- meet_character: 角色信息 -->
+                    <div v-if="plotCardSubType==='meet_character'&&c.content?.character" style="font-size:10px;color:var(--muted);line-height:1.4">
+                      <div>👤 <b>{{c.content.character.name||'?'}}</b> <span v-if="c.content.character.gender" style="font-size:9px">{{c.content.character.gender}}</span> <span v-if="c.content.character.age" style="font-size:9px">{{c.content.character.age}}</span></div>
+                      <div v-if="c.content.character.personality" style="margin-top:2px">🎭 {{typeof c.content.character.personality==='string'?c.content.character.personality:(c.content.character.personality||[]).join('、')}}</div>
+                      <div v-if="c.content.character.relationship_to_protagonist" style="margin-top:2px;color:var(--gold)">🔗 与主角: {{c.content.character.relationship_to_protagonist}}</div>
+                      <div v-if="c.content.character.arc_hint" style="margin-top:2px">📈 {{c.content.character.arc_hint}}</div>
+                    </div>
+                    <!-- conflict: 势力/事件 -->
+                    <div v-if="plotCardSubType==='conflict'&&c.content?.faction_or_event" style="font-size:10px;color:var(--muted);line-height:1.4">
+                      <div>⚔ <b>{{c.content.faction_or_event.name||'?'}}</b> <span style="font-size:9px;color:var(--accent)">[{{c.content.faction_or_event.type||'未知'}}]</span></div>
+                      <div v-if="c.content.faction_or_event.goal" style="margin-top:2px">🎯 {{c.content.faction_or_event.goal}}</div>
+                      <div v-if="c.content.faction_or_event.threat_level" style="margin-top:2px;color:var(--red)">⚠ 威胁: {{'★'.repeat(c.content.faction_or_event.threat_level||1)}}</div>
+                      <div v-if="c.content.faction_or_event.description" style="margin-top:2px">{{c.content.faction_or_event.description.slice(0,100)}}</div>
+                    </div>
+                    <!-- opportunity: 物品/机遇 -->
+                    <div v-if="plotCardSubType==='opportunity'&&c.content" style="font-size:10px;color:var(--muted);line-height:1.4">
+                      <div>🎁 <b>{{c.content.item_name||'?'}}</b> <span style="font-size:9px;color:var(--accent)">[{{c.content.item_type||'物品'}}]</span> <span v-if="c.content.rarity" style="font-size:9px;color:var(--gold)">{{c.content.rarity}}</span></div>
+                      <div v-if="c.content.description" style="margin-top:2px">{{c.content.description.slice(0,100)}}</div>
+                      <div v-if="c.content.foreshadowing_hint" style="margin-top:2px;color:var(--gold)">🔮 伏笔: {{c.content.foreshadowing_hint}}</div>
+                    </div>
+                    <div v-if="c.summary&&!c.content" style="font-size:10px;color:var(--muted);line-height:1.4">{{c.summary.slice(0,120)}}</div>
+                    <div style="display:flex;gap:4px;margin-top:6px;justify-content:flex-end">
+                      <button class="btn btn-primary btn-sm" @click.stop="adoptPlotCard(i)" style="font-size:9px;padding:2px 8px">采纳</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:4px">注入元素</div>
+              <div class="field"><label>新物品 (逗号分隔)</label><input v-model="injectForm.new_items_str" placeholder="噬灵血铠, 破境丹"></div>
+              <div class="field"><label>新角色 (逗号分隔)</label><input v-model="injectForm.new_characters_str" placeholder="柳三娘"></div>
+              <div class="field"><label>新势力 (逗号分隔)</label><input v-model="injectForm.new_factions_str" placeholder="北冥影卫"></div>
+              <div class="field"><label>新地点 (逗号分隔)</label><input v-model="injectForm.new_locations_str" placeholder="绝灵谷"></div>
+              <div class="field"><label>埋设伏笔</label><input v-model="injectForm.foreshadowing_plant_str" placeholder="古剑胎记"></div>
+              <div class="field"><label>回收伏笔</label><input v-model="injectForm.foreshadowing_resolve_str" placeholder="七年前的真相"></div>
+              <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+                <button class="btn btn-outline btn-sm" @click="injectMenu.node=null">取消</button>
+                <button class="btn btn-primary btn-sm" @click="applyInjection(item.node)">确认注入</button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <!-- Settings -->
+      <div class="side-section">
+        <div class="side-section-header" @click="sideOpen.settings=!sideOpen.settings"><span class="arrow" :style="{transform:sideOpen.settings?'rotate(0)':'rotate(-90deg)'}">▼</span> 写作设定</div>
+        <div class="side-section-body" v-if="sideOpen.settings">
+          <div class="field"><label>主题</label><input v-model="topic" placeholder="输入创作主题"></div>
+          <div class="field"><label>世界观 <button class="btn btn-outline btn-sm" @click="genWorldSettingFn" :disabled="genWorld" style="float:right;font-size:9px">AI生成</button></label><textarea v-model="worldSetting" rows="2"></textarea></div>
+          <div class="field"><label>梗概 <button class="btn btn-outline btn-sm" @click="genStorySynopsisFn" :disabled="genSynopsis" style="float:right;font-size:9px">AI生成</button></label><textarea v-model="storySynopsis" rows="2"></textarea></div>
+          <div class="field"><label>参考文本 (提取风格)</label><textarea v-model="referenceText" rows="2"></textarea></div>
+          <div class="field"><label>API Key</label><input v-model="apiKey" type="password" placeholder="输入你的 DeepSeek API Key"></div>
+          <div class="field" style="display:flex;gap:8px;align-items:center"><label style="margin:0">目标字数</label><input type="number" v-model.number="globalWordLimit" style="width:100px"><label style="margin:0">模式</label><select v-model="mode" style="font-size:11px;width:auto"><option value="celery">自动</option><option value="interactive">交互</option></select></div>
+        </div>
+      </div>
+      <!-- Foreshadowing -->
+      <div class="side-section">
+        <div class="side-section-header" @click="sideOpen.foreshadow=!sideOpen.foreshadow"><span class="arrow" :style="{transform:sideOpen.foreshadow?'rotate(0)':'rotate(-90deg)'}">▼</span> 伏笔 ({{foreshadowings.length}})</div>
+        <div class="side-section-body" v-if="sideOpen.foreshadow">
+          <input type="text" v-model="fsSearch" placeholder="搜索伏笔..." style="font-size:10px;margin-bottom:4px">
+          <div style="max-height:140px;overflow-y:auto">
+            <div v-for="f in filteredFS" class="fs-item"><div class="fs-name">{{f.name}}</div><div class="fs-meta"><span class="fs-status" :class="f.status" :style="(f.tags||[]).includes('world_anchor')?'color:var(--gold)':''">{{(f.tags||[]).includes('world_anchor')?'🌐 世界设定':({pending:'待埋设',planted:'已埋设',hinted:'已暗示',resolved:'已回收'})[f.status]||f.status}}</span> {{(f.tags||[]).includes('world_anchor')?'永久有效':'第'+f.plant_chapter+'章→'+(f.resolve_chapter?'第'+f.resolve_chapter+'章':'待定')}}</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="side-section">
+        <div class="side-section-header" @click="sideOpen.audit=!sideOpen.audit"><span class="arrow" :style="{transform:sideOpen.audit?'rotate(0)':'rotate(-90deg)'}">▼</span> 审阅与检测 <span v-if="aiDetectLog.length||sectionReviewStatus.length" style="font-size:9px;color:var(--muted)">({{aiDetectLog.length}}/{{sectionReviewStatus.length}})</span></div>
+        <div class="side-section-body" v-if="sideOpen.audit">
+          <div v-if="!aiDetectLog.length&&!sectionReviewStatus.length" style="font-size:10px;color:var(--muted);padding:4px 0">写作开始后自动显示</div>
+          <div v-if="aiDetectLog.length" style="margin-bottom:6px">
+            <div style="font-size:10px;font-weight:600;margin-bottom:2px">🕵️ AI检测</div>
+            <div v-for="(r,i) in aiDetectLog.slice(-3)" style="font-size:9px;color:var(--muted);display:flex;gap:4px;align-items:center">
+              <span>§{{r.section}}.{{r.subsection}}</span>
+              <span :style="{color:r.ai_score<5?'#f44336':r.ai_score<7?'var(--gold)':'#4caf50'}">{{r.ai_score}}分</span>
+              <span v-if="r.pattern_count">命中{{r.pattern_count}}条</span>
+            </div>
+          </div>
+          <div v-if="sectionReviewStatus.length" style="margin-bottom:4px">
+            <div style="font-size:10px;font-weight:600;margin-bottom:2px">📝 分节审阅</div>
+            <div v-for="r in sectionReviewStatus.slice(-3)" style="font-size:9px;color:var(--muted)">§{{r.section}} — {{r.status==='pending'?'审阅中…':'已审阅'}} ({{r.chars}}字)</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Left resize handle -->
+    <div class="panel-resize-handle" v-if="!sideCollapsed.left" @mousedown="startResize('left',$event)"></div>
+
+    <!-- CENTER -->
+    <main class="panel-center">
+      <div class="draft-area" v-if="visibleDraftBlocks.length" id="draftScrollAnchor">
+        <template v-for="(b,i) in visibleDraftBlocks" :key="i">
+          <div v-if="b.type==='section'" class="section-title" :id="'draft-sec-'+b.section">{{b.title}}</div>
+          <div v-else :id="'draft-sub-'+b.section+'-'+b.subsection"><div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px"><span style="font-size:13px;font-weight:600;color:var(--accent)">{{b.title}}</span><span class="word-badge" :class="b.wordCount>b.targetWords*1.2?'over':b.wordCount<b.targetWords*0.8?'under':'ok'">{{b.wordCount}}/{{b.targetWords}}</span></div>
+          <div class="draft-text">{{b.text}}<span v-if="b===draftBlocks[generatingBlockIdx]" class="cursor-blink">|</span></div></div>
+        </template>
+      </div>
+      <div v-else class="draft-empty"><div class="draft-empty-icon">&#9997;</div><div class="draft-empty-title">{{queuedCount===0&&totalSubsections>0?'没有排队章节':'准备开始创作'}}</div><div class="draft-empty-sub">{{queuedCount===0&&totalSubsections>0?'点击大纲节点旁的 🟡 加入写作队列<br>然后点击下方「继续写作」':'在左侧设定主题和大纲<br>点击下方「开始写作」'}}</div></div>
+    </main>
+
+    <!-- Right resize handle -->
+    <div class="panel-resize-handle" v-if="!sideCollapsed.right" @mousedown="startResize('right',$event)"></div>
+
+    <!-- RIGHT PANEL: Quick view only -->
+    <aside class="panel panel-right" :class="{collapsed:sideCollapsed.right}" :style="{width:sideCollapsed.right?'36px':rightPanelWidth+'px'}">
+      <div class="panel-header"><h3 v-if="!sideCollapsed.right">上下文面板</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.right=!sideCollapsed.right" :title="sideCollapsed.right?'展开右侧栏':'收起右侧栏'">{{sideCollapsed.right?'◀':'▶'}}</button></div>
+      <div class="panel-body" style="overflow-y:auto">
+        <div class="side-section">
+          <div class="side-section-header" @click="sideOpen.chars=!sideOpen.chars"><span class="arrow" :style="{transform:sideOpen.chars?'rotate(0)':'rotate(-90deg)'}">▼</span> 已选角色</div>
+          <div class="side-section-body" v-if="sideOpen.chars">
+            <div v-if="selectedChars.length" style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:6px">
+              <span v-for="c in selectedChars" class="char-chip" @click="toggleChar(c)">{{c.name}} ✕</span>
+            </div>
+            <div v-else style="font-size:11px;color:var(--muted);padding:4px 0">点击 👤 角色按钮选择</div>
+            <button class="btn btn-outline btn-sm" @click="openCharModal(null)" style="width:100%;font-size:10px">+ 新建角色</button>
+          </div>
+        </div>
+        <div class="side-section">
+          <div class="side-section-header" @click="sideOpen.preview=!sideOpen.preview"><span class="arrow" :style="{transform:sideOpen.preview?'rotate(0)':'rotate(-90deg)'}">▼</span> 大纲预览</div>
+          <div class="side-section-body" v-if="sideOpen.preview">
+            <pre style="font-size:10px;line-height:1.7;white-space:pre-wrap;color:var(--muted);max-height:50vh;overflow-y:auto;margin:0">{{outlinePreviewText}}</pre>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- STATUS BAR -->
+  <footer class="status-bar">
+    <span class="status-dot" :style="{background:statusColor}"></span><span style="margin-right:8px">{{statusText}}</span>
+    <span v-if="agentStatus" style="color:var(--accent);font-size:11px;animation:blink 1.2s infinite">⟳ {{agentStatus}}</span>
+    <div class="progress-bar-wrap" style="flex:1"><div class="progress-bar-fill" :style="{width:Math.min(100,totalDraftWords/Math.max(1,globalWordLimit)*100)+'%'}"></div></div>
+    <span style="white-space:nowrap;font-size:10px">{{completedSections}}/{{totalSubsections}}节 · {{totalDraftWords}}字</span>
+    <span style="font-size:10px;color:var(--dim);white-space:nowrap" v-if="tokenUsage>0">{{Math.round(tokenUsage/1000)}}K tokens</span>
+    <span style="font-size:10px;color:var(--gold);white-space:nowrap" v-if="totalSubsections>0">🟡{{queuedCount}} ⚪{{draftCount}}</span>
+    <button class="btn btn-primary btn-sm" @click="startWriting" :disabled="isGenerating||queuedCount===0">{{startBtnText}}</button>
+    <button class="btn btn-danger btn-sm" @click="stopWriting" :disabled="!isGenerating">停止</button>
+  </footer>
+
+  <!-- ═══ MODALS ═══ -->
+  <!-- Cards -->
+  <div class="modal-overlay" v-if="showCards" @click.self="showCards=false">
+    <div class="modal-box" style="width:900px;max-width:95vw"><h3>抽卡 — {{stepLabel(currentStep||'题材选择')}} <span style="font-size:11px;color:var(--muted)">步骤 {{wizardStep}}/{{wizardSteps.length}}</span></h3>
+      <div style="display:flex;gap:6px;margin-bottom:14px;align-items:center;font-size:11px">
+        <span v-for="(s,i) in wizardSteps" :style="{color:i<wizardStep-1?'var(--green)':i===wizardStep-1?'var(--accent)':'var(--muted)',fontWeight:i===wizardStep-1?'600':'400'}">{{i>0?' → ':''}}{{s}}</span>
+      </div>
+      <div v-if="wizardStep===0" style="text-align:center;padding:20px 0">
+        <div style="font-size:14px;color:var(--gold);margin-bottom:16px;font-family:var(--font-display)">选择创作题材</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:700px;margin:0 auto">
+          <button v-for="g in ['玄幻修仙','都市异能','科幻末世','悬疑推理','历史架空','仙侠神话','奇幻魔法','武侠江湖','无限流','轻小说日常']" class="btn btn-outline btn-sm" @click="selectGenre(g)" style="padding:12px 8px;font-size:12px">{{g}}</button>
+        </div>
+      </div>
+      <div v-else-if="agentStatus" style="text-align:center;padding:40px 0;color:var(--accent);font-size:14px">⟳ {{agentStatus}}</div>
+      <div v-else class="card-grid" style="gap:14px"><div v-for="(card,i) in cards" class="card-item" :class="{selected:card.is_adopted}" @click="adoptCard(i)" :style="{width: currentStep==='outline'?'280px':currentStep==='writing'?'240px':currentStep==='protagonist'?'220px':'200px'}"><div class="card-title" style="font-size:13px">{{card.title}} <span v-if="card.quality_score" style="color:var(--orange);font-size:10px">★{{card.quality_score}}</span></div><div class="card-summary" style="font-size:11px;max-height:60px">{{card.summary}}</div>
+        <div v-if="currentStep==='world_setting'&&card.content" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.4"><div v-if="card.content.core_conflict">⚔ {{card.content.core_conflict}}</div><div v-if="card.content.tone">🎭 {{card.content.tone}}</div></div>
+        <div v-if="currentStep==='protagonist'&&card.content" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.5">
+          <div v-if="card.content.name" style="font-weight:600;color:var(--text)">{{card.content.name}} · {{card.content.gender||'?'}} · {{card.content.age||'?'}}</div>
+          <div v-if="card.content.personality" style="margin:2px 0">{{(card.content.personality||'').slice(0,60)}}</div>
+          <div v-if="card.content.golden_finger">✨ {{(card.content.golden_finger||'').slice(0,50)}}</div>
+          <div v-if="card.content.weakness" style="color:var(--orange)">⚠ {{(card.content.weakness||'').slice(0,40)}}</div>
+        </div>
+        <div v-if="currentStep==='outline'&&card.content" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.5">
+          <div v-if="card.content.volumes?.length">📚 {{card.content.volumes.length}}卷 {{card.content.volumes.map(v=>v.title).join(' · ')}}</div>
+          <div v-else-if="card.content.structure">📖 {{(card.content.structure||'').slice(0,80)}}</div>
+          <div v-if="card.content.ending_type" style="color:var(--accent)">🎯 结局: {{card.content.ending_type}}</div>
+          <div v-if="card.content.key_events?.length" style="margin-top:2px">🔑 {{card.content.key_events.slice(0,3).join(' | ')}}</div>
+          <button class="btn btn-outline btn-sm" @click.stop="previewOutlineCard(card,i)" style="margin-top:4px;width:100%;font-size:9px">{{outlinePreview===i?'👁 预览中...':'👁 预览到编辑器'}}</button>
+        </div>
+        <div v-if="currentStep==='writing'&&card.content" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.5">
+          <div v-if="card.content.opening">🎬 {{(card.content.opening||'').slice(0,80)}}</div>
+          <div v-if="card.content.key_scene">🎪 {{(card.content.key_scene||'').slice(0,80)}}</div>
+          <div v-if="card.content.character_interaction">👥 {{(card.content.character_interaction||'').slice(0,60)}}</div>
+          <div v-if="card.content.ending_hook">🎣 {{card.content.ending_hook}}</div>
+        </div>
+        <div v-if="currentStep==='supporting_characters'&&card.content?.characters" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.4">
+          <div v-for="ch in card.content.characters" style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)">👤 {{ch.name}} <span style="font-size:9px;color:var(--accent)">[{{ch.role||'配角'}}]</span> <span v-if="ch.personality" style="font-size:9px">{{(typeof ch.personality==='string'?ch.personality:(ch.personality||[]).join(','))}}</span></div>
+        </div>
+        <div v-if="currentStep==='factions_card'&&card.content?.factions" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.4">
+          <div v-for="f in card.content.factions" style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)">🏛 {{f.name}} <span style="font-size:9px;color:var(--accent)">[{{f.type||'势力'}}]</span> <span v-if="f.goal" style="font-size:9px">· {{f.goal.slice(0,30)}}</span></div>
+        </div>
+        <div v-if="currentStep==='locations_card'&&card.content?.nodes" style="font-size:10px;color:var(--muted);margin:4px 0;line-height:1.4">
+          <div v-for="n in card.content.nodes" style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)">📍 {{n.name}} <span style="font-size:9px;color:var(--accent)">[{{n.type||'地点'}}]</span></div>
+        </div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px"><span v-for="t in card.highlights" class="card-tag">{{t}}</span></div>
+        <div style="display:flex;gap:4px"><button class="btn btn-primary btn-sm" @click.stop="adoptCard(i)">采纳</button><button class="btn btn-outline btn-sm" @click.stop="modifyCard(i)">修改</button></div></div></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn btn-outline btn-sm" @click="drawCardsFn(currentStep)">🔄 重抽</button><button class="btn btn-outline btn-sm" @click="nextWizardStep">⏭ 跳过</button><span style="font-size:10px;color:var(--muted)">按 1-{{cards.length}} 选卡, R重抽, S跳过</span></div>
+    </div>
+  </div>
+  <!-- Dialogue -->
+  <div class="modal-overlay" v-if="showDialogue" @click.self="showDialogue=false">
+    <div class="modal-box"><h3>创作讨论</h3>
+      <div style="max-height:40vh;overflow-y:auto;margin-bottom:12px"><div v-for="m in dialogueMsgs" style="padding:6px 8px;margin:4px 0;border-radius:6px" :style="m.role==='user'?'background:rgba(100,181,246,0.1)':'background:rgba(255,255,255,0.03)'"><b style="font-size:10px">{{m.role==='user'?'你':'AI'}}</b><div style="font-size:12px;white-space:pre-wrap">{{m.content}}</div></div></div>
+      <div style="display:flex;gap:8px"><input v-model="dialogueInput" @keyup.enter="sendDialogue" placeholder="输入你的想法..." style="flex:1"><button class="btn btn-primary btn-sm" @click="sendDialogue">发送</button></div>
+    </div>
+  </div>
+  <!-- Review -->
+  <div class="modal-overlay" v-if="showReview" @click.self="showReview=false">
+    <div class="modal-box wide" style="max-width:680px"><h3>审阅报告</h3>
+      <div v-if="reviewLoading" style="text-align:center;padding:40px;color:var(--muted)">正在分析...</div>
+      <div v-else-if="!reviewResults||!reviewResults.section_reviews" style="text-align:center;padding:40px;color:var(--muted)">暂无审阅结果。完成写作后自动生成。</div>
+      <div v-else>
+        <!-- Tab 切换 -->
+        <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border)">
+          <button class="btn btn-sm" @click="reviewTab='section'" :style="{fontSize:'12px',padding:'6px 16px',borderBottom:reviewTab==='section'?'2px solid var(--gold)':'2px solid transparent',color:reviewTab==='section'?'var(--gold)':'var(--muted)'}">分节审阅</button>
+          <button class="btn btn-sm" @click="reviewTab='global'" :style="{fontSize:'12px',padding:'6px 16px',borderBottom:reviewTab==='global'?'2px solid var(--gold)':'2px solid transparent',color:reviewTab==='global'?'var(--gold)':'var(--muted)'}">全局审阅 ({{reviewResults.global_score||'?'}})</button>
+        </div>
+        <div style="max-height:60vh;overflow-y:auto">
+        <!-- ═══ 分节审阅 ═══ -->
+        <div v-if="reviewTab==='section'">
+          <div style="text-align:center;margin-bottom:16px">
+            <div :style="{fontSize:'48px',fontWeight:700,color:reviewResults.section_score>=8?'#7ec97a':reviewResults.section_score>=5?'#c9a96e':'#c96a6a'}">{{reviewResults.section_score||'?'}}<span style="font-size:20px">/10</span></div>
+            <div style="font-size:11px;color:var(--muted)">{{reviewResults.volume_title||('第'+reviewChapter+'卷')}} · 综合评分</div>
+            <div v-if="reviewResults.leaf_titles.length" style="font-size:10px;color:var(--muted);margin-top:2px">包含: {{reviewResults.leaf_titles.join(' · ')}}</div>
+          </div>
+          <div v-if="reviewResults.dimensions.length" style="margin-bottom:16px">
+            <div v-for="d in reviewResults.dimensions" style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font-size:11px;color:var(--muted);min-width:56px;text-align:right">{{d.label}}</span>
+              <div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden">
+                <div :style="{width:(d.score*10)+'%',height:'100%',borderRadius:'4px',background:d.score>=8?'#7ec97a':d.score>=5?'#c9a96e':'#c96a6a'}"></div>
+              </div>
+              <span :style="{fontSize:'11px',fontWeight:600,color:d.score>=8?'#7ec97a':d.score>=5?'#c9a96e':'#c96a6a',minWidth:'20px'}">{{d.score}}</span>
+            </div>
+          </div>
+          <div v-if="reviewResults.highlight?.text" style="background:rgba(126,201,122,0.08);border-left:3px solid #7ec97a;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:8px">
+            <div style="font-size:10px;color:#7ec97a;font-weight:600;margin-bottom:4px">✦ 亮点</div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5">{{reviewResults.highlight.text}}</div>
+            <div v-if="reviewResults.highlight.reason" style="font-size:10px;color:var(--muted);margin-top:4px">💡 {{reviewResults.highlight.reason}}</div>
+          </div>
+          <div v-if="reviewResults.lowlight?.text" style="background:rgba(201,106,106,0.08);border-left:3px solid #c96a6a;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:8px">
+            <div style="font-size:10px;color:#c96a6a;font-weight:600;margin-bottom:4px">⚠ 需改进</div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5">{{reviewResults.lowlight.text}}</div>
+            <div v-if="reviewResults.lowlight.improvement" style="font-size:10px;color:var(--accent);margin-top:4px">🔧 {{reviewResults.lowlight.improvement}}</div>
+          </div>
+          <div v-if="reviewResults.consistency_notes" style="font-size:11px;color:var(--muted);padding:6px 0;border-top:1px solid var(--border)">📋 {{reviewResults.consistency_notes}}</div>
+          <div v-if="reviewResults.improvement" style="font-size:11px;color:var(--text);padding:6px 0;line-height:1.5">💬 {{reviewResults.improvement}}</div>
+          <div v-if="reviewResults.rewrite_target" style="background:rgba(201,169,110,0.1);border:1px solid var(--gold-dim);padding:10px 14px;border-radius:6px;margin-top:8px">
+            <div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:4px">🎯 重写目标</div>
+            <div style="font-size:11px;color:var(--text);line-height:1.5">{{reviewResults.rewrite_target}}</div>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" v-for="(sr,i) in (reviewResults.section_reviews||[])" @click="reviewChapter=sr.section||(i+1)" :style="{fontSize:'9px',padding:'2px 8px',background:reviewChapter===(sr.section||i+1)?'var(--gold)':'',color:reviewChapter===(sr.section||i+1)?'#000':''}" :title="sr.volume_title||''">{{sr.volume_title||('卷'+(sr.section||i+1))}}</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-outline btn-sm" @click="reviewChapter=Math.max(1,reviewChapter-1)">← 上一卷</button>
+            <button class="btn btn-primary btn-sm" @click="reviewChapter=Math.min((reviewResults.section_reviews||[]).length,reviewChapter+1)">下一卷 →</button>
+          </div>
+        </div>
+        <!-- ═══ 全局审阅 ═══ -->
+        <div v-if="reviewTab==='global'">
+          <div style="text-align:center;margin-bottom:16px">
+            <div :style="{fontSize:'48px',fontWeight:700,color:reviewResults.global_score>=8?'#7ec97a':reviewResults.global_score>=5?'#c9a96e':'#c96a6a'}">{{reviewResults.global_score||'?'}}<span style="font-size:20px">/10</span></div>
+            <div style="font-size:11px;color:var(--muted)">全局综合评分</div>
+          </div>
+          <!-- 逐章评分 -->
+          <div v-if="reviewResults.chapter_scores.length" style="margin-bottom:16px">
+            <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px">逐章评分</div>
+            <div v-for="cs in reviewResults.chapter_scores" style="display:flex;align-items:center;gap:8px;padding:4px 8px;margin-bottom:2px;border-radius:4px;font-size:11px" :style="{background:cs.score>=8?'rgba(126,201,122,0.06)':cs.score<5?'rgba(201,106,106,0.06)':''}">
+              <span style="color:var(--muted);min-width:32px">Ch.{{cs.chapter}}</span>
+              <span style="flex:1">{{cs.title||''}}</span>
+              <span :style="{fontWeight:600,color:cs.score>=8?'#7ec97a':cs.score>=5?'#c9a96e':'#c96a6a',minWidth:'28px',textAlign:'right'}">{{cs.score}}</span>
+              <span v-if="cs.one_line" style="font-size:10px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{cs.one_line}}</span>
+            </div>
+          </div>
+          <!-- 张力曲线 -->
+          <div v-if="reviewResults.tension_curve" style="margin-bottom:12px;font-size:11px;color:var(--muted);line-height:1.5">📈 {{reviewResults.tension_curve}}</div>
+          <!-- 节奏问题 -->
+          <div v-if="reviewResults.pacing_issues.length" style="margin-bottom:12px">
+            <div style="font-size:10px;color:var(--orange);font-weight:600;margin-bottom:4px">⚠ 节奏问题</div>
+            <div v-for="p in reviewResults.pacing_issues" style="font-size:10px;padding:4px 8px;margin-bottom:2px;background:rgba(201,106,106,0.05);border-radius:4px">
+              <span style="color:var(--orange)">Ch.{{p.chapter}}</span>
+              <span style="color:var(--muted)"> · {{p.issue}} · </span>
+              <span style="color:var(--text)">{{p.detail}}</span>
+            </div>
+          </div>
+          <!-- 风格一致性 -->
+          <div v-if="reviewResults.style_adherence" style="font-size:11px;color:var(--muted);margin-bottom:12px;padding:6px 8px;background:var(--surface-1);border-radius:4px">🎨 {{reviewResults.style_adherence}}</div>
+          <!-- 支线健康度 -->
+          <div v-if="reviewResults.subplot_health.length" style="margin-bottom:12px">
+            <div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:4px">📖 支线进度</div>
+            <div v-for="s in reviewResults.subplot_health" style="font-size:10px;padding:3px 8px;margin-bottom:2px;display:flex;gap:8px;align-items:center">
+              <span style="font-weight:600">{{s.name}}</span>
+              <span style="color:var(--muted)">{{s.progress}}</span>
+              <span v-if="s.warning" style="color:var(--orange)">⚠ {{s.warning}}</span>
+            </div>
+          </div>
+          <!-- 角色弧 -->
+          <div v-if="reviewResults.character_arc_health.length" style="margin-bottom:12px">
+            <div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:4px">👤 角色弧线</div>
+            <div v-for="c in reviewResults.character_arc_health" style="font-size:10px;padding:3px 8px;margin-bottom:2px;display:flex;gap:8px;align-items:center">
+              <span style="font-weight:600">{{c.name}}</span>
+              <span style="color:var(--muted)">{{c.completion}}</span>
+              <span v-if="c.note" style="color:var(--muted)">{{c.note}}</span>
+            </div>
+          </div>
+          <!-- 优先改进 -->
+          <div v-if="reviewResults.top_3_actions.length" style="background:rgba(201,169,110,0.08);border:1px solid var(--gold-dim);padding:10px 14px;border-radius:6px;margin-bottom:12px">
+            <div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:6px">🎯 优先改进 (将反馈给下一轮写作)</div>
+            <div v-for="(a,i) in reviewResults.top_3_actions" style="font-size:11px;padding:3px 0;color:var(--text);line-height:1.5">{{i+1}}. {{a}}</div>
+          </div>
+          <!-- 传统字段 -->
+          <div v-if="reviewResults.global_strength" style="font-size:11px;color:var(--text);padding:4px 0">👍 {{reviewResults.global_strength}}</div>
+          <div v-if="reviewResults.global_weakness" style="font-size:11px;color:var(--orange);padding:4px 0">⚠ {{reviewResults.global_weakness}}</div>
+          <div v-if="reviewResults.global_suggestion" style="font-size:11px;color:var(--muted);padding:4px 0;line-height:1.5">💬 {{reviewResults.global_suggestion}}</div>
+          <div v-if="reviewResults.character_consistency" style="font-size:11px;color:var(--muted);padding:4px 0">👥 {{reviewResults.character_consistency}}</div>
+        </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showReview=false">关闭</button></div>
+    </div>
+  </div>
+  <!-- Writing Complete -->
+  <div class="modal-overlay" v-if="showCompleteModal" @click.self="showCompleteModal=false">
+    <div class="modal-box" style="text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">&#127881;</div>
+      <h2 style="font-size:22px;margin-bottom:8px;background:linear-gradient(135deg,var(--gold),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent">写作完成</h2>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:6px">总字数 <b style="color:var(--text-bright)">{{totalDraftWords}}</b> 字</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">审阅结果已生成，查看详细评估</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-primary" @click="showCompleteModal=false;showReview=true;loadReviewResults()">查看审阅</button>
+        <button class="btn btn-outline" @click="showCompleteModal=false">关闭</button>
+      </div>
+    </div>
+  </div>
+  <!-- Import -->
+  <div class="modal-overlay" v-if="showImportModal" @click.self="showImportModal=false">
+    <div class="modal-box"><h3>导入大纲</h3><div class="field"><label>粘贴大纲文本</label><textarea v-model="importText" rows="8"></textarea></div><div class="field"><label>最大深度 <input type="number" v-model.number="importMaxDepth" min="2" max="5" style="width:60px"></label></div><div v-if="importError" style="color:var(--red);font-size:11px;margin-bottom:8px">{{importError}}</div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-outline btn-sm" @click="showImportModal=false">取消</button><button class="btn btn-primary btn-sm" @click="doImportOutline" :disabled="importing">{{importing?'导入中...':'导入'}}</button></div></div>
+  </div>
+
+  <!-- ═══ OUTLINE VERSIONS MODAL ═══ -->
+  <div class="modal-overlay" v-if="showOutlineVersions" @click.self="showOutlineVersions=false">
+    <div class="modal-box"><h3>大纲历史版本</h3>
+      <div v-if="outlineVersions.length===0" style="text-align:center;padding:40px;color:var(--muted)">暂无历史版本。每次保存大纲时自动创建版本（最多保留5个）。</div>
+      <div v-else style="max-height:50vh;overflow-y:auto">
+        <div v-for="v in outlineVersions" style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;color:var(--muted)">{{v.created_at}}</span>
+          <span style="font-size:11px;color:var(--muted)">{{v.node_count}} 个节点</span>
+          <button class="btn btn-outline btn-sm" @click="restoreOutlineVersion(v.id)" style="margin-left:auto">恢复此版本</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showOutlineVersions=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- Character -->
+  <div class="modal-overlay" v-if="showCharModal" @click.self="showCharModal=false">
+    <div class="modal-box wide"><h3>角色管理</h3>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-sm" :class="charTab==='library'?'btn-primary':'btn-outline'" @click="charTab='library'">📚 角色库 ({{libraryChars.length}})</button>
+        <button class="btn btn-sm" :class="charTab==='form'?'btn-primary':'btn-outline'" @click="charTab='form'">+ 创建</button>
+        <button class="btn btn-sm" :class="charTab==='extract'?'btn-primary':'btn-outline'" @click="charTab='extract'">🤖 AI提取</button>
+        <input v-model="charSearch" placeholder="搜索角色..." style="font-size:11px;width:120px;margin-left:auto;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:2px 8px;border-radius:4px">
+      </div>
+      <template v-if="charTab==='library'">
+        <div style="max-height:55vh;overflow-y:auto">
+          <div v-for="c in filteredChars" style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px">
+            <span :style="{color:selectedCharIds.includes(c.id)?'var(--gold)':'var(--muted)',cursor:'pointer'}" @click="toggleChar(c)" :title="selectedCharIds.includes(c.id)?'已选中(点击取消)':'点击选中'">{{selectedCharIds.includes(c.id)?'✅':'➕'}}</span>
+            <span style="font-weight:600;min-width:60px">{{c.name}}</span>
+            <span style="font-size:10px;color:var(--muted)">{{c.gender||''}} {{c.age||''}}</span>
+            <span style="font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{(c.personality||[]).join('、')}}</span>
+            <button class="btn btn-outline btn-sm" @click="openCharModal(c)" style="font-size:9px">编辑</button>
+            <button class="btn btn-outline btn-sm" @click="deleteCharFn(c.id)" style="font-size:9px;color:var(--red)">删除</button>
+          </div>
+        </div>
+        <div v-if="selectedCharIds.length" style="margin-top:8px;font-size:11px;color:var(--gold)">已选中 {{selectedCharIds.length}} 个角色参与写作</div>
+      </template>
+      <template v-if="charTab==='form'">
+        <div style="max-height:55vh;overflow-y:auto;padding-right:4px">
+          <!-- 基本信息 -->
+          <div class="side-section" style="margin-bottom:8px">
+            <div class="side-section-header" @click="charFormOpen.basic=!charFormOpen.basic"><span class="arrow" :style="{transform:charFormOpen.basic?'rotate(0)':'rotate(-90deg)'}">▼</span> 基本信息</div>
+            <div class="side-section-body" v-if="charFormOpen.basic">
+              <div class="field"><label>姓名</label><input v-model="charForm.name"></div>
+              <div class="field"><label>性别 / 年龄</label><div style="display:flex;gap:8px"><input v-model="charForm.gender" placeholder="性别" style="flex:1"><input v-model="charForm.age" placeholder="年龄" style="flex:1"></div></div>
+              <div class="field"><label>外貌特征</label><input v-model="charForm.appearance" placeholder="例如: 清瘦, 眼角有疤, 总是穿着灰布衫"></div>
+              <div class="field"><label>口头禅/语言风格</label><input v-model="charForm.catchphrase" placeholder="例如: 爱说'得加钱', 说话拖长音"></div>
+            </div>
+          </div>
+          <!-- 性格层 -->
+          <div class="side-section" style="margin-bottom:8px">
+            <div class="side-section-header" @click="charFormOpen.personality=!charFormOpen.personality"><span class="arrow" :style="{transform:charFormOpen.personality?'rotate(0)':'rotate(-90deg)'}">▼</span> 性格层</div>
+            <div class="side-section-body" v-if="charFormOpen.personality">
+              <div class="field"><label>性格 (逗号分隔)</label><input v-model="charForm.personalityStr" placeholder="慵懒, 随性, 外冷内热"></div>
+              <div class="field"><label>优点 (逗号分隔)</label><input v-model="charForm.strengthsStr" placeholder="冷静, 观察力强, 重情义"></div>
+              <div class="field"><label>弱点 (逗号分隔)</label><input v-model="charForm.weaknessesStr" placeholder="懒散, 逃避责任, 不擅交际"></div>
+            </div>
+          </div>
+          <!-- 动机层 -->
+          <div class="side-section" style="margin-bottom:8px">
+            <div class="side-section-header" @click="charFormOpen.motivation=!charFormOpen.motivation"><span class="arrow" :style="{transform:charFormOpen.motivation?'rotate(0)':'rotate(-90deg)'}">▼</span> 动机与定位</div>
+            <div class="side-section-body" v-if="charFormOpen.motivation">
+              <div class="field"><label>核心动机</label><input v-model="charForm.motivation" placeholder="他/她最想要什么？"></div>
+              <div class="field"><label>背景故事</label><textarea v-model="charForm.background" rows="3" placeholder="简要背景..."></textarea></div>
+              <div class="field"><label>世界定位</label><input v-model="charForm.world_position" placeholder="例如: 青云宗杂役院底层弟子, 主角, 反派"></div>
+            </div>
+          </div>
+          <!-- 隐层 -->
+          <div class="side-section" style="margin-bottom:8px">
+            <div class="side-section-header" @click="charFormOpen.hidden=!charFormOpen.hidden"><span class="arrow" :style="{transform:charFormOpen.hidden?'rotate(0)':'rotate(-90deg)'}">▼</span> 隐层身份 <span style="font-size:9px;color:var(--muted);font-weight:400">(魂穿/前世/隐藏身世)</span></div>
+            <div class="side-section-body" v-if="charFormOpen.hidden">
+              <div class="field"><label>隐藏秘密</label><input v-model="charForm.secret" placeholder="例如: 体内封印着上古凶兽, 真实身份是皇族遗孤"></div>
+              <div class="field"><label>前世身份</label><input v-model="charForm.previous_life" placeholder="例如: 程序员, 996猝死. 空着=非魂穿角色"></div>
+              <div class="field"><label>前世世界</label><input v-model="charForm.previous_world" placeholder="例如: 2024年现代都市, 空着=非魂穿"></div>
+              <div class="field"><label>保留记忆/技能</label><input v-model="charForm.preserved_knowledge" placeholder="例如: 编程逻辑, 现代管理思维, 空着=无"></div>
+              <div class="field"><label>身份冲突</label><input v-model="charForm.identity_conflict" placeholder="例如: 前世社畜心态 vs 此世躺平心态, 空着=无冲突"></div>
+            </div>
+          </div>
+          <div class="field"><label>计划出现章节 (标题关键词)</label><input v-model="charForm.plannedChapter" placeholder="如: 第3章, 血战帝都"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn btn-outline btn-sm" @click="charTab='library'">取消</button><button class="btn btn-primary btn-sm" @click="saveCharacter">{{editingChar?'更新':'创建'}}</button></div>
+      </template>
+      <template v-if="charTab==='extract'">
+        <div class="field"><label>粘贴角色描述</label><textarea v-model="extractText" rows="6"></textarea></div>
+        <button class="btn btn-primary btn-sm" @click="doExtract" :disabled="extracting" style="width:100%">{{extracting?'提取中...':'AI 提取角色'}}</button>
+        <div v-for="(c,i) in extractedChars" style="padding:8px 0;border-bottom:1px solid var(--border);font-size:11px"><b>{{c.name}}</b> {{c.gender}} {{c.age}} {{(c.personality||[]).join('、')}}<button class="btn btn-success btn-sm" @click="saveExtracted(i)" style="margin-left:8px">保存</button></div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ═══ RULES MODAL ═══ -->
+  <div class="modal-overlay" v-if="showRulesModal" @click.self="showRulesModal=false">
+    <div class="modal-box wide"><h3>规则管理</h3>
+      <div style="margin-bottom:12px;display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" @click="editingRule=null;ruleForm={name:'',content:'',type:'global',priority:5}">+ 新建规则</button>
+        <button class="btn btn-outline btn-sm" @click="exportRules">导出规则包</button>
+        <label class="btn btn-outline btn-sm" style="cursor:pointer">导入规则包<input type="file" accept=".json" @change="importRulesFile" style="display:none"></label>
+      </div>
+      <!-- Rule list -->
+      <div style="max-height:50vh;overflow-y:auto">
+        <div v-for="r in rules" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span class="rule-prio" :class="r.priority>=8?'high':r.priority>=5?'mid':'low'">{{r.priority}}</span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:600">{{r.name||'未命名规则'}}</div><div style="font-size:10px;color:var(--muted)">{{(r.content||'').slice(0,100)}}</div></div>
+          <span style="font-size:9px;color:var(--muted);padding:1px 6px;border-radius:8px;background:rgba(255,255,255,0.04)">{{({style:'风格',plot:'剧情',character:'角色',dialogue:'对话',global:'全局',custom:'自定义'})[r.type]||r.type}}</span>
+          <button class="btn btn-outline btn-sm" @click="editingRule=r;ruleForm={name:r.name,content:r.content,type:r.type,priority:r.priority}">编辑</button>
+          <button class="btn btn-outline btn-sm" @click="deleteRuleFn(r.id)" style="color:var(--red)">删除</button>
+        </div>
+      </div>
+      <!-- Rule form -->
+      <div v-if="editingRule!==undefined" style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+        <h4 style="font-size:12px;color:var(--accent);margin-bottom:8px">{{editingRule?'编辑规则':'新建规则'}}</h4>
+        <div class="field"><label>规则名称</label><input v-model="ruleForm.name" placeholder="如: 禁止主角杀人"></div>
+        <div class="field"><label>规则内容</label><textarea v-model="ruleForm.content" rows="2" placeholder="具体规则描述, 将注入AI的写作提示中"></textarea></div>
+        <div class="field" style="display:flex;gap:8px"><label style="margin:0">类型</label><select v-model="ruleForm.type" style="font-size:11px;width:auto"><option value="style">风格</option><option value="plot">剧情</option><option value="character">角色</option><option value="dialogue">对话</option><option value="global">全局</option></select><label style="margin:0">优先级</label><input type="number" v-model.number="ruleForm.priority" min="1" max="10" style="width:60px"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn btn-outline btn-sm" @click="editingRule=undefined">取消</button><button class="btn btn-primary btn-sm" @click="saveRuleFn">{{editingRule?'更新':'创建'}}</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ INSPIRATION SIDEBAR ═══ -->
+  <div class="modal-overlay" v-if="showInspiration" @click.self="showInspiration=false">
+    <div class="modal-box wide"><h3>灵感库</h3>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button v-for="cat in inspCategories" class="btn btn-sm" :class="inspCat===cat.key?'btn-primary':'btn-outline'" @click="inspCat=cat.key">{{cat.label}}</button>
+      </div>
+      <div style="max-height:55vh;overflow-y:auto">
+        <div v-for="item in filteredInspirations" style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" @click="useInspiration(item)">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">{{item.name}}</div>
+          <div style="font-size:11px;color:var(--muted)">{{item.description}}</div>
+          <div v-if="item.tags" style="margin-top:4px"><span v-for="t in item.tags" class="card-tag">{{t}}</span></div>
+          <div v-if="item.example" style="font-size:10px;color:var(--purple);margin-top:2px">参考: {{item.example}}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn btn-outline btn-sm" @click="showInspiration=false">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STYLE MODAL ═══ -->
+  <div class="modal-overlay" v-if="showStyle" @click.self="showStyle=false">
+    <div class="modal-box wide"><h3>风格控制台</h3>
+      <!-- 预设 -->
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
+        <button v-for="p in stylePresets" class="btn btn-sm" :class="styleProfile?.preset_name===p?'btn-primary':'btn-outline'" @click="applyStylePreset(p)">{{p}}</button>
+      </div>
+      <!-- 叙事密度 -->
+      <div class="style-section">
+        <div class="style-section-title">叙事密度 <span style="color:var(--gold)">{{styleProfile.narrative_density?.toFixed(2)||'0.70'}}</span></div>
+        <input type="range" min="0" max="1" step="0.05" v-model.number="styleProfile.narrative_density" style="width:100%">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted)"><span>0.0 留白</span><span>0.5 适中</span><span>1.0 密集</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;max-height:55vh;overflow-y:auto;margin-top:8px">
+        <!-- 情感 -->
+        <div class="style-section">
+          <div class="style-section-title">🎭 情感基调</div>
+          <div class="field"><label>主情感</label><input v-model="styleProfile.primary_emotion" placeholder="中性/激昂/冷峻/温暖/压抑/恐惧/荒诞"></div>
+          <div class="field"><label>情感强度 {{styleProfile.emotion_intensity||50}}</label><input type="range" min="10" max="100" v-model.number="styleProfile.emotion_intensity"></div>
+          <div class="field"><label>情感曲线</label><select v-model="styleProfile.emotion_curve"><option>平稳</option><option>渐强</option><option>下沉</option><option>波浪</option><option>突转</option></select></div>
+          <div class="field"><label>情感表达</label><select v-model="styleProfile.emotional_registry"><option>文学抒情</option><option>冷峻克制</option><option>日常口语</option></select></div>
+          <div class="field"><label>叙/议</label><select v-model="styleProfile.show_vs_tell"><option>平衡</option><option>动作驱动</option><option>心理驱动</option></select></div>
+        </div>
+        <!-- 句式 -->
+        <div class="style-section">
+          <div class="style-section-title">📝 句式节奏</div>
+          <div class="field"><label>短句占比 {{(styleProfile.short_sentence_ratio*100)?.toFixed(0)||30}}%</label><input type="range" min="0" max="1" step="0.05" v-model.number="styleProfile.short_sentence_ratio"></div>
+          <div class="field"><label>长句占比 {{(styleProfile.long_sentence_ratio*100)?.toFixed(0)||20}}%</label><input type="range" min="0" max="1" step="0.05" v-model.number="styleProfile.long_sentence_ratio"></div>
+          <div class="field"><label>句式模式</label><select v-model="styleProfile.sentence_pattern"><option>长短交替</option><option>紧凑句</option><option>松散句</option><option>短句群</option></select></div>
+          <div class="field"><label>复杂度</label><select v-model="styleProfile.complex_sentence_ratio"><option>简单句为主</option><option>平衡</option><option>复合句为主</option></select></div>
+          <div class="field"><label>句长波动</label><select v-model="styleProfile.sentence_length_variance"><option>稳定</option><option>适度波动</option><option>剧烈波动</option></select></div>
+        </div>
+        <!-- 段落 -->
+        <div class="style-section">
+          <div class="style-section-title">📄 段落结构</div>
+          <div class="field"><label>平均段长 {{styleProfile.paragraph_length_avg||200}}字</label><input type="range" min="60" max="400" step="10" v-model.number="styleProfile.paragraph_length_avg"></div>
+          <div class="field"><label>段落节奏</label><select v-model="styleProfile.paragraph_rhythm"><option>均匀块状</option><option>渐进式</option><option>长→短交替</option><option>短→长交替</option><option>跳跃式</option></select></div>
+          <div class="field"><label>段首风格</label><select v-model="styleProfile.paragraph_opening_style"><option>混合</option><option>动作起头</option><option>场景描写</option><option>独白起头</option></select></div>
+        </div>
+        <!-- 对话 -->
+        <div class="style-section">
+          <div class="style-section-title">💬 对话</div>
+          <div class="field"><label>对话占比 {{(styleProfile.dialogue_ratio*100)?.toFixed(0)||30}}%</label><input type="range" min="0" max="0.7" step="0.05" v-model.number="styleProfile.dialogue_ratio"></div>
+          <div class="field"><label>标记风格</label><select v-model="styleProfile.dialogue_tag_style"><option>稀疏标记</option><option>动作替代</option><option>零标记</option></select></div>
+          <div class="field"><label>对话混合</label><select v-model="styleProfile.dialogue_mixing"><option>混合</option><option>独立成段</option><option>嵌入叙述</option></select></div>
+          <div class="field"><label>内心独白</label><input type="range" min="0" max="0.6" step="0.05" v-model.number="styleProfile.inner_monologue_ratio" :title="'内心独白占比: '+(styleProfile.inner_monologue_ratio*100)?.toFixed(0)+'%'"></div>
+        </div>
+        <!-- 感官 -->
+        <div class="style-section">
+          <div class="style-section-title">👁 感官与意象</div>
+          <div class="field"><label>感官密度</label><select v-model="styleProfile.sensory_density"><option>极少</option><option>适度</option><option>丰富</option></select></div>
+          <div class="field"><label>感官侧重</label><select v-model="styleProfile.sensory_spectrum"><option>视觉为主</option><option>多感官平衡</option><option>触觉突出</option><option>听觉突出</option></select></div>
+          <div class="field"><label>色调</label><select v-model="styleProfile.color_use"><option>暖色调</option><option>冷色调</option><option>低饱和</option><option>高饱和</option><option>金属色</option></select></div>
+          <div class="field"><label>意象域</label><select v-model="styleProfile.imagery_domain"><option>自然</option><option>城市</option><option>身体</option><option>机械</option></select></div>
+        </div>
+        <!-- 修饰 -->
+        <div class="style-section">
+          <div class="style-section-title">✒ 修饰与用词</div>
+          <div class="field"><label>形容词密度 {{styleProfile.adjective_density?.toFixed(2)||'0.15'}}</label><input type="range" min="0" max="0.4" step="0.01" v-model.number="styleProfile.adjective_density"></div>
+          <div class="field"><label>副词策略</label><select v-model="styleProfile.adverb_policy"><option>克制</option><option>适度</option><option>丰富</option></select></div>
+          <div class="field"><label>比喻频率</label><select v-model="styleProfile.metaphor_frequency"><option>极少</option><option>适度</option><option>密集</option></select></div>
+          <div class="field"><label>修辞密度</label><input type="range" min="0" max="0.4" step="0.01" v-model.number="styleProfile.rhetorical_density"></div>
+          <div class="field"><label>词汇等级</label><select v-model="styleProfile.vocabulary_register"><option>口语化</option><option>文学化</option></select></div>
+        </div>
+      </div>
+      <!-- 风格简报生成 + 参考文本分析 -->
+      <div class="field" style="margin-top:12px"><label>风格简报</label><textarea v-model="styleProfile.style_brief" rows="2" placeholder="手动描述或下方填入参考文本自动生成..."></textarea></div>
+      <div class="field"><label>参考文本 (提取风格)</label><textarea v-model="referenceText" rows="2" placeholder="粘贴参考文本..."></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:space-between">
+        <button class="btn btn-primary btn-sm" @click="analyzeStyle" :disabled="analyzingStyle">{{analyzingStyle?'分析中...':'从参考文本提取并填充风格参数'}}</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" @click="genStyleBriefFn" :disabled="genBrief">生成简报</button>
+          <button class="btn btn-outline btn-sm" @click="showStyle=false">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FORESHADOW MODAL ═══ -->
+  <div class="modal-overlay" v-if="showForeshadow" @click.self="showForeshadow=false">
+    <div class="modal-box wide"><h3>伏笔管理 ({{foreshadowings.length}}) <button class="btn btn-outline btn-sm" @click="loadForeshadowings()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div style="margin-bottom:8px"><button class="btn btn-primary btn-sm" @click="showFSForm=!showFSForm">+ 新建伏笔</button></div>
+      <div v-if="showFSForm" style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:12px">
+        <div class="field"><label>伏笔名称</label><input v-model="fsForm.name" placeholder="如: 古剑胎记"></div>
+        <div class="field"><label>描述</label><textarea v-model="fsForm.description" rows="2"></textarea></div>
+        <div class="field" style="display:flex;gap:8px"><label style="margin:0">埋设章节</label><input type="number" v-model.number="fsForm.plant_chapter" style="width:80px"><label style="margin:0">回收章节</label><input type="number" v-model.number="fsForm.resolve_chapter" style="width:80px" placeholder="可选"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-outline btn-sm" @click="showFSForm=false">取消</button><button class="btn btn-primary btn-sm" @click="createFSFn">创建</button></div>
+      </div>
+      <div style="max-height:50vh;overflow-y:auto">
+        <div v-for="f in foreshadowings" class="fs-item" style="padding:8px 0">
+          <div class="fs-name">{{f.name}} <span v-if="(f.tags||[]).includes('world_anchor')" style="font-size:9px;color:var(--gold);margin-left:6px">🌐 世界设定</span></div>
+          <div style="font-size:10px;color:var(--muted);margin:2px 0">{{f.description}}</div>
+          <div class="fs-meta">
+            <span class="fs-status" :class="f.status" :style="(f.tags||[]).includes('world_anchor')?'color:var(--gold)':''">{{(f.tags||[]).includes('world_anchor')?'世界设定':({pending:'待埋设',planted:'已埋设',hinted:'已暗示',resolved:'已回收'})[f.status]||f.status}}</span>
+            {{(f.tags||[]).includes('world_anchor')?'永久有效（每节可见）':'第'+f.plant_chapter+'章 → '+(f.resolve_chapter?'第'+f.resolve_chapter+'章':'待定')}}
+            <span style="margin-left:8px">重要性: {{'★'.repeat(Math.min(f.importance||5,5))}}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showForeshadow=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ MAP MODAL ═══ -->
+  <div class="modal-overlay" v-if="showMap" @click.self="showMap=false">
+    <div class="modal-box wide"><h3>故事地图 <button class="btn btn-outline btn-sm" @click="loadMap()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div style="margin-bottom:8px"><button class="btn btn-primary btn-sm" @click="showMapForm=!showMapForm">+ 新建地点</button></div>
+      <div v-if="showMapForm" style="padding:8px;background:var(--surface-1);border-radius:6px;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+        <input v-model="mapForm.name" placeholder="名称" style="width:100px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px">
+        <select v-model="mapForm.type" style="font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px"><option v-for="t in ['区域','城市','地点','房间','秘境']">{{t}}</option></select>
+        <input v-model="mapForm.description" placeholder="描述" style="flex:1;min-width:120px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px">
+        <input v-model="mapForm.plannedChapter" placeholder="计划章节" style="width:80px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px"><input v-model="mapForm.atmosphere" placeholder="氛围" style="width:80px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px">
+        <button class="btn btn-primary btn-sm" @click="createMapNodeFn">创建</button>
+      </div>
+      <div v-if="mapNodes.length===0&&!showMapForm" style="text-align:center;padding:40px;color:var(--muted)">暂无地点数据。点击上方按钮手动创建，或等待写作自动生成。</div>
+      <div v-else style="max-height:45vh;overflow-y:auto">
+        <div v-for="n in mapNodes" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px">
+          <span style="font-weight:600">{{n.name}}</span>
+          <span style="color:var(--muted);margin-left:8px;font-size:10px">[{{n.type}}]</span>
+          <span v-if="n.description" style="color:var(--muted);margin-left:8px;font-size:10px">{{n.description.slice(0,60)}}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showMap=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ FACTION MODAL ═══ -->
+  <div class="modal-overlay" v-if="showFactions" @click.self="showFactions=false">
+    <div class="modal-box wide"><h3>势力库 ({{factionsList.length}}) <button class="btn btn-outline btn-sm" @click="loadFactions()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div style="margin-bottom:8px"><button class="btn btn-primary btn-sm" @click="editingFaction=null;factionForm={task_id:taskId,name:'',type:'宗门',leader_name:'',description:'',goal:'',strength:5,territory:'',members_str:''}">+ 新建势力</button></div>
+      <div style="max-height:45vh;overflow-y:auto">
+        <div v-for="f in factionsList" style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-weight:600">{{f.name}}</span>
+            <span style="font-size:10px;color:var(--muted)">[{{f.type}}]</span>
+            <span style="font-size:10px;color:var(--gold)">{{'★'.repeat(Math.min(f.strength||5,10))}}</span>
+            <span v-if="f.territory" style="font-size:10px;color:var(--accent)">📍{{f.territory}}</span>
+            <span v-if="f.leader_name" style="font-size:10px;color:var(--muted)">👤{{f.leader_name}}</span>
+            <span v-if="f.members_str" style="font-size:10px;color:var(--muted);margin-left:4px">成员: {{f.members_str}}</span>
+            <button class="btn btn-outline btn-sm" @click="editingFaction=f;factionForm={...f,members_str:(f.members||[]).join(',')}" style="font-size:9px;margin-left:auto">编辑</button>
+            <button class="btn btn-outline btn-sm" @click="deleteFactionFn(f.id)" style="color:var(--red);font-size:9px">删除</button>
+          </div>
+          <div v-if="f.description" style="font-size:10px;color:var(--muted);margin-top:2px">{{f.description.slice(0,120)}}</div>
+        </div>
+      </div>
+      <div v-if="editingFaction!==undefined" style="margin-top:12px;padding:12px;background:var(--surface-1);border-radius:8px">
+        <h4 style="font-size:12px;color:var(--gold);margin-bottom:8px">{{editingFaction?'编辑势力':'新建势力'}}</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field"><label>名称</label><input v-model="factionForm.name"></div>
+          <div class="field"><label>类型</label><select v-model="factionForm.type"><option v-for="t in ['宗门','世家','皇朝','教派','散修联盟','邪道','商盟','其他']">{{t}}</option></select></div>
+          <div class="field"><label>首领</label><input v-model="factionForm.leader_name"></div>
+          <div class="field"><label>强度(1-10)</label><input type="number" v-model.number="factionForm.strength" min="1" max="10"></div>
+          <div class="field"><label>势力范围</label><input v-model="factionForm.territory" placeholder="东荒青云山脉"></div>
+          <div class="field"><label>成员(逗号分隔)</label><input v-model="factionForm.members_str" placeholder="张三, 李四"></div>
+        </div>
+        <div class="field"><label>描述</label><textarea v-model="factionForm.description" rows="2"></textarea></div>
+        <div class="field"><label>目标</label><input v-model="factionForm.goal"></div>
+        <div class="field"><label>计划出现章节</label><input v-model="factionForm.plannedChapter" placeholder="如: 第3章"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn btn-outline btn-sm" @click="editingFaction=undefined">取消</button><button class="btn btn-primary btn-sm" @click="saveFactionFn">{{editingFaction?'更新':'创建'}}</button></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showFactions=false">关闭</button></div>
+    </div>
+  </div>
+  <!-- ═══ CHARACTER RELATIONS MODAL ═══ -->
+  <div class="modal-overlay" v-if="showRelations" @click.self="showRelations=false">
+    <div class="modal-box wide"><h3>角色关系管理 ({{relationsList.length}}) <button class="btn btn-outline btn-sm" @click="loadRelations()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div style="margin-bottom:8px"><button class="btn btn-primary btn-sm" @click="openRelationForm(null)">+ 新建关系</button></div>
+      <!-- 关系列表 -->
+      <div style="max-height:40vh;overflow-y:auto">
+        <div v-for="r in relationsList" style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-weight:600">{{r.character_a}}</span>
+            <span style="color:var(--muted)">↔</span>
+            <span style="font-weight:600">{{r.character_b}}</span>
+            <span style="font-size:10px;color:var(--gold);background:var(--surface-1);padding:1px 6px;border-radius:3px">{{r.relation_type}}</span>
+            <span style="font-size:10px;color:var(--muted)">{{{positive:'↑',negative:'↓',complex:'↕'}[r.direction]||'↑'}} {{{positive:'正向',negative:'负向',complex:'复杂'}[r.direction]||'正向'}}</span>
+            <span style="font-size:10px;color:var(--accent)">{{'♥'.repeat(Math.min(r.intensity||5,10))}}</span>
+            <span v-if="r.source==='ai_extracted'" style="font-size:9px;color:var(--muted);background:var(--surface-2);padding:1px 4px;border-radius:3px">AI</span>
+            <button class="btn btn-outline btn-sm" @click="openRelationForm(r)" style="font-size:9px;margin-left:auto">编辑</button>
+            <button class="btn btn-outline btn-sm" @click="deleteRelation(r.id)" style="color:var(--red);font-size:9px">删除</button>
+          </div>
+          <!-- 关系弧阶段可视化 -->
+          <div v-if="r.stages&&r.stages.length" style="display:flex;align-items:center;gap:2px;margin-top:4px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--muted);margin-right:4px">弧:</span>
+            <template v-for="(s,i) in r.stages">
+              <span v-if="i>0" style="color:var(--muted);font-size:9px">→</span>
+              <span :style="{fontSize:'10px',padding:'1px 5px',borderRadius:'3px',background:s.status==='done'?'#2d5a27':s.status==='active'?'#5a4a1f':'#333',color:s.status==='done'?'#7ec97a':s.status==='active'?'#c9a96e':'#888'}">{{s.stage||'?'}}</span>
+            </template>
+          </div>
+          <div v-if="r.description" style="font-size:10px;color:var(--muted);margin-top:2px">{{r.description.slice(0,120)}}</div>
+        </div>
+        <div v-if="!relationsList.length" style="text-align:center;color:var(--muted);padding:20px">暂无关系数据，点击"+ 新建关系"创建</div>
+      </div>
+      <!-- 创建/编辑表单 -->
+      <div v-if="editingRelation!==undefined" style="margin-top:12px;padding:12px;background:var(--surface-1);border-radius:8px">
+        <h4 style="font-size:12px;color:var(--gold);margin-bottom:8px">{{editingRelation?'编辑关系':'新建关系'}}</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field"><label>角色A</label><input v-model="relationForm.character_a" placeholder="例如：张三" list="charListA"><datalist id="charListA"><option v-for="c in libraryChars" :value="c.name"></datalist></div>
+          <div class="field"><label>角色B</label><input v-model="relationForm.character_b" placeholder="例如：李四" list="charListB"><datalist id="charListB"><option v-for="c in libraryChars" :value="c.name"></datalist></div>
+          <div class="field"><label>关系类型</label><input v-model="relationForm.relation_type" placeholder="选择或输入" list="relTypeList"><datalist id="relTypeList"><option v-for="t in relationPresets.relation_types" :value="t"></datalist></div>
+          <div class="field"><label>方向</label><select v-model="relationForm.direction"><option v-for="d in relationPresets.directions" :value="d.value">{{d.label}}</option></select></div>
+          <div class="field"><label>羁绊深度 ({{relationForm.intensity}})</label><input type="range" v-model.number="relationForm.intensity" min="1" max="10" style="width:100%"></div>
+          <div class="field"><label>来源章节</label><input type="number" v-model.number="relationForm.source_section" min="0"></div>
+        </div>
+        <!-- 关系弧阶段 -->
+        <div style="margin-top:10px">
+          <label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:8px">关系弧阶段 <button class="btn btn-outline btn-sm" @click="addRelationStage()" style="font-size:9px;padding:0 6px">+添加阶段</button></label>
+          <div v-for="(s,i) in relationForm.stages" style="display:flex;gap:6px;margin-top:4px;align-items:center">
+            <span style="font-size:10px;color:var(--muted);min-width:16px">{{i+1}}.</span>
+            <input v-model="s.stage" placeholder="阶段名" style="flex:1;font-size:11px;padding:3px 6px" title="例如：暗中较量">
+            <input v-model.number="s.section" type="number" placeholder="章节" style="width:60px;font-size:11px;padding:3px 6px" title="触发章节">
+            <input v-model="s.trigger" placeholder="触发事件" style="flex:1;font-size:11px;padding:3px 6px" title="例如：功劳被抢">
+            <select v-model="s.status" style="width:70px;font-size:10px;padding:3px"><option value="pending">待触发</option><option value="active">进行中</option><option value="done">已完成</option></select>
+            <button class="btn btn-outline btn-sm" @click="removeRelationStage(i)" style="color:var(--red);font-size:9px;padding:0 6px">✕</button>
+          </div>
+        </div>
+        <div class="field" style="margin-top:8px"><label>当前状态描述</label><textarea v-model="relationForm.description" rows="2" placeholder="例如：两人因共同敌人暂时联手，但互相提防"></textarea></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn btn-outline btn-sm" @click="editingRelation=undefined">取消</button><button class="btn btn-primary btn-sm" @click="saveRelation()">{{editingRelation?'更新':'创建'}}</button></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showRelations=false">关闭</button></div>
+    </div>
+  </div>
+  <!-- ═══ SUBPLOT MODAL ═══ -->
+  <div class="modal-overlay" v-if="showSubplot" @click.self="showSubplot=false">
+    <div class="modal-box wide"><h3>支线故事 <button class="btn btn-outline btn-sm" @click="loadSubplots()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div style="margin-bottom:8px;display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" @click="showSubplotForm=!showSubplotForm;editingSubplot=null;subplotForm={name:'',description:'',type:'character_arc',volume_start:1,volume_end:3,priority:5,pov:'protagonist',elements:[{element_type:'desire',name:'',description:'',chapter_binding:[],_chStr:''},{element_type:'obstacle',name:'',description:'',chapter_binding:[],_chStr:''},{element_type:'action',name:'',description:'',chapter_binding:[],_chStr:''},{element_type:'result',name:'',description:'',chapter_binding:[],_chStr:''},{element_type:'surprise',name:'',description:'',chapter_binding:[],_chStr:''},{element_type:'twist',name:'',description:'',chapter_binding:[],_chStr:''},{element_type:'ending',name:'',description:'',chapter_binding:[],_chStr:''}]}">+ 新建支线</button>
+        <button class="btn btn-outline btn-sm" @click="drawSubplotCardsFn()" :disabled="drawingSubplotCards">🎴 {{drawingSubplotCards?'抽卡中...':'抽支线'}}</button>
+      </div>
+      <!-- 创建/编辑表单 -->
+      <div v-if="showSubplotForm" style="padding:12px;background:var(--surface-1);border-radius:8px;margin-bottom:12px">
+        <!-- 基本信息行 -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
+          <div class="field" style="margin:0;flex:1;min-width:120px"><label style="font-size:10px">支线名称</label><input v-model="subplotForm.name" placeholder="如：青云血仇" style="font-size:11px;padding:4px 8px"></div>
+          <div class="field" style="margin:0"><label style="font-size:10px">类型</label><select v-model="subplotForm.type" style="font-size:11px;padding:4px"><option v-for="t in [{v:'character_arc',l:'角色弧'},{v:'romance',l:'感情线'},{v:'mystery',l:'悬疑'},{v:'revenge',l:'复仇'},{v:'political',l:'权谋'},{v:'exploration',l:'探索'}]" :value="t.v">{{t.l}}</option></select></div>
+          <div class="field" style="margin:0"><label style="font-size:10px">卷范围</label><div style="display:flex;gap:4px;align-items:center"><input v-model="subplotForm.volume_start" type="number" min="1" style="width:44px;font-size:11px;padding:4px;text-align:center"><span style="font-size:10px;color:var(--muted)">—</span><input v-model="subplotForm.volume_end" type="number" min="1" style="width:44px;font-size:11px;padding:4px;text-align:center"></div></div>
+          <div class="field" style="margin:0"><label style="font-size:10px">优先级</label><input v-model="subplotForm.priority" type="number" min="1" max="10" style="width:44px;font-size:11px;padding:4px;text-align:center"></div>
+          <div class="field" style="margin:0"><label style="font-size:10px">视角(POV)</label><select v-model="subplotForm.pov" style="font-size:11px;padding:4px"><option value="protagonist">主角视角</option><option value="other">他人视角(间幕)</option><option value="omniscient">全知旁白</option></select></div>
+        </div>
+        <div class="field"><label style="font-size:10px">一句话概述（这条支线讲什么）</label><input v-model="subplotForm.description" placeholder="如：主角潜入青云宗追查灭门真凶，发现仇人竟是师尊" style="font-size:11px;padding:4px 8px"></div>
+        <!-- 七要素时序图 -->
+        <div style="font-size:11px;color:var(--gold);margin:10px 0 6px">支线弧线 · 七要素时序</div>
+        <div style="display:flex;gap:2px;align-items:stretch;overflow-x:auto;padding-bottom:4px">
+          <template v-for="(el,ei) in subplotForm.elements" :key="ei">
+            <div style="flex:1;min-width:96px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;display:flex;flex-direction:column;gap:3px;position:relative">
+              <div style="display:flex;align-items:center;gap:4px">
+                <span :style="{fontSize:'9px',fontWeight:600,padding:'1px 5px',borderRadius:'3px',color:'#fff',background:({desire:'#c9a96e',obstacle:'#d4834a',action:'#5d8a5e',result:'#7ea8c9',surprise:'#c96a6a',twist:'#9a8ac9',ending:'#4a9a8a'})[el.element_type]||'#888'}">{{({desire:'欲望',obstacle:'阻碍',action:'行动',result:'结果',surprise:'意外',twist:'转折',ending:'结局'})[el.element_type]||el.element_type}}</span>
+                <button class="btn btn-outline btn-sm" @click="subplotForm.elements.splice(ei,1)" style="font-size:7px;color:var(--red);padding:0 2px;margin-left:auto" title="删除">✕</button>
+              </div>
+              <input v-model="el.name" :placeholder="({desire:'要什么',obstacle:'拦什么',action:'怎么做',result:'得到什么',surprise:'出什么意外',twist:'如何翻盘',ending:'怎么收场'})[el.element_type]" style="font-size:10px;padding:2px 4px;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:3px">
+              <input v-model="el._chStr" placeholder="绑第几章" style="font-size:9px;padding:1px 4px;background:transparent;border:1px solid var(--border);color:var(--gold);border-radius:3px;width:100%">
+            </div>
+            <!-- 箭头连接 -->
+            <div v-if="ei<subplotForm.elements.length-1" style="display:flex;align-items:center;color:var(--gold-dim);font-size:14px;flex-shrink:0">→</div>
+          </template>
+          <button class="btn btn-outline btn-sm" @click="subplotForm.elements.push({element_type:'desire',name:'',description:'',chapter_binding:[],_chStr:''})" style="font-size:9px;padding:2px 6px;flex-shrink:0;align-self:center;margin-left:4px" title="添加要素">+</button>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px">🔗 每个要素绑定到具体章节号（逗号分隔，如 3,5）——Writer 写到对应章时自动引入该要素</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
+          <button class="btn btn-outline btn-sm" @click="showSubplotForm=false">取消</button>
+          <button class="btn btn-primary btn-sm" @click="saveSubplotFn">{{editingSubplot?'更新':'创建'}}</button>
+        </div>
+      </div>
+      <!-- 支线抽卡结果 -->
+      <div v-if="subplotCards.length>0" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:12px;font-weight:600;color:var(--gold)">🎴 抽卡结果 ({{subplotCards.length}})</span>
+          <button class="btn btn-outline btn-sm" @click="drawSubplotCardsFn()" :disabled="drawingSubplotCards" style="font-size:9px;padding:0 6px">🔄 重抽</button>
+          <button class="btn btn-outline btn-sm" @click="subplotCards=[]" style="font-size:9px;padding:0 6px">✕ 清除</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:50vh;overflow-y:auto">
+          <div v-for="(c,i) in subplotCards" style="background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;position:relative">
+            <!-- 卡片头部 -->
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <span style="font-weight:600;font-size:12px">{{c.content?.name||c.title||'支线'+ (i+1)}}</span>
+              <span v-if="c.quality_score" style="font-size:9px;color:var(--gold)">★{{c.quality_score}}</span>
+              <span :style="{fontSize:'9px',padding:'1px 5px',borderRadius:'3px',color:'#fff',background:({character_arc:'#c9a96e',romance:'#d4834a',mystery:'#5d8a5e',revenge:'#7ea8c9',political:'#9a8ac9',exploration:'#4a9a8a'})[c.content?.type]||'#888'}">{{({character_arc:'角色弧',romance:'感情线',mystery:'悬疑',revenge:'复仇',political:'权谋',exploration:'探索'})[c.content?.type]||c.content?.type||'未知'}}</span>
+              <span style="font-size:9px;color:var(--muted)">★{{c.content?.priority||5}}</span>
+              <span style="font-size:9px;color:var(--muted);margin-left:auto">卷{{c.content?.volume_start||1}}-{{c.content?.volume_end||3}}</span>
+            </div>
+            <!-- 描述 -->
+            <div v-if="c.content?.description||c.summary" style="font-size:10px;color:var(--muted);margin-bottom:6px;line-height:1.4">{{(c.content?.description||c.summary||'').slice(0,120)}}</div>
+            <!-- 七要素流水线 -->
+            <div v-if="c.content?.elements?.length" style="display:flex;gap:2px;align-items:stretch;overflow-x:auto;padding-bottom:2px">
+              <template v-for="(el,ei) in c.content.elements" :key="ei">
+                <div :style="{flex:'1',minWidth:'60px',background:'var(--bg)',border:'1px solid var(--border)',borderRadius:'4px',padding:'3px 4px',textAlign:'center'}">
+                  <div :style="{fontSize:'7px',color:({desire:'#c9a96e',obstacle:'#d4834a',action:'#5d8a5e',result:'#7ea8c9',surprise:'#c96a6a',twist:'#9a8ac9',ending:'#4a9a8a'})[el.element_type]||'#888'}">{{({desire:'欲望',obstacle:'阻碍',action:'行动',result:'结果',surprise:'意外',twist:'转折',ending:'结局'})[el.element_type]||el.element_type}}</div>
+                  <div v-if="el.name" style="font-size:8px;color:var(--text);line-height:1.2;margin-top:1px">{{el.name.slice(0,12)}}</div>
+                  <div v-if="(el.chapter_binding||[]).length" style="font-size:7px;color:var(--accent)">第{{el.chapter_binding.join(',')}}章</div>
+                </div>
+                <div v-if="ei<c.content.elements.length-1" style="display:flex;align-items:center;color:var(--gold-dim);font-size:10px;flex-shrink:0">→</div>
+              </template>
+            </div>
+            <!-- 操作按钮 -->
+            <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
+              <button class="btn btn-primary btn-sm" @click="adoptSubplotCardFn(i)" style="font-size:10px;padding:2px 10px">采纳</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 支线列表 -->
+      <div v-if="subplots.length===0&&!showSubplotForm" style="text-align:center;padding:30px;color:var(--muted)">暂无支线。支线可跨越多章，七要素分别绑定到不同章节。</div>
+      <div v-else style="max-height:45vh;overflow-y:auto">
+        <div v-for="sp in subplots" style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer" @click="selectedSubplot=selectedSubplot===sp.id?null:sp.id">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:600">{{sp.name}}</span>
+            <span style="font-size:10px;color:var(--muted)">{{({character_arc:'角色弧',romance:'感情线',mystery:'悬疑',revenge:'复仇',political:'权谋',exploration:'探索'})[sp.type]||sp.type}}</span>
+            <span style="font-size:10px;color:var(--gold)">★{{sp.priority}}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:auto">卷{{sp.volume_start}}-{{sp.volume_end}} · {{(sp.elements||[]).length}}要素</span>
+          </div>
+          <div v-if="sp.description" style="font-size:10px;color:var(--muted);margin-top:2px">{{sp.description.slice(0,100)}}</div>
+          <!-- 展开要素详情 -->
+          <div v-if="selectedSubplot===sp.id" style="margin-top:4px;padding:4px 8px;background:var(--surface-1);border-radius:4px">
+            <div v-for="el in (sp.elements||[])" style="font-size:10px;padding:2px 0;display:flex;gap:6px">
+              <span style="color:var(--gold);min-width:40px">{{({desire:'欲望',obstacle:'阻碍',action:'行动',result:'结果',surprise:'意外',twist:'转折',ending:'结局'})[el.element_type]||el.element_type}}</span>
+              <span style="font-weight:500">{{el.name||'未命名'}}</span>
+              <span v-if="(el.chapter_binding||[]).length" style="color:var(--accent)">第{{el.chapter_binding.join(',')}}章</span>
+            </div>
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <button class="btn btn-outline btn-sm" @click.stop="editingSubplot=sp;subplotForm={...sp,elements:(sp.elements||[]).map(e=>({...e,_chStr:(e.chapter_binding||[]).join(',')}))};showSubplotForm=true" style="font-size:9px">编辑</button>
+              <button class="btn btn-outline btn-sm" @click.stop="deleteSubplotFn(sp.id)" style="font-size:9px;color:var(--red)">删除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showSubplot=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ ITEMS MODAL ═══ -->
+  <div class="modal-overlay" v-if="showItems" @click.self="showItems=false">
+    <div class="modal-box wide"><h3>物品背包 <button class="btn btn-outline btn-sm" @click="loadItems()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div style="margin-bottom:8px"><button class="btn btn-primary btn-sm" @click="showItemForm=!showItemForm">+ 新建物品</button></div>
+      <div v-if="showItemForm" style="padding:8px;background:var(--surface-1);border-radius:6px;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+        <input v-model="itemForm.name" placeholder="名称" style="width:100px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px">
+        <select v-model="itemForm.type" style="font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px"><option v-for="t in ['weapon','armor','consumable','quest','currency','material','mysterious']">{{t}}</option></select>
+        <select v-model="itemForm.rarity" style="font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px"><option v-for="r in ['普通','稀有','史诗','传说','神器']">{{r}}</option></select>
+        <input v-model="itemForm.description" placeholder="描述" style="flex:1;min-width:120px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px">
+        <input v-model="itemForm.plannedChapter" placeholder="计划章节" style="width:80px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px"><button class="btn btn-primary btn-sm" @click="createItemFn">创建</button>
+      </div>
+      <div v-if="itemsList.length===0&&!showItemForm" style="text-align:center;padding:40px;color:var(--muted)">暂无物品。点击上方手动创建，或等待写作自动提取。</div>
+      <div v-else style="max-height:45vh;overflow-y:auto">
+        <div v-for="it in itemsList" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;display:flex;align-items:center;gap:8px">
+          <span>{{({weapon:'🗡',armor:'🛡',consumable:'🧪',quest:'📜',currency:'💰',material:'🔮',mysterious:'❓'})[it.type]||'📦'}}</span>
+          <span style="font-weight:600">{{it.name}}</span>
+          <span style="font-size:10px;color:var(--muted)">[{{it.rarity}}]</span>
+          <span v-if="it.current_owner" style="font-size:10px;color:var(--accent);margin-left:auto">持有: {{it.current_owner}}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showItems=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ TIMELINE MODAL ═══ -->
+  <div class="modal-overlay" v-if="showTimeline" @click.self="showTimeline=false">
+    <div class="modal-box wide"><h3>经历事件线 <button class="btn btn-outline btn-sm" @click="loadTimeline()" style="font-size:9px;padding:0 6px" title="刷新">🔄</button></h3>
+      <div v-if="timelineEvents.length===0" style="text-align:center;padding:40px;color:var(--muted)">暂无经历记录。每章写完后自动提取主角的重要经历事件。</div>
+      <div style="position:relative;padding-left:24px;max-height:55vh;overflow-y:auto">
+        <div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)"></div>
+        <div v-for="ev in timelineEvents" style="position:relative;padding:4px 0 4px 16px;margin-bottom:4px;font-size:12px">
+          <div style="position:absolute;left:2px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--bg-tertiary);border:2px solid var(--border)" :style="ev.importance>=7?'border-color:var(--red);background:rgba(244,67,54,0.3)':''"></div>
+          <div style="font-size:10px;color:var(--muted)">第{{ev.chapter}}章 · {{({major_event:'重大事件',item_gain:'获得物品',item_loss:'失去物品',relationship_change:'关系变化',decision:'关键决策',power_up:'力量突破',death:'角色死亡'})[ev.event_type]||ev.event_type}}</div>
+          <div>{{ev.description}}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showTimeline=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ AI DETECT MODAL ═══ -->
+  <div class="modal-overlay" v-if="showAIDetect" @click.self="showAIDetect=false">
+    <div class="modal-box" style="max-width:560px"><h3>AI 痕迹检测</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select v-model="detectChapter" @change="autoFillDetectByChapter()" style="font-size:11px;padding:4px 8px;flex:1">
+          <option :value="0">手动粘贴文本</option>
+          <option v-for="b in draftBlocks.filter(x=>x.type==='subsection')" :value="b.section+'-'+b.subsection">第{{b.section}}.{{b.subsection}}节 {{b.title}}</option>
+        </select>
+        <button class="btn btn-outline btn-sm" @click="autoFillDetectText()" style="font-size:10px;white-space:nowrap">全部正文</button>
+      </div>
+      <div class="field"><label>待检测文本</label><textarea v-model="detectText" rows="6" placeholder="选择章节或粘贴正文..."></textarea></div>
+      <button class="btn btn-primary btn-sm" @click="runAIDetect" :disabled="detecting" style="width:100%;margin-bottom:8px">{{detecting?'检测中...':'开始检测'}}</button>
+      <div v-if="detectResult" style="max-height:55vh;overflow-y:auto">
+        <!-- 评分 -->
+        <div style="text-align:center;margin:12px 0">
+          <div style="font-size:36px;font-weight:700" :style="{color:detectResult.ai_score>=7?'var(--green)':detectResult.ai_score>=4?'var(--orange)':'var(--red)'}">{{detectResult.ai_score}}<span style="font-size:16px">/10</span></div>
+          <div style="font-size:12px;color:var(--muted)">{{detectResult.verdict}} · {{detectResult.total_chars}}字 · {{detectResult.pattern_count}}处AI痕迹</div>
+        </div>
+        <!-- 类别分布 -->
+        <div v-if="detectResult.category_counts&&Object.keys(detectResult.category_counts).length" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
+          <span v-for="(cnt,cat) in detectResult.category_counts" style="font-size:10px;padding:2px 8px;border-radius:4px;background:var(--surface-1);color:var(--orange)">{{cat}} ×{{cnt}}</span>
+        </div>
+        <!-- 改进建议 -->
+        <div v-if="detectResult.advices&&detectResult.advices.length" style="margin-bottom:12px">
+          <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:6px">改进建议</div>
+          <div v-for="a in detectResult.advices" style="font-size:10px;padding:4px 8px;margin-bottom:3px;background:rgba(201,169,110,0.06);border-radius:4px;line-height:1.4">
+            <span style="color:var(--orange);font-weight:600">[{{a.category}}]</span>
+            <span style="color:var(--muted);margin-left:4px">{{a.advice}}</span>
+          </div>
+        </div>
+        <!-- 具体命中 -->
+        <details v-if="detectResult.ai_patterns.length" style="margin-bottom:12px">
+          <summary style="font-size:11px;color:var(--muted);cursor:pointer">查看全部 {{detectResult.ai_patterns.length}} 处命中</summary>
+          <div style="max-height:200px;overflow-y:auto;margin-top:4px">
+            <div v-for="(p,i) in detectResult.ai_patterns" style="font-size:10px;padding:3px 6px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;gap:6px">
+              <span style="color:var(--orange);flex-shrink:0;min-width:28px">{{i+1}}.</span>
+              <span style="color:var(--red-dim);flex-shrink:0">"{{p.match}}"</span>
+              <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{p.context}}</span>
+            </div>
+          </div>
+        </details>
+        <!-- 高频词 -->
+        <div v-if="detectResult.high_frequency_words.length" style="font-size:10px;color:var(--muted)">高频词: {{detectResult.high_frequency_words.slice(0,8).map(w=>w.word+'('+w.count+')').join(', ')}}</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showAIDetect=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- ═══ OUTLINE EVAL MODAL ═══ -->
+  <div class="modal-overlay" v-if="showOutlineEval" @click.self="showOutlineEval=false">
+    <div class="modal-box"><h3>大纲逻辑评估</h3>
+      <div class="field"><label>评估章节范围</label><div style="display:flex;gap:8px"><input type="number" v-model.number="evalRange.from" placeholder="从" style="width:80px"><span>→</span><input type="number" v-model.number="evalRange.to" placeholder="到" style="width:80px"></div></div>
+      <button class="btn btn-primary btn-sm" @click="runOutlineEval" :disabled="evalLoading" style="width:100%;margin-bottom:8px">{{evalLoading?'评估中...':'开始评估'}}</button>
+      <div v-if="evalResult" style="font-size:12px;line-height:1.8">
+        <div>流畅性: {{evalResult.fluency_score}}/10</div><div>因果关系: {{evalResult.causality_score}}/10</div>
+        <div>逻辑一致: {{evalResult.logic_score}}/10</div><div>爽点密度: {{evalResult.density_score}}/10</div>
+        <div v-if="evalResult.issues&&evalResult.issues.length" style="margin-top:8px;color:var(--orange)">{{evalResult.issues.length}} 个问题</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showOutlineEval=false">关闭</button></div>
+    </div>
+  </div>
+
+
+  <!-- ═══ HISTORY / PROJECTS MODAL ═══ -->
+  <div class="modal-overlay" v-if="showHistory" @click.self="showHistory=false">
+    <div class="modal-box wide"><h3>项目列表</h3>
+      <div v-if="historyLoading" style="text-align:center;padding:40px;color:var(--muted)">加载中...</div>
+      <div v-else-if="!historyList.length" style="text-align:center;padding:40px;color:var(--muted)">暂无项目。开始写作后自动创建。</div>
+      <div v-else style="max-height:55vh;overflow-y:auto">
+        <div v-for="p in historyList" :key="p.id" style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px;color:var(--text)">{{p.name||'未命名项目'}}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">
+              <span v-if="p.world_setting">世界观已设定 · </span>
+              <span v-if="p.outline_json?.length">{{p.outline_json.length}}个大纲节点 · </span>
+              <span>{{(p.updated_at||p.created_at||'').slice(0,16)}}</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" @click="resumeProject(p.id)" style="font-size:10px;padding:4px 12px;white-space:nowrap">继续</button>
+          <button class="btn btn-outline btn-sm" @click="deleteProjectFn(p.id)" style="color:var(--red);font-size:10px;padding:4px 8px">删除</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showHistory=false">关闭</button></div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-container"><div v-for="t in toasts" :key="t.id" class="toast" :class="t.type">{{t.msg}}</div></div>
+
+
+
+
+  <!-- Outline Preview Modal -->
+  <div class="modal-overlay" v-if="showOutlineDetail" @click.self="showOutlineDetail=false">
+    <div class="modal-box wide" style="max-width:700px"><h3>大纲预览</h3>
+      <div style="max-height:65vh;overflow-y:auto;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text)">{{outlinePreviewText}}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showOutlineDetail=false">关闭</button></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createWriterApp } from '/static/js/main.js';
+createWriterApp().mount('#app');
+</script>
+</body>
+</html>

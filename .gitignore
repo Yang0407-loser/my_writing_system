@@ -1,0 +1,34 @@
+# 环境变量（含 API Key）
+.env
+
+# Redis 持久化
+dump.rdb
+
+# SQLite 数据库
+*.db
+*.db-shm
+*.db-wal
+
+# Chroma 向量库
+chroma_data/
+
+# 输出目录
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 部署打包(含敏感文件,禁止上传)
+*.tar.gz
+writer.tar.gz

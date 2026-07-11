@@ -1,0 +1,126 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: writer-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 300 1
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  web:
+    build: .
+    container_name: writer-web
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_BROKER_URL=redis://redis:6379/0
+      - REDIS_BACKEND_URL=redis://redis:6379/1
+      - TASK_DB_PATH=/data/tasks.db
+      - CHARACTER_DB_PATH=/data/characters.db
+      - CHROMA_DATA_PATH=/chroma
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-v4-pro}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-ollama}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-bge-m3:latest}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - app_data:/data
+      - chroma_data:/chroma
+      - ./output:/output
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/write-ui-v2"]
+      interval: 30s
+      timeout: 5s
+      retries: 2
+
+  # 写作 worker —— 独占用 solo 池处理长任务
+  worker-writing:
+    build: .
+    container_name: writer-worker-writing
+    environment:
+      - REDIS_BROKER_URL=redis://redis:6379/0
+      - REDIS_BACKEND_URL=redis://redis:6379/1
+      - TASK_DB_PATH=/data/tasks.db
+      - CHARACTER_DB_PATH=/data/characters.db
+      - CHROMA_DATA_PATH=/chroma
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-v4-pro}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-ollama}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-bge-m3:latest}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - app_data:/data
+      - chroma_data:/chroma
+      - ./output:/output
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: python -m celery -A app.celery_app worker --loglevel=info -Q writing -P solo -c 1
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # 通用 worker —— prefork 池处理短任务（提取、审阅、风格分析等）
+  worker-general:
+    build: .
+    container_name: writer-worker-general
+    environment:
+      - REDIS_BROKER_URL=redis://redis:6379/0
+      - REDIS_BACKEND_URL=redis://redis:6379/1
+      - TASK_DB_PATH=/data/tasks.db
+      - CHARACTER_DB_PATH=/data/characters.db
+      - CHROMA_DATA_PATH=/chroma
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-v4-pro}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-ollama}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-bge-m3:latest}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - app_data:/data
+      - chroma_data:/chroma
+      - ./output:/output
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: python -m celery -A app.celery_app worker --loglevel=info -Q celery -P prefork -c 4
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+volumes:
+  redis_data:
+  app_data:
+  chroma_data:
