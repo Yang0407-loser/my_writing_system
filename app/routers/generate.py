@@ -203,25 +203,49 @@ def import_outline(body: dict, x_api_key: str = Header("", alias="X-API-Key")):
     if not text.strip():
         raise HTTPException(status_code=400, detail="text 不能为空")
     llm = get_llm_client()
-    prompt = f"""请将以下自然语言描述解析为树状大纲 JSON。
+    prompt = f"""请将以下文本解析为树状大纲 JSON。严格支持以下格式：
+
+1. **Markdown 标题**：# 卷名 / ## 章名 / ### 节名
+2. **数字编号**：1. / 1.1 / 1.1.1
+3. **第X章：标题模式**（章节摘要导入）：每章以"第X章：标题"或"第X章 标题"开头，后面跟着的段落是该章的 description。所有章节必须全部提取，不得遗漏
+4. **Markdown 表格**：| 卷 | 章 | 节 | 描述 |
+5. **纯列表**：- 或 * 缩进列表
+6. **自然语言**：语义提取卷章结构
+
+层级规则（最多 {max_depth} 层）：第1层→卷/部，第2层→章，第3层+→节/小节
 
 输入文本：
 {text}
 
-层级规则：
-- 最高层（卷/部）：如"第一卷"、"第一部"
-- 中层（章/节）：如"第一章"、"第1节"
-- 底层（小节）：如"1.1"、"小节"
+严格返回以下 JSON（不要 markdown 代码块）：
+{{
+  "outline": [{{"title": "节点标题", "description": "描述文本", "children": [...], "target_words": 2000}}],
+  "report": {{
+    "total_input_chars": 数字, "parsed_volumes": 数字, "parsed_chapters": 数字,
+    "parsed_leaves": 数字, "dropped_lines": ["无法解析的行"],
+    "format_detected": "chapter_summary/markdown/outline/natural_language/table"
+  }}
+}}
 
-请以 JSON 数组格式输出（最多 {max_depth} 层）：
-[{{"title": "章节标题", "children": [{{"title": "小节标题", "children": [], "target_words": 2000}}], "target_words": 4000}}]"""
+关键规则：
+- **每条输入必须在 outline 或 dropped_lines 中，绝对不允许静默丢弃**
+- 第X章格式的章节摘要：title 取"第X章：标题"，description 取段落文本
+- 如果输入没有明显的卷结构，自动创建"第一卷"包裹所有章节
+- title 保留原始文本，不要改写或润色"""
     resp = llm.chat_completion(
-        [{"role": "system", "content": "你是一位文本结构化专家。请以 JSON 数组格式输出树状大纲。"},
+        [{"role": "system", "content": "你是一位文本结构化专家。核心原则：输入中的每一章、每一节都必须出现在输出中。如果输入有 N 个章节，输出的 outline 必须包含 N 个节点。无法解析的零散内容放入 dropped_lines。"},
          {"role": "user", "content": prompt}],
-        temperature=0.3, max_tokens=2000,
+        temperature=0.3, max_tokens=8000,
     )
     try:
-        outline = parse_json(resp)
-        return {"outline": outline if isinstance(outline, list) else []}
+        result = parse_json(resp)
+        if isinstance(result, dict) and "outline" in result:
+            outline = result["outline"] if isinstance(result["outline"], list) else []
+            report = result.get("report", {})
+            return {"outline": outline, "report": report}
+        # fallback: old format (bare array)
+        if isinstance(result, list):
+            return {"outline": result, "report": {}}
+        return {"outline": [], "report": {}, "raw": resp[:500]}
     except ValueError:
-        return {"outline": [], "raw": resp[:500]}
+        return {"outline": [], "report": {}, "raw": resp[:500]}

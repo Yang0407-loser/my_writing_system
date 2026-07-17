@@ -98,15 +98,13 @@ def get_relation(rid: str) -> dict | None:
 
 
 def list_relations(task_id: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        if task_id:
-            rows = conn.execute(
-                "SELECT * FROM character_relations WHERE task_id = ? ORDER BY intensity DESC",
-                (task_id,)).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT * FROM character_relations ORDER BY intensity DESC").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM character_relations WHERE task_id = ? ORDER BY intensity DESC",
+            (task_id,)).fetchall()
         return [_row_to_dict(r) for r in rows]
     finally:
         conn.close()

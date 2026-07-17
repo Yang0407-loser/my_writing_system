@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+  "source": "historical Redis task",
+  "available": false,
+  "per_subsection_coverage": 0.0,
+  "input_tokens": null,
+  "output_tokens": null,
+  "context_block_tokens": null,
+  "generation_latency_seconds": null,
+  "rewrite_count": null,
+  "reason": "Redis localhost:6379 was unavailable and these fields were not persisted in SQLite/output artifacts. New runs are instrumented by section_timings."
+}

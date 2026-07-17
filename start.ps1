@@ -89,7 +89,7 @@ Write-Host "  依赖就绪" -ForegroundColor Green
 # 4. 启动 Celery Worker
 # ==========================================
 Write-Host "[3/4] 启动 Celery Worker..." -ForegroundColor Green
-$celeryCmd = "cd /d `"$ProjectDir`" && uv run celery -A app.celery_app worker --loglevel=info -P solo"
+$celeryCmd = "cd /d `"$ProjectDir`" && uv run celery -A app.celery_app worker --loglevel=info -P solo -Q writing,celery"
 Start-Process cmd -ArgumentList "/c", $celeryCmd -WindowStyle Normal
 
 # ==========================================

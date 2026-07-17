@@ -154,6 +154,16 @@ class EventGraph:
         self._save()
         return event.event_id
 
+    def link_events(self, event_id1: str, event_id2: str) -> None:
+        """创建双向因果关联边。"""
+        if event_id1 in self._events and event_id2 in self._events:
+            e1, e2 = self._events[event_id1], self._events[event_id2]
+            if event_id2 not in e1.related_events:
+                e1.related_events.append(event_id2)
+            if event_id1 not in e2.related_events:
+                e2.related_events.append(event_id1)
+            self._save()
+
     def update_arc_status(self, character_id: str, status: str) -> int:
         """更新指定角色的所有 pending 弧线状态。status: done|deviated。
         Returns: 更新数量。
@@ -210,6 +220,32 @@ class EventGraph:
     def query_relevant(self, section: int, subsection: int = 0) -> list[NarrativeEvent]:
         """返回当前小节的弧线事件（向后兼容）。"""
         return self.get_arc_events(section, subsection)
+
+    def get_events_by_sections(self, sections: set[int]) -> list[NarrativeEvent]:
+        """返回指定章节范围内的所有事件 (v0.9.1: RAG因果扩展)。"""
+        if 0 in sections:
+            sections = sections - {0}  # section 0 是前作引用，没有事件
+        if not sections:
+            return []
+        return [e for e in self._events.values()
+                if e.section in sections]
+
+    def expand_causal(self, events: list[NarrativeEvent]) -> list[NarrativeEvent]:
+        """对每个事件做 1-hop 因果扩展：同章节事件 + related_events 邻居。"""
+        expanded = list(events)
+        seen = {e.event_id for e in events}
+        for event in events:
+            # 同章节事件：同一节内的事件在叙事上强关联
+            for e in self._events.values():
+                if e.section == event.section and e.event_id not in seen:
+                    expanded.append(e)
+                    seen.add(e.event_id)
+            # related_events 显式关联（coordinator 写入边时填充）
+            for neighbor_id in event.related_events:
+                if neighbor_id in self._events and neighbor_id not in seen:
+                    expanded.append(self._events[neighbor_id])
+                    seen.add(neighbor_id)
+        return expanded
 
     # ── 持久化 ──
 

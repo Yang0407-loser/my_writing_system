@@ -6,8 +6,9 @@ from app.agents.context_manager import ContextManager
 class TestContextManager:
     def test_init(self):
         cm = ContextManager()
-        assert cm.running_summary == ""
-        assert cm.compress_threshold == 6000
+        assert cm.max_recent == 3
+        assert cm._buffer == []
+        assert not hasattr(cm, "running_summary")
 
     def test_add_subsection(self):
         cm = ContextManager()
@@ -36,28 +37,45 @@ class TestContextManager:
     def test_serialize_empty(self):
         cm = ContextManager()
         data = cm.serialize()
-        assert data["running_summary"] == ""
         assert data["buffer"] == []
+        assert data["char_count"] == 0
+        assert "running_summary" not in data
 
     def test_serialize_with_data(self):
         cm = ContextManager()
         cm.add_subsection("测试。", section_num=1)
-        cm.running_summary = "前文摘要"
         data = cm.serialize()
-        assert data["running_summary"] == "前文摘要"
         assert len(data["buffer"]) == 1
+        assert data["char_count"] == len("测试。")
         assert data["section_drafts"] == {1: "测试。\n\n"}
 
     def test_deserialize_restores_state(self):
         cm = ContextManager()
         cm.add_subsection("原始数据。", section_num=1)
-        cm.running_summary = "旧摘要"
         data = cm.serialize()
 
         cm2 = ContextManager()
         cm2.deserialize(data)
-        assert cm2.running_summary == "旧摘要"
+        assert cm2.get_summary() == "【最近内容】\n原始数据。"
+        assert cm2._char_count == len("原始数据。")
         assert cm2.section_drafts == {1: "原始数据。\n\n"}
+
+    def test_deserialize_historical_checkpoint_ignores_running_summary(self):
+        historical = {
+            "running_summary": "旧版压缩摘要，不应恢复",
+            "compress_threshold": 6000,
+            "buffer": ["第一小节", "第二小节", "第三小节", "第四小节"],
+            "char_count": 999999,
+            "section_drafts": {"1": "历史草稿\n\n"},
+        }
+
+        cm = ContextManager()
+        cm.deserialize(historical)
+
+        assert cm._buffer == ["第二小节", "第三小节", "第四小节"]
+        assert cm._char_count == sum(map(len, cm._buffer))
+        assert cm.section_drafts == {1: "历史草稿\n\n"}
+        assert not hasattr(cm, "running_summary")
 
     def test_finalize(self, mock_llm):
         mock_client = mock_llm('{"summary": "compressed"}')

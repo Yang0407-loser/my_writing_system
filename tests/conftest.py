@@ -6,23 +6,20 @@ from unittest.mock import MagicMock
 
 @pytest.fixture
 def sample_style():
-    """中性风格预设（完整 50 维）。"""
+    """当前风格契约：4 个主旋钮 + 兼容字段。"""
     return {
-        "narrative_density": 0.7,
-        "primary_emotion": "中性", "emotion_intensity": 50, "emotion_subtlety": "含蓄",
-        "emotion_blend": {},
-        "emotion_curve": "平稳", "emotional_peaks": "均匀分布", "catharsis_style": "渐进式",
-        "narrative_empathy": "适度共情", "inner_monologue_ratio": 0.2, "show_vs_tell": "平衡",
-        "emotional_registry": "文学抒情", "emotional_contrast": "渐进演变",
-        "short_sentence_ratio": 0.3, "long_sentence_ratio": 0.2,
-        "sentence_pattern": "长短交替", "paragraph_rhythm": "均匀块状",
-        "paragraph_length_avg": 200, "dialogue_ratio": 0.3, "dialogue_tag_style": "稀疏标记",
-        "pacing": "中等", "scene_transition": "过渡铺垫", "tension_curve": "波浪起伏",
-        "metaphor_frequency": "适度", "personification": "适度",
-        "vocabulary_register": "文学化", "vocabulary_richness": "中等",
-        "chengyu_frequency": "适度", "adjective_density": 0.15, "adverb_policy": "适度",
-        "sensory_density": "适度", "sensory_spectrum": "视觉为主", "color_use": "暖色调",
-        "imagery_domain": "自然", "style_brief": "中性风格，均衡叙事",
+        "emotion_intensity": 50,
+        "dialogue_ratio": 0.3,
+        "sentence_preference": "balanced",
+        "sensory_density": "medium",
+        "narrative_density": 0.5,
+        "adjective_density": 0.15,
+        "paragraph_length_avg": 200,
+        "short_sentence_ratio": 0.33,
+        "medium_sentence_ratio": 0.34,
+        "long_sentence_ratio": 0.33,
+        "dialogue_tag_style": "动作替代",
+        "pacing": "中等",
         "preset_name": "中性",
     }
 

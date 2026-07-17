@@ -183,24 +183,16 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ### Phase 1: 风格分析
 
 **实现** (`StyleAnalyzer.analyze()`)：
-1. 参考文本（截取 6000 字符）填充 `STYLE_ANALYSIS_PROMPT` → LLM 返回 50 维 JSON
-2. `_fill_defaults()` 用预设默认值补齐 LLM 未返回的字段
-3. `build_brief()` 调 LLM 将 50 维参数转为 200-500 字自然语言风格简报（编辑口吻，给出可操作建议）
+1. 参考文本（截取 6000 字符）填充 `STYLE_ANALYSIS_PROMPT` → LLM 返回 4 个主要控制量
+2. `_fill_defaults()` 用预设默认值补齐：`emotion_intensity`、`dialogue_ratio`、`sentence_preference`、`sensory_density`
+3. 保留少量兼容统计字段（如 `narrative_density`、`paragraph_length_avg`），下游通过 `StyleSummarizer` 生成确定性的行为指令
 
-**50 维模型分组**：
-
-| 组 | 维度 | 示例字段 |
-|----|------|----------|
-| A. 情感基调 | 13 项 | `primary_emotion`, `emotion_intensity`(0-100), `emotion_curve`, `narrative_empathy`, `inner_monologue_ratio` |
-| B. 句式节奏 | 16 项 | `short_sentence_ratio`, `paragraph_rhythm`, `dialogue_ratio`, `pacing`, `tension_curve` |
-| C. 修辞用词 | 21 项 | `metaphor_frequency`, `vocabulary_register`, `adjective_density`, `color_use`, `imagery_domain` |
-
-**输出**：`{...50维..., style_brief: "自然语言简报"}` → `bb.set(task_id, "style", ...)`
+**输出**：4 个主要控制量 + 兼容统计字段 → `bb.set(task_id, "style", ...)`
 
 **设计要点**：
 - 用户可以直接提供 `style_profile` 跳过 AI 分析
-- 7 个内置预设（中性/热血/冷峻/治愈/压抑/紧迫/荒诞）一键覆盖全 50 维
-- `style_brief` 是下游 Agent 消费风格的主要方式——自然语言注入 prompt 比数字更有效
+- 7 个内置预设覆盖相同的 4 个主要控制量
+- Writer 消费结构化控制量、确定性摘要和按需示例；写后客观指标由 `style_stats`/离线基线计算
 
 ---
 
@@ -442,12 +434,12 @@ class BaseAgent(ABC):
 | 智能体 | 职责 | 关键方法 | LLM 调用 |
 |--------|------|----------|----------|
 | **CharacterManager** | 角色提取、弧线规划、状态更新 | `extract_characters()`, `plan_arcs()`, `update_states()` | temperature=0.3~0.4, max_tokens=4000 |
-| **StyleAnalyzer** | 50 维风格分析、预设管理、简报生成、大纲风格审查 | `analyze()`, `build_brief()`, `review_outline()` | temperature=0.3~0.5, max_tokens=800~3000 |
+| **StyleAnalyzer** | 4 个主要风格控制量、预设管理、大纲风格审查 | `analyze()`, `get_preset()`, `review_outline()` | temperature=0.3, max_tokens=800~1500 |
 | **Planner** | 大纲生成、反馈修订 | `generate_outline()`, `revise_from_feedback()` | temperature=0.4~0.5, max_tokens=4000 |
 | **Writer** | 继承制写作（统一入口）、定向修订、精修建议 | `run()`, `revise_subsection()`, `suggest_refinements()`, `refine_section()` | temperature=0.4~0.7, max_tokens 动态计算 |
 | **Reviewer** | 分节审阅、全局终审、章节衔接检查 | `review_section()`, `review_global()`, `review_continuity()` | temperature=0.3~0.4, max_tokens=1000~1500 |
 | **ContinuityEditor** | 回溯修正分级判定 | `run()` | temperature=0.3, max_tokens=2000 |
-| **ContextManager** | 运行摘要维护、LLM 压缩 | `add_subsection()`, `get_summary()`, `_compress()` | temperature=0.3, max_tokens=600 |
+| **ContextManager** | 最近 3 小节原文缓冲、检查点恢复 | `add_subsection()`, `get_summary()`, `serialize()` | 无 LLM 调用 |
 
 ### Writer 详解（核心智能体）
 
@@ -659,9 +651,9 @@ character_traits (id, character_id, trait_type, trait_value)
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/api/style/analyze` | 从参考文本分析 50 维风格 |
+| `POST` | `/api/style/analyze` | 从参考文本分析 4 个主要风格控制量 |
 | `POST` | `/api/style/preset` | 获取风格预设（7 个） |
-| `POST` | `/api/style/brief` | 将 50 维转为自然语言简报 |
+| `POST` | `/api/style/brief` | 将风格控制量转为写作简报 |
 
 ### AI 辅助生成
 
@@ -878,7 +870,7 @@ my_writing_system/
 │   │   ├── base.py                  # Agent 基类
 │   │   ├── character_manager.py     # 角色提取/弧线/状态更新
 │   │   ├── character_formatter.py   # 角色上下文格式化
-│   │   ├── style_analyzer.py        # 50 维风格 + 7 预设
+│   │   ├── style_analyzer.py        # 4 个主要风格控制量 + 7 预设
 │   │   ├── planner.py               # 大纲生成 + 修订 + 约束提取
 │   │   ├── writer.py                # 继承制写作 (统一入口, v0.9 约束/伏笔/规则注入)
 │   │   ├── reviewer.py              # 分节审阅 + 全局终审
@@ -1015,7 +1007,7 @@ uv run python tests/test_basic.py
 
 ## 扩展方向
 
-- **风格系统**：✅ 50 维模型 + 7 预设。后续：风格迁移（A 文本风格 → B 文本改写）
+- **风格系统**：✅ 4 个主要控制量 + 兼容统计字段 + 7 预设。后续：基于固定样本验证风格迁移
 - **角色库**：✅ SQLite 持久化 + CRUD API。后续：角色关系网络图、出场历史追踪、跨作品角色联动
 - **交互式写作**：✅ Redis Stream + 检查点 + paragraph级粒度。后续：多人协作编辑、版本历史、分支剧情
 - **抽卡模式**：✅ 多方案生成 + 灵感库。后续：社区灵感市场、历史卡片复用

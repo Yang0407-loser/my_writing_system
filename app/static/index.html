@@ -42,7 +42,7 @@
           <span class="node-icon">{{node.icon}}</span><span class="node-label">{{node.label}}</span>
           <div v-if="selectedNodeId===node.id" class="flow-detail-panel" @click.stop>
             <h4>{{node.label}}</h4>
-            <template v-if="node.id==='style'&&node.status!=='waiting'"><div v-if="styleProfile?.style_brief">{{styleProfile.style_brief}}</div></template>
+            <template v-if="node.id==='style'&&node.status!=='waiting'"><div v-if="styleProfile?.preset_name">风格: {{styleProfile.preset_name}}</div></template>
             <template v-if="node.id==='outline'&&node.status!=='waiting'"><div v-for="s in outline" style="font-size:10px;padding:2px 0"><b style="color:var(--purple)">{{s.title}}</b> <span style="color:var(--muted)">({{subtreeWords(s)}}字)</span></div>
               <div v-if="awaitingConfirm&&confirmPhase==='outline'" style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-success btn-sm" @click.stop="sendDecisionFn('approve')">批准大纲</button><button class="btn btn-outline btn-sm" @click.stop="sendDecisionFn('revise',prompt('修改意见：')||'')">修订</button></div></template>
             <template v-if="node.id==='writing'"><div v-if="node.status==='waiting'">等待写作...</div><div v-else>进度: {{totalDraftWords}}/{{globalWordLimit}}字</div>
@@ -66,6 +66,7 @@
             <span v-if="item.node.children&&item.node.children.length" class="tree-arrow" @click="item.node.collapsed=!item.node.collapsed">{{item.node.collapsed?'▶':'▼'}}</span>
             <span v-else class="tree-arrow" style="visibility:hidden">▶</span>
             <input class="tree-title" :class="'level-'+Math.min(item.level,4)" v-model="item.node.title" @focus="selectedNodeId=item.node.id">
+            <span v-if="!item.node.children?.length" class="tree-btn" @click="showDescEdit=showDescEdit===item.node.id?null:item.node.id" title="编辑要点/梗概">&#9998;</span>
             <span v-if="!item.node.children?.length" class="tree-btn" @click="aiFillKeyPoints(item.node)" :title="item.node.key_points?.length?'AI重新生成要点':'AI填充要点'" :style="{opacity:fillingKeyPoints?0.5:1}">{{fillingKeyPoints?'⏳':'🤖'}}</span>
             <span v-if="!item.node.children?.length" class="tree-btn" @click="toggleLeafStatus(item.node)" :title="leafStatusTitle(item.node.status)" :style="{color:leafStatusColor(item.node.status),fontSize:'12px'}">{{leafStatusIcon(item.node.status)}}</span>
             <span class="tree-btn" @click="addChildNode(item.node)" title="添加子节点">+</span>
@@ -78,8 +79,8 @@
             <div v-if="showDescEdit===item.node.id&&!item.node.children?.length" class="split-popup" style="position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--gold-dim);border-radius:8px;padding:8px;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
               <div style="font-size:10px;color:var(--gold);margin-bottom:4px">编辑要点（逗号分隔，每点10字内）</div>
               <input v-model="editingKeyPoints" @keyup.enter="saveKeyPoints(item.node)" placeholder="主角突破金丹, 古剑觉醒, 遭遇北冥追兵" style="font-size:10px;margin-bottom:4px">
-              <div style="font-size:10px;color:var(--gold);margin-bottom:4px">梗概（30字内）</div>
-              <input v-model="editingDesc" @keyup.enter="saveKeyPoints(item.node)" placeholder="主角在绝灵谷中突破境界..." style="font-size:10px;margin-bottom:6px">
+              <div style="font-size:10px;color:var(--gold);margin-bottom:4px">梗概（100字内）</div>
+              <input v-model="editingDesc" @keyup.enter="saveKeyPoints(item.node)" placeholder="主角在绝灵谷中突破金丹境界，意外觉醒古剑剑灵，同时遭遇北冥追兵围堵..." style="font-size:10px;margin-bottom:6px">
               <button class="btn btn-primary btn-sm" @click="saveKeyPoints(item.node)" style="width:100%">保存</button>
             </div>
             <div v-if="showSplitPopup===item.node.id" class="split-popup" style="position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
@@ -168,7 +169,7 @@
           <div class="field"><label>梗概 <button class="btn btn-outline btn-sm" @click="genStorySynopsisFn" :disabled="genSynopsis" style="float:right;font-size:9px">AI生成</button></label><textarea v-model="storySynopsis" rows="2"></textarea></div>
           <div class="field"><label>参考文本 (提取风格)</label><textarea v-model="referenceText" rows="2"></textarea></div>
           <div class="field"><label>API Key</label><input v-model="apiKey" type="password" placeholder="输入你的 DeepSeek API Key"></div>
-          <div class="field" style="display:flex;gap:8px;align-items:center"><label style="margin:0">目标字数</label><input type="number" v-model.number="globalWordLimit" style="width:100px"><label style="margin:0">模式</label><select v-model="mode" style="font-size:11px;width:auto"><option value="celery">自动</option><option value="interactive">交互</option></select></div>
+          <div class="field" style="display:flex;gap:8px;align-items:center"><label style="margin:0" title="修改后自动应用到所有章节">默认字数/章</label><input type="number" v-model.number="globalWordLimit" style="width:100px"><label style="margin:0">模式</label><select v-model="mode" style="font-size:11px;width:auto"><option value="celery">自动</option><option value="interactive">交互</option></select></div>
         </div>
       </div>
       <!-- Foreshadowing -->
@@ -248,8 +249,8 @@
     <span class="status-dot" :style="{background:statusColor}"></span><span style="margin-right:8px">{{statusText}}</span>
     <span v-if="agentStatus" style="color:var(--accent);font-size:11px;animation:blink 1.2s infinite">⟳ {{agentStatus}}</span>
     <div class="progress-bar-wrap" style="flex:1"><div class="progress-bar-fill" :style="{width:Math.min(100,totalDraftWords/Math.max(1,globalWordLimit)*100)+'%'}"></div></div>
-    <span style="white-space:nowrap;font-size:10px">{{completedSections}}/{{totalSubsections}}节 · {{totalDraftWords}}字</span>
-    <span style="font-size:10px;color:var(--dim);white-space:nowrap" v-if="tokenUsage>0">{{Math.round(tokenUsage/1000)}}K tokens</span>
+    <span style="white-space:nowrap;font-size:10px">{{completedSections}}/{{queuedCount}}节 · {{totalDraftWords}}字</span>
+    <span style="font-size:10px;color:var(--dim);white-space:nowrap" v-if="tokenUsage>0">{{Math.round(tokenUsage/1000)}}K tokens · ${{tokenCost?.est_cost_usd?.toFixed(4)||'--'}}</span>
     <span style="font-size:10px;color:var(--gold);white-space:nowrap" v-if="totalSubsections>0">🟡{{queuedCount}} ⚪{{draftCount}}</span>
     <button class="btn btn-primary btn-sm" @click="startWriting" :disabled="isGenerating||queuedCount===0">{{startBtnText}}</button>
     <button class="btn btn-danger btn-sm" @click="stopWriting" :disabled="!isGenerating">停止</button>
@@ -441,7 +442,18 @@
   </div>
   <!-- Import -->
   <div class="modal-overlay" v-if="showImportModal" @click.self="showImportModal=false">
-    <div class="modal-box"><h3>导入大纲</h3><div class="field"><label>粘贴大纲文本</label><textarea v-model="importText" rows="8"></textarea></div><div class="field"><label>最大深度 <input type="number" v-model.number="importMaxDepth" min="2" max="5" style="width:60px"></label></div><div v-if="importError" style="color:var(--red);font-size:11px;margin-bottom:8px">{{importError}}</div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-outline btn-sm" @click="showImportModal=false">取消</button><button class="btn btn-primary btn-sm" @click="doImportOutline" :disabled="importing">{{importing?'导入中...':'导入'}}</button></div></div>
+    <div class="modal-box"><h3>导入大纲</h3>
+      <details style="margin-bottom:10px;font-size:11px;color:var(--muted)"><summary style="cursor:pointer">支持格式（点击展开）</summary>
+        <div style="padding:6px 10px;line-height:1.8">
+          <b>Markdown 标题</b>: # 第一卷 / ## 第一章 / ### 第一节<br>
+          <b>数字编号</b>: 1. / 1.1 / 1.1.1<br>
+          <b>第X卷/第X章</b>: 第一卷 序章 / 第一章 觉醒<br>
+          <b>表格</b>: | 卷 | 章 | 节 | 概述 |<br>
+          <b>自然语言</b>: "故事分三部，第一部讲..."<br>
+          <b>列表</b>: - 或 * 缩进层级
+        </div>
+      </details>
+      <div class="field"><label>粘贴大纲文本</label><textarea v-model="importText" rows="8" placeholder="支持 Markdown标题 / 编号列表 / 表格 / 自然语言 ..."></textarea></div><div class="field"><label>最大深度 <input type="number" v-model.number="importMaxDepth" min="2" max="5" style="width:60px"></label><label style="margin-left:12px;font-size:11px;color:var(--muted)"><input type="checkbox" v-model="importReplace" checked> 替换现有大纲</label></div><div v-if="importError" style="color:var(--red);font-size:11px;margin-bottom:8px">{{importError}}</div><div v-if="importReport" style="font-size:11px;color:var(--green);margin-bottom:8px">{{importReport.parsed_volumes||0}}卷 {{importReport.parsed_chapters||0}}章 {{importReport.parsed_leaves||0}}节<span v-if="importReport.format_detected"> · 检测格式: {{importReport.format_detected}}</span><div v-if="importReport.dropped_lines?.length" style="color:var(--gold);margin-top:4px">丢弃 {{importReport.dropped_lines.length}} 行: {{importReport.dropped_lines.slice(0,5).join('; ')}}<span v-if="importReport.dropped_lines.length>5">...</span></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-outline btn-sm" @click="showImportModal=false;importReport=null">取消</button><button class="btn btn-primary btn-sm" @click="doImportOutline" :disabled="importing">{{importing?'导入中...':'导入'}}</button></div></div>
   </div>
 
   <!-- ═══ OUTLINE VERSIONS MODAL ═══ -->
@@ -590,73 +602,31 @@
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
         <button v-for="p in stylePresets" class="btn btn-sm" :class="styleProfile?.preset_name===p?'btn-primary':'btn-outline'" @click="applyStylePreset(p)">{{p}}</button>
       </div>
-      <!-- 叙事密度 -->
-      <div class="style-section">
-        <div class="style-section-title">叙事密度 <span style="color:var(--gold)">{{styleProfile.narrative_density?.toFixed(2)||'0.70'}}</span></div>
-        <input type="range" min="0" max="1" step="0.05" v-model.number="styleProfile.narrative_density" style="width:100%">
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted)"><span>0.0 留白</span><span>0.5 适中</span><span>1.0 密集</span></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;max-height:55vh;overflow-y:auto;margin-top:8px">
-        <!-- 情感 -->
-        <div class="style-section">
-          <div class="style-section-title">🎭 情感基调</div>
-          <div class="field"><label>主情感</label><input v-model="styleProfile.primary_emotion" placeholder="中性/激昂/冷峻/温暖/压抑/恐惧/荒诞"></div>
-          <div class="field"><label>情感强度 {{styleProfile.emotion_intensity||50}}</label><input type="range" min="10" max="100" v-model.number="styleProfile.emotion_intensity"></div>
-          <div class="field"><label>情感曲线</label><select v-model="styleProfile.emotion_curve"><option>平稳</option><option>渐强</option><option>下沉</option><option>波浪</option><option>突转</option></select></div>
-          <div class="field"><label>情感表达</label><select v-model="styleProfile.emotional_registry"><option>文学抒情</option><option>冷峻克制</option><option>日常口语</option></select></div>
-          <div class="field"><label>叙/议</label><select v-model="styleProfile.show_vs_tell"><option>平衡</option><option>动作驱动</option><option>心理驱动</option></select></div>
+      <!-- 4 个旋钮 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:12px">
+        <div class="field">
+          <label>情感强度 {{styleProfile.emotion_intensity||50}}</label>
+          <input type="range" min="10" max="90" v-model.number="styleProfile.emotion_intensity">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted)"><span>克制</span><span>温婉</span><span>浓郁</span></div>
         </div>
-        <!-- 句式 -->
-        <div class="style-section">
-          <div class="style-section-title">📝 句式节奏</div>
-          <div class="field"><label>短句占比 {{(styleProfile.short_sentence_ratio*100)?.toFixed(0)||30}}%</label><input type="range" min="0" max="1" step="0.05" v-model.number="styleProfile.short_sentence_ratio"></div>
-          <div class="field"><label>长句占比 {{(styleProfile.long_sentence_ratio*100)?.toFixed(0)||20}}%</label><input type="range" min="0" max="1" step="0.05" v-model.number="styleProfile.long_sentence_ratio"></div>
-          <div class="field"><label>句式模式</label><select v-model="styleProfile.sentence_pattern"><option>长短交替</option><option>紧凑句</option><option>松散句</option><option>短句群</option></select></div>
-          <div class="field"><label>复杂度</label><select v-model="styleProfile.complex_sentence_ratio"><option>简单句为主</option><option>平衡</option><option>复合句为主</option></select></div>
-          <div class="field"><label>句长波动</label><select v-model="styleProfile.sentence_length_variance"><option>稳定</option><option>适度波动</option><option>剧烈波动</option></select></div>
+        <div class="field">
+          <label>句长偏好</label>
+          <select v-model="styleProfile.sentence_preference"><option value="short">短句驱动</option><option value="balanced">长短交替</option><option value="long">长句铺陈</option></select>
         </div>
-        <!-- 段落 -->
-        <div class="style-section">
-          <div class="style-section-title">📄 段落结构</div>
-          <div class="field"><label>平均段长 {{styleProfile.paragraph_length_avg||200}}字</label><input type="range" min="60" max="400" step="10" v-model.number="styleProfile.paragraph_length_avg"></div>
-          <div class="field"><label>段落节奏</label><select v-model="styleProfile.paragraph_rhythm"><option>均匀块状</option><option>渐进式</option><option>长→短交替</option><option>短→长交替</option><option>跳跃式</option></select></div>
-          <div class="field"><label>段首风格</label><select v-model="styleProfile.paragraph_opening_style"><option>混合</option><option>动作起头</option><option>场景描写</option><option>独白起头</option></select></div>
+        <div class="field">
+          <label>对话占比 {{(styleProfile.dialogue_ratio*100)?.toFixed(0)||30}}%</label>
+          <input type="range" min="0" max="0.7" step="0.05" v-model.number="styleProfile.dialogue_ratio">
         </div>
-        <!-- 对话 -->
-        <div class="style-section">
-          <div class="style-section-title">💬 对话</div>
-          <div class="field"><label>对话占比 {{(styleProfile.dialogue_ratio*100)?.toFixed(0)||30}}%</label><input type="range" min="0" max="0.7" step="0.05" v-model.number="styleProfile.dialogue_ratio"></div>
-          <div class="field"><label>标记风格</label><select v-model="styleProfile.dialogue_tag_style"><option>稀疏标记</option><option>动作替代</option><option>零标记</option></select></div>
-          <div class="field"><label>对话混合</label><select v-model="styleProfile.dialogue_mixing"><option>混合</option><option>独立成段</option><option>嵌入叙述</option></select></div>
-          <div class="field"><label>内心独白</label><input type="range" min="0" max="0.6" step="0.05" v-model.number="styleProfile.inner_monologue_ratio" :title="'内心独白占比: '+(styleProfile.inner_monologue_ratio*100)?.toFixed(0)+'%'"></div>
-        </div>
-        <!-- 感官 -->
-        <div class="style-section">
-          <div class="style-section-title">👁 感官与意象</div>
-          <div class="field"><label>感官密度</label><select v-model="styleProfile.sensory_density"><option>极少</option><option>适度</option><option>丰富</option></select></div>
-          <div class="field"><label>感官侧重</label><select v-model="styleProfile.sensory_spectrum"><option>视觉为主</option><option>多感官平衡</option><option>触觉突出</option><option>听觉突出</option></select></div>
-          <div class="field"><label>色调</label><select v-model="styleProfile.color_use"><option>暖色调</option><option>冷色调</option><option>低饱和</option><option>高饱和</option><option>金属色</option></select></div>
-          <div class="field"><label>意象域</label><select v-model="styleProfile.imagery_domain"><option>自然</option><option>城市</option><option>身体</option><option>机械</option></select></div>
-        </div>
-        <!-- 修饰 -->
-        <div class="style-section">
-          <div class="style-section-title">✒ 修饰与用词</div>
-          <div class="field"><label>形容词密度 {{styleProfile.adjective_density?.toFixed(2)||'0.15'}}</label><input type="range" min="0" max="0.4" step="0.01" v-model.number="styleProfile.adjective_density"></div>
-          <div class="field"><label>副词策略</label><select v-model="styleProfile.adverb_policy"><option>克制</option><option>适度</option><option>丰富</option></select></div>
-          <div class="field"><label>比喻频率</label><select v-model="styleProfile.metaphor_frequency"><option>极少</option><option>适度</option><option>密集</option></select></div>
-          <div class="field"><label>修辞密度</label><input type="range" min="0" max="0.4" step="0.01" v-model.number="styleProfile.rhetorical_density"></div>
-          <div class="field"><label>词汇等级</label><select v-model="styleProfile.vocabulary_register"><option>口语化</option><option>文学化</option></select></div>
+        <div class="field">
+          <label>感官密度</label>
+          <select v-model="styleProfile.sensory_density"><option value="sparse">留白简洁</option><option value="medium">适度</option><option value="rich">五感丰富</option></select>
         </div>
       </div>
-      <!-- 风格简报生成 + 参考文本分析 -->
-      <div class="field" style="margin-top:12px"><label>风格简报</label><textarea v-model="styleProfile.style_brief" rows="2" placeholder="手动描述或下方填入参考文本自动生成..."></textarea></div>
+      <!-- 参考文本 -->
       <div class="field"><label>参考文本 (提取风格)</label><textarea v-model="referenceText" rows="2" placeholder="粘贴参考文本..."></textarea></div>
       <div style="display:flex;gap:8px;justify-content:space-between">
-        <button class="btn btn-primary btn-sm" @click="analyzeStyle" :disabled="analyzingStyle">{{analyzingStyle?'分析中...':'从参考文本提取并填充风格参数'}}</button>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" @click="genStyleBriefFn" :disabled="genBrief">生成简报</button>
-          <button class="btn btn-outline btn-sm" @click="showStyle=false">关闭</button>
-        </div>
+        <button class="btn btn-primary btn-sm" @click="analyzeStyle" :disabled="analyzingStyle">{{analyzingStyle?'分析中...':'从参考文本提取风格参数'}}</button>
+        <button class="btn btn-outline btn-sm" @click="showStyle=false">关闭</button>
       </div>
     </div>
   </div>
@@ -1017,21 +987,21 @@
 
   <!-- ═══ HISTORY / PROJECTS MODAL ═══ -->
   <div class="modal-overlay" v-if="showHistory" @click.self="showHistory=false">
-    <div class="modal-box wide"><h3>项目列表</h3>
+    <div class="modal-box wide"><h3>写作历史</h3>
       <div v-if="historyLoading" style="text-align:center;padding:40px;color:var(--muted)">加载中...</div>
-      <div v-else-if="!historyList.length" style="text-align:center;padding:40px;color:var(--muted)">暂无项目。开始写作后自动创建。</div>
+      <div v-else-if="!historyList.length" style="text-align:center;padding:40px;color:var(--muted)">暂无记录。开始写作后自动保存。</div>
       <div v-else style="max-height:55vh;overflow-y:auto">
-        <div v-for="p in historyList" :key="p.id" style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div v-for="t in historyList" :key="t.task_id" style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:13px;color:var(--text)">{{p.name||'未命名项目'}}</div>
+            <div style="font-weight:600;font-size:13px;color:var(--text)">{{t.topic||'未命名'}}</div>
             <div style="font-size:10px;color:var(--muted);margin-top:2px">
-              <span v-if="p.world_setting">世界观已设定 · </span>
-              <span v-if="p.outline_json?.length">{{p.outline_json.length}}个大纲节点 · </span>
-              <span>{{(p.updated_at||p.created_at||'').slice(0,16)}}</span>
+              <span :style="{color:t.status==='completed'?'var(--green)':t.status==='failed'?'var(--red)':'var(--gold)'}">{{t.status||'unknown'}}</span>
+              <span v-if="t.word_count"> · {{t.word_count}}字</span>
+              <span> · {{(t.updated_at||t.created_at||'').slice(0,16)}}</span>
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" @click="resumeProject(p.id)" style="font-size:10px;padding:4px 12px;white-space:nowrap">继续</button>
-          <button class="btn btn-outline btn-sm" @click="deleteProjectFn(p.id)" style="color:var(--red);font-size:10px;padding:4px 8px">删除</button>
+          <button class="btn btn-primary btn-sm" @click="resumeTask(t.task_id)" style="font-size:10px;padding:4px 12px;white-space:nowrap">加载</button>
+          <button class="btn btn-outline btn-sm" @click="deleteTaskFn(t.task_id)" style="color:var(--red);font-size:10px;padding:4px 8px">删除</button>
         </div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-outline btn-sm" @click="showHistory=false">关闭</button></div>

@@ -4,7 +4,10 @@ import sqlite3
 import json
 import uuid
 import os
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 from .config import settings
 
 
@@ -66,15 +69,14 @@ def _serialize_lists(data: dict) -> dict:
 # ── CRUD ─────────────────────────────────────────────────────────
 
 def list_foreshadowings(task_id: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        if task_id:
-            rows = conn.execute(
-                "SELECT * FROM foreshadowings WHERE task_id = ? ORDER BY plant_chapter ASC",
-                (task_id,)
-            ).fetchall()
-        else:
-            rows = conn.execute("SELECT * FROM foreshadowings ORDER BY plant_chapter ASC").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM foreshadowings WHERE task_id = ? ORDER BY plant_chapter ASC",
+            (task_id,)
+        ).fetchall()
         return [_row_to_dict(r) for r in rows]
     finally:
         conn.close()
@@ -243,7 +245,7 @@ def ensure_world_anchors(task_id: str, world_setting_text: str, characters: list
                 existing_names.add(a["name"])
                 created += 1
             except Exception:
-                pass
+                logger.warning(f"世界锚点创建失败: {a.get('name', '?')[:40]}", exc_info=True)
     return created
 
 
@@ -295,6 +297,106 @@ def _extract_world_anchors(world_setting_text: str, characters: list[dict]) -> l
                         "description": item.get("description", f"世界观设定: {name}"),
                     })
     except Exception:
-        pass
+        logger.warning("LLM 世界锚点提取失败，仅使用角色名作为锚点", exc_info=True)
 
     return anchors
+
+
+# ── 伏笔回收验证 ──────────────────────────────────────────────────────
+
+def get_unresolved_foreshadowings(task_id: str, current_chapter: int) -> list[dict]:
+    """查找应在当前章节前回收但尚未回收的伏笔。
+
+    Args:
+        task_id: 项目 ID
+        current_chapter: 当前已完成的最大章节号
+
+    Returns:
+        断裂伏笔列表 [{name, plant_chapter, resolve_chapter, status, importance, ...}]
+    """
+    conn = _get_conn()
+    try:
+        rows = conn.execute("""
+            SELECT * FROM foreshadowings
+            WHERE task_id = ?
+              AND status != 'resolved'
+              AND resolve_chapter IS NOT NULL
+              AND resolve_chapter <= ?
+              AND resolve_chapter != 999
+            ORDER BY importance DESC
+        """, (task_id, current_chapter)).fetchall()
+        return [_row_to_dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
+    """伏笔健康度汇总。
+
+    Returns:
+        {
+            "total": int,
+            "resolved": int,
+            "pending": int,
+            "planted": int,
+            "hinted": int,
+            "broken": int,          # 应回收但未回收
+            "broken_list": [...],
+            "upcoming": int,        # 即将需要回收的（未来3章内）
+            "health": "健康" | "注意" | "断裂",
+        }
+    """
+    conn = _get_conn()
+    try:
+        # 全部伏笔
+        all_rows = conn.execute(
+            "SELECT * FROM foreshadowings WHERE task_id = ?",
+            (task_id,)
+        ).fetchall()
+        all_fs = [_row_to_dict(r) for r in all_rows]
+
+        total = len(all_fs)
+        resolved = sum(1 for f in all_fs if f["status"] == "resolved")
+        pending = sum(1 for f in all_fs if f["status"] == "pending")
+        planted = sum(1 for f in all_fs if f["status"] == "planted")
+        hinted = sum(1 for f in all_fs if f["status"] == "hinted")
+
+        # 断裂：应回收但未回收（排除世界锚点 resolve_chapter=999）
+        broken_list = [
+            f for f in all_fs
+            if f["status"] != "resolved"
+            and f.get("resolve_chapter") is not None
+            and f["resolve_chapter"] != 999
+            and f["resolve_chapter"] <= current_chapter
+        ]
+        broken = len(broken_list)
+
+        # 即将需要回收
+        upcoming = sum(
+            1 for f in all_fs
+            if f["status"] != "resolved"
+            and f.get("resolve_chapter") is not None
+            and f["resolve_chapter"] != 999
+            and current_chapter < f["resolve_chapter"] <= current_chapter + 3
+        )
+
+        if broken == 0:
+            health = "健康"
+        elif broken <= 2:
+            health = "注意"
+        else:
+            health = "断裂"
+
+        return {
+            "total": total,
+            "resolved": resolved,
+            "pending": pending,
+            "planted": planted,
+            "hinted": hinted,
+            "broken": broken,
+            "broken_list": broken_list,
+            "upcoming": upcoming,
+            "health": health,
+        }
+    finally:
+        conn.close()

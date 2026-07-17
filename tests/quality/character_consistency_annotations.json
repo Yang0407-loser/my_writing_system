@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "golden_story": "周六面包店与凌晨三点半",
+  "annotation_source": "codex_provisional_requires_human_confirmation",
+  "allowed_statuses": ["satisfied", "violated", "not_applicable"],
+  "constraints": [
+    {
+      "id": "linwan-01", "character": "林晚", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "通过观察、摄影和笔记理解他人，而不是直接替他人下结论。",
+      "evidence_sections": [1, 3, 11], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-02", "character": "林晚", "constraint_type": "allowed",
+      "hardness": "hard", "constraint": "面对隐私与流量冲突时会自省，并愿意删除或停止传播。",
+      "evidence_sections": [4, 6, 14], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-03", "character": "林晚", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "情绪强烈时仍以动作和沉默为主，不突然长篇宣讲。",
+      "evidence_sections": [10, 14, 15], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-04", "character": "林晚", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得在未经铺垫时变成追逐商业流量、漠视被摄者意愿的人。",
+      "evidence_sections": [6, 13, 14], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-05", "character": "林晚", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得知道尚未由周野、顾衍、季晴或正文证据透露的周野私事。",
+      "evidence_sections": [3, 10, 12], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-06", "character": "林晚", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得无过渡地从旁观者直接成为面包店经营决策者。",
+      "evidence_sections": [1, 7, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-07", "character": "林晚", "constraint_type": "boundary",
+      "hardness": "soft", "constraint": "可以从记录者成长为参与者，但必须经过删帖、学习揉面和社区事件铺垫。",
+      "evidence_sections": [4, 6, 7, 15], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-08", "character": "林晚", "constraint_type": "boundary",
+      "hardness": "hard", "constraint": "可以帮助周野筹款，但不能替周野决定是否接受或如何使用资金。",
+      "evidence_sections": [16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-09", "character": "林晚", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "在不确定时会向可信朋友求助或被朋友推动去直接求证。",
+      "evidence_sections": [14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "linwan-10", "character": "林晚", "constraint_type": "boundary",
+      "hardness": "hard", "constraint": "与周野的亲近可以增长，但不能在缺少共同经历时突然越级为明确恋爱承诺。",
+      "evidence_sections": [7, 12, 18], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+
+    {
+      "id": "zhouye-01", "character": "周野", "constraint_type": "allowed",
+      "hardness": "hard", "constraint": "主要通过揉面、递水、留面包等行动表达关心，语言保持克制。",
+      "evidence_sections": [1, 7, 12], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-02", "character": "周野", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "在压力下会改变揉面节奏、沉默或短句回应。",
+      "evidence_sections": [10, 11, 13], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-03", "character": "周野", "constraint_type": "allowed",
+      "hardness": "hard", "constraint": "重视面包工艺、固定节奏和周六营业的承诺。",
+      "evidence_sections": [1, 3, 18], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-04", "character": "周野", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得突然热衷曝光、探店合作或以流量作为经营核心。",
+      "evidence_sections": [6, 14], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-05", "character": "周野", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得无事件触发地与父亲彻底和解或彻底断绝关系。",
+      "evidence_sections": [10, 12, 18], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-06", "character": "周野", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得以长篇直白独白替代其稳定的行动表达模式。",
+      "evidence_sections": [1, 11, 12], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-07", "character": "周野", "constraint_type": "boundary",
+      "hardness": "soft", "constraint": "可以逐渐信任林晚，但信任应由共同劳动、删帖和持续在场推动。",
+      "evidence_sections": [4, 6, 7, 12], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-08", "character": "周野", "constraint_type": "boundary",
+      "hardness": "hard", "constraint": "可以接受扩店与他人资金，但必须保留其对工艺与自主性的选择权。",
+      "evidence_sections": [16, 17], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-09", "character": "周野", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "会记录熟客细节，关心通过精确的小动作体现。",
+      "evidence_sections": [10], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "zhouye-10", "character": "周野", "constraint_type": "boundary",
+      "hardness": "hard", "constraint": "可以表达愤怒，但不得无铺垫地对林晚施加暴力或人格羞辱。",
+      "evidence_sections": [6, 10, 14], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+
+    {
+      "id": "jiqing-01", "character": "季晴", "constraint_type": "allowed",
+      "hardness": "hard", "constraint": "说话直接、务实，会用具体行动把林晚从内耗中拉出来。",
+      "evidence_sections": [14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-02", "character": "季晴", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "作为互联网公司 HRBP，对工作压力、流量与现实成本敏感。",
+      "evidence_sections": [1, 14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-03", "character": "季晴", "constraint_type": "allowed",
+      "hardness": "hard", "constraint": "在朋友危机时愿意到场、借钱并承担现实风险。",
+      "evidence_sections": [14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-04", "character": "季晴", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得在缺少重大事件时突然背叛、公开羞辱或利用林晚。",
+      "evidence_sections": [14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-05", "character": "季晴", "constraint_type": "forbidden",
+      "hardness": "hard", "constraint": "不得知道她没有被告知、没有看到消息或没有亲历的私密事实。",
+      "evidence_sections": [14], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-06", "character": "季晴", "constraint_type": "forbidden",
+      "hardness": "soft", "constraint": "不得长期只充当无条件赞同者，她应提出现实反问和边界提醒。",
+      "evidence_sections": [14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-07", "character": "季晴", "constraint_type": "boundary",
+      "hardness": "hard", "constraint": "可以强势介入林晚的危机，但不能替林晚向周野作出承诺。",
+      "evidence_sections": [14], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-08", "character": "季晴", "constraint_type": "boundary",
+      "hardness": "soft", "constraint": "可以离开高压职业，但转变必须由健康、价值观或长期倦怠铺垫。",
+      "evidence_sections": [16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-09", "character": "季晴", "constraint_type": "allowed",
+      "hardness": "soft", "constraint": "表达关心时倾向短句、追问和可执行建议。",
+      "evidence_sections": [14, 16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    },
+    {
+      "id": "jiqing-10", "character": "季晴", "constraint_type": "boundary",
+      "hardness": "hard", "constraint": "可以提供大额借款，但金额、偿还预期和风险必须在正文中明确。",
+      "evidence_sections": [16], "observed_status": "satisfied", "review_status": "provisional_codex"
+    }
+  ]
+}

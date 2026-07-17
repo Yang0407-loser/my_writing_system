@@ -19,12 +19,14 @@ function post(url,body){return req(url,{method:'POST',headers:{'Content-Type':'a
 function put(url,body){return req(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
 
 // Writing
+export const createTask=()=>post('/tasks',{});
 export const startWriting=(body,mode)=>req('/write?mode='+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 export const getStatus=(id)=>req('/status/'+id);
 export const getStream=(id,lastId)=>req('/stream/'+id+'?last_id='+encodeURIComponent(lastId)+'&count=50');
 export const sendDecision=(id,phase,action,fb='')=>req('/tasks/'+id+'/decide?phase='+phase+'&action='+action+'&feedback='+encodeURIComponent(fb),{method:'POST'});
 export const continueWriting=(id,body)=>req('/tasks/'+id+'/continue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 export const updateOutline=(id,outline)=>post('/tasks/'+id+'/update-outline',{outline});
+export const deleteTask=(id)=>req('/tasks/'+id,{method:'DELETE'});
 
 // Generate
 export const genWorldSetting=(topic)=>post('/api/generate/world-setting',{topic});
@@ -77,27 +79,21 @@ export const deleteSubplot=(id)=>req('/api/subplots/'+id,{method:'DELETE'});
 // Map
 export const fullMap=(tid)=>req('/api/map/full?task_id='+tid);
 
-// History
-export const listHistory=()=>req('/tasks?limit=30');
 
 // Impact
 export const changeImpact=(type,name,change)=>req('/api/impact?type='+type+'&name='+encodeURIComponent(name)+'&change='+encodeURIComponent(change));
 
-// Projects
-export const createProject=(name='未命名项目')=>post('/api/projects',{name});
-export const listProjects=()=>req('/api/projects');
-export const getProject=(id)=>req('/api/projects/'+id);
-export const deleteProject=(id)=>req('/api/projects/'+id,{method:'DELETE'});
-export const saveDraft=(id,draft)=>req('/api/projects/'+id+'/draft',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft})});
-export const getDraft=(id)=>req('/api/projects/'+id+'/draft');
-export const saveWorldSetting=(id,text)=>req('/api/projects/'+id+'/world-setting',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
-export const saveOutlineNodes=(id,nodes)=>post('/api/projects/'+id+'/outline',{nodes});
-export const getOutlineNodes=(id)=>req('/api/projects/'+id+'/outline');
-export const stageDeleteNode=(id,body)=>post('/api/projects/'+id+'/outline/delete-node',body);
-export const undoDeleteNode=(id)=>req('/api/projects/'+id+'/outline/undo-delete',{method:'POST'});
-export const getUndoCount=(id)=>req('/api/projects/'+id+'/outline/undo-count');
-export const getOutlineVersions=(id)=>req('/api/projects/'+id+'/outline/versions');
-export const restoreOutlineVersion=(id,vid)=>req('/api/projects/'+id+'/outline/restore/'+vid,{method:'POST'});
+// Projects (legacy — now task-scoped)
+export const listHistory=()=>req('/tasks');
+export const saveDraft=(id,draft)=>req('/tasks/'+id+'/draft',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({draft})});
+export const getDraft=(id)=>req('/tasks/'+id+'/draft');
+export const saveOutlineNodes=(id,nodes)=>post('/tasks/'+id+'/outline',{nodes});
+export const getOutlineNodes=(id)=>req('/tasks/'+id+'/outline');
+export const getOutlineVersions=(id)=>req('/tasks/'+id+'/outline/versions');
+export const restoreOutlineVersion=(id,vid)=>req('/tasks/'+id+'/outline/restore/'+vid,{method:'POST'});
+export const stageDeleteNode=(id,body)=>post('/tasks/'+id+'/outline/delete-node',body);
+export const undoDeleteNode=(id)=>req('/tasks/'+id+'/outline/undo-delete',{method:'POST'});
+export const getUndoCount=(id)=>req('/tasks/'+id+'/outline/undo-count');
 
 // Factions
 export const listFactions=(tid='')=>req('/api/factions?task_id='+tid);

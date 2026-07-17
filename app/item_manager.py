@@ -106,6 +106,15 @@ def update_item(iid: str, updates: dict) -> dict | None:
         conn.close()
 
 
+def list_items(task_id: str) -> list[dict]:
+    """返回指定任务的所有物品。"""
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT * FROM items WHERE task_id = ? ORDER BY updated_at DESC", (task_id,)
+    ).fetchall()
+    return [_row_to_dict(r) for r in rows]
+
+
 def get_character_inventory(character_id: str) -> list[dict]:
     conn = _get_conn()
     try:

@@ -99,12 +99,13 @@ def get_faction(fid: str) -> dict | None:
 
 
 def list_factions(task_id: str = "", ftype: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        where = []; params = []
-        if task_id: where.append("task_id=?"); params.append(task_id)
+        where = ["task_id=?"]; params = [task_id]
         if ftype: where.append("type=?"); params.append(ftype)
-        clause = ("WHERE " + " AND ".join(where)) if where else ""
+        clause = "WHERE " + " AND ".join(where)
         rows = conn.execute(
             f"SELECT * FROM factions {clause} ORDER BY strength DESC", params
         ).fetchall()
@@ -207,12 +208,13 @@ def set_relation(task_id: str, faction_a: str, faction_b: str,
 
 
 def get_relations(task_id: str = "", faction_name: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        where = []; params = []
-        if task_id: where.append("task_id=?"); params.append(task_id)
+        where = ["task_id=?"]; params = [task_id]
         if faction_name: where.append("(faction_a=? OR faction_b=?)"); params.extend([faction_name]*2)
-        clause = ("WHERE " + " AND ".join(where)) if where else ""
+        clause = "WHERE " + " AND ".join(where)
         rows = conn.execute(
             f"SELECT * FROM faction_relations {clause}", params
         ).fetchall()

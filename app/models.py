@@ -142,6 +142,7 @@ class NarrativeEventModel(BaseModel):
 # 请求 / 响应
 # ============================================================
 class WriteRequest(BaseModel):
+    task_id: str = ""  # draft task UUID；为空时 Celery 自动生成
     topic: str = Field(..., min_length=1)
     reference_text: str = Field(..., min_length=1)
     target_words_per_section: int = Field(10000, ge=500)
@@ -150,7 +151,7 @@ class WriteRequest(BaseModel):
     world_setting: str = ""      # 世界观设定
     story_synopsis: str = ""     # 故事梗概
 
-    style_profile: dict = {}  # 50维风格参数（AI分析或预设）
+    style_profile: dict = {}  # 4 个主要风格控制量 + 兼容统计字段
     outline: list[dict] = []  # 用户预设大纲（可选，跳过 Planner 生成）
 
 
@@ -169,64 +170,24 @@ class ReviseRequest(BaseModel):
 # 风格 / 大纲
 # ============================================================
 class StyleProfile(BaseModel):
-    """50 维风格模型 —— AI 可全量填充，用户可选精细调节。"""
-    # 元风格参数
-    narrative_density: float = Field(0.7)  # 元风格参数：文本压缩程度 (0=高度留白, 0.5=适度, 1=精密)
-    # A. 情感基调 (12)
-    primary_emotion: str = "中性"
-    emotion_intensity: int = Field(50, ge=0, le=100)
-    emotion_subtlety: str = "含蓄"
-    emotion_blend: dict = Field(default_factory=dict)
-    emotion_curve: str = "平稳"
-    emotional_peaks: str = "均匀分布"
-    catharsis_style: str = "渐进式"
-    narrative_empathy: str = "适度共情"
-    inner_monologue_ratio: float = Field(0.2, ge=0, le=1)
-    show_vs_tell: str = "平衡"
-    emotional_registry: str = "文学抒情"
-    sensory_anchoring: bool = True
-    emotional_contrast: str = "渐进演变"
-    # B. 句式节奏 (16)
-    short_sentence_ratio: float = Field(0.3, ge=0, le=1)
-    medium_sentence_ratio: float = Field(0.5, ge=0, le=1)
-    long_sentence_ratio: float = Field(0.2, ge=0, le=1)
-    sentence_length_variance: str = "适度波动"
-    sentence_pattern: str = "长短交替"
-    sentence_opening_style: str = "变化丰富"
-    complex_sentence_ratio: str = "平衡"
-    paragraph_rhythm: str = "均匀块状"
-    paragraph_length_avg: int = 200
-    paragraph_opening_style: str = "混合"
-    dialogue_ratio: float = Field(0.3, ge=0, le=1)
-    dialogue_mixing: str = "混合"
-    dialogue_tag_style: str = "稀疏标记"
-    pacing: str = "中等"
-    scene_transition: str = "过渡铺垫"
-    time_dilation: str = "实时"
-    tension_curve: str = "波浪起伏"
-    # C. 修辞用词 (22)
-    metaphor_frequency: str = "适度"
-    simile_metaphor_ratio: str = "平衡"
-    personification: str = "适度"
-    synesthesia: str = "极少"
-    rhetorical_devices: list[str] = Field(default_factory=list)
-    rhetorical_density: float = Field(0.1, ge=0, le=1)
-    vocabulary_register: str = "文学化"
-    vocabulary_richness: str = "中等"
-    chengyu_frequency: str = "适度"
-    dialect_flavor: str = "无"
-    foreign_loanwords: str = "偶尔"
-    adjective_density: float = Field(0.15, ge=0, le=1)
-    adverb_policy: str = "适度"
-    modifier_position: str = "平衡"
-    sensory_density: str = "适度"
-    sensory_spectrum: str = "视觉为主"
-    color_use: str = "暖色调"
-    imagery_domain: str = "自然"
+    """精简风格模型 —— 参考文本提供底色，4 个旋钮做微调。"""
     # 元数据
-    style_brief: str = ""
     reference_text: str = ""
     preset_name: str = ""
+    # 4 个旋钮
+    dialogue_ratio: float = Field(0.3, ge=0, le=1)     # 对话占比
+    emotion_intensity: int = Field(50, ge=10, le=90)     # 情感强度: 克制←50→浓郁
+    sentence_preference: str = "balanced"                # 句长偏好: short | balanced | long
+    sensory_density: str = "medium"                      # 感官密度: sparse | medium | rich
+    # 保留兼容字段
+    narrative_density: float = 0.5
+    adjective_density: float = 0.15
+    paragraph_length_avg: int = 200
+    short_sentence_ratio: float = 0.33
+    medium_sentence_ratio: float = 0.34
+    long_sentence_ratio: float = 0.33
+    dialogue_tag_style: str = "动作替代"
+    pacing: str = "中等"
 
 
 class SubsectionItem(BaseModel):
@@ -368,6 +329,13 @@ class TaskStatus(BaseModel):
     ai_detect_log: list[dict] | None = None   # AI痕迹检测日志
     section_reviews: list[dict] | None = None  # 分节审阅累积
     token_usage: int | None = None  # v0.9.1: 累计 token 消耗 (prompt + completion)
+    token_cost: dict | None = None  # v0.9.2: {total_tokens, est_cost_usd, total_time_s}
+    topic: str | None = None
+    world_setting: str | None = None
+    story_synopsis: str | None = None
+    reference_text: str | None = None
+    style_profile: dict | None = None
+    target_words_per_section: int | None = None
 
 
 class FinalResult(BaseModel):

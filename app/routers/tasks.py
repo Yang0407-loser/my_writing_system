@@ -1,6 +1,10 @@
 import os
 import re
+import uuid
+import logging
 from fastapi import APIRouter, Header, HTTPException, Query
+
+logger = logging.getLogger(__name__)
 from ..models import WriteRequest, WriteResponse, TaskStatus, ReviseRequest
 from ..dependencies import bb
 from ..task_store import TaskStore
@@ -9,23 +13,24 @@ from ..celery_app import celery_app
 
 router = APIRouter(tags=["tasks"])
 
+
+@router.post("/tasks")
+def create_draft_task():
+    """创建 draft task，返回 task_id。之后的所有编辑操作都以此 task_id 为锚点。"""
+    task_id = str(uuid.uuid4())
+    bb.set(task_id, "status", "draft")
+    return {"task_id": task_id, "status": "draft"}
+
+
 @router.post("/write", response_model=WriteResponse)
 def create_writing_task(
     req: WriteRequest,
     mode: str = Query("celery", description="执行模式: 'celery' 或 'interactive'"),
     x_api_key: str = Header("", alias="X-API-Key"),
 ):
-    """提交写作任务。
-
-    - mode=celery: Celery 异步执行，通过 GET /status/{task_id} 轮询进度，
-      通过 GET /stream/{task_id} 获取流式事件。
-    - mode=interactive: 同上，但每节完成后暂停等待用户确认，
-      用户通过 POST /tasks/{task_id}/decide 发送决策。
-    - X-API-Key: 用户自己的 API Key（可选，不填则使用服务器 Key）。
-    """
     interactive = (mode == "interactive")
 
-    task = writing_task.delay(
+    task_kwargs = dict(
         topic=req.topic,
         reference_text=req.reference_text,
         target_words_per_section=req.target_words_per_section,
@@ -34,14 +39,22 @@ def create_writing_task(
         interactive=interactive,
         world_setting=req.world_setting,
         story_synopsis=req.story_synopsis,
-
         style_profile=req.style_profile,
         outline=req.outline,
         api_key=x_api_key,
     )
-    bb.set(task.id, "status", "pending")
-    bb.set(task.id, "mode", mode)
-    return WriteResponse(task_id=task.id, status="pending")
+
+    if req.task_id:
+        # 使用已有的 draft task_id
+        task_id = req.task_id
+        writing_task.apply_async(kwargs=task_kwargs, task_id=task_id)
+    else:
+        task = writing_task.delay(**task_kwargs)
+        task_id = task.id
+
+    bb.set(task_id, "status", "pending")
+    bb.set(task_id, "mode", mode)
+    return WriteResponse(task_id=task_id, status="pending")
 
 
 # ── 状态查询 ────────────────────────────────────────────────────
@@ -73,6 +86,13 @@ def get_task_status(task_id: str):
         ai_detect_log=data.get("ai_detect_log"),
         section_reviews=data.get("section_reviews"),
         token_usage=data.get("token_usage"),
+        token_cost=data.get("token_cost"),
+        topic=data.get("topic") or data.get("config_topic"),
+        world_setting=data.get("world_setting") or data.get("config_world_setting"),
+        story_synopsis=data.get("story_synopsis") or data.get("config_story_synopsis"),
+        reference_text=data.get("reference_text") or data.get("config_reference_text"),
+        style_profile=data.get("style_profile") or data.get("config_style_profile"),
+        target_words_per_section=data.get("target_words_per_section") or data.get("config_target_words"),
     )
 
 
@@ -172,8 +192,7 @@ def task_decision(
         try:
             celery_app.control.revoke(task_id, terminate=False)
         except Exception:
-            pass
-        bb.set(task_id, "status", "stopped")
+            logger.warning(f"Celery 任务撤销失败: {task_id}", exc_info=True)
         bb.xadd_event(task_id, {"event": "cancelled", "message": "用户停止"})
 
     return {"status": "ok", "phase": phase, "action": action}
@@ -360,3 +379,38 @@ def continue_writing(task_id: str, body: dict, x_api_key: str = Header("", alias
     bb.set(task.id, "mode", "interactive" if interactive else "celery")
     bb.set(task.id, "continue_from", task_id)
     return {"task_id": task.id, "status": "pending", "continue_from": task_id, "total_new_sections": len(offset_outline)}
+
+
+# ── 任务列表 / 删除 ──────────────────────────────────────────────
+
+@router.get("/tasks")
+def list_tasks():
+    """列出所有历史任务。"""
+    ts = TaskStore()
+    return {"tasks": ts.list_all()}
+
+
+@router.delete("/tasks/{task_id}")
+def delete_task(task_id: str):
+    """删除任务：清 Redis、SQLite 归档和该任务的向量块。"""
+    try:
+        bb.delete_checkpoint(task_id)
+        bb._redis.delete(task_id)  # 主 hash
+        bb._redis.delete(f"stream:{task_id}")  # stream key
+    except Exception:
+        logger.warning(f"任务检查点清理失败: {task_id}", exc_info=True)
+    try:
+        ts = TaskStore()
+        ts.delete(task_id)
+    except Exception:
+        logger.warning(f"任务历史删除失败: {task_id}", exc_info=True)
+    try:
+        from ..vector_store import VectorStore
+        deleted_chunks = VectorStore().cleanup_task(task_id)
+        logger.info(f"任务向量清理完成: task={task_id[:8]} chunks={deleted_chunks}")
+    except Exception:
+        logger.warning(
+            f"任务向量清理失败: task={task_id[:8]} feature=rag_cleanup fallback=retain",
+            exc_info=True,
+        )
+    return {"status": "deleted", "task_id": task_id}

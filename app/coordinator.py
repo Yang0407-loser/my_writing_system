@@ -18,7 +18,7 @@ from .narrative_event import EventGraph, NarrativeEvent
 from .utils.prompt_templates import OUTLINE_REVIEW_PROMPT
 from .utils.json_parser import parse_json
 from .utils.word_counter import count_chinese_chars
-from .utils.llm_client import set_api_key, reset_token_counter
+from .utils.llm_client import set_api_key, reset_token_counter, get_cumulative_tokens, get_token_breakdown, set_cost_label
 from .config import settings, set_task_id
 
 logger = logging.getLogger("writing_system.coordinator")
@@ -132,6 +132,13 @@ def writing_task(
             "config_outline": outline or [],
             "api_key": api_key,
         }
+        # 同步 config 到主 Redis hash，让 /status 可返回
+        bb.set(task_id, "topic", topic)
+        bb.set(task_id, "world_setting", world_setting)
+        bb.set(task_id, "story_synopsis", story_synopsis)
+        bb.set(task_id, "reference_text", reference_text)
+        bb.set(task_id, "style_profile", style_profile or {})
+        bb.set(task_id, "target_words_per_section", target_words_per_section)
         if characters is None:
             characters = []
         state["characters"] = characters
@@ -161,6 +168,7 @@ def writing_task(
 
         bb.set(task_id, "status", "running")
         phase = state.get("phase", "characters")
+        phase_timings = {}
 
     try:
         # ── 阶段路由 ──
@@ -246,9 +254,14 @@ def writing_task(
                 break
 
             elapsed = time.time() - t0
+            phase_timings[p] = round(elapsed, 1)
             logger.info(f"[{task_id[:8]}] <<< 完成阶段: {p} (耗时 {elapsed:.1f}s)")
 
     except Exception as e:
+        logger.warning(
+            f"[{task_id[:8]}] 任务失败，累计 Token: {get_cumulative_tokens()}, "
+            f"阶段耗时: {_json.dumps(phase_timings) if phase_timings else 'N/A'}"
+        )
         bb.set(task_id, "status", "failed")
         bb.set(task_id, "error", str(e))
         bb.xadd_event(task_id, {"event": "error", "message": str(e)[:500]})
@@ -262,6 +275,84 @@ def writing_task(
         timeline = _json.loads(timeline_raw) if isinstance(timeline_raw, str) else (timeline_raw or [])
     except (_json.JSONDecodeError, TypeError):
         timeline = []
+
+    # ── v0.9.2: Token 成本 & 端到端延迟汇总 ──
+    total_tokens = get_cumulative_tokens()
+    total_time = sum(phase_timings.values())
+    est_cost = total_tokens * 0.000000435  # DeepSeek V4 Pro input price (cache miss)
+    token_breakdown = get_token_breakdown()
+
+    logger.info(
+        f"[{task_id[:8]}] ====== 性能汇总 ======"
+    )
+    logger.info(
+        f"[{task_id[:8]}] 总耗时: {total_time:.1f}s | "
+        f"总 Token: {total_tokens} | 预估成本: ${est_cost:.4f}"
+    )
+    if token_breakdown:
+        logger.info(
+            f"[{task_id[:8]}] Agent Token 分布: {_json.dumps(token_breakdown, ensure_ascii=False)}"
+        )
+    logger.info(
+        f"[{task_id[:8]}] 各阶段耗时: {_json.dumps(phase_timings, ensure_ascii=False)}"
+    )
+
+    # ── v0.9.2: 事实验证统计 ──
+    try:
+        from .world_state import fact_stats
+        fs = fact_stats.summary()
+        logger.info(
+            f"[{task_id[:8]}] 事实验证: total={fs['total_facts']} "
+            f"rule(subj={fs['rule_subjective']}/obj={fs['rule_objective']}/mixed={fs['rule_mixed']}) "
+            f"llm(ok={fs['llm_verified']}/rej={fs['llm_rejected']}) "
+            f"矛盾(detect={fs['contradictions_detected']}/confirm={fs['contradictions_confirmed']})"
+        )
+        logger.info(
+            f"[{task_id[:8]}] 抽样事实: {_json.dumps(fs['sample_facts'][:10], ensure_ascii=False)}"
+        )
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 事实验证统计记录失败", exc_info=True)
+
+    # ── v0.9.5: 风格基线（4 维标签 → 预期区间，供离线对比） ──
+    try:
+        initial_style = state.get("config_style_profile") or state.get("style_profile") or {}
+        style_baseline = {
+            "emotion_intensity": initial_style.get("emotion_intensity", 50),
+            "dialogue_ratio": initial_style.get("dialogue_ratio", 0.3),
+            "sentence_preference": initial_style.get("sentence_preference", "balanced"),
+            "sensory_density": initial_style.get("sensory_density", "medium"),
+        }
+        if style_baseline:
+            bb.set(task_id, "style_baseline", style_baseline)
+            logger.info(
+                f"[{task_id[:8]}] 风格基线: {_json.dumps(style_baseline, ensure_ascii=False)}"
+                f"（完成后运行 eval 对比漂移量）"
+            )
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 风格基线保存失败", exc_info=True)
+
+    # ── v0.9.3: 逐节延迟 p50/p95 ──
+    try:
+        section_timings = state.get("section_timings") or result.get("section_timings", []) if isinstance(result, dict) else []
+        if section_timings:
+            latencies = sorted([t["total_time_s"] for t in section_timings])
+            n = len(latencies)
+            p50 = latencies[int(n * 0.5)] if n > 0 else 0
+            p95 = latencies[int(n * 0.95)] if n > 1 else latencies[-1] if n > 0 else 0
+            avg_latency = sum(latencies) / n if n > 0 else 0
+            bb.set(task_id, "section_timings", section_timings)
+            logger.info(f"[{task_id[:8]}] 逐节延迟 (n={n}): avg={avg_latency:.1f}s p50={p50:.1f}s p95={p95:.1f}s")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 逐节延迟统计失败", exc_info=True)
+
+    # 写入黑板，前端可展示
+    bb.set(task_id, "phase_timings", phase_timings)
+    bb.set(task_id, "token_cost", {
+        "total_tokens": total_tokens,
+        "est_cost_usd": round(est_cost, 4),
+        "total_time_s": round(total_time, 1),
+        "by_agent": token_breakdown,
+    })
 
     return {
         "task_id": task_id, "topic": state.get("config_topic", ""),
@@ -313,7 +404,7 @@ def _phase_style(bb, task_id, state):
     """Phase 1: 风格分析。若用户已提供 style_profile，直接使用。"""
     provided = state.get("config_style_profile") or {}
 
-    if provided.get("style_brief"):
+    if provided.get("emotion_intensity"):
         bb.set(task_id, "style", provided)
         state["style_profile"] = provided
         _add_timeline(bb, task_id, "style", "system", "使用用户提供的风格参数")
@@ -324,8 +415,6 @@ def _phase_style(bb, task_id, state):
 
     sa = StyleAnalyzer()
     style = sa.analyze(reference_text=state.get("config_reference_text", ""))
-    if not style.get("style_brief"):
-        style["style_brief"] = sa.build_brief(style)
     bb.set(task_id, "style", style)
     state["style_profile"] = style
     _add_timeline(bb, task_id, "style", "style_analyst", "完成风格分析")
@@ -434,9 +523,7 @@ def _phase_narrative_rhythm(bb, task_id, state):
     style = state.get("style_profile") or {}
     topic = state.get("config_topic", "")
 
-    style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
-    if not style_brief:
-        style_brief = f"情感强度{style.get('emotion_intensity', 50)}/100"
+    style_summary = f"情感{style.get('emotion_intensity', 50)}/100 句长{style.get('sentence_preference', 'balanced')} 感官{style.get('sensory_density', 'medium')}" if isinstance(style, dict) else ""
 
     # 简化的节奏生成：按小节位置计算 intensity 曲线
     total_subs = sum(len(s.get("subsections", [])) for s in outline_v2)
@@ -535,6 +622,14 @@ def _phase_writing(bb, task_id, state):
     topic = state.get("config_topic", "")
     style = state.get("style_profile") or {}
     outline = state.get("outline_v2") or []
+    # 从 Redis 刷新大纲，获取用户最新编辑（subsection status 变更等）
+    try:
+        redis_outline = bb.get(task_id, "outline")
+        if redis_outline and isinstance(redis_outline, list) and len(redis_outline) > 0:
+            outline = redis_outline
+            state["outline_v2"] = outline
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] Redis 大纲刷新失败，使用本地缓存", exc_info=True)
     characters = state.get("characters") or []
     character_arcs = state.get("character_arcs") or []
     interactive = state.get("config_interactive", False)
@@ -547,18 +642,43 @@ def _phase_writing(bb, task_id, state):
     event_graph = EventGraph(bb, task_id)
     world_state = WorldStateManager(bb, task_id, event_graph=event_graph) if settings.ENABLE_WORLD_STATE else None
     # 将角色弧线里程碑注入 EventGraph
+    arc_event_ids: dict[str, list[str]] = {}  # character_id -> [event_id, ...]
+    section_event_ids: dict[int, list[str]] = {}  # section -> [event_id, ...]
+
     for arc in (character_arcs or []):
         if isinstance(arc, dict) and arc.get("key_milestones"):
             cid = arc.get("character_id", "")
+            eids: list[str] = []
             for ms in arc["key_milestones"]:
                 desc = ms.get("event", ms.get("description", ""))
                 if desc:
-                    event_graph.add_arc_milestone(
+                    eid = event_graph.add_arc_milestone(
                         description=desc,
                         section=ms.get("section", 0), subsection=ms.get("subsection", 0),
                         character_id=cid,
                         weight=5,
                     )
+                    eids.append(eid)
+                    sec = ms.get("section", 0)
+                    if sec:
+                        section_event_ids.setdefault(sec, []).append(eid)
+            if eids:
+                arc_event_ids[cid] = eids
+
+    # v0.9.4: 创建事件边 —— 同角色连续里程碑 + 同章节事件互连
+    edge_count = 0
+    for eids in arc_event_ids.values():
+        for i in range(len(eids) - 1):
+            event_graph.link_events(eids[i], eids[i + 1])
+            edge_count += 1
+    for eids in section_event_ids.values():
+        for i in range(len(eids)):
+            for j in range(i + 1, len(eids)):
+                event_graph.link_events(eids[i], eids[j])
+                edge_count += 1
+    if edge_count > 0:
+        logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条事件因果边 "
+                    f"({len(arc_event_ids)} 个角色弧, {len(section_event_ids)} 个章节)")
 
     bb.set(task_id, "status", "writing")
     bb.xadd_event(task_id, {"event": "phase_change", "phase": "writing"})
@@ -576,6 +696,7 @@ def _phase_writing(bb, task_id, state):
                 "task_id": task_id, "section": 0, "subsection": 0,
                 "title": "前作", "topic": topic,
             })
+        vector_store.enforce_task_limit(task_id)
         _add_timeline(bb, task_id, "writing", "system",
                       f"续写模式：前作 {count_chinese_chars(prev_draft)} 字已入库 ({len(chunks)} 块)")
 
@@ -680,6 +801,8 @@ def _phase_writing(bb, task_id, state):
             relation_context=relation_context,
             improvement_context=improvement_context,
             experience_context=experience_context,
+            narrative_beats=state.get("narrative_beats"),
+            reference_text=state.get("config_reference_text", ""),
         )
     except Exception as e:
         # Writer.run() 内部已有 per-subsection 错误处理，这里做最外层兜底
@@ -691,6 +814,9 @@ def _phase_writing(bb, task_id, state):
     section_texts = result.get("section_texts", {})
     all_handover = result.get("handover_notes", [])
     all_backrefs = result.get("backref_suggestions", [])
+    section_timings = result.get("section_timings", [])
+    if section_timings:
+        state["section_timings"] = section_timings
 
     # 合并 on_section_done 中累积的数据（交互模式下由回调填充）
     if _accum["section_texts"]:
@@ -755,7 +881,7 @@ def _phase_writing(bb, task_id, state):
                         existing_names.add(item)
                         _add_timeline(bb, task_id, "writing", "system", f"伏笔已归档: {item[:40]}")
                     except Exception:
-                        pass
+                        logger.warning(f"[{task_id[:8]}] 伏笔归档失败: {item[:40]}", exc_info=True)
     except Exception as e:
         logger.warning(f"伏笔自动归档失败: {e}", exc_info=True)
 
@@ -860,6 +986,10 @@ def _phase_continuity(bb, task_id, state):
         section_summary_parts.append(f"第{i}节 ({count_chinese_chars(section_texts.get(i, ''))}字): {preview}...")
     section_summaries = "\n".join(section_summary_parts)
 
+    # v0.9.4: 矛盾检测统计埋点
+    total_backrefs = len(backrefs)
+    sections_with_backrefs = len(set(s.get("from_section") for s in backrefs if s.get("from_section")))
+
     fix_checklist = ce.run(backrefs, section_summaries)
     bb.set(task_id, "fix_checklist", fix_checklist)
     state["fix_checklist"] = fix_checklist
@@ -870,6 +1000,8 @@ def _phase_continuity(bb, task_id, state):
                   f"生成修正清单: {critical_count} 严重 + {minor_count} 轻微")
 
     # 执行 critical 修正
+    fixes_applied = 0
+    fixes_skipped = 0
     if fix_checklist.get("critical_fixes"):
         bb.set(task_id, "status", "fixing")
         bb.xadd_event(task_id, {"event": "phase_change", "phase": "fixing"})
@@ -883,7 +1015,23 @@ def _phase_continuity(bb, task_id, state):
                 _add_timeline(bb, task_id, "fixing", "writer",
                               f"修正第{target_sec}节", fix.get("description", "")[:200],
                               section=target_sec)
+                fixes_applied += 1
+            else:
+                fixes_skipped += 1
         state["section_texts"] = section_texts
+
+    # 写入矛盾检测统计
+    import json as _json
+    contradiction_stats = {
+        "total_backrefs": total_backrefs,
+        "critical_fixes": critical_count,
+        "minor_fixes": minor_count,
+        "fixes_applied": fixes_applied,
+        "fixes_skipped": fixes_skipped,
+        "sections_with_backrefs": sections_with_backrefs,
+    }
+    bb.set(task_id, "contradiction_stats", _json.dumps(contradiction_stats, ensure_ascii=False))
+    logger.info(f"[矛盾检测] 检出{total_backrefs}条 -> 严重{critical_count}/轻微{minor_count} -> 执行{fixes_applied}/跳过{fixes_skipped}")
 
     return state
 
@@ -911,7 +1059,19 @@ def _phase_review(bb, task_id, state):
         subs = vol.get("subsections", [])
         leaves = [s.get("title", "") for s in subs]
         volume_labels[vi] = {"title": vol_title, "leaves": leaves}
-    for i in sorted(section_texts.keys()):
+    # v0.9.4: 间隔抽样审阅（每3节1次），减少 token 消耗
+    sorted_sections = sorted(section_texts.keys())
+    total_sections = len(sorted_sections)
+    if total_sections > 6:
+        sample_count = len([idx for idx in range(total_sections) if idx % 3 == 0])
+        logger.info(f"[{task_id[:8]}] Reviewer 采样模式: 每3节1次, {sample_count}/{total_sections} 节参与审阅")
+    else:
+        logger.info(f"[{task_id[:8]}] Reviewer 全审模式: {total_sections} 节 ≤6, 全部审阅")
+    skipped_sections = []
+    for idx, i in enumerate(sorted_sections):
+        if idx % 3 != 0 and total_sections > 6:
+            skipped_sections.append(i)
+            continue  # 跳过非采样节（但总节数≤6时全审）
         try:
             sr = reviewer.review_section(i, topic, style, section_texts[i])
             sr["section"] = i
@@ -929,6 +1089,10 @@ def _phase_review(bb, task_id, state):
                 "leaf_titles": vi.get("leaves", []),
                 "_fallback": True,
             })
+
+    if skipped_sections:
+        logger.info(f"[{task_id[:8]}] Reviewer 跳过 {len(skipped_sections)} 节: {skipped_sections}")
+    logger.info(f"[{task_id[:8]}] Reviewer 实际审阅 {len(section_reviews)} 节")
 
     handover_chain_text = "\n".join(
         f"第{n.get('from_section', '?')}节→第{n.get('to_section', '?')}节: "
@@ -984,6 +1148,47 @@ def _phase_review(bb, task_id, state):
         "character_consistency": global_review.get("character_consistency", ""),
         "character_arc_progress": global_review.get("character_arc_progress", ""),
     }
+
+    # ── v0.9.5: 量化指标（风格硬统计 / 伏笔健康 / 交接穿透率） ──
+    assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
+
+    # 1. 风格硬统计
+    try:
+        from .style_stats import style_report
+        style_metrics = style_report(assembled, style)
+        review["style_metrics"] = style_metrics
+        if style_metrics.get("deviation"):
+            dev = style_metrics["deviation"]
+            _add_timeline(bb, task_id, "review", "system",
+                          f"风格偏差: {dev['verdict']} (总偏差={dev['total_deviation']})")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 风格硬统计计算失败", exc_info=True)
+
+    # 2. 伏笔健康度
+    try:
+        from .foreshadowing_store import get_foreshadowing_summary
+        max_section = max(section_texts.keys()) if section_texts else 0
+        fs_summary = get_foreshadowing_summary(task_id, max_section)
+        review["foreshadowing_health"] = fs_summary
+        _add_timeline(bb, task_id, "review", "system",
+                      f"伏笔健康度: {fs_summary['health']} "
+                      f"({fs_summary['resolved']}/{fs_summary['total']} 已回收, "
+                      f"{fs_summary['broken']} 断裂)")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 伏笔健康度检查失败", exc_info=True)
+
+    # 3. 交接笔记穿透率
+    try:
+        from .handover_penetration import compute_handover_penetration
+        hp_result = compute_handover_penetration(handover_chain, section_texts)
+        review["handover_penetration"] = hp_result
+        _add_timeline(bb, task_id, "review", "system",
+                      f"交接穿透率: {hp_result['verdict']} "
+                      f"({hp_result['total_hits']}/{hp_result['total_keywords']} "
+                      f"= {hp_result['overall_penetration']:.0%})")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 交接穿透率计算失败", exc_info=True)
+
     bb.set(task_id, "review", review)
     state["review_result"] = review
 
@@ -1081,11 +1286,7 @@ def _assemble_draft(state):
 
 def _writer_review_outline(writer, topic, style, outline) -> dict:
     """撰稿人审查大纲的可执行性。"""
-    style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
-    style_summary = style_brief if style_brief else (
-        f"情感强度{style.get('emotion_intensity', 50)}/100，"
-        f"段落长度约{style.get('paragraph_length_avg', 200)}字"
-    )
+    style_summary = f"情感{style.get('emotion_intensity', 50)}/100 句长{style.get('sentence_preference', 'balanced')}" if isinstance(style, dict) else ""
     outline_text = _json.dumps(outline, ensure_ascii=False, indent=2)
     prompt = OUTLINE_REVIEW_PROMPT.format(
         reviewer_role="撰稿人", review_perspective="可执行性（结构是否合理、小节是否过多/过少、逻辑是否连贯）",

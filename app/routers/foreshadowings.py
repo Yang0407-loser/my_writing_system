@@ -25,21 +25,6 @@ class ForeshadowingBody(BaseModel):
 @router.get("")
 def list_foreshadowings(task_id: str = Query("")):
     items = fs.list_foreshadowings(task_id=task_id)
-
-    # 追溯补建：已有世界设定但无世界锚点 → 自动提取
-    if task_id and not any("world_anchor" in (f.get("tags") or []) for f in items):
-        try:
-            from ..project_store import get_project
-            from ..character_store import CharacterStore
-            proj = get_project(task_id)
-            if proj and proj.get("world_setting", "").strip():
-                chars = CharacterStore().list_all(limit=200)
-                n = fs.ensure_world_anchors(task_id, proj["world_setting"], chars)
-                if n:
-                    items = fs.list_foreshadowings(task_id=task_id)
-        except Exception:
-            pass
-
     return {"foreshadowings": items, "total": len(items)}
 
 

@@ -1,127 +1,51 @@
-"""经历事件线 —— 主角记忆库的长期记忆索引。
+"""Deprecated compatibility API for long-term experience events.
 
-与 ContextManager 互补：ContextManager 做短期压缩，ExperienceTimeline 做跨卷重要事件索引。
-
-P5a: 存储已迁移到 event_store，本模块保留 LLM 提取逻辑。
+``event_store`` is the sole persistence owner.  This module keeps the existing
+router and Writer imports stable while providing extraction/formatting only.
+The legacy ``experience.db`` file is intentionally left untouched as a
+recoverable backup, but this code no longer reads or writes it.
 """
 
-import json
-import uuid
-import os
-from pathlib import Path
-from .config import settings
+import logging
+
 from .utils.llm_client import get_llm_client
 from . import event_store as _es
 
-DB_PATH = os.path.join(os.path.dirname(settings.TASK_DB_PATH), "experience.db")
+
+logger = logging.getLogger(__name__)
 
 
-def _get_conn():
-    import sqlite3
-    Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS experience_events (
-            id TEXT PRIMARY KEY,
-            task_id TEXT DEFAULT '',
-            chapter INTEGER DEFAULT 0,
-            event_type TEXT DEFAULT 'major_event',
-            description TEXT DEFAULT '',
-            importance INTEGER DEFAULT 5,
-            related_characters TEXT DEFAULT '[]',
-            related_items TEXT DEFAULT '[]',
-            related_locations TEXT DEFAULT '[]',
-            emotional_impact TEXT DEFAULT '',
-            consequences TEXT DEFAULT '',
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """)
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_exp_task ON experience_events(task_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_exp_importance ON experience_events(importance DESC)")
-    conn.commit()
-    return conn
+def _to_legacy(event: dict) -> dict:
+    """Expose legacy field names without creating another stored record."""
+    result = dict(event)
+    result["event_type"] = result.get("type", result.get("event_type", "major_event"))
+    return result
 
 
 def add_event(data: dict) -> dict:
-    conn = _get_conn()
-    try:
-        eid = data.get("id") or str(uuid.uuid4())
-        for f in ("related_characters", "related_items", "related_locations"):
-            if f in data and isinstance(data[f], list):
-                data[f] = json.dumps(data[f], ensure_ascii=False)
-        conn.execute("""
-            INSERT OR REPLACE INTO experience_events
-            (id, task_id, chapter, event_type, description, importance,
-             related_characters, related_items, related_locations, emotional_impact, consequences)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            eid, data.get("task_id", ""), data.get("chapter", 0), data.get("event_type", "major_event"),
-            data.get("description", ""), data.get("importance", 5),
-            data.get("related_characters", "[]"), data.get("related_items", "[]"),
-            data.get("related_locations", "[]"), data.get("emotional_impact", ""),
-            data.get("consequences", ""),
-        ))
-        conn.commit()
-        # P5a: 双写到统一 event_store
-        try:
-            _es.add_event(
-                task_id=data.get("task_id", ""),
-                event_type=data.get("event_type", "major_event"),
-                description=data.get("description", ""),
-                chapter=data.get("chapter", 0),
-                importance=data.get("importance", 5),
-                emotional_impact=data.get("emotional_impact", ""),
-                consequences=data.get("consequences", ""),
-            )
-        except Exception:
-            pass
-        return get_event(eid)
-    finally:
-        conn.close()
+    return _to_legacy(_es.add_event(
+        task_id=data.get("task_id", ""),
+        event_type=data.get("event_type", "major_event"),
+        description=data.get("description", ""),
+        chapter=data.get("chapter", 0),
+        subsection=data.get("subsection", 0),
+        importance=data.get("importance", 5),
+        related_characters=list(data.get("related_characters") or []),
+        related_items=list(data.get("related_items") or []),
+        related_locations=list(data.get("related_locations") or []),
+        emotional_impact=data.get("emotional_impact", ""),
+        consequences=data.get("consequences", ""),
+    ))
 
 
 def get_event(eid: str) -> dict | None:
-    conn = _get_conn()
-    try:
-        row = conn.execute("SELECT * FROM experience_events WHERE id = ?", (eid,)).fetchone()
-        if not row:
-            return None
-        d = dict(row)
-        for f in ("related_characters", "related_items", "related_locations"):
-            try:
-                d[f] = json.loads(d.get(f, "[]"))
-            except (json.JSONDecodeError, TypeError):
-                d[f] = []
-        return d
-    finally:
-        conn.close()
+    event = _es.get_event(eid)
+    return _to_legacy(event) if event else None
 
 
 def get_relevant_events(task_id: str, chapter: int, top_k: int = 10) -> list[dict]:
     """获取与当前写作相关的重要事件。importance>=7的永久保留，5-6的按recency衰减。"""
-    conn = _get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT *, (importance * 10 - ABS(chapter - ?)) as relevance
-            FROM experience_events
-            WHERE task_id = ? AND chapter <= ?
-            ORDER BY relevance DESC
-            LIMIT ?
-        """, (chapter, task_id, chapter, top_k)).fetchall()
-        events = []
-        for row in rows:
-            d = dict(row)
-            for f in ("related_characters", "related_items", "related_locations"):
-                try:
-                    d[f] = json.loads(d.get(f, "[]"))
-                except (json.JSONDecodeError, TypeError):
-                    d[f] = []
-            events.append(d)
-        return events
-    finally:
-        conn.close()
+    return [_to_legacy(event) for event in _es.get_relevant_events(task_id, chapter, top_k)]
 
 
 def build_experience_context(task_id: str, chapter: int, max_tokens: int = 1000) -> str:
@@ -186,28 +110,14 @@ def extract_from_section(task_id: str, chapter: int, section_text: str) -> list[
             return saved
         return []
     except Exception:
+        logger.warning(f"经历事件 LLM 提取失败 (第{chapter}章)", exc_info=True)
         return []
 
 
 def list_events(task_id: str = "") -> list[dict]:
-    conn = _get_conn()
-    try:
-        if task_id:
-            rows = conn.execute(
-                "SELECT * FROM experience_events WHERE task_id = ? ORDER BY chapter ASC",
-                (task_id,)
-            ).fetchall()
-        else:
-            rows = conn.execute("SELECT * FROM experience_events ORDER BY chapter ASC").fetchall()
-        events = []
-        for row in rows:
-            d = dict(row)
-            for f in ("related_characters", "related_items", "related_locations"):
-                try:
-                    d[f] = json.loads(d.get(f, "[]"))
-                except (json.JSONDecodeError, TypeError):
-                    d[f] = []
-            events.append(d)
-        return events
-    finally:
-        conn.close()
+    if not task_id:
+        return []
+    return [
+        _to_legacy(event)
+        for event in _es.get_events(task_id=task_id, limit=5000)
+    ]

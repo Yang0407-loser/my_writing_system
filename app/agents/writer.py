@@ -10,6 +10,7 @@ from .context_manager import ContextManager
 from ..utils.prompt_templates import (
     WRITING_PROMPT,
     WRITING_SECTION1_PROMPT,
+    WRITER_SYSTEM_PROMPT,
     TARGETED_REVISE_PROMPT,
     HANDOVER_EXTRACTION_PROMPT,
 )
@@ -21,10 +22,20 @@ from ..config import settings
 from ..world_state import WorldStateManager
 from ..narrative_event import EventGraph, rank_and_fill, format_events_for_prompt
 from ..rule_checks import pre_check, post_check
+from ..retrieval_observability import measure_retrieval_usage
 from .. import foreshadowing_store
 from .. import rule_store
 
 logger = logging.getLogger("writing_system.writer")
+
+
+def _estimate_prompt_tokens(text: str) -> int:
+    """Stable local estimate used for context budgeting telemetry."""
+    if not text:
+        return 0
+    chinese = len(re.findall(r"[\u4e00-\u9fff]", text))
+    other = len(text) - chinese
+    return int(chinese * 1.5 + other * 0.3)
 
 
 def _narrative_density_instruction(density: float) -> str:
@@ -94,6 +105,8 @@ class Writer(BaseAgent):
         relation_context: str = "",
         improvement_context: str = "",
         experience_context: str = "",
+        narrative_beats: list[dict] | None = None,
+        reference_text: str = "",
     ) -> dict:
         """返回 {draft, handover_notes, backref_suggestions, section_texts}。
 
@@ -108,12 +121,17 @@ class Writer(BaseAgent):
             existing_draft: 从检查点恢复的已完成小节 {sub_key: text}
             existing_section_texts: 从检查点恢复的已完成节 {section_num: text}
         """
+        # v0.9.4: Token 归属标签
+        from ..utils.llm_client import set_cost_label
+        set_cost_label("writer")
+
         cm = ContextManager(self.llm)
         if resume_context:
             cm.deserialize(resume_context)
         full_draft = ""
         handover_notes = []
         backref_suggestions = []
+        section_timings = []  # 逐节计时: [{section, subsection, llm_time_s, total_time_s, char_count}]
         section_texts = dict(existing_section_texts) if existing_section_texts else {}
         previous_sub_texts = []  # P2: 累积已生成的小节正文，用于重复检测
         existing_draft = existing_draft or {}
@@ -123,10 +141,65 @@ class Writer(BaseAgent):
             handover_notes = list(prev_handover_list)
             prev_handover = prev_handover_list[-1] if prev_handover_list else None
 
-        style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
         narrative_density = style.get("narrative_density", 0.7) if isinstance(style, dict) else 0.7
         density_instruction = _narrative_density_instruction(narrative_density)
         style_structured = StyleSummarizer.for_writer(style) if isinstance(style, dict) else ""
+
+        # 用 LLM 将模糊风格参数翻译为具体行为指令（一次调用，全任务复用）
+        style_behavior_text = ""
+        if style and isinstance(style, dict) and settings.ENABLE_STYLE_BEHAVIOR:
+            try:
+                import json as _json
+                from ..utils.prompt_templates import STYLE_BEHAVIOR_PROMPT
+                behavior_prompt = STYLE_BEHAVIOR_PROMPT.format(style_params=_json.dumps(style, ensure_ascii=False, indent=2))
+                style_behavior_text = self.llm.chat_completion(
+                    [{"role": "user", "content": behavior_prompt}],
+                    temperature=0.3, max_tokens=600, prompt_name="style_behavior"
+                )
+                logger.info(f"[{task_id[:8]}] 风格行为指令已生成 ({len(style_behavior_text)} 字)")
+            except Exception:
+                logger.warning(f"[{task_id[:8]}] 风格行为指令生成失败，跳过", exc_info=True)
+
+        # v0.9.4: 构建风格示例文本（参数→模板，照猫画虎）
+        style_examples = ""
+        if style and isinstance(style, dict) and settings.ENABLE_STYLE_BEHAVIOR:
+            try:
+                from ..utils.style_mapping import build_style_examples
+                style_examples = build_style_examples(style)
+                if style_examples:
+                    logger.info(f"[{task_id[:8]}] 风格示例已生成 ({len(style_examples)} 字)")
+            except Exception:
+                logger.warning(f"[{task_id[:8]}] 风格示例生成失败，跳过", exc_info=True)
+
+        # v0.9.5: 参考原文 few-shot（比预写示例更强的风格信号）
+        reference_passages = ""
+        if reference_text and reference_text.strip():
+            import re as _re
+            paras = _re.split(r'\n{2,}', reference_text.strip())
+            paras = [p.strip() for p in paras if len(p.strip()) > 80]
+            selected = []
+            n = len(paras)
+            if n > 0:
+                indices = set()
+                indices.add(0)
+                if n > 1: indices.add(n - 1)
+                if n > 3: indices.add(n // 2)
+                for i in [2, n - 2, n // 4, 3 * n // 4]:
+                    if 0 <= i < n and len(indices) < 5:
+                        indices.add(i)
+                selected = [paras[i] for i in sorted(indices)]
+            if selected:
+                reference_passages = "## 风格参考原文（请模仿以下段落的句法节奏、对话风格和用词习惯，照猫画虎）\n\n"
+                for i, p in enumerate(selected, 1):
+                    reference_passages += f"### 参考段落 {i}\n{p}\n\n"
+                logger.info(f"[{task_id[:8]}] 参考原文 few-shot: {len(selected)} 段 ({sum(len(p) for p in selected)} 字)")
+
+        # v0.9.4: 构建节拍查找表 (section, subsection) -> {intensity, character_focus}
+        beat_lookup: dict[tuple, dict] = {}
+        if narrative_beats:
+            for b in narrative_beats:
+                key = (b.get("section", 0), b.get("subsection", 0))
+                beat_lookup[key] = b
 
         # P0 预检: 大纲是否包含足够的关键事件
         total_kp = sum(len(sub.get("key_points", [])) for sec in outline for sub in sec.get("subsections", []))
@@ -145,16 +218,40 @@ class Writer(BaseAgent):
             if blackboard and section_num > 1 and sec_idx > 0:
                 try:
                     updated = blackboard.get(task_id, "outline")
-                    if updated and isinstance(updated, list) and len(updated) > len(outline):
-                        logger.info(f"[{task_id[:8]}] 检测到大纲更新: {len(outline)}→{len(updated)}节")
-                        existing = {s.get("section") for s in outline}
+                    if updated and isinstance(updated, list):
+                        # 检测新增节
+                        existing_sections = {s.get("section") for s in outline}
+                        new_sections = 0
                         for new_sec in updated:
                             ns = new_sec.get("section", 0)
-                            if ns not in existing:
+                            if ns not in existing_sections:
                                 outline.append(new_sec)
-                                existing.add(ns)
+                                existing_sections.add(ns)
+                                new_sections += 1
+                        # 检测已有节的 subsection status 变更（用户手动设置 done/queued）
+                        status_changes = 0
+                        for cur_sec in outline:
+                            cs = cur_sec.get("section", 0)
+                            updated_sec = next((u for u in updated if u.get("section") == cs), None)
+                            if not updated_sec:
+                                continue
+                            cur_subs = {s.get("subsection"): s.get("status", "queued")
+                                       for s in cur_sec.get("subsections", [])}
+                            upd_subs = {s.get("subsection"): s.get("status", "queued")
+                                       for s in updated_sec.get("subsections", [])}
+                            for sub_id, new_status in upd_subs.items():
+                                old_status = cur_subs.get(sub_id)
+                                if old_status and old_status != new_status:
+                                    for sub in cur_sec.get("subsections", []):
+                                        if sub.get("subsection") == sub_id:
+                                            sub["status"] = new_status
+                                            status_changes += 1
+                                            break
+                        if new_sections or status_changes:
+                            logger.info(f"[{task_id[:8]}] 大纲更新: +{new_sections}节, "
+                                       f"{status_changes}处subsection状态变更")
                 except Exception:
-                    pass
+                    logger.warning(f"[{task_id[:8]}] 大纲动态更新失败，继续使用原大纲", exc_info=True)
             subsections = sec.get("subsections", [])
             n_subs = len(subsections)
 
@@ -191,7 +288,7 @@ class Writer(BaseAgent):
 
                 sub_title = sub.get("title", "")
                 # P11: done=已写完跳过；draft=断点墙，遇到即停止整个写作
-                sub_status = sub.get("status", "queued")
+                sub_status = sub.get("status", "draft")
                 if sub_status == "done":
                     logger.info(f"[{task_id[:8]}] 跳过 done: 第{section_num}.{sub_num}小节")
                     continue
@@ -222,21 +319,100 @@ class Writer(BaseAgent):
                 call_max_tokens = min(max(settings.WRITER_MAX_TOKENS_FLOOR, target_words * 4),
                                      settings.WRITER_MAX_TOKENS_CEIL)
 
+                t_sub_start = time.time()
                 # --- 进度 ---
                 if blackboard:
                     blackboard.set(task_id, "progress",
                         f"第{section_num}节第{sub_num}/{len(subsections)}小节")
 
-                # --- RAG 检索 ---
-                query = f"{topic} {section_title} {sub_title} {' '.join(key_points)}"
-                retrieved_chunks = vector_store.search(
-                    query, k=settings.RAG_TOP_K, task_id=task_id
-                )
+                # --- RAG 检索 (v0.9.1: 语义召回 + 因果扩展) ---
+                query = ""
+                retrieval_trace = {
+                    "query": "",
+                    "filter": {"task_id": task_id},
+                    "elapsed_ms": 0.0,
+                    "candidate_count": 0,
+                    "returned_count": 0,
+                    "candidates": [],
+                    "disabled": not settings.ENABLE_RAG,
+                }
+                if not settings.ENABLE_RAG:
+                    retrieved_items = []
+                    causal_events = []
+                else:
+                    q_parts = [topic, section_title]
+                    if sub_title != section_title:
+                        q_parts.append(sub_title)
+                    q_parts.extend(kp for kp in key_points if kp not in q_parts)
+                    query = ' '.join(q_parts)
+                    retrieved_items = vector_store.search_with_meta(
+                        query,
+                        k=settings.RAG_TOP_K,
+                        task_id=task_id,
+                        candidate_k=settings.RAG_TRACE_CANDIDATE_K or None,
+                    )
+                    retrieval_trace = vector_store.last_search_trace
+                    # 因果扩展
+                    causal_events = []
+                    if event_graph and retrieved_items:
+                        try:
+                            sections = {item["section"] for item in retrieved_items}
+                            semantic_events = event_graph.get_events_by_sections(sections)
+                            causal_events = event_graph.expand_causal(semantic_events)
+                            causal_events = [e for e in causal_events
+                                             if e.section not in sections and e.section < section_num]
+                        except Exception:
+                            logger.warning(
+                                f"[{task_id[:8]}] 因果扩展失败 (第{section_num}.{sub_num}节)，"
+                                f"回退到纯语义检索", exc_info=True
+                            )
                 retrieved_context = ""
-                if retrieved_chunks:
-                    retrieved_context = "已写段落参考：\n"
-                    for i, chunk in enumerate(retrieved_chunks, 1):
-                        retrieved_context += f"--- {i} ---\n{chunk}\n"
+                if retrieved_items:
+                    retrieved_context = "已写段落参考（以下段落与当前章节语义相关，供风格和情节参照）：\n"
+                    for i, item in enumerate(retrieved_items, 1):
+                        src = ""
+                        if item.get("title"):
+                            src = f"第{item['section']}节 · {item['title']}"
+                        else:
+                            src = f"第{item['section']}.{item['subsection']}小节"
+                        retrieved_context += f"\n### 参考 {i}：{src}\n{item['text']}\n"
+                # 因果事件追加到参考末尾
+                if causal_events:
+                    retrieved_context += "\n---\n以下事件与当前章节存在因果关联（语义检索漏掉但剧情逻辑相关）：\n"
+                    for evt in causal_events:
+                        retrieved_context += f"[因果关联] 第{evt.section}章 · {evt.description}\n"
+
+                # --- v0.9.2: RAG 召回日志（供离线抽样评估） ---
+                try:
+                    if not blackboard:
+                        raise RuntimeError("blackboard unavailable")
+                    rag_log = blackboard.get(task_id, "rag_recall_log")
+                    if isinstance(rag_log, str):
+                        import json as _json
+                        rag_log = _json.loads(rag_log)
+                    rag_log = rag_log if isinstance(rag_log, list) else []
+                    rag_log.append({
+                        "section": section_num, "subsection": sub_num,
+                        "query": query[:120],
+                        "semantic_items": [{
+                            "id": item.get("id", ""),
+                            "rank": item.get("rank", index),
+                            "section": item["section"],
+                            "subsection": item.get("subsection", 0),
+                            "title": item.get("title", "")[:60],
+                            "text": item.get("text", "")[:200],
+                            "distance": item.get("distance"),
+                            "score": item.get("score"),
+                            "metadata": item.get("metadata", {}),
+                        } for index, item in enumerate(retrieved_items, 1)] if retrieved_items else [],
+                        "semantic_sections": [item["section"] for item in retrieved_items] if retrieved_items else [],
+                        "causal_sections": [e.section for e in causal_events] if causal_events else [],
+                        "retrieval_trace": retrieval_trace,
+                        "writer_usage": [],
+                    })
+                    blackboard.set(task_id, "rag_recall_log", rag_log)
+                except Exception:
+                    logger.warning(f"[{task_id[:8]}] RAG 召回日志写入失败", exc_info=True)
 
                 # --- 角色上下文 ---
                 character_context = CharacterFormatter.build_context(characters, character_arcs)
@@ -316,17 +492,29 @@ class Writer(BaseAgent):
                         from ..faction_store import build_faction_context
                         fc_ctx = build_faction_context(task_id, section_num)
                         if fc_ctx: parts.append(fc_ctx)
-                    except Exception: pass
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] 势力上下文加载失败 (第{section_num}.{sub_num}节)，fallback=skip",
+                            exc_info=True,
+                        )
                     try:
                         from ..map_manager import build_location_context
                         lc_ctx = build_location_context(task_id)
                         if lc_ctx: parts.append(lc_ctx)
-                    except Exception: pass
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] 地图上下文加载失败 (第{section_num}.{sub_num}节)，fallback=skip",
+                            exc_info=True,
+                        )
                     try:
                         from ..item_manager import build_item_context
                         ic_ctx = build_item_context(task_id)
                         if ic_ctx: parts.append(ic_ctx)
-                    except Exception: pass
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] 物品上下文加载失败 (第{section_num}.{sub_num}节)，fallback=skip",
+                            exc_info=True,
+                        )
 
                 rules_ctx = "\n\n".join(parts) if parts else ""
 
@@ -361,12 +549,35 @@ class Writer(BaseAgent):
                     sub_desc=sub_desc,
                 )
 
+                # --- 风格硬约束 ---
+                style_constraints = ""
+                if style_behavior_text:
+                    style_constraints = "【风格硬约束 - 必须严格遵循】\n" + style_behavior_text
+
+                # --- v0.9.4: 节拍风格提醒 ---
+                beat_reminder = ""
+                beat = beat_lookup.get((section_num, sub_num))
+                if beat:
+                    intensity = beat.get("intensity", 5)
+                    focus = beat.get("character_focus", "")
+                    # 叙事节奏标签——区别于全局 style.emotion_intensity（控制用词风格）
+                    rhythm_label = ("铺垫/过渡" if intensity <= 4 else
+                                    "日常/推进" if intensity <= 6 else
+                                    "冲突/升温" if intensity <= 8 else "高潮/爆发")
+                    beat_reminder = (
+                        f"【叙事节奏】本节在故事弧线中的位置: {intensity}/10 ({rhythm_label})。"
+                        f"这影响的是事件密度和张力走向，而非用词风格。"
+                    )
+                    if focus:
+                        beat_reminder += f" 本节的叙事重心是: {focus}。"
+
                 # --- 选择 prompt ---
                 template = WRITING_SECTION1_PROMPT if (section_num == 1 and sub_num == 1) else WRITING_PROMPT
 
                 prompt = template.format(
                     mandatory_events=mandatory_events,
                     character_constraints=self._build_character_constraints(characters),
+                    style_constraints=style_constraints,
                     progress_context=progress_context,
                     rules_context=rules_ctx if rules_ctx else "",
                     topic=topic,
@@ -379,19 +590,21 @@ class Writer(BaseAgent):
                     world_setting=world_setting if world_setting.strip() else "",
                     world_facts=world_facts_str,
                     world_contradictions=world_contradictions_str,
-                    style_brief=style_brief,
                     style_structured=style_structured,
                     narrative_density_instruction=density_instruction,
                     ranked_events=ranked_events_str,
                     emotion_intensity=style.get("emotion_intensity", 50) if isinstance(style, dict) else 50,
-                    adjective_density=style.get("adjective_density", 0.15) if isinstance(style, dict) else 0.15,
-                    paragraph_length_avg=style.get("paragraph_length_avg", 200) if isinstance(style, dict) else 200,
+                    sentence_preference=style.get("sentence_preference", "balanced") if isinstance(style, dict) else "balanced",
+                    sensory_density=style.get("sensory_density", "medium") if isinstance(style, dict) else "medium",
+                    dialogue_ratio=int((style.get("dialogue_ratio", 0.2) if isinstance(style, dict) else 0.2) * 100),
                     character_context=character_context,
                     arc_context=arc_context,
                     handover_context=handover_context,
                     summary_context=summary_context if summary_context else "（故事开头）",
                     retrieved_context=retrieved_context if retrieved_context else "（无相关段落）",
                     target_words=target_words,
+                    beat_reminder=beat_reminder,
+                    style_examples=(reference_passages + "\n" + style_examples).strip(),
                 )
 
                 system_msg = WRITER_SYSTEM_PROMPT
@@ -399,6 +612,27 @@ class Writer(BaseAgent):
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": prompt},
                 ]
+                context_token_estimates = {
+                    "outline": _estimate_prompt_tokens(
+                        f"{section_outline}\n{sub_desc}\n{'、'.join(key_points)}"
+                    ),
+                    "rules": _estimate_prompt_tokens(rules_ctx),
+                    "characters": _estimate_prompt_tokens(character_context + "\n" + arc_context),
+                    "handover": _estimate_prompt_tokens(handover_context),
+                    "recent_summary": _estimate_prompt_tokens(summary_context),
+                    "rag": _estimate_prompt_tokens(retrieved_context),
+                    "world": _estimate_prompt_tokens(
+                        world_setting + "\n" + world_facts_str + "\n" + world_contradictions_str
+                    ),
+                    "events": _estimate_prompt_tokens(ranked_events_str + "\n" + mandatory_events),
+                    "style": _estimate_prompt_tokens(
+                        style_structured + "\n" + density_instruction + "\n"
+                        + reference_passages + "\n" + style_examples
+                    ),
+                }
+                input_tokens_estimate = sum(
+                    _estimate_prompt_tokens(message["content"]) for message in messages
+                )
 
                 # --- LLM 调用（支持重试） ---
                 t_llm_start = time.time()
@@ -417,11 +651,42 @@ class Writer(BaseAgent):
                 )
                 t_llm = time.time() - t_llm_start
                 out_chars = count_chinese_chars(raw_output)
+                t_total = time.time() - t_sub_start
+                section_timings.append({"section": section_num, "subsection": sub_num,
+                    "llm_time_s": round(t_llm, 1), "total_time_s": round(t_total, 1),
+                    "char_count": out_chars,
+                    "input_tokens_estimate": input_tokens_estimate,
+                    "output_tokens_estimate": _estimate_prompt_tokens(raw_output),
+                    "context_block_tokens": context_token_estimates,
+                    "rewrite_count": getattr(self, "_last_retry_count", 0),
+                })
                 logger.info(f"[{task_id[:8]}] 第{section_num}.{sub_num}小节 LLM 完成 "
                            f"(耗时 {t_llm:.1f}s, {out_chars} 字)")
 
                 # --- 提取交接信息（独立 LLM 调用，不影响正文纯净度） ---
                 sub_text = raw_output  # Writer 只输出纯正文，无需正则切分
+                if blackboard and retrieved_items:
+                    try:
+                        rag_log = blackboard.get(task_id, "rag_recall_log")
+                        if isinstance(rag_log, str):
+                            import json as _json
+                            rag_log = _json.loads(rag_log)
+                        if isinstance(rag_log, list):
+                            for record in reversed(rag_log):
+                                if (record.get("section"), record.get("subsection")) == (section_num, sub_num):
+                                    usage = measure_retrieval_usage(retrieved_items, sub_text)
+                                    record["writer_usage"] = usage
+                                    record["writer_unused_count"] = sum(
+                                        item["classification"] == "not_observed" for item in usage
+                                    )
+                                    break
+                            blackboard.set(task_id, "rag_recall_log", rag_log)
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] RAG Writer 利用率记录失败 "
+                            f"(第{section_num}.{sub_num}节)，fallback=offline-eval",
+                            exc_info=True,
+                        )
                 handover_note = self._extract_handover(
                     sub_text, section_num, sub_num,
                     character_context=character_context,
@@ -452,7 +717,10 @@ class Writer(BaseAgent):
                                 if fid:
                                     logger.debug(f"[{task_id[:8]}] 新事实已写入 WorldState: {fact_text[:50]}")
                             except Exception:
-                                pass
+                                logger.debug(
+                                    f"[{task_id[:8]}] 世界事实写入失败: {fact_text[:50]}",
+                                    exc_info=True
+                                )
 
                 # --- 写作后规则检查 ---
                 if required_events:
@@ -515,7 +783,10 @@ class Writer(BaseAgent):
                         if _finish and len(_finish) < 200:
                             sub_text += _finish
                     except Exception:
-                        pass
+                        logger.warning(
+                            f"[{task_id[:8]}] 段落收尾补全失败 (第{section_num}.{sub_num}节)，"
+                            f"跳过补全", exc_info=True
+                        )
 
                 # --- 精简（超出目标 30% 时触发） ---
                 if sub_words > target_words * 1.3:
@@ -564,7 +835,7 @@ class Writer(BaseAgent):
                         })
                         blackboard.set(task_id, bb_key, log)
                 except Exception:
-                    pass  # AI 检测失败不影响写作
+                    logger.warning(f"[{task_id[:8]}] AI 痕迹检测失败，跳过", exc_info=True)
 
                 # --- 分节审阅检查（由 WRITER_REVIEW_TRIGGER_SUBS/CHARS 配置） ---
                 _review_subs_done = sum(
@@ -634,6 +905,7 @@ class Writer(BaseAgent):
                         "title": sub_title,
                         "topic": topic,
                     })
+                vector_store.enforce_task_limit(task_id)
 
                 cm.add_subsection(sub_text, section_num)
 
@@ -642,7 +914,7 @@ class Writer(BaseAgent):
                     from ..utils.llm_client import get_cumulative_tokens
                     blackboard.set(task_id, "token_usage", get_cumulative_tokens())
                 except Exception:
-                    pass
+                    logger.warning(f"[{task_id[:8]}] token 消耗写入黑板失败", exc_info=True)
 
                 # --- 小节完成事件 ---
                 if stream_callback:
@@ -724,6 +996,21 @@ class Writer(BaseAgent):
                 logger.info(f"[{task_id[:8]}] 检测到停止信号，退出写作")
                 break
 
+            # --- 自动模式检查点 (v0.9.2: 每节存档，不挂起) ---
+            if not interactive and blackboard:
+                try:
+                    blackboard.save_checkpoint(task_id, {
+                        "task_id": task_id,
+                        "phase": "writing",
+                        "section_texts": dict(section_texts),
+                        "handover_chain": list(handover_notes),
+                        "backref_suggestions": list(backref_suggestions),
+                        "current_section": section_num,
+                        "draft": full_draft,
+                    })
+                except Exception:
+                    logger.warning(f"[{task_id[:8]}] 检查点保存失败 (第{section_num}节)，继续写作", exc_info=True)
+
             # --- 交互模式检查点 ---
             if interactive and on_section_done:
                 should_continue = on_section_done(
@@ -792,6 +1079,7 @@ class Writer(BaseAgent):
             "backref_suggestions": backref_suggestions,
             "section_texts": section_texts,
             "context_state": cm.serialize(),
+            "section_timings": section_timings,
         }
 
     # ═══ P0: 硬约束构建 ═══
@@ -1026,6 +1314,7 @@ class Writer(BaseAgent):
                               target_goal=""):
         """生成正文，若不满足硬约束则重试一次。"""
         import time as _time
+        retry_count = 0
 
         def _do_generate(msgs, temp):
             raw = ""
@@ -1085,6 +1374,7 @@ class Writer(BaseAgent):
             ]
             raw_output = _do_generate(retry_messages, 0.3)
             outline_retries += 1
+            retry_count += 1
 
         # 角色行为违规检测 (最多重试1次)
         if characters:
@@ -1103,6 +1393,7 @@ class Writer(BaseAgent):
                     {"role": "user", "content": retry_msg},
                 ]
                 raw_output = _do_generate(retry_messages, 0.3)
+                retry_count += 1
 
         # P2: 重复检测（jieba TF-IDF + 轻量 LLM 节拍验证，方案 C）
         retry_reasons = []
@@ -1134,7 +1425,9 @@ class Writer(BaseAgent):
                 {"role": "user", "content": retry_msg},
             ]
             raw_output = _do_generate(retry_messages, 0.3)
+            retry_count += 1
 
+        self._last_retry_count = retry_count
         return raw_output
 
     def _extract_handover(self, section_text: str, section_num: int, sub_num: int = 0,

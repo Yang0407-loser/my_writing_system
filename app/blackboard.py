@@ -143,7 +143,6 @@ class Blackboard:
         for field, value in state_dict.items():
             mapping[field] = json.dumps(value, ensure_ascii=False, default=str)
         self._redis.hset(key, mapping=mapping)
-        self._redis.expire(key, 86400)
 
     def load_checkpoint(self, task_id: str) -> dict | None:
         """从 Redis 加载任务状态快照。"""

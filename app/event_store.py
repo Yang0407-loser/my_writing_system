@@ -81,17 +81,16 @@ def add_event(task_id: str, event_type: str, description: str,
 
 def get_events(task_id: str = "", event_type: str = "",
                chapter: int = 0, limit: int = 50) -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        where = []
-        params = []
-        if task_id:
-            where.append("task_id = ?"); params.append(task_id)
+        where = ["task_id = ?"]; params = [task_id]
         if event_type:
             where.append("type = ?"); params.append(event_type)
         if chapter:
             where.append("chapter = ?"); params.append(chapter)
-        clause = ("WHERE " + " AND ".join(where)) if where else ""
+        clause = "WHERE " + " AND ".join(where)
         rows = conn.execute(
             f"SELECT * FROM events {clause} ORDER BY chapter, importance DESC LIMIT ?",
             params + [limit]
@@ -103,6 +102,37 @@ def get_events(task_id: str = "", event_type: str = "",
 
 def get_events_for_chapter(task_id: str, chapter: int, limit: int = 20) -> list[dict]:
     return get_events(task_id=task_id, chapter=chapter, limit=limit)
+
+
+def get_event(event_id: str) -> dict | None:
+    """Get one event by its canonical ID."""
+    conn = _get_conn()
+    try:
+        row = conn.execute("SELECT * FROM events WHERE id=?", (event_id,)).fetchone()
+        return _row_to_dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_relevant_events(task_id: str, chapter: int, limit: int = 10) -> list[dict]:
+    """Rank occurred/planned events by importance and chapter proximity."""
+    if not task_id:
+        return []
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT *, (importance * 10 - ABS(chapter - ?)) AS relevance
+            FROM events
+            WHERE task_id = ? AND chapter <= ?
+            ORDER BY relevance DESC, chapter DESC
+            LIMIT ?
+            """,
+            (chapter, task_id, chapter, limit),
+        ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+    finally:
+        conn.close()
 
 
 def update_event_status(eid: str, status: str) -> bool:

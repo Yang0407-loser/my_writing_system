@@ -36,7 +36,12 @@ class Settings:
     SUBSECTION_TARGET_WORDS: int = int(os.getenv("SUBSECTION_TARGET_WORDS", "2000"))
     CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "500"))
     CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "100"))
+    ENABLE_RAG: bool = os.getenv("ENABLE_RAG", "true").lower() in ("true", "1", "yes")
+    ENABLE_STYLE_BEHAVIOR: bool = os.getenv("ENABLE_STYLE_BEHAVIOR", "true").lower() in ("true", "1", "yes")
     RAG_TOP_K: int = int(os.getenv("RAG_TOP_K", "5"))
+    # 0 keeps legacy top-k behavior. Larger values only expand the logged
+    # coarse candidate set; Writer still receives exactly RAG_TOP_K items.
+    RAG_TRACE_CANDIDATE_K: int = int(os.getenv("RAG_TRACE_CANDIDATE_K", "0"))
 
     # --- Writer agent tuning ---
     WRITER_REVIEW_TRIGGER_SUBS: int = int(os.getenv("WRITER_REVIEW_TRIGGER_SUBS", "3"))
@@ -77,6 +82,8 @@ class Settings:
             warnings.append("CHUNK_SIZE 过低 (<100)")
         if self.RAG_TOP_K < 1:
             warnings.append("RAG_TOP_K 必须 >= 1")
+        if self.RAG_TRACE_CANDIDATE_K < 0:
+            warnings.append("RAG_TRACE_CANDIDATE_K 必须 >= 0")
         return warnings
 
 

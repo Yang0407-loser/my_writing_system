@@ -98,12 +98,11 @@ def get_subplot(sid: str) -> dict | None:
 
 
 def list_subplots(task_id: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        if task_id:
-            rows = conn.execute("SELECT * FROM subplots WHERE task_id = ? ORDER BY priority DESC", (task_id,)).fetchall()
-        else:
-            rows = conn.execute("SELECT * FROM subplots ORDER BY priority DESC").fetchall()
+        rows = conn.execute("SELECT * FROM subplots WHERE task_id = ? ORDER BY priority DESC", (task_id,)).fetchall()
         return [_row_to_dict(r) for r in rows]
     finally:
         conn.close()

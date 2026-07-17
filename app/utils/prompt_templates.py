@@ -12,68 +12,20 @@
 # - WRITER_SYSTEM_PROMPT: 从 writer.py 迁移到此处统一管理
 # - 模块末尾 PromptRegistry
 
-STYLE_ANALYSIS_PROMPT = """你是一位资深的文学风格分析专家。请仔细阅读以下参考文本，从情感基调、句式节奏、修辞用词三个维度全面分析其写作风格。
+STYLE_ANALYSIS_PROMPT = """你是一位文学编辑。请分析以下参考文本的写作风格。
 
 参考文本：
 {reference_text}
 
-请以 JSON 对象格式输出全部字段（不要包含其他内容），字段说明和可选值如下：
+四个维度：
 
-A. 情感基调 (12项):
-- primary_emotion: 主情感 (温暖/冷峻/压抑/激昂/悲凉/恐惧/好奇/怀旧/荒诞/宁静/中性)
-- emotion_intensity: 情感强度 0-100 (克制30 → 浓烈90)
-- emotion_subtlety: 表达方式 (直白/含蓄/隐晦)
-- emotion_blend: 情感配比，如 {{"悲凉":0.6,"温暖":0.3,"冷峻":0.1}}，至多3个情感
-- emotion_curve: 情感曲线 (平稳/渐强/渐弱/波浪/突转)
-- emotional_peaks: 高潮频率 (每节1次/每节2-3次/集中在结尾/均匀分布)
-- catharsis_style: 释放方式 (爆发式/内敛式/渐进式)
-- narrative_empathy: 叙述共情度 (冷漠旁观/适度共情/深度代入)
-- inner_monologue_ratio: 内心独白占比 0-1
-- show_vs_tell: 展示vs讲述 (动作驱动/心理驱动/平衡)
-- emotional_registry: 情感语域 (日常口语/文学抒情/冷峻克制/诗化/新闻报道)
-- sensory_anchoring: 感官锚定，情感是否通过感官描写传达 (true/false)
-- emotional_contrast: 情感对比度 (高频切换/稳定持续/渐进演变)
+1. emotion_intensity (10-90): 情感强度。10=极度克制冷峻，50=温婉适度，90=激烈浓郁
+2. dialogue_ratio (0-1): 对话占比。0=纯叙述，0.3=适度对话，0.5+=对话驱动
+3. sentence_preference: 句长偏好。"short"=短句驱动节奏快，"balanced"=长短交替，"long"=长句铺陈
+4. sensory_density: 感官密度。"sparse"=留白简洁，"medium"=适度，"rich"=五感丰富
 
-B. 句式节奏 (16项):
-- short_sentence_ratio: 短句<15字占比 0-1
-- medium_sentence_ratio: 中句15-30字占比 0-1
-- long_sentence_ratio: 长句>30字占比 0-1
-- sentence_length_variance: 句长波动性 (稳定/适度波动/剧烈波动)
-- sentence_pattern: 句式偏好 (松散句/紧凑句/排比句/长短交替/倒装句/短句群)
-- sentence_opening_style: 句首多样性 (变化丰富/重复开头/主语开头为主/连词开头)
-- complex_sentence_ratio: 复合句占比 (简单句为主/复合句为主/平衡)
-- paragraph_rhythm: 段落节奏 (长→短交替/短→长交替/渐进式/均匀块状/跳跃式)
-- paragraph_length_avg: 平均段落字数 (整数)
-- paragraph_opening_style: 段落开头偏好 (场景描写/对话起头/动作起头/独白起头/混合)
-- dialogue_ratio: 对话占比 0-1
-- dialogue_mixing: 对话与叙述的交替方式 (独立成段/嵌入叙述/混合)
-- dialogue_tag_style: 对话标记风格 ("他说"密集/稀疏标记/零标记/动作替代)
-- pacing: 整体节奏 (舒缓/中等/紧凑/急促/变速)
-- scene_transition: 场景过渡 (直接切/过渡铺垫/蒙太奇/时间跳跃/倒叙插入)
-- time_dilation: 时间拉伸 (实时/加速/减速/静止/非线性)
-- tension_curve: 张力曲线 (持续上升/波浪起伏/突然爆发/缓慢释放)
-
-C. 修辞用词 (22项):
-- metaphor_frequency: 比喻频率 (极少/适度/密集)
-- simile_metaphor_ratio: 明喻vs暗喻 (明喻为主/暗喻为主/平衡)
-- personification: 拟人频率 (极少/适度/密集)
-- synesthesia: 通感频率 (极少/适度/密集)
-- rhetorical_devices: 常用修辞标签数组，如 ["排比","反问","反复"]
-- rhetorical_density: 修辞密度 0-1 (每千字修辞格数)
-- vocabulary_register: 用词层级 (口语化/文学化/学术化/古风化/新闻体)
-- vocabulary_richness: 词汇丰富度 (基础/中等/丰富/专业领域)
-- chengyu_frequency: 成语频率 (极少/适度/密集)
-- dialect_flavor: 方言色彩 (无/轻微/浓重)
-- foreign_loanwords: 外来词 (无/偶尔/频繁)
-- adjective_density: 形容词密度 0-1
-- adverb_policy: 副词策略 (克制/适度/丰富)
-- modifier_position: 修饰位置偏好 (前置为主/后置为主/平衡)
-- sensory_density: 感官描写密度 (极少/适度/丰富)
-- sensory_spectrum: 感官侧重 (视觉为主/听觉为主/多感官平衡/触觉突出/嗅觉突出/味觉突出)
-- color_use: 色彩使用 (黑白灰/暖色调/冷色调/高饱和/低饱和/金属色)
-- imagery_domain: 意象领域 (自然/城市/身体/机械/宗教/战争/家庭)
-
-请确保每个字段都填写，根据参考文本的实际特征给出准确的评估值。"""
+请输出 JSON（不要 markdown 代码块）：
+{{"emotion_intensity":50,"dialogue_ratio":0.3,"sentence_preference":"balanced","sensory_density":"medium"}}"""
 
 # ----------------------------------------------------------------
 # 大纲规划
@@ -90,9 +42,6 @@ PLANNING_PROMPT = """你是一位专业的文章策划编辑。根据以下设�
 
 风格参数：
 {style_structured}
-
-风格简报：
-{style_brief}
 
 请规划 3 个大节，每节包含 {subsections_per_section} 个小节。每小节应有一个描述故事进展的梗概（description 字段，1-2句话说明这一幕发生什么）。
 
@@ -169,6 +118,8 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 ========== 硬约束（代码会检查，缺失则重写）==========
 {mandatory_events}
 {character_constraints}
+{style_constraints}
+{beat_reminder}
 
 {progress_context}
 ========== 写作指引（请尽量参考）==========
@@ -193,10 +144,9 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 ## 叙事密度
 {narrative_density_instruction}
 
-## 风格要求
-{style_brief}
+{style_examples}
 
-（参考数值：情感强度 {emotion_intensity}/100，形容词密度 {adjective_density}，参考段落长度 {paragraph_length_avg} 字）
+（风格：情感 {emotion_intensity}/100 | 句长 {sentence_preference} | 感官 {sensory_density} | 对话 {dialogue_ratio}%）
 
 ## 本节关键事件（按重要性排序，供参考融入）
 {ranked_events}
@@ -232,6 +182,8 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 ========== 硬约束（代码会检查，缺失则重写）==========
 {mandatory_events}
 {character_constraints}
+{style_constraints}
+{beat_reminder}
 
 {progress_context}
 ========== 写作指引（请尽量参考）==========
@@ -256,10 +208,9 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 ## 叙事密度
 {narrative_density_instruction}
 
-## 风格要求
-{style_brief}
+{style_examples}
 
-（参考数值：情感强度 {emotion_intensity}/100，形容词密度 {adjective_density}，参考段落长度 {paragraph_length_avg} 字）
+（风格：情感 {emotion_intensity}/100 | 句长 {sentence_preference} | 感官 {sensory_density} | 对话 {dialogue_ratio}%）
 
 ## 本节关键事件（按重要性排序，供参考融入）
 {ranked_events}
@@ -295,10 +246,8 @@ WRITER_SYSTEM_PROMPT = """你是一位作家。请只输出小说正文。
 2. 禁止模板式神态：不要写"眼中闪过一丝XX""嘴角勾起一抹XX""眼底泛起XX""眸中XX"。神态描写要具体独特，与角色性格和当下场景挂钩。
 3. 禁止通用比喻：不要使用脱离场景的比喻如"像蝴蝶般轻盈""如同被雷击中""仿佛时间凝固"。比喻必须来自角色当下所处的环境——铁匠用铁的比喻，猎户用山的比喻。
 4. 禁止机械过渡：不要用"随着时间的推移""渐渐地""不知不觉中""与此同时"来填充段落。用具体事件、感官细节、角色动作推动时间线。
-5. 禁止句式雷同：禁止连续3句使用相同句式结构。长短句交替，描写与动作穿插。一段内最多两个比喻。
-6. 禁止空洞总结：不要在段落末尾写\"从此，XX开始了新的旅程\"\"这一切，都源于那个决定\"之类。故事自然收束，让读者自己感受。
-7. 禁止过度修饰：不要堆砌形容词（\"苍凉的、破败的、布满青苔的古旧石阶\"）。选一个最准确的，留白给读者。
-8. 情感表达通过动作和对话传递，禁止直接叙述\"他感到XX\"。参考信息供你判断融入，如与创作意图冲突可自行取舍。
+5. 禁止空洞总结：不要在段落末尾写"从此，XX开始了新的旅程""这一切，都源于那个决定"之类。故事自然收束，让读者自己感受。
+6. 禁止过度修饰：不要堆砌形容词（"苍凉的、破败的、布满青苔的古旧石阶"）。选一个最准确的，留白给读者。
 不要附加任何标记、注释或元数据。"""
 
 # ----------------------------------------------------------------
@@ -436,7 +385,6 @@ GLOBAL_REVIEW_PROMPT = """你是一位资深文学评论家。请对以下长文
 {style_structured}
 
 风格参考：{style_summary}
-风格简报：{style_brief}
 总字数：约 {total_words} 字
 
 各节摘要：
@@ -984,7 +932,26 @@ PROMPT_REGISTRY = {
     "global_review":    {"version":"0.7.0","used_by":["Reviewer"],"changelog":"v0.7.0 global final review"},
     "continuity_editor":{"version":"0.6.0","used_by":["ContinuityEditor"],"changelog":"v0.6.0 backref classification"},
     "card_draw":        {"version":"0.9.0","used_by":["CardDrawer"],"changelog":"v0.9.0 45+ inspirations"},
+    "style_behavior":   {"version":"0.9.3","used_by":["Writer"],"changelog":"v0.9.3 fuzzy params -> concrete instructions"},
 }
+
+# ── 风格参数 -> 写作行为翻译 ──────────────────────────────────────
+STYLE_BEHAVIOR_PROMPT = """你是一位写作教练。将以下风格参数翻译为 5-8 条具体写作行为指令。
+
+风格参数：
+{style_params}
+
+参数定义：
+- emotion_intensity: 10-30=克制(环境折射，不命名情绪) | 30-50=温婉(可提情绪，用感官传递) | 50-70=浓郁(可直述内心) | 70-90=激烈
+- dialogue_ratio: 对话占比，生成时控制对话段落比例
+- sentence_preference: short=短句驱动节奏快 | balanced=长短交替 | long=长句铺陈
+- sensory_density: sparse=留白简洁 | medium=适度描写 | rich=多感官交织
+
+输出规则：
+- 每条以【句式】/【情感】/【对话】/【感官】开头
+- 祈使句，直接告诉作家该做什么
+- 数值参数给出具体阈值
+- 输出 5-8 条，按重要性排序"""
 
 
 def get_prompt_info(name: str) -> dict | None:

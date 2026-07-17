@@ -17,6 +17,10 @@ _api_key_ctx: ContextVar[str] = ContextVar('llm_api_key', default='')
 # Per-task token counter (cumulative)
 _token_count_ctx: ContextVar[int] = ContextVar('llm_token_count', default=0)
 
+# v0.9.4: Per-agent token breakdown
+_token_by_agent_ctx: ContextVar[dict[str, int]] = ContextVar('llm_token_breakdown', default={})
+_current_agent_ctx: ContextVar[str] = ContextVar('llm_current_agent', default='')
+
 # CJK character range for rough token estimation
 _CJK_RE = re.compile(r'[一-鿿㐀-䶿豈-﫿]')
 
@@ -54,8 +58,59 @@ def get_cumulative_tokens() -> int:
 
 
 def reset_token_counter() -> None:
-    """Reset the per-task token counter (called at task start)."""
+    """Reset the per-task token counter and agent breakdown (called at task start)."""
     _token_count_ctx.set(0)
+    _token_by_agent_ctx.set({})
+    _current_agent_ctx.set('')
+
+
+def set_cost_label(agent: str) -> None:
+    """Set the current agent label for token attribution.
+
+    All subsequent chat_completion calls will attribute tokens to this agent
+    until changed. Call with '' to stop attribution.
+
+    Usable as a context manager:
+        with cost_label("writer"):
+            ...  # all LLM calls attributed to "writer"
+    """
+    _current_agent_ctx.set(agent)
+
+
+class cost_label:
+    """Context manager for per-agent token attribution.
+
+    Usage:
+        with cost_label("writer"):
+            result = llm.chat_completion(...)
+        # tokens from the call are attributed to "writer"
+    """
+    def __init__(self, agent: str):
+        self._agent = agent
+        self._prev = ''
+
+    def __enter__(self):
+        self._prev = _current_agent_ctx.get()
+        _current_agent_ctx.set(self._agent)
+        return self
+
+    def __exit__(self, *args):
+        _current_agent_ctx.set(self._prev)
+
+
+def get_token_breakdown() -> dict[str, int]:
+    """Return per-agent token breakdown dict {agent_name: total_tokens}."""
+    return dict(_token_by_agent_ctx.get())
+
+
+def _accumulate_agent_tokens(actual_in: int, actual_out: int) -> None:
+    """Add token usage to the current agent's counter (if a label is active)."""
+    agent = _current_agent_ctx.get()
+    if not agent:
+        return
+    breakdown = dict(_token_by_agent_ctx.get())
+    breakdown[agent] = breakdown.get(agent, 0) + actual_in + actual_out
+    _token_by_agent_ctx.set(breakdown)
 
 
 def set_api_key(key: str) -> None:
@@ -64,8 +119,8 @@ def set_api_key(key: str) -> None:
 
 
 def get_api_key() -> str:
-    """Get the API key for the current task context (no server fallback)."""
-    return _api_key_ctx.get()
+    """Get the API key for the current task context, falling back to config."""
+    return _api_key_ctx.get() or settings.LLM_API_KEY
 
 
 # ============================================================
@@ -189,6 +244,7 @@ class LLMClient:
                 if actual_in and actual_out:
                     cumulative = _token_count_ctx.get() + actual_in + actual_out
                     _token_count_ctx.set(cumulative)
+                    _accumulate_agent_tokens(actual_in, actual_out)
                 logger.info(f"LLM response: {t_api:.1f}s, finish={choice.finish_reason}, "
                            f"tokens_in={actual_in or '?'}, tokens_out={actual_out or '?'}, "
                            f"cumulative={_token_count_ctx.get()}")

@@ -1,9 +1,13 @@
 """任务分析与审阅 API。"""
 
+import logging
+
 from fastapi import APIRouter, Header, HTTPException
 from ..dependencies import bb
 from ..utils.endpoint_helpers import assemble_draft_from_checkpoint
 from ..utils.llm_client import set_api_key
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["analysis"])
 
@@ -133,6 +137,6 @@ def analyze_task(task_id: str, x_api_key: str = Header("", alias="X-API-Key")):
                 "events": existing.get("events_json", []),
             }, "analysis": analysis})
     except Exception:
-        pass
+        logger.warning(f"分析结果缓存写入失败 for task {task_id}", exc_info=True)
 
     return analysis
