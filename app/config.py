@@ -42,6 +42,12 @@ class Settings:
     # 0 keeps legacy top-k behavior. Larger values only expand the logged
     # coarse candidate set; Writer still receives exactly RAG_TOP_K items.
     RAG_TRACE_CANDIDATE_K: int = int(os.getenv("RAG_TRACE_CANDIDATE_K", "0"))
+    # Phase 3 batch 1 is trace-only. Even when enabled, Writer continues to
+    # consume the legacy RAG_TOP_K result.
+    RAG_PHASE3_SHADOW: bool = os.getenv("RAG_PHASE3_SHADOW", "false").lower() in ("true", "1", "yes")
+    RAG_PHASE3_MAX_QUERIES: int = int(os.getenv("RAG_PHASE3_MAX_QUERIES", "4"))
+    RAG_PHASE3_CANDIDATE_K: int = int(os.getenv("RAG_PHASE3_CANDIDATE_K", "12"))
+    RAG_PHASE3_MIN_SCORE: float = float(os.getenv("RAG_PHASE3_MIN_SCORE", "0.35"))
 
     # --- Writer agent tuning ---
     WRITER_REVIEW_TRIGGER_SUBS: int = int(os.getenv("WRITER_REVIEW_TRIGGER_SUBS", "3"))
@@ -84,6 +90,12 @@ class Settings:
             warnings.append("RAG_TOP_K 必须 >= 1")
         if self.RAG_TRACE_CANDIDATE_K < 0:
             warnings.append("RAG_TRACE_CANDIDATE_K 必须 >= 0")
+        if not 1 <= self.RAG_PHASE3_MAX_QUERIES <= 4:
+            warnings.append("RAG_PHASE3_MAX_QUERIES 必须在 1..4")
+        if self.RAG_PHASE3_CANDIDATE_K < self.RAG_TOP_K:
+            warnings.append("RAG_PHASE3_CANDIDATE_K 不应小于 RAG_TOP_K")
+        if not 0 <= self.RAG_PHASE3_MIN_SCORE <= 1:
+            warnings.append("RAG_PHASE3_MIN_SCORE 必须在 0..1")
         return warnings
 
 

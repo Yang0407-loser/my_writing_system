@@ -23,6 +23,7 @@ from ..world_state import WorldStateManager
 from ..narrative_event import EventGraph, rank_and_fill, format_events_for_prompt
 from ..rule_checks import pre_check, post_check
 from ..retrieval_observability import measure_retrieval_usage
+from ..retrieval_pipeline import QueryPlanner, ShadowRetriever
 from .. import foreshadowing_store
 from .. import rule_store
 
@@ -336,6 +337,12 @@ class Writer(BaseAgent):
                     "candidates": [],
                     "disabled": not settings.ENABLE_RAG,
                 }
+                phase3_shadow = {
+                    "enabled": settings.RAG_PHASE3_SHADOW,
+                    "mode": "shadow",
+                    "writer_uses": "legacy",
+                    "skipped": not settings.RAG_PHASE3_SHADOW,
+                }
                 if not settings.ENABLE_RAG:
                     retrieved_items = []
                     causal_events = []
@@ -352,6 +359,48 @@ class Writer(BaseAgent):
                         candidate_k=settings.RAG_TRACE_CANDIDATE_K or None,
                     )
                     retrieval_trace = vector_store.last_search_trace
+                    if settings.RAG_PHASE3_SHADOW:
+                        try:
+                            character_names = []
+                            for character in characters or []:
+                                if isinstance(character, dict):
+                                    name = str(character.get("name", "")).strip()
+                                else:
+                                    name = str(getattr(character, "name", "")).strip()
+                                if name:
+                                    character_names.append(name)
+                            phase3_plan = QueryPlanner(
+                                max_queries=settings.RAG_PHASE3_MAX_QUERIES
+                            ).plan(
+                                topic=topic,
+                                section_title=section_title,
+                                subsection_title=sub_title,
+                                key_points=key_points,
+                                description=sub_desc,
+                                character_names=character_names,
+                                current_section=section_num,
+                                current_subsection=sub_num,
+                            )
+                            phase3_shadow = ShadowRetriever(
+                                candidate_k=settings.RAG_PHASE3_CANDIDATE_K,
+                                min_score=settings.RAG_PHASE3_MIN_SCORE,
+                                max_results=settings.RAG_TOP_K,
+                            ).run(vector_store, phase3_plan, task_id=task_id)
+                            phase3_shadow["enabled"] = True
+                            phase3_shadow["skipped"] = False
+                        except Exception as exc:
+                            phase3_shadow = {
+                                "enabled": True,
+                                "mode": "shadow",
+                                "writer_uses": "legacy",
+                                "skipped": True,
+                                "error": type(exc).__name__,
+                            }
+                            logger.warning(
+                                f"[{task_id[:8]}] Phase 3 shadow 检索失败 "
+                                f"(第{section_num}.{sub_num}节)，Writer 继续使用旧检索",
+                                exc_info=True,
+                            )
                     # 因果扩展
                     causal_events = []
                     if event_graph and retrieved_items:
@@ -408,6 +457,7 @@ class Writer(BaseAgent):
                         "semantic_sections": [item["section"] for item in retrieved_items] if retrieved_items else [],
                         "causal_sections": [e.section for e in causal_events] if causal_events else [],
                         "retrieval_trace": retrieval_trace,
+                        "phase3_shadow": phase3_shadow,
                         "writer_usage": [],
                     })
                     blackboard.set(task_id, "rag_recall_log", rag_log)

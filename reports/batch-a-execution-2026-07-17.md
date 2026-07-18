@@ -108,3 +108,12 @@ The 11 outdated assertions were reconciled without restoring removed behavior: f
 - Phase 1: accepted for audit/compatibility scope. Dedicated versioned CharacterState persistence remains a declared Phase 7 gap.
 - Phase 2: accepted for observability and smoke-benchmark scope. Production strategy remains unchanged; the full-scale matrix is explicitly waived until a documented trigger occurs.
 - Phase 3 entry recommendation: ready to start when explicitly requested. The human-label, test and Chroma-decision gates are closed. The two draft defects and qualitative style issue must remain frozen baseline findings; Phase 3 retrieval work must not silently rewrite them or claim to solve them.
+
+## Phase 3 Batch 1 follow-up (2026-07-18)
+
+- Implemented a bounded four-intent QueryPlanner, multi-query reuse of the existing vector search, candidate merging and an explainable rules-only reranker. The shared collection and mandatory `task_id` filter remain unchanged.
+- Integrated the new path as trace-only shadow retrieval. Writer still receives and renders the legacy top-5; the default feature flag is off.
+- On the same ten queries, section-level proxy precision/recall changed from 44.0%/43.3% to 71.1%/70.0%; late-section proxy precision is 60.0%. Mean selected context fell from 5.0 to 3.8 chunks and estimated tokens from 609.9 to 470.3, while retrieval latency rose from 2568.9 ms to 6361.3 ms.
+- None of the 38 selected shadow chunks exactly reuse a human relevance label from the legacy candidate set. Therefore the 68% human Precision@5 release gate is unverified; section-level proxy scores are not substituted for human precision.
+- Full verification after Batch 1: unit 135/135, integration 8/8 and quality 8/8; Python compileall passed.
+- Decision: remain in shadow mode. Do not start Phase 3 Batch 2 or Phase 4 until the new candidates are reviewed and the user explicitly requests the next batch. Full detail is in `reports/phase3-batch1-2026-07-18.md`.

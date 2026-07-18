@@ -797,6 +797,10 @@ DEFAULT_TARGET_WORDS=10000       # 每节默认目标字数
 CHUNK_SIZE=500                  # RAG 切块大小（字符数）
 CHUNK_OVERLAP=100               # 切块重叠字符数
 RAG_TOP_K=5                     # 每次检索段落数
+RAG_PHASE3_SHADOW=false         # Phase 3 新检索仅记录影子结果，不改变 Writer 输入
+RAG_PHASE3_MAX_QUERIES=4        # 人物/事件/伏笔/场景查询数量上限
+RAG_PHASE3_CANDIDATE_K=12       # 每个意图的向量粗召回数量
+RAG_PHASE3_MIN_SCORE=0.35       # 规则重排最低入选分，低于阈值允许返回 0 条
 
 # ═══ 角色一致性检查 ═══
 ENABLE_CONSISTENCY_CHECK=true
