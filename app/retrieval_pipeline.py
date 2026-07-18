@@ -25,6 +25,11 @@ _SCENE_TERMS = (
     "房间", "店", "仓库", "书店", "街", "巷", "门口", "操作间", "社区",
     "厨房", "活动室", "医院", "学校", "公司", "凌晨", "清晨", "夜里",
 )
+_ACTION_TERMS = (
+    "说", "问", "告诉", "发现", "知道", "决定", "答应", "拒绝", "删除", "删帖",
+    "拍", "记录", "写", "回忆", "想起", "加入", "离开", "回来", "帮助", "邀请",
+    "承诺", "等待", "寻找", "收到", "递", "揉面", "做", "交代", "联系", "讨论",
+)
 
 
 def _clean_parts(parts: Iterable[object]) -> list[str]:
@@ -165,6 +170,129 @@ class QueryPlanner:
         )
 
 
+class QueryPlannerV2:
+    """Build at most two anchored queries for an isolated shadow experiment.
+
+    Unlike V1, a character query is never just a list of names, and scene is
+    emitted only when the writing requirement contains an explicit place/time
+    anchor. This planner is intentionally not wired into Writer defaults.
+    """
+
+    def __init__(self, max_queries: int = 2):
+        self.max_queries = max(1, min(int(max_queries), 2))
+
+    @staticmethod
+    def _clauses(text: str) -> list[str]:
+        clauses = re.split(r"[\s，。；！？：:、]+", str(text or ""))
+        return [clause.strip() for clause in clauses if len(clause.strip()) >= 2]
+
+    @staticmethod
+    def _anchored_clauses(clauses: list[str], names: tuple[str, ...]) -> list[str]:
+        anchored = []
+        for clause in clauses:
+            has_name = any(name in clause for name in names)
+            has_action = any(term in clause for term in _ACTION_TERMS)
+            if has_action or (has_name and len(clause) >= 6):
+                if clause not in anchored:
+                    anchored.append(clause)
+        return anchored
+
+    def plan(
+        self,
+        *,
+        topic: str = "",
+        section_title: str = "",
+        subsection_title: str = "",
+        key_points: Iterable[str] = (),
+        description: str = "",
+        character_names: Iterable[str] = (),
+        current_section: int = 0,
+        current_subsection: int = 0,
+        requested_intents: Iterable[str] | None = None,
+    ) -> QueryPlan:
+        key_points = _clean_parts(key_points)
+        base_parts = _clean_parts(
+            [section_title, subsection_title, *key_points, description, topic]
+        )
+        base_text = " ".join(base_parts)
+        if not base_text:
+            return QueryPlan(current_section, current_subsection, (), self.max_queries)
+
+        names = tuple(
+            name for name in _clean_parts(character_names) if name in base_text
+        )
+        requested = (
+            set(_clean_parts(requested_intents))
+            if requested_intents is not None else set(SUPPORTED_INTENTS)
+        )
+        clauses = self._clauses(base_text)
+        anchored = self._anchored_clauses(clauses, names)
+        event_parts = _clean_parts(
+            [section_title, subsection_title, *anchored[-3:], *key_points[-2:]]
+        )
+        queries: list[PlannedQuery] = []
+
+        if "event" in requested and event_parts:
+            queries.append(PlannedQuery("event", " ".join(event_parts), names))
+
+        character_clauses = [
+            clause for clause in anchored if any(name in clause for name in names)
+        ]
+        if "character" in requested and names and character_clauses:
+            character_text = " ".join(
+                _clean_parts([*names, *character_clauses[-2:]])
+            )
+            if character_text and character_text not in {query.query for query in queries}:
+                queries.append(PlannedQuery("character", character_text, names))
+
+        if "foreshadowing" in requested and any(
+            term in base_text for term in _FORESHADOWING_TERMS
+        ):
+            clue_parts = [
+                clause for clause in clauses
+                if any(term in clause for term in _FORESHADOWING_TERMS)
+            ]
+            clue_text = " ".join(_clean_parts(["伏笔 后续", *clue_parts[-2:]]))
+            if clue_text and clue_text not in {query.query for query in queries}:
+                queries.append(PlannedQuery("foreshadowing", clue_text, names))
+
+        explicit_scene = [
+            clause for clause in clauses
+            if any(term in clause for term in _SCENE_TERMS)
+        ]
+        if "scene" in requested and explicit_scene:
+            scene_text = " ".join(_clean_parts(explicit_scene[-2:]))
+            if scene_text and scene_text not in {query.query for query in queries}:
+                queries.append(PlannedQuery("scene", scene_text, names))
+
+        if not queries and anchored and "event" in requested:
+            queries.append(PlannedQuery("event", " ".join(anchored[-2:]), names))
+
+        return QueryPlan(
+            current_section=current_section,
+            current_subsection=current_subsection,
+            queries=tuple(queries[: self.max_queries]),
+            max_queries=self.max_queries,
+        )
+
+    def plan_text(
+        self,
+        text: str,
+        *,
+        requested_intents: Iterable[str],
+        character_names: Iterable[str] = (),
+        current_section: int = 0,
+        current_subsection: int = 0,
+    ) -> QueryPlan:
+        return self.plan(
+            description=text,
+            character_names=character_names,
+            current_section=current_section,
+            current_subsection=current_subsection,
+            requested_intents=requested_intents,
+        )
+
+
 def merge_candidates(query_results: Iterable[tuple[PlannedQuery, list[dict]]]) -> list[dict]:
     """Merge coarse results by source ID while preserving all matched intents."""
     merged: dict[str, dict] = {}
@@ -209,9 +337,18 @@ class ExplainableReranker:
         "chapter_proximity": 0.05,
     }
 
-    def __init__(self, min_score: float = 0.35, max_results: int = 5):
+    def __init__(
+        self,
+        min_score: float = 0.35,
+        max_results: int = 5,
+        *,
+        token_budget: int | None = None,
+        require_non_character_support: bool = False,
+    ):
         self.min_score = max(0.0, min(float(min_score), 1.0))
         self.max_results = max(0, min(int(max_results), 5))
+        self.token_budget = max(1, int(token_budget)) if token_budget else None
+        self.require_non_character_support = bool(require_non_character_support)
 
     def rerank(self, plan: QueryPlan, candidates: Iterable[dict]) -> dict:
         all_query_text = " ".join(query.query for query in plan.queries)
@@ -242,15 +379,11 @@ class ExplainableReranker:
             keyword_overlap = self._coverage(query_tokens, candidate_tokens)
             title_overlap = self._coverage(query_tokens, title_tokens)
 
-            metadata = candidate.get("metadata") or {}
-            candidate_characters = set(_decode_metadata_list(metadata.get("characters")))
-            if not candidate_characters:
-                candidate_characters = {
-                    name for name in query_characters if name in f"{title}{text}"
-                }
-            character_overlap = (
-                len(query_characters & candidate_characters) / len(query_characters)
-                if query_characters else 0.0
+            character_overlap, character_evidence = self._character_score(
+                query_characters=query_characters,
+                title=title,
+                text=text,
+                metadata=candidate.get("metadata") or {},
             )
             if plan.current_section > 0 and 0 < section <= plan.current_section:
                 chapter_proximity = 1.0 / (1.0 + plan.current_section - section)
@@ -287,10 +420,16 @@ class ExplainableReranker:
                 "chapter_proximity": round(chapter_proximity, 6),
             }
             base_score = sum(components[name] * weight for name, weight in self.WEIGHTS.items())
+            score_without_character = (
+                base_score - components["character"] * self.WEIGHTS["character"]
+            )
             scored.append({
                 **candidate,
                 "score_components": components,
+                "character_evidence": character_evidence,
                 "base_score": round(base_score, 6),
+                "score_without_character": round(score_without_character, 6),
+                "estimated_tokens": math.ceil(len(text) / 4),
                 "duplicate_section_penalty": 0.0,
                 "final_score": round(base_score, 6),
                 "selected": False,
@@ -303,6 +442,7 @@ class ExplainableReranker:
         )
         section_counts: dict[int, int] = {}
         selected: list[dict] = []
+        used_tokens = 0
         for item in eligible:
             section = int(item.get("section") or 0)
             duplicate_penalty = 0.08 * section_counts.get(section, 0)
@@ -312,12 +452,23 @@ class ExplainableReranker:
             if final_score < self.min_score:
                 item["reason"] = "below_min_score"
                 continue
+            if (
+                self.require_non_character_support
+                and float(item.get("score_without_character", 0.0)) < self.min_score
+            ):
+                item["reason"] = "below_non_character_support"
+                continue
             if len(selected) >= self.max_results:
                 item["reason"] = "top_k_limit"
+                continue
+            item_tokens = int(item.get("estimated_tokens", 0))
+            if self.token_budget is not None and used_tokens + item_tokens > self.token_budget:
+                item["reason"] = "token_budget_limit"
                 continue
             item["selected"] = True
             item["reason"] = self._selection_reason(item)
             selected.append(item)
+            used_tokens += item_tokens
             section_counts[section] = section_counts.get(section, 0) + 1
 
         return {
@@ -328,6 +479,25 @@ class ExplainableReranker:
             ),
             "min_score": self.min_score,
             "max_results": self.max_results,
+            "token_budget": self.token_budget,
+        }
+
+    @staticmethod
+    def _character_score(
+        *, query_characters: set[str], title: str, text: str, metadata: dict,
+    ) -> tuple[float, dict]:
+        candidate_characters = set(_decode_metadata_list(metadata.get("characters")))
+        if not candidate_characters:
+            candidate_characters = {
+                name for name in query_characters if name in f"{title}{text}"
+            }
+        overlap = (
+            len(query_characters & candidate_characters) / len(query_characters)
+            if query_characters else 0.0
+        )
+        return overlap, {
+            "mode": "binary",
+            "metadata_matches": sorted(query_characters & candidate_characters),
         }
 
     @staticmethod
@@ -336,6 +506,7 @@ class ExplainableReranker:
 
     @staticmethod
     def _excluded(candidate: dict, reason: str) -> dict:
+        text = str(candidate.get("text", ""))
         return {
             **candidate,
             "score_components": {
@@ -346,6 +517,9 @@ class ExplainableReranker:
                 "chapter_proximity": 0.0,
             },
             "base_score": 0.0,
+            "score_without_character": 0.0,
+            "character_evidence": {"mode": "excluded"},
+            "estimated_tokens": math.ceil(len(text) / 4),
             "duplicate_section_penalty": 0.0,
             "final_score": 0.0,
             "selected": False,
@@ -360,12 +534,71 @@ class ExplainableReranker:
         return f"selected:intents={intents};strongest={strongest}"
 
 
+class ExplainableRerankerV2(ExplainableReranker):
+    """Shadow-only reranker with graded character evidence and a token cap."""
+
+    def __init__(
+        self, min_score: float = 0.35, max_results: int = 5, token_budget: int = 600,
+    ):
+        super().__init__(
+            min_score=min_score,
+            max_results=max_results,
+            token_budget=token_budget,
+            require_non_character_support=True,
+        )
+
+    @staticmethod
+    def _character_score(
+        *, query_characters: set[str], title: str, text: str, metadata: dict,
+    ) -> tuple[float, dict]:
+        if not query_characters:
+            return 0.0, {
+                "mode": "graded",
+                "metadata_matches": [],
+                "title_matches": [],
+                "text_mentions": {},
+            }
+        metadata_names = set(_decode_metadata_list(metadata.get("characters")))
+        metadata_matches = query_characters & metadata_names
+        title_matches = {name for name in query_characters if name in title}
+        text_mentions = {name: text.count(name) for name in query_characters}
+        metadata_coverage = len(metadata_matches) / len(query_characters)
+        title_coverage = len(title_matches) / len(query_characters)
+        text_strength = sum(
+            1.0 if count >= 2 else 0.5 if count == 1 else 0.0
+            for count in text_mentions.values()
+        ) / len(query_characters)
+        score = (
+            0.45 * metadata_coverage
+            + 0.25 * title_coverage
+            + 0.30 * text_strength
+        )
+        return score, {
+            "mode": "graded",
+            "metadata_matches": sorted(metadata_matches),
+            "title_matches": sorted(title_matches),
+            "text_mentions": dict(sorted(text_mentions.items())),
+            "metadata_coverage": round(metadata_coverage, 6),
+            "title_coverage": round(title_coverage, 6),
+            "text_strength": round(text_strength, 6),
+        }
+
+
 class ShadowRetriever:
     """Execute multi-intent coarse recall and return trace-only Phase 3 results."""
 
-    def __init__(self, *, candidate_k: int = 12, min_score: float = 0.35, max_results: int = 5):
+    def __init__(
+        self,
+        *,
+        candidate_k: int = 12,
+        min_score: float = 0.35,
+        max_results: int = 5,
+        reranker: ExplainableReranker | None = None,
+    ):
         self.candidate_k = max(1, int(candidate_k))
-        self.reranker = ExplainableReranker(min_score=min_score, max_results=max_results)
+        self.reranker = reranker or ExplainableReranker(
+            min_score=min_score, max_results=max_results
+        )
 
     def run(self, vector_store, plan: QueryPlan, *, task_id: str) -> dict:
         started = time.perf_counter()
@@ -392,10 +625,12 @@ class ShadowRetriever:
         rerank_trace = {
             "min_score": ranked["min_score"],
             "max_results": ranked["max_results"],
+            "token_budget": ranked.get("token_budget"),
             "candidates": [self._candidate_trace(item) for item in ranked["candidates"]],
         }
         return {
             "mode": "shadow",
+            "retriever_version": "v1",
             "writer_uses": "legacy",
             "plan": plan.to_dict(),
             "filter": {"task_id": task_id},
@@ -423,11 +658,40 @@ class ShadowRetriever:
             "matched_intents": list(item.get("matched_intents", [])),
             "coarse_ranks": list(item.get("coarse_ranks", [])),
             "score_components": dict(item.get("score_components", {})),
+            "character_evidence": dict(item.get("character_evidence", {})),
             "raw_vector_score": item.get("raw_vector_score", 0.0),
             "rank_vector_score": item.get("rank_vector_score", 0.0),
             "base_score": item.get("base_score", 0.0),
+            "score_without_character": item.get("score_without_character", 0.0),
+            "estimated_tokens": item.get("estimated_tokens", 0),
             "duplicate_section_penalty": item.get("duplicate_section_penalty", 0.0),
             "final_score": item.get("final_score", 0.0),
             "selected": bool(item.get("selected")),
             "reason": item.get("reason", ""),
         }
+
+
+class ShadowRetrieverV2(ShadowRetriever):
+    """Experimental V2 retriever; callers must keep its output out of Writer."""
+
+    def __init__(
+        self,
+        *,
+        candidate_k: int = 12,
+        min_score: float = 0.35,
+        max_results: int = 5,
+        token_budget: int = 600,
+    ):
+        super().__init__(
+            candidate_k=candidate_k,
+            reranker=ExplainableRerankerV2(
+                min_score=min_score,
+                max_results=max_results,
+                token_budget=token_budget,
+            ),
+        )
+
+    def run(self, vector_store, plan: QueryPlan, *, task_id: str) -> dict:
+        result = super().run(vector_store, plan, task_id=task_id)
+        result["retriever_version"] = "v2_experimental"
+        return result

@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 Batch 2B Codex 辅助定向复核已完成（非独立人工金标准）；最佳闭集精度仍未达到 68% 门槛，继续 shadow，Phase 4 未开始
+> 状态：Phase 3 Batch 2C 真实 V1/V2 shadow 对照已完成；V2 已知相关保留率仅 43.48%，不切生产，Phase 4 未开始
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -536,3 +536,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-18 | Phase 3 新候选人工审阅入口 | 从冻结的 shadow 报告提取 10 条 query 下 38 个入选候选，按 source ID 从现有 Chroma 只读回填完整 chunk 正文；同 query 去重、跨 query 保持独立；保留 query、意图、must-recall facts、得分与原因 | 审阅表 query=10、candidate=38、human_reviewed=0；一致性测试校验数量、ID、正文 hash、查询上下文、分数、原因、空人工字段和防覆盖行为；unit=135/0、integration=8/0、quality=13/0 | 等待用户填写 `human_relevant`、`supports_which_fact`、`review_note`；保持 shadow，不修改权重、Writer 或其他冻结系统，不开始第二批或 Phase 4 |
 | 2026-07-18 | Phase 3 第一批人工评估收尾 | 二审并固化 38 条新候选：21 相关、17 不相关；分别计算人工候选精度、人工相关候选的 gold-section recall、事实覆盖率与后期精度；输出逐 query 和失败层级机器报告 | 人工 P@5=55.26%（21/38）；可比章节 R@5=43.33%（13/30）；事实覆盖=23.08%（6/26，独立诊断指标）；后期人工 P@5=26.67%（4/15）；Q3 返回 0；17 个误召回中 13 个角色分饱和；unit=137/0、integration=8/0、quality=15/0 | 三项质量门槛均失败，仅 Writer 不变通过；保持 shadow，不切生产；第二批只建议做意图/角色分/阈值/query 数/token 预算消融，且须显式授权，不开始 Phase 4 |
 | 2026-07-18 | Phase 3 Batch 2A/2B 离线诊断及定向复核 | 对冻结 trace 和 38 条人工标签复跑 10,368 个组合并做按 query 留一验证；随后由 Codex 辅助复核 2 条新进入 top-5 的候选，两条均为间接相关但不支持完整 must-recall fact | 40 条已审阅 query-candidate 对中最后 2 条 provenance=`codex_assisted_review`，不是独立人工金标准；去 scene P=65.71%、保留=100%；去 character/max3 P=66.67%、保留=69.57%；事实覆盖不变 | 最佳闭集精度仍低于 68%；辅助标签只作诊断，不能满足人工发布门槛；继续 shadow，不调生产权重、不开始 Phase 4 |
+| 2026-07-18 | Phase 3 Batch 2C 真实 V1/V2 shadow 对照 | 新增未接入 Writer 的 QueryPlannerV2：最多 2 条查询，character 必须带动作/关系/状态锚点，scene 仅显式地点/时间触发；角色分按 metadata/标题/正文次数分级并设置 600-token 上限；用现有 embedding 与共享 task-filtered Chroma 真实重跑 10 条 V1/V2 | V1→V2：闭集 P 55.26%→62.50%，池化已知相关保留 91.30%→43.48%，后期 P 26.67%→20.00%，gold-section 候选池代理 76.67%→80.00%，token 470.3→317.6，真实延迟 6107.2→4914.7ms；未知候选=12；unit=145/0、integration=8/0、quality=24/0 | 即使 12 条未知全部相关，池化保留率上界也仅 62.86%，不可能达到 90%；不生成无效人工阅读任务，V2 保持实验，不切生产、不开始 Phase 4 |

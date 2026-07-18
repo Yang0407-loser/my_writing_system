@@ -1,9 +1,12 @@
 from app.retrieval_pipeline import (
     ExplainableReranker,
+    ExplainableRerankerV2,
     PlannedQuery,
     QueryPlan,
     QueryPlanner,
+    QueryPlannerV2,
     ShadowRetriever,
+    ShadowRetrieverV2,
     merge_candidates,
 )
 
@@ -31,6 +34,39 @@ def test_query_planner_is_bounded_and_uses_supported_intents():
 def test_query_planner_returns_empty_plan_for_empty_input():
     plan = QueryPlanner().plan(current_section=1, current_subsection=1)
     assert plan.queries == ()
+
+
+def test_query_planner_v2_bounds_queries_and_anchors_character_intent():
+    plan = QueryPlannerV2().plan_text(
+        "林晚删帖后告诉周野，她决定进入面包店帮忙",
+        requested_intents=["character", "event", "scene"],
+        character_names=["林晚", "周野", "顾衍"],
+        current_section=7,
+        current_subsection=1,
+    )
+
+    assert 1 <= len(plan.queries) <= 2
+    character = next(query for query in plan.queries if query.intent == "character")
+    assert "林晚" in character.query
+    assert any(term in character.query for term in ("删帖", "告诉", "决定", "帮忙"))
+    assert "顾衍" not in character.characters
+    assert all(query.intent != "scene" for query in plan.queries)
+
+
+def test_query_planner_v2_only_emits_scene_for_explicit_anchor():
+    without_scene = QueryPlannerV2().plan_text(
+        "林晚决定继续记录生活",
+        requested_intents=["scene"],
+        character_names=["林晚"],
+    )
+    with_scene = QueryPlannerV2().plan_text(
+        "凌晨林晚站在书店门口等待周野",
+        requested_intents=["scene"],
+        character_names=["林晚", "周野"],
+    )
+
+    assert without_scene.queries == ()
+    assert [query.intent for query in with_scene.queries] == ["scene"]
 
 
 def test_merge_candidates_keeps_identity_and_all_intents():
@@ -114,6 +150,41 @@ def test_reranker_can_return_zero_and_penalizes_same_section_duplicates():
     assert second["duplicate_section_penalty"] == 0.08
 
 
+def test_v2_reranker_grades_character_evidence_and_enforces_token_budget():
+    plan = QueryPlan(
+        8, 1,
+        (PlannedQuery("character", "林晚 决定帮助周野", ("林晚", "周野")),),
+        2,
+    )
+    candidates = [
+        {
+            "id": "rich", "text": "林晚决定帮助周野。周野点头。" * 8,
+            "section": 7, "subsection": 1, "title": "共同劳动",
+            "metadata": {"characters": '["林晚", "周野"]'},
+            "best_vector_score": 0.9, "rank": 1,
+            "matched_intents": ["character"],
+        },
+        {
+            "id": "overflow", "text": "林晚和周野继续工作。" * 80,
+            "section": 6, "subsection": 1, "title": "工作",
+            "metadata": {"characters": '["林晚", "周野"]'},
+            "best_vector_score": 0.89, "rank": 2,
+            "matched_intents": ["character"],
+        },
+    ]
+
+    result = ExplainableRerankerV2(
+        min_score=0.2, token_budget=100
+    ).rerank(plan, candidates)
+
+    assert [item["id"] for item in result["selected"]] == ["rich"]
+    rich = result["selected"][0]
+    assert rich["character_evidence"]["mode"] == "graded"
+    assert rich["score_components"]["character"] < 1.0
+    overflow = next(item for item in result["candidates"] if item["id"] == "overflow")
+    assert overflow["reason"] == "token_budget_limit"
+
+
 class FakeVectorStore:
     def __init__(self):
         self.calls = []
@@ -160,3 +231,28 @@ def test_shadow_retriever_uses_task_filter_and_never_claims_writer_output():
     assert trace["id"] == "doc-1"
     assert trace["reason"].startswith("selected:")
     assert "text" not in trace
+
+
+def test_v2_shadow_retriever_remains_trace_only_and_task_filtered():
+    plan = QueryPlannerV2().plan_text(
+        "林晚删帖后决定帮助周野",
+        requested_intents=["event", "character"],
+        character_names=["林晚", "周野"],
+        current_section=7,
+        current_subsection=1,
+    )
+    store = FakeVectorStore()
+
+    result = ShadowRetrieverV2(
+        candidate_k=8, min_score=0.1, token_budget=600
+    ).run(store, plan, task_id="task-v2")
+
+    assert result["retriever_version"] == "v2_experimental"
+    assert result["mode"] == "shadow"
+    assert result["writer_uses"] == "legacy"
+    assert result["filter"] == {"task_id": "task-v2"}
+    assert len(store.calls) <= 2
+    assert all(call[2] == "task-v2" for call in store.calls)
+    selected = next(item for item in result["rerank"]["candidates"] if item["selected"])
+    assert selected["character_evidence"]["mode"] == "graded"
+    assert selected["estimated_tokens"] > 0
