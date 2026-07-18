@@ -879,14 +879,59 @@
   },
   "new_candidate_review": {
     "candidate_count": 2,
-    "human_reviewed_count": 0,
-    "status": "awaiting_targeted_review"
+    "human_reviewed_count": 2,
+    "status": "human_review_complete"
+  },
+  "targeted_review_outcome": {
+    "review_provenance": "codex_assisted_review",
+    "independent_human_confirmation": false,
+    "reviewed_relevant": 2,
+    "reviewed_irrelevant": 0,
+    "newly_supported_must_recall_facts": 0,
+    "pooled_known_relevant_candidates": 23,
+    "post_review_comparison": [
+      {
+        "config_id": "current-baseline",
+        "selected_candidates": 38,
+        "known_relevant_selected": 21,
+        "known_irrelevant_selected": 17,
+        "unlabeled_selected": 0,
+        "closed_set_precision": 0.5526,
+        "pooled_known_relevant_retention": 0.913
+      },
+      {
+        "config_id": "cfg-03483",
+        "selected_candidates": 35,
+        "known_relevant_selected": 23,
+        "known_irrelevant_selected": 12,
+        "unlabeled_selected": 0,
+        "closed_set_precision": 0.6571,
+        "pooled_known_relevant_retention": 1.0
+      },
+      {
+        "config_id": "cfg-07777",
+        "selected_candidates": 24,
+        "known_relevant_selected": 16,
+        "known_irrelevant_selected": 8,
+        "unlabeled_selected": 0,
+        "closed_set_precision": 0.6667,
+        "pooled_known_relevant_retention": 0.6957
+      }
+    ],
+    "frozen_loo_selection_re_evaluation": {
+      "known_relevant_selected": 21,
+      "known_irrelevant_selected": 13,
+      "unlabeled_selected": 0,
+      "closed_set_precision": 0.6176,
+      "pooled_known_relevant_retention": 0.913
+    },
+    "interpretation": "Both Codex-assisted reviews judge the new candidates indirectly relevant but find no complete must_recall_fact support. These labels are diagnostic only and do not satisfy an independent-human release gate. Precision improves relative to the frozen baseline, but no selected configuration reaches the 68% gate and the more aggressive configuration loses known relevant candidates."
   },
   "limitations": [
     "Intent removal and max_queries filter candidates by frozen matched_intents; keyword/title components are not re-embedded or recomputed.",
     "The graded character score uses metadata first, then title/text mention strength; it is an offline proposal, not production behavior.",
-    "Closed-set metrics cannot establish true recall because candidates outside the existing 38 labels remain unlabeled.",
+    "Closed-set metrics cannot establish true recall because candidates outside the 40 reviewed query-candidate pairs remain unlabeled.",
     "Token counts use exact Chroma text lengths; latency is a proportional estimate from the frozen shadow run."
   ],
-  "decision": "await_targeted_review"
+  "decision": "remain_shadow_after_targeted_review"
 }

@@ -8,8 +8,8 @@
   },
   "summary": {
     "candidate_count": 2,
-    "human_reviewed_count": 0,
-    "status": "awaiting_targeted_review"
+    "human_reviewed_count": 2,
+    "status": "human_review_complete"
   },
   "candidates": [
     {
@@ -37,9 +37,10 @@
           "final_score": 0.36817
         }
       ],
-      "human_relevant": "",
+      "review_provenance": "codex_assisted_review",
+      "human_relevant": "相关",
       "supports_which_fact": [],
-      "review_note": ""
+      "review_note": "间接相关：正文直接写林晚与周野讨论删帖及拍摄人群带来的后果，属于删帖事件的连续上下文；但没有顾衍与林晚谈周野、童谣来自母亲或林晚决定不再旁观，不能计入任何完整 must_recall_fact。"
     },
     {
       "review_item_id": "q08-216b5429",
@@ -66,9 +67,10 @@
           "final_score": 0.361543
         }
       ],
-      "human_relevant": "",
+      "review_provenance": "codex_assisted_review",
+      "human_relevant": "相关",
       "supports_which_fact": [],
-      "review_note": ""
+      "review_note": "间接相关：正文写周野明确许可拍摄、限制闪光灯，林晚据此调整并记录拍摄内容，构成分享与尊重边界的上下文；但没有直接写林晚开始思考该边界，也没有微咸余味或味道与周野过往的联系，不能计入任何完整 must_recall_fact。"
     }
   ]
 }
