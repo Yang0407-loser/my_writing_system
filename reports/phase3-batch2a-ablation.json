@@ -1,0 +1,892 @@
+{
+  "schema_version": 1,
+  "mode": "offline_trace_replay",
+  "production_changed": false,
+  "writer_changed": false,
+  "grid": {
+    "configurations": 10368,
+    "intent_variants": [
+      "all",
+      "no_scene",
+      "no_character"
+    ],
+    "character_weight_factors": [
+      1.0,
+      0.75,
+      0.5,
+      0.25
+    ],
+    "character_modes": [
+      "binary",
+      "graded"
+    ],
+    "min_scores": [
+      0.35,
+      0.4,
+      0.45,
+      0.5
+    ],
+    "max_queries": [
+      2,
+      3,
+      4
+    ],
+    "max_results": [
+      3,
+      4,
+      5
+    ],
+    "duplicate_penalties": [
+      0.04,
+      0.08,
+      0.12
+    ],
+    "token_budgets": [
+      null,
+      400,
+      600,
+      800
+    ]
+  },
+  "metric_scope": {
+    "closed_set_precision": "known relevant / all labeled selections; unlabeled candidates excluded from this denominator",
+    "known_relevant_retention": "known relevant selections / the 21 known relevant candidates",
+    "unlabeled_selected": "reported separately and never treated as irrelevant",
+    "latency": "estimated by retained query count ratio; not a live timing measurement"
+  },
+  "baseline": {
+    "config": {
+      "config_id": "current-baseline",
+      "intent_variant": "all",
+      "character_weight_factor": 1.0,
+      "character_mode": "binary",
+      "min_score": 0.35,
+      "max_queries": 4,
+      "max_results": 5,
+      "duplicate_penalty": 0.08,
+      "token_budget": null
+    },
+    "selected_candidates": 38,
+    "known_relevant_selected": 21,
+    "known_irrelevant_selected": 17,
+    "unlabeled_selected": 0,
+    "closed_set_precision": 0.5526,
+    "known_relevant_retention": 1.0,
+    "label_coverage": 1.0,
+    "late_closed_set_precision": 0.2667,
+    "mean_selected_per_query": 3.8,
+    "mean_token_estimate": 471.6,
+    "mean_latency_estimate_ms": 6361.342,
+    "per_query": [
+      {
+        "query_index": 1,
+        "selected": 5,
+        "known_relevant": 1,
+        "known_irrelevant": 4,
+        "unlabeled": 0,
+        "token_estimate": 662
+      },
+      {
+        "query_index": 2,
+        "selected": 2,
+        "known_relevant": 0,
+        "known_irrelevant": 2,
+        "unlabeled": 0,
+        "token_estimate": 230
+      },
+      {
+        "query_index": 3,
+        "selected": 0,
+        "known_relevant": 0,
+        "known_irrelevant": 0,
+        "unlabeled": 0,
+        "token_estimate": 0
+      },
+      {
+        "query_index": 4,
+        "selected": 5,
+        "known_relevant": 1,
+        "known_irrelevant": 4,
+        "unlabeled": 0,
+        "token_estimate": 639
+      },
+      {
+        "query_index": 5,
+        "selected": 5,
+        "known_relevant": 4,
+        "known_irrelevant": 1,
+        "unlabeled": 0,
+        "token_estimate": 578
+      },
+      {
+        "query_index": 6,
+        "selected": 5,
+        "known_relevant": 5,
+        "known_irrelevant": 0,
+        "unlabeled": 0,
+        "token_estimate": 561
+      },
+      {
+        "query_index": 7,
+        "selected": 5,
+        "known_relevant": 4,
+        "known_irrelevant": 1,
+        "unlabeled": 0,
+        "token_estimate": 642
+      },
+      {
+        "query_index": 8,
+        "selected": 3,
+        "known_relevant": 3,
+        "known_irrelevant": 0,
+        "unlabeled": 0,
+        "token_estimate": 356
+      },
+      {
+        "query_index": 9,
+        "selected": 3,
+        "known_relevant": 1,
+        "known_irrelevant": 2,
+        "unlabeled": 0,
+        "token_estimate": 410
+      },
+      {
+        "query_index": 10,
+        "selected": 5,
+        "known_relevant": 2,
+        "known_irrelevant": 3,
+        "unlabeled": 0,
+        "token_estimate": 638
+      }
+    ]
+  },
+  "pareto_frontier_outcomes": 20,
+  "selected_pareto_configs": [
+    {
+      "config": {
+        "config_id": "cfg-03483",
+        "intent_variant": "no_scene",
+        "character_weight_factor": 1.0,
+        "character_mode": "binary",
+        "min_score": 0.35,
+        "max_queries": 2,
+        "max_results": 5,
+        "duplicate_penalty": 0.04,
+        "token_budget": 600
+      },
+      "selected_candidates": 35,
+      "known_relevant_selected": 21,
+      "known_irrelevant_selected": 12,
+      "unlabeled_selected": 2,
+      "closed_set_precision": 0.6364,
+      "known_relevant_retention": 1.0,
+      "label_coverage": 0.9429,
+      "late_closed_set_precision": 0.3333,
+      "mean_selected_per_query": 3.5,
+      "mean_token_estimate": 429.4,
+      "mean_latency_estimate_ms": 4822.48,
+      "per_query": [
+        {
+          "query_index": 1,
+          "selected": 4,
+          "known_relevant": 1,
+          "known_irrelevant": 3,
+          "unlabeled": 0,
+          "token_estimate": 536
+        },
+        {
+          "query_index": 2,
+          "selected": 2,
+          "known_relevant": 0,
+          "known_irrelevant": 2,
+          "unlabeled": 0,
+          "token_estimate": 230
+        },
+        {
+          "query_index": 3,
+          "selected": 0,
+          "known_relevant": 0,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 0
+        },
+        {
+          "query_index": 4,
+          "selected": 4,
+          "known_relevant": 1,
+          "known_irrelevant": 3,
+          "unlabeled": 0,
+          "token_estimate": 490
+        },
+        {
+          "query_index": 5,
+          "selected": 5,
+          "known_relevant": 4,
+          "known_irrelevant": 0,
+          "unlabeled": 1,
+          "token_estimate": 578
+        },
+        {
+          "query_index": 6,
+          "selected": 5,
+          "known_relevant": 5,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 561
+        },
+        {
+          "query_index": 7,
+          "selected": 4,
+          "known_relevant": 4,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 497
+        },
+        {
+          "query_index": 8,
+          "selected": 4,
+          "known_relevant": 3,
+          "known_irrelevant": 0,
+          "unlabeled": 1,
+          "token_estimate": 498
+        },
+        {
+          "query_index": 9,
+          "selected": 3,
+          "known_relevant": 1,
+          "known_irrelevant": 2,
+          "unlabeled": 0,
+          "token_estimate": 410
+        },
+        {
+          "query_index": 10,
+          "selected": 4,
+          "known_relevant": 2,
+          "known_irrelevant": 2,
+          "unlabeled": 0,
+          "token_estimate": 494
+        }
+      ]
+    },
+    {
+      "config": {
+        "config_id": "cfg-07777",
+        "intent_variant": "no_character",
+        "character_weight_factor": 0.75,
+        "character_mode": "binary",
+        "min_score": 0.35,
+        "max_queries": 2,
+        "max_results": 3,
+        "duplicate_penalty": 0.04,
+        "token_budget": null
+      },
+      "selected_candidates": 24,
+      "known_relevant_selected": 16,
+      "known_irrelevant_selected": 8,
+      "unlabeled_selected": 0,
+      "closed_set_precision": 0.6667,
+      "known_relevant_retention": 0.7619,
+      "label_coverage": 1.0,
+      "late_closed_set_precision": 0.4444,
+      "mean_selected_per_query": 2.4,
+      "mean_token_estimate": 294.3,
+      "mean_latency_estimate_ms": 2539.709,
+      "per_query": [
+        {
+          "query_index": 1,
+          "selected": 3,
+          "known_relevant": 1,
+          "known_irrelevant": 2,
+          "unlabeled": 0,
+          "token_estimate": 399
+        },
+        {
+          "query_index": 2,
+          "selected": 1,
+          "known_relevant": 0,
+          "known_irrelevant": 1,
+          "unlabeled": 0,
+          "token_estimate": 116
+        },
+        {
+          "query_index": 3,
+          "selected": 0,
+          "known_relevant": 0,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 0
+        },
+        {
+          "query_index": 4,
+          "selected": 3,
+          "known_relevant": 1,
+          "known_irrelevant": 2,
+          "unlabeled": 0,
+          "token_estimate": 340
+        },
+        {
+          "query_index": 5,
+          "selected": 3,
+          "known_relevant": 3,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 380
+        },
+        {
+          "query_index": 6,
+          "selected": 3,
+          "known_relevant": 3,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 314
+        },
+        {
+          "query_index": 7,
+          "selected": 3,
+          "known_relevant": 3,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 384
+        },
+        {
+          "query_index": 8,
+          "selected": 2,
+          "known_relevant": 2,
+          "known_irrelevant": 0,
+          "unlabeled": 0,
+          "token_estimate": 230
+        },
+        {
+          "query_index": 9,
+          "selected": 3,
+          "known_relevant": 1,
+          "known_irrelevant": 2,
+          "unlabeled": 0,
+          "token_estimate": 410
+        },
+        {
+          "query_index": 10,
+          "selected": 3,
+          "known_relevant": 2,
+          "known_irrelevant": 1,
+          "unlabeled": 0,
+          "token_estimate": 370
+        }
+      ]
+    }
+  ],
+  "leave_one_query_out": {
+    "method": "select on nine queries with a retention floor of 75%, evaluate on the held-out query",
+    "folds": [
+      {
+        "held_out_query": 1,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.653602,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 4,
+          "known_relevant_selected": 1,
+          "known_irrelevant_selected": 3,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 0.25,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": 0.25,
+          "mean_selected_per_query": 4.0,
+          "mean_token_estimate": 536.0,
+          "mean_latency_estimate_ms": 5016.53,
+          "per_query": [
+            {
+              "query_index": 1,
+              "selected": 4,
+              "known_relevant": 1,
+              "known_irrelevant": 3,
+              "unlabeled": 0,
+              "token_estimate": 536
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 2,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.64501,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 2,
+          "known_relevant_selected": 0,
+          "known_irrelevant_selected": 2,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 0.0,
+          "known_relevant_retention": null,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 2.0,
+          "mean_token_estimate": 230.0,
+          "mean_latency_estimate_ms": 5007.019,
+          "per_query": [
+            {
+              "query_index": 2,
+              "selected": 2,
+              "known_relevant": 0,
+              "known_irrelevant": 2,
+              "unlabeled": 0,
+              "token_estimate": 230
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 3,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.622726,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 0,
+          "known_relevant_selected": 0,
+          "known_irrelevant_selected": 0,
+          "unlabeled_selected": 0,
+          "closed_set_precision": null,
+          "known_relevant_retention": null,
+          "label_coverage": 0.0,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 0.0,
+          "mean_token_estimate": 0.0,
+          "mean_latency_estimate_ms": 5138.752,
+          "per_query": [
+            {
+              "query_index": 3,
+              "selected": 0,
+              "known_relevant": 0,
+              "known_irrelevant": 0,
+              "unlabeled": 0,
+              "token_estimate": 0
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 4,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.653176,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 4,
+          "known_relevant_selected": 1,
+          "known_irrelevant_selected": 3,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 0.25,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": 0.25,
+          "mean_selected_per_query": 4.0,
+          "mean_token_estimate": 490.0,
+          "mean_latency_estimate_ms": 5142.151,
+          "per_query": [
+            {
+              "query_index": 4,
+              "selected": 4,
+              "known_relevant": 1,
+              "known_irrelevant": 3,
+              "unlabeled": 0,
+              "token_estimate": 490
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 5,
+        "selected_config": {
+          "config_id": "cfg-00031",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.08,
+          "token_budget": 600
+        },
+        "training_score": 0.610007,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00031",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.08,
+            "token_budget": 600
+          },
+          "selected_candidates": 5,
+          "known_relevant_selected": 4,
+          "known_irrelevant_selected": 1,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 0.8,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 5.0,
+          "mean_token_estimate": 578.0,
+          "mean_latency_estimate_ms": 5078.92,
+          "per_query": [
+            {
+              "query_index": 5,
+              "selected": 5,
+              "known_relevant": 4,
+              "known_irrelevant": 1,
+              "unlabeled": 0,
+              "token_estimate": 578
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 6,
+        "selected_config": {
+          "config_id": "cfg-00017",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 4,
+          "duplicate_penalty": 0.08,
+          "token_budget": null
+        },
+        "training_score": 0.603783,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00017",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 4,
+            "duplicate_penalty": 0.08,
+            "token_budget": null
+          },
+          "selected_candidates": 4,
+          "known_relevant_selected": 4,
+          "known_irrelevant_selected": 0,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 1.0,
+          "known_relevant_retention": 0.8,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 4.0,
+          "mean_token_estimate": 438.0,
+          "mean_latency_estimate_ms": 4992.313,
+          "per_query": [
+            {
+              "query_index": 6,
+              "selected": 4,
+              "known_relevant": 4,
+              "known_irrelevant": 0,
+              "unlabeled": 0,
+              "token_estimate": 438
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 7,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.601491,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 4,
+          "known_relevant_selected": 4,
+          "known_irrelevant_selected": 0,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 1.0,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 4.0,
+          "mean_token_estimate": 497.0,
+          "mean_latency_estimate_ms": 5007.148,
+          "per_query": [
+            {
+              "query_index": 7,
+              "selected": 4,
+              "known_relevant": 4,
+              "known_irrelevant": 0,
+              "unlabeled": 0,
+              "token_estimate": 497
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 8,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.611626,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 4,
+          "known_relevant_selected": 3,
+          "known_irrelevant_selected": 0,
+          "unlabeled_selected": 1,
+          "closed_set_precision": 1.0,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 0.75,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 4.0,
+          "mean_token_estimate": 498.0,
+          "mean_latency_estimate_ms": 5244.259,
+          "per_query": [
+            {
+              "query_index": 8,
+              "selected": 4,
+              "known_relevant": 3,
+              "known_irrelevant": 0,
+              "unlabeled": 1,
+              "token_estimate": 498
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 9,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.641137,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 3,
+          "known_relevant_selected": 1,
+          "known_irrelevant_selected": 2,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 0.3333,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": null,
+          "mean_selected_per_query": 3.0,
+          "mean_token_estimate": 410.0,
+          "mean_latency_estimate_ms": 5156.631,
+          "per_query": [
+            {
+              "query_index": 9,
+              "selected": 3,
+              "known_relevant": 1,
+              "known_irrelevant": 2,
+              "unlabeled": 0,
+              "token_estimate": 410
+            }
+          ]
+        }
+      },
+      {
+        "held_out_query": 10,
+        "selected_config": {
+          "config_id": "cfg-00027",
+          "intent_variant": "all",
+          "character_weight_factor": 1.0,
+          "character_mode": "binary",
+          "min_score": 0.35,
+          "max_queries": 2,
+          "max_results": 5,
+          "duplicate_penalty": 0.04,
+          "token_budget": 600
+        },
+        "training_score": 0.635963,
+        "held_out": {
+          "config": {
+            "config_id": "cfg-00027",
+            "intent_variant": "all",
+            "character_weight_factor": 1.0,
+            "character_mode": "binary",
+            "min_score": 0.35,
+            "max_queries": 2,
+            "max_results": 5,
+            "duplicate_penalty": 0.04,
+            "token_budget": 600
+          },
+          "selected_candidates": 4,
+          "known_relevant_selected": 2,
+          "known_irrelevant_selected": 2,
+          "unlabeled_selected": 0,
+          "closed_set_precision": 0.5,
+          "known_relevant_retention": 1.0,
+          "label_coverage": 1.0,
+          "late_closed_set_precision": 0.5,
+          "mean_selected_per_query": 4.0,
+          "mean_token_estimate": 494.0,
+          "mean_latency_estimate_ms": 5010.457,
+          "per_query": [
+            {
+              "query_index": 10,
+              "selected": 4,
+              "known_relevant": 2,
+              "known_irrelevant": 2,
+              "unlabeled": 0,
+              "token_estimate": 494
+            }
+          ]
+        }
+      }
+    ],
+    "aggregate": {
+      "known_relevant_selected": 20,
+      "known_irrelevant_selected": 13,
+      "unlabeled_selected": 1,
+      "closed_set_precision": 0.6061,
+      "known_relevant_retention": 0.9524
+    }
+  },
+  "new_candidate_review": {
+    "candidate_count": 2,
+    "human_reviewed_count": 0,
+    "status": "awaiting_targeted_review"
+  },
+  "limitations": [
+    "Intent removal and max_queries filter candidates by frozen matched_intents; keyword/title components are not re-embedded or recomputed.",
+    "The graded character score uses metadata first, then title/text mention strength; it is an offline proposal, not production behavior.",
+    "Closed-set metrics cannot establish true recall because candidates outside the existing 38 labels remain unlabeled.",
+    "Token counts use exact Chroma text lengths; latency is a proportional estimate from the frozen shadow run."
+  ],
+  "decision": "await_targeted_review"
+}
