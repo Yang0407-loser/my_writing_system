@@ -13,8 +13,8 @@
   "summary": {
     "query_count": 10,
     "candidate_count": 38,
-    "human_reviewed_count": 0,
-    "status": "awaiting_human_review"
+    "human_reviewed_count": 38,
+    "status": "human_review_complete"
   },
   "queries": [
     {
@@ -55,9 +55,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.644191,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文只涉及网络围堵，没有出现照片墙的时间线陈列或居民纸条"
         },
         {
           "review_item_id": "q01-c02",
@@ -92,9 +92,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.572334,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "间接相关：吴阿姨把林晚带向活动室，并说居民都在看她的记录，是社区照片墙事件的直接过渡；但没有直接证明两条目标事实"
         },
         {
           "review_item_id": "q01-c03",
@@ -130,9 +130,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.528273,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "只出现林晚和面包店以及和面包有关的句子，没有涉及照片墙或居民纸条"
         },
         {
           "review_item_id": "q01-c04",
@@ -168,9 +168,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.463147,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "未涉及照片墙或居民纸条，只出现面包店爆火之后给周野和林晚两人带来的麻烦"
         },
         {
           "review_item_id": "q01-c05",
@@ -206,9 +206,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.407111,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "没有涉及照片墙和居民纸条，只出现了周野和林晚的相识过程"
         }
       ]
     },
@@ -248,9 +248,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.650126,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "只写拍摄过程，没有图文爆火、人群涌入或身份转变"
         },
         {
           "review_item_id": "q02-c02",
@@ -283,9 +283,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.420162,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "写面包味道和采访，不证明爆火或转为参与者"
         }
       ]
     },
@@ -332,9 +332,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.516637,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚联合季晴、顾衍和吴阿姨筹集三十万"],
+          "review_note": "正文直接写了林晚联合他人筹款的过程"
         },
         {
           "review_item_id": "q04-c02",
@@ -369,9 +369,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.467996,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "只是早期认识顾衍，离“见证新空间开业”太远"
         },
         {
           "review_item_id": "q04-c03",
@@ -407,9 +407,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.459508,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "只是早期社区生态，既没有筹款，也没有开业见证"
         },
         {
           "review_item_id": "q04-c04",
@@ -444,9 +444,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.387326,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文写的是季晴开导林晚和周野面对网络围堵的做法，和重新开业与筹款均无关系"
         },
         {
           "review_item_id": "q04-c05",
@@ -482,9 +482,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.372392,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文未写道筹款一事，而且此时主人公们未互相深入了解，不可能会借出这么一笔巨大的款项"
         }
       ]
     },
@@ -527,9 +527,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.537099,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚决定不再只做旁观者"],
+          "review_note": "直接相关：正文写林晚删帖后接受周野邀请，从拍摄者转为面包店参与者；只间接表明顾衍知道删帖，没有出现顾衍与林晚谈周野"
         },
         {
           "review_item_id": "q05-c02",
@@ -565,9 +565,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.501412,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚决定不再只做旁观者"],
+          "review_note": "直接相关：正文直接交代林晚帮周野干活"
         },
         {
           "review_item_id": "q05-c03",
@@ -604,9 +604,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.489402,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": [ "林晚决定不再只做旁观者"],
+          "review_note": "直接相关：正文交代了林晚加入周野的面包店帮周野干活"
         },
         {
           "review_item_id": "q05-c04",
@@ -641,9 +641,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.431025,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚决定不再只做旁观者"],
+          "review_note": "直接相关：正文明确写林晚删帖并决定学习揉面；没有出现顾衍与林晚谈周野"
         },
         {
           "review_item_id": "q05-c05",
@@ -679,9 +679,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.402577,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "顾衍和周野日常交谈，不涉及删帖，也不是顾衍与林晚谈周野"
         }
       ]
     },
@@ -722,9 +722,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.535849,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "与删帖事件相关，但只写删帖和学习揉面，没有直接呈现她因争议陷入自我怀疑"
         },
         {
           "review_item_id": "q06-c02",
@@ -759,9 +759,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.527964,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["周野主动邀请她再来"],
+          "review_note": "直接相关：正文写林晚删帖后，周野邀请她来面包店帮忙；没有直接呈现自我怀疑"
         },
         {
           "review_item_id": "q06-c03",
@@ -796,9 +796,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.427212,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "与删帖和参与面包店的同一事件链相关，但没有直接呈现自我怀疑，而且下周再来是林晚主动提出"
         },
         {
           "review_item_id": "q06-c04",
@@ -832,9 +832,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.382248,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "与林晚转为参与者的过程相关，但本段是林晚主动提出下周早点来，不是周野主动邀请"
         },
         {
           "review_item_id": "q06-c05",
@@ -869,9 +869,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.3531,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["周野主动邀请她再来"],
+          "review_note": "直接相关：正文写图文爆火、林晚删帖以及周野随后邀请她进店；不充分证明她陷入自我怀疑"
         }
       ]
     },
@@ -912,9 +912,10 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.655572,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"],
+          "review_note": "直接写爆火、人群摆拍、林晚删除图文并随后面对周野"
         },
         {
           "review_item_id": "q07-c02",
@@ -949,9 +950,10 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.610496,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"],
+          "review_note": "间接相关：正文写了林晚担任店员的日常，为后文埋下伏笔"
         },
         {
           "review_item_id": "q07-c03",
@@ -986,9 +988,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.548262,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "间接相关：正文提供周野真实揉面这一侧，但没有同时呈现网红摆拍，不能独立证明完整对照"
         },
         {
           "review_item_id": "q07-c04",
@@ -1023,9 +1025,10 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.417836,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"],
+          "review_note": "正文明确写到林晚删帖后直面周野"
         },
         {
           "review_item_id": "q07-c05",
@@ -1059,9 +1062,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.408075,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "只写后来学习揉面和转为参与者，没有出现网红摆拍，也不是形成该对照的必要证据"
         }
       ]
     },
@@ -1104,9 +1107,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.7175,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "间接相关：周野明确给出拍摄许可和不开闪光灯的边界，但本段没有直接写林晚开始思考分享与尊重"
         },
         {
           "review_item_id": "q08-c02",
@@ -1142,9 +1145,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.509286,
-          "human_relevant": "",
-          "supports_which_fact": [],
-          "review_note": ""
+          "human_relevant": "相关",
+          "supports_which_fact": ["小圆面包具有微咸余味"],
+          "review_note": "直接相关：正文明确写小圆面包的微咸余味，也提到周野的建筑师过往；但没有明确把味道与过往联系起来"
         },
         {
           "review_item_id": "q08-c03",
@@ -1179,9 +1182,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.36,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "间接相关：正文写小圆面包出炉和周野的建筑师经历，但没有写微咸余味，也没有呈现林晚把味道与过往联系起来"
         }
       ]
     },
@@ -1224,9 +1227,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.508975,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文写了林晚对周野的初步采访，与当前准则无关"
         },
         {
           "review_item_id": "q09-c02",
@@ -1263,9 +1266,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.499621,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文只写了任务之间的日常交谈，与当前准则无关"
         },
         {
           "review_item_id": "q09-c03",
@@ -1302,9 +1305,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.359277,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "相关但仅部分支持：正文写小圆面包外硬内软，没有写微咸，不能证明完整复合事实"
         }
       ]
     },
@@ -1345,9 +1348,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.63052,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文未涉及周野父亲，只写了林晚加入面包后店发生的事"
         },
         {
           "review_item_id": "q10-c02",
@@ -1381,9 +1384,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.532334,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文讲周野母亲开馒头作坊和去世，没有涉及父亲做面食或父子因职业选择产生隔阂"
         },
         {
           "review_item_id": "q10-c03",
@@ -1418,9 +1421,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.490869,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "与父亲到店和白吐司事件直接相关，但只写父亲买走最后一袋吐司，没有证明他离开后案板边还有同款吐司"
         },
         {
           "review_item_id": "q10-c04",
@@ -1454,9 +1457,9 @@
           },
           "duplicate_section_penalty": 0.0,
           "final_score": 0.410976,
-          "human_relevant": "",
+          "human_relevant": "不相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "正文未涉及到对周野父亲的描写"
         },
         {
           "review_item_id": "q10-c05",
@@ -1491,9 +1494,9 @@
           },
           "duplicate_section_penalty": 0.08,
           "final_score": 0.383409,
-          "human_relevant": "",
+          "human_relevant": "相关",
           "supports_which_fact": [],
-          "review_note": ""
+          "review_note": "与父亲再次到店的事件相关，但粗糙手指和工厂式站姿不能证明他年轻时做过面食"
         }
       ]
     }

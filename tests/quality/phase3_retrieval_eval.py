@@ -80,3 +80,195 @@ def manual_label_metrics(entries: list[dict], runs: list[dict]) -> dict:
         "precision_at_5_on_labeled": round(relevant / labeled, 4) if labeled else None,
         "production_gate_valid": bool(total) and labeled == total,
     }
+
+
+def human_review_metrics(annotation: dict, review: dict) -> dict:
+    """Compute human metrics without mixing section and fact denominators.
+
+    ``section_recall_at_5`` is comparable to the legacy 66.7% recall baseline:
+    for each query it counts unique gold sections represented by candidates a
+    human marked relevant.  ``fact_coverage_recall`` is a separate, stricter
+    diagnostic based only on explicitly selected ``supports_which_fact`` values.
+    """
+    annotations = {
+        int(entry["query_index"]): entry for entry in annotation["entries"]
+    }
+    groups = {int(group["query_index"]): group for group in review["queries"]}
+    selected_total = 0
+    relevant_total = 0
+    late_selected = 0
+    late_relevant = 0
+    gold_section_total = 0
+    gold_section_hits = 0
+    fact_total = 0
+    fact_hits = 0
+    per_query = []
+
+    for query_index in sorted(annotations):
+        source = annotations[query_index]
+        candidates = list(groups[query_index]["candidates"])
+        relevant = [
+            candidate for candidate in candidates
+            if candidate["human_relevant"] == "相关"
+        ]
+        gold_sections = {int(section) for section in source["gold_sections"]}
+        relevant_sections = {int(candidate["section"]) for candidate in relevant}
+        section_hits = relevant_sections & gold_sections
+        must_facts = list(source["must_recall_facts"])
+        supported_facts = {
+            fact
+            for candidate in relevant
+            for fact in candidate["supports_which_fact"]
+        }
+        supported_facts &= set(must_facts)
+        is_late = int(source.get("section", 0)) >= 13
+
+        selected_total += len(candidates)
+        relevant_total += len(relevant)
+        gold_section_total += len(gold_sections)
+        gold_section_hits += len(section_hits)
+        fact_total += len(must_facts)
+        fact_hits += len(supported_facts)
+        if is_late:
+            late_selected += len(candidates)
+            late_relevant += len(relevant)
+
+        per_query.append({
+            "query_index": query_index,
+            "current_section": int(source.get("section", 0)),
+            "selected_candidates": len(candidates),
+            "relevant_candidates": len(relevant),
+            "human_precision_at_5": (
+                round(len(relevant) / len(candidates), 4) if candidates else None
+            ),
+            "gold_section_hits": len(section_hits),
+            "gold_sections": len(gold_sections),
+            "section_recall_at_5": (
+                round(len(section_hits) / len(gold_sections), 4)
+                if gold_sections else None
+            ),
+            "supported_facts": len(supported_facts),
+            "must_recall_facts": len(must_facts),
+            "fact_coverage_recall": (
+                round(len(supported_facts) / len(must_facts), 4)
+                if must_facts else None
+            ),
+            "supported_fact_values": [
+                fact for fact in must_facts if fact in supported_facts
+            ],
+            "zero_result": not candidates,
+            "late_query": is_late,
+        })
+
+    return {
+        "formulas": {
+            "human_precision_at_5": "human-relevant selected candidates / all selected candidates",
+            "section_recall_at_5": "unique gold sections represented by human-relevant candidates / all gold sections",
+            "fact_coverage_recall": "unique must_recall_facts explicitly supported / all must_recall_facts",
+            "late_chapter_human_precision_at_5": "human-relevant selected candidates in queries with current_section >= 13 / all selected candidates in those queries",
+        },
+        "queries": len(annotations),
+        "selected_candidates": selected_total,
+        "human_relevant_candidates": relevant_total,
+        "human_precision_at_5": (
+            round(relevant_total / selected_total, 4) if selected_total else None
+        ),
+        "gold_section_hits": gold_section_hits,
+        "gold_sections": gold_section_total,
+        "section_recall_at_5": (
+            round(gold_section_hits / gold_section_total, 4)
+            if gold_section_total else None
+        ),
+        "supported_facts": fact_hits,
+        "must_recall_facts": fact_total,
+        "fact_coverage_recall": (
+            round(fact_hits / fact_total, 4) if fact_total else None
+        ),
+        "late_selected_candidates": late_selected,
+        "late_human_relevant_candidates": late_relevant,
+        "late_chapter_human_precision_at_5": (
+            round(late_relevant / late_selected, 4) if late_selected else None
+        ),
+        "zero_result_queries": [
+            item["query_index"] for item in per_query if item["zero_result"]
+        ],
+        "per_query": per_query,
+    }
+
+
+def human_review_failure_observations(review: dict) -> dict:
+    """Describe observed failure layers without claiming causal proof."""
+    candidates = [
+        candidate for group in review["queries"] for candidate in group["candidates"]
+    ]
+    false_positives = [
+        candidate for candidate in candidates
+        if candidate["human_relevant"] == "不相关"
+    ]
+    partial_fact_candidates = [
+        candidate for candidate in candidates
+        if candidate["human_relevant"] == "相关"
+        and not candidate["supports_which_fact"]
+    ]
+    generic_intent_false_positives = [
+        candidate for candidate in false_positives
+        if {"character", "scene"} & set(candidate["matched_intents"])
+    ]
+    character_dominant_false_positives = [
+        candidate for candidate in false_positives
+        if candidate["score_components"].get("character") == 1.0
+    ]
+    zero_groups = [
+        int(group["query_index"])
+        for group in review["queries"] if not group["candidates"]
+    ]
+    return {
+        "query_planner_intent_deviation": {
+            "status": "inference_not_causal_proof",
+            "candidate_count": len(generic_intent_false_positives),
+            "query_indices": sorted({
+                int(candidate["query_index"])
+                for candidate in generic_intent_false_positives
+            }),
+            "observation": "false positives matched broad character or scene intents; an intent ablation is required to prove planner causality",
+        },
+        "vector_coarse_recall_deviation": {
+            "status": "observed_false_positives_entered_candidate_pool",
+            "candidate_count": len(false_positives),
+            "query_indices": sorted({
+                int(candidate["query_index"]) for candidate in false_positives
+            }),
+            "observation": "irrelevant chunks entered the coarse pool; unselected candidates are not human-labeled, so missing-fact recall cannot yet be causally assigned to coarse recall",
+        },
+        "rule_rerank_deviation": {
+            "status": "observed_selected_false_positives",
+            "selected_false_positives": len(false_positives),
+            "character_score_one": len(character_dominant_false_positives),
+            "observation": "all listed false positives passed threshold and final selection; character overlap saturation is reported as correlation, not proof",
+        },
+        "partial_fact_support": {
+            "status": "observed",
+            "candidate_count": len(partial_fact_candidates),
+            "query_indices": sorted({
+                int(candidate["query_index"])
+                for candidate in partial_fact_candidates
+            }),
+            "observation": "human-relevant chunks provide event context but explicitly support no complete must-recall fact",
+        },
+        "zero_result_queries": {
+            "status": "observed",
+            "query_indices": zero_groups,
+            "count": len(zero_groups),
+        },
+        "false_positive_items": [
+            {
+                "review_item_id": candidate["review_item_id"],
+                "query_index": int(candidate["query_index"]),
+                "source_id": candidate["source_id"],
+                "matched_intents": candidate["matched_intents"],
+                "final_score": candidate["final_score"],
+                "selection_reason": candidate["selection_reason"],
+            }
+            for candidate in false_positives
+        ],
+    }

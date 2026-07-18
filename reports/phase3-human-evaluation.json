@@ -1,0 +1,468 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "review": "tests/quality/phase3_shadow_candidates_review.json",
+    "annotations": "tests/rag_annotation_07d1391e.json",
+    "shadow_report": "reports/phase3-shadow-retrieval.json"
+  },
+  "metric_scope": {
+    "release_recall": "section_recall_at_5, comparable to the legacy section-based 66.7% baseline",
+    "additional_recall": "fact_coverage_recall, stricter and not substituted for the legacy recall gate",
+    "late_query_rule": "current_section >= 13"
+  },
+  "metrics": {
+    "formulas": {
+      "human_precision_at_5": "human-relevant selected candidates / all selected candidates",
+      "section_recall_at_5": "unique gold sections represented by human-relevant candidates / all gold sections",
+      "fact_coverage_recall": "unique must_recall_facts explicitly supported / all must_recall_facts",
+      "late_chapter_human_precision_at_5": "human-relevant selected candidates in queries with current_section >= 13 / all selected candidates in those queries"
+    },
+    "queries": 10,
+    "selected_candidates": 38,
+    "human_relevant_candidates": 21,
+    "human_precision_at_5": 0.5526,
+    "gold_section_hits": 13,
+    "gold_sections": 30,
+    "section_recall_at_5": 0.4333,
+    "supported_facts": 6,
+    "must_recall_facts": 26,
+    "fact_coverage_recall": 0.2308,
+    "late_selected_candidates": 15,
+    "late_human_relevant_candidates": 4,
+    "late_chapter_human_precision_at_5": 0.2667,
+    "zero_result_queries": [
+      3
+    ],
+    "per_query": [
+      {
+        "query_index": 1,
+        "current_section": 15,
+        "selected_candidates": 5,
+        "relevant_candidates": 1,
+        "human_precision_at_5": 0.2,
+        "gold_section_hits": 1,
+        "gold_sections": 5,
+        "section_recall_at_5": 0.2,
+        "supported_facts": 0,
+        "must_recall_facts": 2,
+        "fact_coverage_recall": 0.0,
+        "supported_fact_values": [],
+        "zero_result": false,
+        "late_query": true
+      },
+      {
+        "query_index": 2,
+        "current_section": 4,
+        "selected_candidates": 2,
+        "relevant_candidates": 0,
+        "human_precision_at_5": 0.0,
+        "gold_section_hits": 0,
+        "gold_sections": 3,
+        "section_recall_at_5": 0.0,
+        "supported_facts": 0,
+        "must_recall_facts": 2,
+        "fact_coverage_recall": 0.0,
+        "supported_fact_values": [],
+        "zero_result": false,
+        "late_query": false
+      },
+      {
+        "query_index": 3,
+        "current_section": 2,
+        "selected_candidates": 0,
+        "relevant_candidates": 0,
+        "human_precision_at_5": null,
+        "gold_section_hits": 0,
+        "gold_sections": 2,
+        "section_recall_at_5": 0.0,
+        "supported_facts": 0,
+        "must_recall_facts": 2,
+        "fact_coverage_recall": 0.0,
+        "supported_fact_values": [],
+        "zero_result": true,
+        "late_query": false
+      },
+      {
+        "query_index": 4,
+        "current_section": 17,
+        "selected_candidates": 5,
+        "relevant_candidates": 1,
+        "human_precision_at_5": 0.2,
+        "gold_section_hits": 1,
+        "gold_sections": 4,
+        "section_recall_at_5": 0.25,
+        "supported_facts": 1,
+        "must_recall_facts": 2,
+        "fact_coverage_recall": 0.5,
+        "supported_fact_values": [
+          "林晚联合季晴、顾衍和吴阿姨筹集三十万"
+        ],
+        "zero_result": false,
+        "late_query": true
+      },
+      {
+        "query_index": 5,
+        "current_section": 7,
+        "selected_candidates": 5,
+        "relevant_candidates": 4,
+        "human_precision_at_5": 0.8,
+        "gold_section_hits": 3,
+        "gold_sections": 3,
+        "section_recall_at_5": 1.0,
+        "supported_facts": 1,
+        "must_recall_facts": 3,
+        "fact_coverage_recall": 0.3333,
+        "supported_fact_values": [
+          "林晚决定不再只做旁观者"
+        ],
+        "zero_result": false,
+        "late_query": false
+      },
+      {
+        "query_index": 6,
+        "current_section": 7,
+        "selected_candidates": 5,
+        "relevant_candidates": 5,
+        "human_precision_at_5": 1.0,
+        "gold_section_hits": 3,
+        "gold_sections": 3,
+        "section_recall_at_5": 1.0,
+        "supported_facts": 1,
+        "must_recall_facts": 3,
+        "fact_coverage_recall": 0.3333,
+        "supported_fact_values": [
+          "周野主动邀请她再来"
+        ],
+        "zero_result": false,
+        "late_query": false
+      },
+      {
+        "query_index": 7,
+        "current_section": 6,
+        "selected_candidates": 5,
+        "relevant_candidates": 4,
+        "human_precision_at_5": 0.8,
+        "gold_section_hits": 2,
+        "gold_sections": 3,
+        "section_recall_at_5": 0.6667,
+        "supported_facts": 2,
+        "must_recall_facts": 3,
+        "fact_coverage_recall": 0.6667,
+        "supported_fact_values": [
+          "林晚因记录造成的后果而愧疚",
+          "她决定删帖并直面周野"
+        ],
+        "zero_result": false,
+        "late_query": false
+      },
+      {
+        "query_index": 8,
+        "current_section": 4,
+        "selected_candidates": 3,
+        "relevant_candidates": 3,
+        "human_precision_at_5": 1.0,
+        "gold_section_hits": 2,
+        "gold_sections": 2,
+        "section_recall_at_5": 1.0,
+        "supported_facts": 1,
+        "must_recall_facts": 3,
+        "fact_coverage_recall": 0.3333,
+        "supported_fact_values": [
+          "小圆面包具有微咸余味"
+        ],
+        "zero_result": false,
+        "late_query": false
+      },
+      {
+        "query_index": 9,
+        "current_section": 4,
+        "selected_candidates": 3,
+        "relevant_candidates": 1,
+        "human_precision_at_5": 0.3333,
+        "gold_section_hits": 0,
+        "gold_sections": 2,
+        "section_recall_at_5": 0.0,
+        "supported_facts": 0,
+        "must_recall_facts": 3,
+        "fact_coverage_recall": 0.0,
+        "supported_fact_values": [],
+        "zero_result": false,
+        "late_query": false
+      },
+      {
+        "query_index": 10,
+        "current_section": 13,
+        "selected_candidates": 5,
+        "relevant_candidates": 2,
+        "human_precision_at_5": 0.4,
+        "gold_section_hits": 1,
+        "gold_sections": 3,
+        "section_recall_at_5": 0.3333,
+        "supported_facts": 0,
+        "must_recall_facts": 3,
+        "fact_coverage_recall": 0.0,
+        "supported_fact_values": [],
+        "zero_result": false,
+        "late_query": true
+      }
+    ]
+  },
+  "failure_observations": {
+    "query_planner_intent_deviation": {
+      "status": "inference_not_causal_proof",
+      "candidate_count": 15,
+      "query_indices": [
+        1,
+        2,
+        4,
+        5,
+        9,
+        10
+      ],
+      "observation": "false positives matched broad character or scene intents; an intent ablation is required to prove planner causality"
+    },
+    "vector_coarse_recall_deviation": {
+      "status": "observed_false_positives_entered_candidate_pool",
+      "candidate_count": 17,
+      "query_indices": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        10
+      ],
+      "observation": "irrelevant chunks entered the coarse pool; unselected candidates are not human-labeled, so missing-fact recall cannot yet be causally assigned to coarse recall"
+    },
+    "rule_rerank_deviation": {
+      "status": "observed_selected_false_positives",
+      "selected_false_positives": 17,
+      "character_score_one": 13,
+      "observation": "all listed false positives passed threshold and final selection; character overlap saturation is reported as correlation, not proof"
+    },
+    "partial_fact_support": {
+      "status": "observed",
+      "candidate_count": 10,
+      "query_indices": [
+        1,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "observation": "human-relevant chunks provide event context but explicitly support no complete must-recall fact"
+    },
+    "zero_result_queries": {
+      "status": "observed",
+      "query_indices": [
+        3
+      ],
+      "count": 1
+    },
+    "false_positive_items": [
+      {
+        "review_item_id": "q01-c01",
+        "query_index": 1,
+        "source_id": "b27020f9-6b2c-4b96-b6d5-d28fcbb5177f",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.644191,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q01-c03",
+        "query_index": 1,
+        "source_id": "7887989c-7aff-49e7-8777-1d1f591d2c5c",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.528273,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q01-c04",
+        "query_index": 1,
+        "source_id": "cb40d4f0-76cf-4dee-b6ec-2c0bc2ae4e73",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.463147,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q01-c05",
+        "query_index": 1,
+        "source_id": "b0fedefb-886e-4e19-8225-fc03c82c460c",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.407111,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q02-c01",
+        "query_index": 2,
+        "source_id": "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+        "matched_intents": [
+          "character",
+          "event"
+        ],
+        "final_score": 0.650126,
+        "selection_reason": "selected:intents=character,event;strongest=character"
+      },
+      {
+        "review_item_id": "q02-c02",
+        "query_index": 2,
+        "source_id": "890a929d-ec95-4879-a46b-813607b3b827",
+        "matched_intents": [
+          "character"
+        ],
+        "final_score": 0.420162,
+        "selection_reason": "selected:intents=character;strongest=character"
+      },
+      {
+        "review_item_id": "q04-c02",
+        "query_index": 4,
+        "source_id": "b675c871-c0a2-4481-a549-7d9bb2cabc7b",
+        "matched_intents": [
+          "event",
+          "scene"
+        ],
+        "final_score": 0.467996,
+        "selection_reason": "selected:intents=event,scene;strongest=vector"
+      },
+      {
+        "review_item_id": "q04-c03",
+        "query_index": 4,
+        "source_id": "776aa783-78fb-4555-8c20-b0b3525b15de",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.459508,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q04-c04",
+        "query_index": 4,
+        "source_id": "cb40d4f0-76cf-4dee-b6ec-2c0bc2ae4e73",
+        "matched_intents": [
+          "character",
+          "scene"
+        ],
+        "final_score": 0.387326,
+        "selection_reason": "selected:intents=character,scene;strongest=vector"
+      },
+      {
+        "review_item_id": "q04-c05",
+        "query_index": 4,
+        "source_id": "e0ef371b-7fef-42c8-ac8d-8b39e4fd3892",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.372392,
+        "selection_reason": "selected:intents=character,event,scene;strongest=vector"
+      },
+      {
+        "review_item_id": "q05-c05",
+        "query_index": 5,
+        "source_id": "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20",
+        "matched_intents": [
+          "event",
+          "scene"
+        ],
+        "final_score": 0.402577,
+        "selection_reason": "selected:intents=event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q07-c05",
+        "query_index": 7,
+        "source_id": "91e847dc-4855-4365-9ba6-47eb7a3a4a96",
+        "matched_intents": [
+          "event"
+        ],
+        "final_score": 0.408075,
+        "selection_reason": "selected:intents=event;strongest=character"
+      },
+      {
+        "review_item_id": "q09-c01",
+        "query_index": 9,
+        "source_id": "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.508975,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q09-c02",
+        "query_index": 9,
+        "source_id": "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20",
+        "matched_intents": [
+          "character",
+          "event",
+          "scene"
+        ],
+        "final_score": 0.499621,
+        "selection_reason": "selected:intents=character,event,scene;strongest=character"
+      },
+      {
+        "review_item_id": "q10-c01",
+        "query_index": 10,
+        "source_id": "85cda2bd-f853-41d2-bff0-b76520368fb9",
+        "matched_intents": [
+          "character",
+          "event"
+        ],
+        "final_score": 0.63052,
+        "selection_reason": "selected:intents=character,event;strongest=character"
+      },
+      {
+        "review_item_id": "q10-c02",
+        "query_index": 10,
+        "source_id": "a0d8a8b6-969d-4ee8-8797-09611cc9bc83",
+        "matched_intents": [
+          "character"
+        ],
+        "final_score": 0.532334,
+        "selection_reason": "selected:intents=character;strongest=character"
+      },
+      {
+        "review_item_id": "q10-c04",
+        "query_index": 10,
+        "source_id": "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20",
+        "matched_intents": [
+          "event"
+        ],
+        "final_score": 0.410976,
+        "selection_reason": "selected:intents=event;strongest=character"
+      }
+    ]
+  },
+  "gates": {
+    "human_precision_at_5_at_least_0_68": false,
+    "section_recall_at_5_above_0_6667": false,
+    "late_chapter_human_precision_at_5_above_0_40": false,
+    "writer_input_and_behavior_unchanged": true
+  },
+  "all_release_gates_passed": false,
+  "production_switched": false,
+  "decision": "remain_shadow",
+  "next_batch_recommendation": "Do not start automatically. Phase 3 Batch 2 should first ablate broad intents, character-overlap saturation, threshold, query count and token budget; label unselected candidates before assigning missing facts causally to coarse recall."
+}
