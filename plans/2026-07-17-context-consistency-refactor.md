@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：批次 A 与 Phase 3 前置收尾已完成；Phase 3 未开始，等待 19 条 hard 角色规则人工确认  
+> 状态：批次 A 与 Phase 3 入口收尾已完成；19 条 hard 规则已人工审阅，Phase 3 可启动但尚未开始  
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -529,3 +529,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-17 | Phase 1 | 新增 ContextItem/StoryChunk/EventEdge 契约和状态所有权审计；ExperienceTimeline 改为 event_store 兼容层；MemoryFuser 标记 deprecated；活动文档改为 4 个主要风格控制量 | ExperienceTimeline 从双写两个 DB 降为单一 events.db 权威源；新增契约/兼容测试全部通过 | 保留 experience.db 作为可恢复备份；因 MemoryFuser 含用户未提交修改，不物理删除；动态 CharacterState 仍是明确遗留项 |
 | 2026-07-17 | Phase 2 | `search_with_meta` 增加 ID/distance/score/metadata/filter/耗时/粗候选 trace；增加空块与重复块防护、生命周期清理、Writer 利用率启发式和 Chroma 隔离基准 | 新增定向测试 20/20 通过；全量 unit=115/11（无新增失败），integration=7/0；Chroma 1.5.9 在 100×100 时 filter=3.736ms、per-task=7.667ms，后者 2/30 查询失败 | 保持共享 collection + task_id filter；`RAG_TRACE_CANDIDATE_K=0` 默认维持旧生产查询；完整 1/10/100×100/1000/5000 矩阵未完成，不进入 Phase 3 排序改造 |
 | 2026-07-18 | Phase 3 前置收尾 | 为 19 条 hard 角色规则生成留空人工审阅表；ContextManager 保留最近 3 小节原文并兼容旧 checkpoint；风格契约固定为 4 个主旋钮；记录 5,000-chunk 矩阵临时豁免 | 定向契约测试 33/33；全量 unit=127/0，integration=7/0；未恢复 `running_summary` 或旧 50 维字段 | 保持共享 collection + `task_id` filter；完整矩阵在 Chroma 升级、规模/延迟/隔离异常或迁移提案时强制重跑；不开始 Phase 3，等待用户人工确认角色标签 |
+| 2026-07-18 | Phase 3 人工标注入口 | 固化 19 条 hard 人工结果：17 条 `human_confirmed`、2 条 `human_flagged_issue`；`linwan-10` 改为关系阶段约束并补第16节；`jiqing-10` 明确现实风险缺口；三类结果分离；新增标注一致性测试 | 人工覆盖率=100%，当前正文 hard 违反率=2/19（10.53%）；标注测试=8/8、unit=127/127、integration=7/7；机械计数/重复句式/情绪层次不足登记为独立风格基线问题 | Phase 3 入口条件满足，可在用户明确指令后启动；不得在 Phase 3 中顺带修改 Writer、恢复旧 50 维风格字段或把两个已知正文缺陷抹掉 |

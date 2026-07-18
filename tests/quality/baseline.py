@@ -213,8 +213,10 @@ def compute_character_metrics(annotation: dict[str, Any]) -> dict[str, Any]:
     hard = [item for item in applicable if item.get("hardness") == "hard"]
     violations = [item for item in hard if item.get("observed_status") == "violated"]
     confirmed_hard = [item for item in hard if item.get("review_status") == "human_confirmed"]
-    confirmed_violations = [
-        item for item in confirmed_hard if item.get("observed_status") == "violated"
+    flagged_hard = [item for item in hard if item.get("review_status") == "human_flagged_issue"]
+    reviewed_hard = confirmed_hard + flagged_hard
+    human_violations = [
+        item for item in reviewed_hard if item.get("observed_status") == "violated"
     ]
 
     return {
@@ -222,12 +224,17 @@ def compute_character_metrics(annotation: dict[str, Any]) -> dict[str, Any]:
         "constraints": len(constraints),
         "constraints_per_character": counts,
         "provisional_hard_violation_rate": round(len(violations) / len(hard), 4) if hard else None,
+        "hard_constraints": len(hard),
+        "human_confirmed_hard": len(confirmed_hard),
+        "human_flagged_issue_hard": len(flagged_hard),
+        "human_reviewed_hard": len(reviewed_hard),
+        "human_issue_rule_ids": sorted(item["id"] for item in flagged_hard),
         "human_hard_violation_rate": (
-            round(len(confirmed_violations) / len(confirmed_hard), 4)
-            if confirmed_hard else None
+            round(len(human_violations) / len(reviewed_hard), 4)
+            if reviewed_hard else None
         ),
-        "human_label_coverage": round(len(confirmed_hard) / len(hard), 4) if hard else 0.0,
-        "release_gate_ready": bool(confirmed_hard) and len(confirmed_hard) == len(hard),
+        "human_label_coverage": round(len(reviewed_hard) / len(hard), 4) if hard else 0.0,
+        "release_gate_ready": bool(reviewed_hard) and len(reviewed_hard) == len(hard),
     }
 
 
@@ -243,12 +250,13 @@ def build_report() -> dict[str, Any]:
         "style": compute_style_metrics(load_json(DEFAULT_STYLE)),
         "runtime": runtime,
         "test_baseline": {
-            "unit": {"passed": 99, "failed": 11, "warnings": 1},
+            "unit": {"passed": 127, "failed": 0, "warnings": 1},
             "integration": {"passed": 7, "failed": 0, "warnings": 3},
         },
         "limitations": [
             "Redis was unavailable, so historical per-subsection input/output/context tokens and rewrite counts could not be recovered.",
-            "Character labels are Codex-provisional and are excluded from the human release gate until confirmed by a person.",
+            "All 19 hard character rules were human-reviewed: 17 satisfied and 2 current-draft violations.",
+            "The qualitative style issues require dedicated metrics and human sampling; this baseline does not attribute them to the four-control style contract.",
             "The RAG set contains 10 queries; metrics are descriptive and not statistically significant.",
         ],
     }
@@ -273,7 +281,8 @@ This report is deterministic and offline; it does not call an LLM.
 | RAG Precision@5 | {rag['precision_at_5']:.1%} |
 | RAG Recall@5 | {rag['recall_at_5']:.1%} |
 | Late-chapter Precision@5 | {rag['late_chapter_precision_at_5']:.1%} |
-| Provisional character hard-constraint violation rate | {character['provisional_hard_violation_rate']:.1%} |
+| Observed character hard-constraint violation rate | {character['provisional_hard_violation_rate']:.1%} |
+| Human-reviewed hard-rule violation rate | {character['human_hard_violation_rate']:.1%} |
 | Human character-label coverage | {character['human_label_coverage']:.1%} |
 | Style range violation rate | {style['range_violation_rate']:.1%} |
 | Style normalized range deviation | {style['mean_normalized_range_deviation']:.4f} |

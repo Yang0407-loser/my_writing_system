@@ -16,6 +16,17 @@
     "paragraph_length_avg": [20, 110],
     "sensory_terms_per_1k": [12, 55]
   },
+  "qualitative_issues": [
+    {
+      "id": "style-human-01",
+      "source": "human_review_2026-07-18",
+      "status": "baseline_issue",
+      "dimensions": ["mechanical_counting", "repetitive_sentence_patterns", "insufficient_emotional_layering"],
+      "description": "部分段落呈现机械计数、重复句法模板和情绪层次不足，文字显得流水账且缺少圆润过渡。",
+      "measurement_status": "requires_dedicated_metrics_and_human_sampling",
+      "contract_decision": "保留 emotion_intensity、dialogue_ratio、sentence_preference、sensory_density 四个主旋钮；不恢复旧 50 维字段，本轮不修改 Writer。"
+    }
+  ],
   "samples": [
     {"id": "style-s01", "section": 1, "label": "开篇观察与感官铺陈"},
     {"id": "style-s04", "section": 4, "label": "人物访谈与克制对话"},

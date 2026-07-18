@@ -84,23 +84,27 @@ The 11 outdated assertions were reconciled without restoring removed behavior: f
 
 ## Phase 3 preflight closure (2026-07-18)
 
-- Added a manual review table for exactly 19 hard character rules at `tests/quality/character_consistency_hard_rules_review.md`. It includes each constraint, `evidence_sections`, prose excerpts and blank human-decision fields; no label was promoted to `human_confirmed`.
+- Added a manual review table for exactly 19 hard character rules at `tests/quality/character_consistency_hard_rules_review.md`. Human review is complete: 17 rules are `human_confirmed`; `linwan-10` and `jiqing-10` are `human_flagged_issue` and remain current-draft violations.
+- `linwan-10` is now an explicit 林晚—周野 relationship-stage constraint with the gate `观察者→共同劳动者→可信赖伙伴→浪漫关系`; section 16 is included because it contains the actual romantic escalation.
+- `jiqing-10` retains its realism boundary. The recorded defect is evidence-specific: the amount is stated, but post-year-end repayment, source of funds, post-resignation capacity and downside risk are not.
+- Character stability constraints, relationship-stage constraints and current-draft quality defects are represented separately. A valid rule violated by this draft is not treated as an invalid rule.
 - Kept ContextManager v0.9.2: recent three subsection originals plus the existing handover path; `running_summary` remains removed.
 - Kept the four primary style controls: `emotion_intensity`, `dialogue_ratio`, `sentence_preference`, `sensory_density`. Historical compatibility fields remain secondary; the deleted 50-dimensional contract was not restored.
+- Registered mechanical counting, repetitive sentence patterns and insufficient emotional layering as a separate qualitative style baseline issue. This round does not modify Writer and does not attribute the issue to removal of the legacy 50-dimensional fields without an A/B test.
 - Recorded the bounded Chroma 5,000-chunk waiver and its mandatory re-test triggers. Shared collection + `task_id` metadata filter remains the production strategy.
-- Unit and integration suites are green. Phase 3 implementation has not started and remains blocked on human character-label review.
+- Annotation consistency tests are 8/8; unit is 127/127; integration is 7/7. Phase 3 implementation has not started.
 
 ## Risks and incomplete gates
 
 - The working tree already contained extensive uncommitted user changes. The 2026-07-18 checkpoint audit must use an explicit allowlist and exclude local artifacts, generated output and secrets.
-- Phase 0 cannot satisfy a human ground-truth release gate until a person confirms the 30 character labels.
+- All 19 hard labels are human-reviewed. Two violations are deliberate baseline defects, not missing labels: relationship-stage pacing (`linwan-10`) and incomplete financial-risk grounding (`jiqing-10`).
 - Historical per-subsection metrics cannot be reconstructed from the exported story; new runs will collect them.
 - Chroma smoke data is synthetic and does not measure embedding relevance.
 - The full 1/10/100 task × 100/1,000/5,000 chunk matrix is not complete and is temporarily waived under the documented triggers above.
 
 ## Phase acceptance
 
-- Phase 0: partially accepted. Offline RAG/style baseline is repeatable; the 19 hard rules now have a human review table, but human confirmation and historical token telemetry remain open.
+- Phase 0: accepted for the annotation gate. Offline RAG/style baseline is repeatable; hard-rule human coverage is 100% with 17 satisfied and 2 violated. Historical token telemetry remains unavailable for the reused story and will only exist for new runs.
 - Phase 1: accepted for audit/compatibility scope. Dedicated versioned CharacterState persistence remains a declared Phase 7 gap.
 - Phase 2: accepted for observability and smoke-benchmark scope. Production strategy remains unchanged; the full-scale matrix is explicitly waived until a documented trigger occurs.
-- Phase 3 must not begin until the user confirms the hard-rule labels. Test reconciliation and the benchmark waiver no longer block entry.
+- Phase 3 entry recommendation: ready to start when explicitly requested. The human-label, test and Chroma-decision gates are closed. The two draft defects and qualitative style issue must remain frozen baseline findings; Phase 3 retrieval work must not silently rewrite them or claim to solve them.

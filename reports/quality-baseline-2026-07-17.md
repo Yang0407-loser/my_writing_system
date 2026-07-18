@@ -9,15 +9,16 @@ This report is deterministic and offline; it does not call an LLM.
 | RAG Precision@5 | 68.0% |
 | RAG Recall@5 | 66.7% |
 | Late-chapter Precision@5 | 40.0% |
-| Provisional character hard-constraint violation rate | 0.0% |
-| Human character-label coverage | 0.0% |
+| Observed character hard-constraint violation rate | 10.5% |
+| Human-reviewed hard-rule violation rate | 10.5% |
+| Human character-label coverage | 100.0% |
 | Style range violation rate | 0.0% |
 | Style normalized range deviation | 0.0000 |
 | Per-subsection context-token coverage | 0.0% |
 
 ## Existing tests
 
-- Unit: 99 passed, 11 failed, 1 warning.
+- Unit: 127 passed, 0 failed, 1 warning.
 - Integration: 7 passed, 0 failed, 3 warnings.
 
 ## Golden story
@@ -30,5 +31,6 @@ This report is deterministic and offline; it does not call an LLM.
 ## Known gaps
 
 - Redis was unavailable, so historical per-subsection input/output/context tokens and rewrite counts could not be recovered.
-- Character labels are Codex-provisional and are excluded from the human release gate until confirmed by a person.
+- All 19 hard character rules were human-reviewed: 17 satisfied and 2 current-draft violations.
+- The qualitative style issues require dedicated metrics and human sampling; this baseline does not attribute them to the four-control style contract.
 - The RAG set contains 10 queries; metrics are descriptive and not statistically significant.
