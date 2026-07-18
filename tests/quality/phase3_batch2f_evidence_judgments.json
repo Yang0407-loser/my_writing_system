@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "review_provenance": "codex_assisted_review",
+  "independent_human_confirmation": false,
+  "decision_basis": "Compare each compressed excerpt with the existing supports_which_fact claim and its original source evidence. A multi-part claim passes only when every part remains verifiable.",
+  "baseline_annotation_findings": [
+    {
+      "review_item_id": "q06-679a7aa0",
+      "finding": "The original source shows traffic consequences and deletion but contains no active invitation from Zhou Ye; no lossless compactor can independently prove the assigned fact from this source."
+    },
+    {
+      "review_item_id": "q07-679a7aa0",
+      "finding": "The original source supports guilt and deletion but stops before Lin Wan directly faces Zhou Ye; it cannot independently prove the complete two-part assigned fact."
+    }
+  ],
+  "decisions": {
+    "q04-8e9a3ccc": {
+      "paragraph_window": {"preserved": false, "note": "Keeps the total and some contributions but drops the explicit Lin Wan/Wu-Aunt linkage, so the complete joint-funding relation is not independently verifiable."},
+      "dialogue_narrative_block": {"preserved": false, "note": "Keeps the funding dialogue and amounts but drops the paragraph identifying Wu Aunt as the caller; the complete four-party relation is incomplete."},
+      "character_span_150": {"preserved": true, "note": "Keeps Lin Wan's calls, Ji Qing and Gu Yan's amounts, Wu Aunt's contribution, the 300,000 total and the final source list."},
+      "character_span_250": {"preserved": true, "note": "Keeps the complete joint-funding chain and total."},
+      "character_span_350": {"preserved": true, "note": "Keeps the complete joint-funding chain and total."}
+    },
+    "q05-2c933962": {
+      "paragraph_window": {"preserved": false, "note": "Keeps deletion and the start of the invitation but drops the decisive response and transition from observer to participant."},
+      "dialogue_narrative_block": {"preserved": false, "note": "Keeps Zhou Ye's invitation but drops Lin Wan's acceptance and final decision to step out from behind the viewfinder."},
+      "character_span_150": {"preserved": true, "note": "Keeps invitation, acceptance and the explicit transition from behind the viewfinder into the room."},
+      "character_span_250": {"preserved": true, "note": "Keeps the complete invitation, acceptance and participation decision."},
+      "character_span_350": {"preserved": true, "note": "Keeps the complete invitation, acceptance and participation decision."}
+    },
+    "q05-91e847dc": {
+      "paragraph_window": {"preserved": false, "note": "Keeps the plan to arrive early but stops before the explicit line about stepping out from behind the viewfinder."},
+      "dialogue_narrative_block": {"preserved": true, "note": "Keeps the early-arrival plan, learning work and explicit decision to step out from behind the viewfinder."},
+      "character_span_150": {"preserved": true, "note": "Keeps the complete participation decision and transition language."},
+      "character_span_250": {"preserved": true, "note": "Keeps the complete participation decision and transition language."},
+      "character_span_350": {"preserved": true, "note": "Keeps the complete participation decision and transition language."}
+    },
+    "q05-85cda2bd": {
+      "*": {"preserved": true, "note": "Keeps Lin Wan arriving for the agreed work, receiving the bakery apron and entering the worker role; the observer-to-participant transition remains verifiable."}
+    },
+    "q05-097053c9": {
+      "*": {"preserved": true, "note": "Keeps the explicit 'you teach, I learn' commitment, which independently supports active participation."}
+    },
+    "q06-2c933962": {
+      "paragraph_window": {"preserved": false, "note": "Keeps the staffing need but drops the decisive 'now it is time to come in' invitation."},
+      "dialogue_narrative_block": {"preserved": true, "note": "Keeps Zhou Ye's staffing request and explicit invitation for her to come in and participate."},
+      "character_span_150": {"preserved": true, "note": "Keeps the complete active invitation sequence."},
+      "character_span_250": {"preserved": true, "note": "Keeps the complete active invitation sequence."},
+      "character_span_350": {"preserved": true, "note": "Keeps the complete active invitation sequence."}
+    },
+    "q06-679a7aa0": {
+      "*": {"preserved": false, "note": "Baseline annotation ceiling: the original source itself contains no active invitation from Zhou Ye, so the assigned fact cannot be independently verified even without compression."}
+    },
+    "q07-679a7aa0": {
+      "*": {"preserved": false, "note": "Baseline annotation ceiling: the original source supports guilt and deletion but contains no direct confrontation with Zhou Ye, so the complete two-part fact is not independently verifiable."}
+    },
+    "q07-7714910d": {
+      "paragraph_window": {"preserved": false, "note": "Keeps deletion and consequences but drops Lin Wan's proposal to face the crowd, leaving the direct-confrontation action incomplete."},
+      "dialogue_narrative_block": {"preserved": true, "note": "Keeps the posted-photo consequence, deletion, direct conversation with Zhou Ye and Lin Wan's proposal to address the crowd."},
+      "character_span_150": {"preserved": true, "note": "Keeps the complete consequence, deletion and confrontation sequence."},
+      "character_span_250": {"preserved": true, "note": "Keeps the complete consequence, deletion and confrontation sequence."},
+      "character_span_350": {"preserved": true, "note": "Keeps the complete consequence, deletion and confrontation sequence."}
+    },
+    "q07-2c933962": {
+      "*": {"preserved": true, "note": "Keeps the deletion action and the ensuing face-to-face exchange with Zhou Ye, so the relevant action chain remains verifiable."}
+    },
+    "q08-890a929d": {
+      "*": {"preserved": true, "note": "Keeps the slowly emerging salty aftertaste, wheat aroma and explicit sea-salt explanation."}
+    }
+  }
+}
