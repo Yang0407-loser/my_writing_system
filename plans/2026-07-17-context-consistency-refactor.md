@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 第一批已完成影子实现；生产 Writer 仍使用旧检索；人工 Precision 门槛待新增候选标注，Phase 4 未开始
+> 状态：Phase 3 第一批已完成影子实现；38 个新候选的人工审阅表已生成并等待填写；生产 Writer 仍使用旧检索，Phase 4 未开始
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -533,3 +533,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-18 | Phase 3 前置收尾 | 为 19 条 hard 角色规则生成留空人工审阅表；ContextManager 保留最近 3 小节原文并兼容旧 checkpoint；风格契约固定为 4 个主旋钮；记录 5,000-chunk 矩阵临时豁免 | 定向契约测试 33/33；全量 unit=127/0，integration=7/0；未恢复 `running_summary` 或旧 50 维字段 | 保持共享 collection + `task_id` filter；完整矩阵在 Chroma 升级、规模/延迟/隔离异常或迁移提案时强制重跑；不开始 Phase 3，等待用户人工确认角色标签 |
 | 2026-07-18 | Phase 3 人工标注入口 | 固化 19 条 hard 人工结果：17 条 `human_confirmed`、2 条 `human_flagged_issue`；`linwan-10` 改为关系阶段约束并补第16节；`jiqing-10` 明确现实风险缺口；三类结果分离；新增标注一致性测试 | 人工覆盖率=100%，当前正文 hard 违反率=2/19（10.53%）；标注测试=8/8、unit=127/127、integration=7/7；机械计数/重复句式/情绪层次不足登记为独立风格基线问题 | Phase 3 入口条件满足，可在用户明确指令后启动；不得在 Phase 3 中顺带修改 Writer、恢复旧 50 维风格字段或把两个已知正文缺陷抹掉 |
 | 2026-07-18 | Phase 3 第一批（shadow） | 新增四类意图 QueryPlanner、每意图现有向量粗召回、候选合并和可解释规则重排；每条候选记录来源 ID、分项/最终得分及入选/淘汰原因；Writer 只记录新旧结果，仍消费旧 top-5 | 10 条样本章节代理：旧 P@5=44.0% / R@5=43.3%，新 P@5=71.1% / R@5=70.0%，后期新 P@5=60.0%；平均返回 5.0→3.8，估算 token 609.9→470.3，延迟 2568.9→6361.3 ms；新候选人工标签覆盖 0%；unit=135/0、integration=8/0、quality=8/0 | 召回/后期代理指标达到方向性目标，但人工 Precision 门槛无效且延迟约 2.48×；保持 shadow，不切生产，不开始 Phase 3 第二批或 Phase 4；下一入口是人工标注新版候选 |
+| 2026-07-18 | Phase 3 新候选人工审阅入口 | 从冻结的 shadow 报告提取 10 条 query 下 38 个入选候选，按 source ID 从现有 Chroma 只读回填完整 chunk 正文；同 query 去重、跨 query 保持独立；保留 query、意图、must-recall facts、得分与原因 | 审阅表 query=10、candidate=38、human_reviewed=0；一致性测试校验数量、ID、正文 hash、查询上下文、分数、原因、空人工字段和防覆盖行为；unit=135/0、integration=8/0、quality=13/0 | 等待用户填写 `human_relevant`、`supports_which_fact`、`review_note`；保持 shadow，不修改权重、Writer 或其他冻结系统，不开始第二批或 Phase 4 |

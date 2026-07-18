@@ -1,0 +1,1501 @@
+{
+  "schema_version": 1,
+  "purpose": "Phase 3 shadow 候选人工相关性审阅；本文件不包含 Codex 自动判断",
+  "source_report": "reports/phase3-shadow-retrieval.json",
+  "source_annotation": "tests/rag_annotation_07d1391e.json",
+  "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+  "review_instructions": {
+    "human_relevant": "人工填写：相关 / 不相关 / 无法判断",
+    "supports_which_fact": "人工填写：复制本候选支持的 must_recall_facts；不支持则保持空数组",
+    "review_note": "人工填写判断依据、歧义或缺失信息",
+    "scope": "同一 source_id 在不同 query 下必须分别判断；不得跨 query 复用结论"
+  },
+  "summary": {
+    "query_count": 10,
+    "candidate_count": 38,
+    "human_reviewed_count": 0,
+    "status": "awaiting_human_review"
+  },
+  "queries": [
+    {
+      "query_index": 1,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "review_item_id": "q01-c01",
+          "query_index": 1,
+          "query": "周六面包店与凌晨三点半 第14章：社区生活墙 满墙的日常 从第一篇面包店到最新一张流浪猫，所有照片按时间线排列，彩色图钉在灯光下反光 纸条内容各异：老爷爷写'谢谢你拍我买面包'，孩子画了歪扭的笑脸，有人写'这不是偷窥，是看见' 林晚从第一张",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "社区照片墙按时间线陈列林晚的记录",
+            "纸条表达居民对林晚记录行为的认可"
+          ],
+          "source_id": "b27020f9-6b2c-4b96-b6d5-d28fcbb5177f",
+          "section": 14,
+          "subsection": 2,
+          "title": "围堵与告示",
+          "evidence_text": "周六早上七点，林晚没下楼。\n\n手机亮了一夜。评论区叠到三百条，匿名帖被转进超话，标题挂着“偷窥”。有人截她三个月前的街景，放大门牌号，圈出红砖楼。有人@面包店官号：“老板知道她在消费你吗？”\n\n她往下滑。一条写着“周六去打卡，看看那个揉面的”，下面十七条回复，贴出街道名，描述槐树和红砖楼。她锁屏。楼下卷帘门推上去，闷闷的，像掌根压在案板上。她没去。\n\n九点。吴阿姨发语音：“小林啊，面包店门口好多人，举着补光灯，周野脸都黑了。”\n\n十一点。季晴发截图。五个人举着手机，三脚架支在人行道上。有人端着可颂贴脸边，对着镜头说“打卡成功”。补光灯的白光打在面包柜上。周野站在柜台后，手臂交叉，袖口卷到小臂，没有表情。\n\n截图下：“你那个面包店火了。”\n\n林晚扣上手机。打开笔记本，《一袋吐司》那页还摊着。她写的是凌晨三点半的背影，掌根压进面团，面粉在橘光里浮沉。现在那些字被截成九宫格，标红，挂上“偷窥”。",
+          "evidence_text_hash": "aa774067e738a264e5d287540828376285a335e741dbbc0851cdc65986984fe1",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.869565,
+            "keyword": 0.116279,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.644191,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q01-c02",
+          "query_index": 1,
+          "query": "周六面包店与凌晨三点半 第14章：社区生活墙 满墙的日常 从第一篇面包店到最新一张流浪猫，所有照片按时间线排列，彩色图钉在灯光下反光 纸条内容各异：老爷爷写'谢谢你拍我买面包'，孩子画了歪扭的笑脸，有人写'这不是偷窥，是看见' 林晚从第一张",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "社区照片墙按时间线陈列林晚的记录",
+            "纸条表达居民对林晚记录行为的认可"
+          ],
+          "source_id": "c7ef5a01-0957-4d05-8dd2-cd18d59cf3c3",
+          "section": 15,
+          "subsection": 1,
+          "title": "消失的两周",
+          "evidence_text": "到“一袋吐司”。她点开第一篇，拇指悬在“发布”按钮上。那些字还在——她写凌晨三点半的揉面声，写掌根压进面团，写面粉在橘光里浮沉。现在这些字被截成九宫格，标红，挂上“偷窥”。她锁屏，把手机扣在床头柜上。\n那篇匿名帖的标题还在脑子里转——《那个靠偷窥别人生活走红的女人》。评论区有人贴出街道名，有人描述槐树和红砖楼，有人截她三个月前的街景放大门牌号。她翻了个身，被子蒙住头。槐树叶还在响。楼下卷帘门拉着，周野该揉第二块面团了。她没去。今天是第几天，她没数。\n\n敲门声在下午两点响起。\n\n三下。停。又三下。林晚没动。钥匙转动，锁舌弹开。吴阿姨站在门口，手里拎着塑料袋，芹菜叶子从袋口支出来。\n\n“两周了。”吴阿姨把塑料袋搁在鞋柜上。“楼下都没见你。”\n\n林晚坐起来，头发散在脸上。手机从被子里滑出来，屏幕还亮着，停在相册页面。吴阿姨弯腰捡起来，看了一眼。周野的背影，凌晨三点半，操作间窗户漏着橘光。\n\n“拍得挺好。”她把手机搁回床头柜。“走吧，下楼。”\n\n“我不去。”\n\n“没问你去不去。”吴阿姨拽住她胳膊，手指箍得紧，掌心力道像揉面。“活动室缺人手。搬椅子。”\n\n林晚被拽起来。拖鞋在地板上拖出声响。吴阿姨没松手，一路拽到门口。芹菜叶子还支在塑料袋外面，电梯里飘着那股青涩味。\n\n“你拍的那些东西。”吴阿姨按了一楼，没回头。“我们都在看。”\n\n电梯往下沉。林晚盯着楼层数字跳。六。五。四。\n\n“什么。”",
+          "evidence_text_hash": "091df02a0f792b7282ab4137e8d941b4113a9d6318d6de604f3e8017e468ecf1",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.127907,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.572334,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q01-c03",
+          "query_index": 1,
+          "query": "周六面包店与凌晨三点半 第14章：社区生活墙 满墙的日常 从第一篇面包店到最新一张流浪猫，所有照片按时间线排列，彩色图钉在灯光下反光 纸条内容各异：老爷爷写'谢谢你拍我买面包'，孩子画了歪扭的笑脸，有人写'这不是偷窥，是看见' 林晚从第一张",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "社区照片墙按时间线陈列林晚的记录",
+            "纸条表达居民对林晚记录行为的认可"
+          ],
+          "source_id": "7887989c-7aff-49e7-8777-1d1f591d2c5c",
+          "section": 3,
+          "subsection": 3,
+          "title": "暖黄初现",
+          "evidence_text": "雪天也开。有次停电，他点蜡烛揉面，烤箱不能用，就把面团分给邻居，第二天挨家挨户问烤得怎么样。”\n\n林晚翻回第一周模糊的背影，第二周的侧脸，第三周他递来热水。三周的照片叠在一起，同一个背影，同一种节奏。\n“我一直在拍他做面包，但打动我的不是面包。”她把相机放下，“是他一个人站在那里。凌晨三点半，五百克面粉，一百下揉面。没有人看，没有人催。”她翻开笔记本，笔尖点在第一行“野面包店”上，“我想拍的，是这种孤独。”\n\n顾衍端起茶杯：“那就拍孤独。”\n\n林晚合上笔记本，把相机装进包里。“下周还来。”\n\n“他知道你在拍什么吗。”\n\n“不知道。”她走到门口，回头看他，“但我会告诉他。”\n\n深夜，林晚坐在书桌前。她选中那张背影拖进文档，标题还是《一个只肯把时间分给面包的人》，但开头改了。\n\n“凌晨三点半。他舀面粉，筛进盆里。掌根推出去，面团展开又收拢。一百下，翻面，再一百下。节奏像钟摆。两年没变过。他以前是建筑师，现在只做面包。操作间只有他一个人。那种孤独不是空荡荡的，是满的。满得只剩下揉面这一件事。”\n\n她停手，继续写。\n\n“我拍了他三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。他递了杯热水，说可以拍，别开闪光灯，面粉怕爆。下周我会告诉他，我想拍的不是面包，是他一个人站在那里。”",
+          "evidence_text_hash": "a5daedfccbf79d8c6ebf8f7d58dd0e71c8f92cf421fcdccccb19c0dbbfd34bc5",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.139535,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.076923
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.528273,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q01-c04",
+          "query_index": 1,
+          "query": "周六面包店与凌晨三点半 第14章：社区生活墙 满墙的日常 从第一篇面包店到最新一张流浪猫，所有照片按时间线排列，彩色图钉在灯光下反光 纸条内容各异：老爷爷写'谢谢你拍我买面包'，孩子画了歪扭的笑脸，有人写'这不是偷窥，是看见' 林晚从第一张",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "社区照片墙按时间线陈列林晚的记录",
+            "纸条表达居民对林晚记录行为的认可"
+          ],
+          "source_id": "cb40d4f0-76cf-4dee-b6ec-2c0bc2ae4e73",
+          "section": 14,
+          "subsection": 2,
+          "title": "围堵与告示",
+          "evidence_text": "没有表情。\n\n截图下：“你那个面包店火了。”\n\n林晚扣上手机。打开笔记本，《一袋吐司》那页还摊着。她写的是凌晨三点半的背影，掌根压进面团，面粉在橘光里浮沉。现在那些字被截成九宫格，标红，挂上“偷窥”。\n下午两点。季晴又发图。店门口贴了告示，硬纸板，记号笔字迹凹进纸面——“禁止店内拍摄。面包是给人吃的，不是给人拍的。”字很大，占满整张纸。周野站在旁边，冷着脸，手臂交叉。三个博主举着手机站在门口，补光灯还亮着，镜头对着告示拍。\n\n林晚盯着告示。字迹和“每人限购两个”一样，笔锋压得重，纸板边缘戳出凹痕。她点开周野的对话框。上次对话停在“明天还来吗”“来”。她打几个字，删掉。光标在闪。\n\n她锁屏，手机塞进抽屉。震动隔着木板传过来。\n\n周日。周一。周二凌晨三点，林晚盯着天花板。槐树叶沙沙响，暖气管咕噜。她三天没下楼。冰箱剩半袋吐司，上周带回来的，封口拧着银色扎带。她撕着吃，面包皮发干。\n\n门锁响了。\n\n钥匙转动，锁舌弹开。季晴站在门口，西装没换，高跟鞋踩在门垫上。她按亮灯，走进卧室，掀开被子。\n\n“起来。”\n\n林晚坐起来，头发散在脸上。季晴把手机举到她眼前——店门口卷帘门拉着，告示还贴在玻璃上，边角被风吹卷。门口没人。\n\n“你躲了三天。”季晴把手机拍在床头柜。“那些探店的是你招来的，告示是你害人家贴的，现在你躲这儿啃干面包。”\n\n林晚盯着手机。屏幕暗下去，又亮起——凌晨三点十七分。",
+          "evidence_text_hash": "0bd30a69831b4a4359a9b95e481a56e24f8cf328d934506107213f5eab779208",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.104651,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.463147,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q01-c05",
+          "query_index": 1,
+          "query": "周六面包店与凌晨三点半 第14章：社区生活墙 满墙的日常 从第一篇面包店到最新一张流浪猫，所有照片按时间线排列，彩色图钉在灯光下反光 纸条内容各异：老爷爷写'谢谢你拍我买面包'，孩子画了歪扭的笑脸，有人写'这不是偷窥，是看见' 林晚从第一张",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "社区照片墙按时间线陈列林晚的记录",
+            "纸条表达居民对林晚记录行为的认可"
+          ],
+          "source_id": "b0fedefb-886e-4e19-8225-fc03c82c460c",
+          "section": 4,
+          "subsection": 1,
+          "title": "破晓等候",
+          "evidence_text": "第四周周六，清晨六点四十分。\n\n林晚站在野面包店门口，相机挂在脖子上。卷帘门拉着，门缝漏出橘色光。烤箱的低鸣从里面传出来，像某种持续的低音。槐树叶子在头顶沙沙响，人行道上还残留着昨夜的水渍。她没躲，就站在门口，手指扣在相机边缘。\n\n七点整，烤箱嘀了一声。脚步声靠近门口，卷帘门哗啦推上去。周野戴着棉手套，端出一盘小圆面包。面包壳是金褐色的，蒸汽从裂口涌出，带着焦糖和面粉混在一起的气味。他看见她，手套停在半空。\n\n“早。”\n\n林晚点了下头。“第一炉？”\n\n“嗯。”周野把烤盘搁在架子上，摘掉手套。他转身往操作间走，走到一半回头看她。“进来。”\n\n操作间比外面冷。面粉撒在案板上，不锈钢盆摞在角落。林晚站在门口，相机没举起来。\n\n“为什么只开周六。”\n\n周野拿起抹布擦案板，抹布在台面上画圈。“天然酵母得养五天。周一喂粉，周二发酵，周三续种，周四冷藏，周五回温。周六才够活性。”他把抹布搭在水池边上，“急不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”",
+          "evidence_text_hash": "18bece64e18b5f32ec6268d3eb04be2baef4f0ab7da57e2c5f1411f92bafcd92",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.487805,
+            "keyword": 0.081395,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.083333
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.407111,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 2,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "review_item_id": "q02-c01",
+          "query_index": 2,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 暗涌初现 林晚的图文记录点赞破万，面包店遭网红涌入，周野表示面包是给人吃的不是给人拍的 林晚内疚删帖，周野却邀请她周六来当店员，从观察者转为参与者",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚的图文爆火并引来拍摄人群",
+            "林晚删帖后从观察者转向面包店参与者"
+          ],
+          "source_id": "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+          "section": 3,
+          "subsection": 2,
+          "title": "直面晨光",
+          "evidence_text": "第三周周六，凌晨三点四十分。\n\n林晚站在野面包店门口，相机挂在脖子上，镜头盖摘了。门缝漏出橘色光，揉面声从里面传出来——掌根推出去，案板吱呀一响，收回来，再推出去。节奏没变。她手指扣在相机边缘，胸口有什么东西在跳，不是恐惧，是某种更尖锐的、卡在肋骨之间的东西。\n\n卷帘门哗啦一响。\n\n周野拎着垃圾袋出来，袖口卷到小臂，面粉沾在手腕上。他看见她，停住。槐树叶子沙沙响。他看了她三秒，转身进了操作间，出来时端着杯热水，递给她。\n\n林晚接过来。一次性纸杯，杯壁薄得透光。\n\n“你在拍我。”不是问句。\n\n林晚握紧杯子。“拍了两周。”\n\n周野靠在门框上。“拍到了什么。”\n\n“背影。揉面。四点半开窗。”\n\n他点了下头。“可以拍。”他转身往里走，“别开闪光灯。面粉怕爆。”\n\n林晚端起相机。取景器里，周野舀起一把面粉，手腕一抖，粉末扬起来。掌根推出去，面团在案板上展开又收拢。肩胛骨在灰色长袖下起伏，节奏像钟摆。她按下快门。咔嚓。再按下。咔嚓。面粉像凝固的雪。\n\n周野没回头。\n\n林晚退到门外，蹲下来，从包里掏出笔记本，翻到新的一页。",
+          "evidence_text_hash": "49bb5dcc1ca190d726dab324ded0a5ffaf31d3d695c2bb5c667892b2fca3a558",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.869565,
+            "keyword": 0.149254,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.650126,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q02-c02",
+          "query_index": 2,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 暗涌初现 林晚的图文记录点赞破万，面包店遭网红涌入，周野表示面包是给人吃的不是给人拍的 林晚内疚删帖，周野却邀请她周六来当店员，从观察者转为参与者",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚的图文爆火并引来拍摄人群",
+            "林晚删帖后从观察者转向面包店参与者"
+          ],
+          "source_id": "890a929d-ec95-4879-a46b-813607b3b827",
+          "section": 4,
+          "subsection": 1,
+          "title": "破晓等候",
+          "evidence_text": "不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”\n“什么病。”\n\n周野没回答。他转身从架子上取下一个藤编筐，拿油纸包了个小圆面包，递给她。“采访费。”\n\n林晚接过面包。油纸透出热度，面包壳硬挺，手指按下去能感觉到外壳的阻力。她掰开，里面是浅黄色的组织，气孔大小不一，蒸汽从断面涌出来。咬了一口，外壳碎裂的声音很轻，里面软得几乎不用嚼。咸味是慢慢渗出来的，藏在麦香后面，像海风混进面粉里。\n\n“盐。”\n\n“海盐。”周野靠在案板边，“揉面的时候加进去，烤完就融在组织里。”\n\n林晚吃完半个面包，把油纸折好。相机还挂在脖子上，第三个问题卡在喉咙里。她看着周野转身继续摆面包，肩胛骨在灰色长袖下起伏，节奏没变。\n\n“我还有一个问题。”\n\n周野回头看她。\n\n“下周问。”林晚把相机盖摘下来，“今天先拍。”她举起相机，取景框里周野正把一炉新面包拖出来，热气模糊了他的轮廓。",
+          "evidence_text_hash": "f7b16c45edef006b8cd5622dd256ae475e83b3cb6c557451a903b4da15010e73",
+          "selection_reason": "selected:intents=character;strongest=character",
+          "matched_intents": [
+            "character"
+          ],
+          "score_components": {
+            "vector": 0.425532,
+            "keyword": 0.089552,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.420162,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 3,
+      "candidate_count": 0,
+      "candidates": []
+    },
+    {
+      "query_index": 4,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "review_item_id": "q04-c01",
+          "query_index": 4,
+          "query": "周六面包店与凌晨三点半 第16章：按时吃饭 面包婚礼 林晚策划'面包婚礼'，仅邀请十几位社区好友，份子钱是每人自烤的一个面包。 顾衍、季晴、吴阿姨等老顾客带着心意和故事到场，在面包香中见证两人的仪式。",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "林晚联合季晴、顾衍和吴阿姨筹集三十万",
+            "新空间开业由社区与老顾客共同见证"
+          ],
+          "source_id": "8e9a3ccc-21e3-4f1c-bd19-dcd13088d7b7",
+          "section": 16,
+          "subsection": 1,
+          "title": "三十万缺口",
+          "evidence_text": "交上两人并排坐着。周野看窗外，手指在膝盖上敲。林晚手机屏幕亮着，银行APP余额停在四位数。她退出，点开通讯录。\n\n季晴接电话时背景音是键盘声。\n\n“季晴，我需要钱。”\n\n“多少。”\n\n“你能拿多少。”\n“五万。年终奖刚发。”键盘声没停。“什么时候要。”\n\n“这周。”\n\n电话挂断。林晚又拨顾衍的号码。翻书声沙沙响。\n\n“顾衍，周野看中一个仓库。”\n\n“我知道。”翻书声停了。“差三十万。”\n\n“我拿八万。书店流水还行。”\n\n“算入股。”顾衍说。“那家面包店值得。”\n\n林晚点开吴阿姨的微信。打字到一半，吴阿姨直接拨过来。\n\n“小林，啥事。”\n\n“周野想开面包工坊，差钱。”\n\n“差多少。”\n\n“三十万。季晴拿了五万，顾衍八万。”\n\n麻将牌磕在桌上。有人喊“碰”。她压低声音。\n\n“我拿三万。别跟周野说是我出的。那孩子倔。”\n\n“为什么。”\n\n“他妈走那年他十九岁。一个人撑到现在。你让他觉得是借的就行。”\n\n电话挂断。\n\n周六早上六点，林晚推开面包店门。周野在操作间揉面，掌根压进面团，往前推，折回来。她从口袋掏出一张银行卡，搁在面粉袋旁。\n\n周野停下手。\n\n“什么。”\n\n“三十万。”\n\n他拿起卡，翻过来看背面。签名条空着。面粉沾在卡面上，他用拇指擦掉。\n\n“哪来的。”\n\n“季晴、顾衍、吴阿姨。还有我。”林晚系上围裙。“我拿四万。”\n\n周野把卡搁回案板。手掌撑在台面上，指关节泛白。窗外槐树叶子沙沙响。",
+          "evidence_text_hash": "773e8fe7c25a9615af704de8fabf96c0c92c6d8788b71c7cdbdfe888b15316f6",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.15493,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.516637,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q04-c02",
+          "query_index": 4,
+          "query": "周六面包店与凌晨三点半 第16章：按时吃饭 面包婚礼 林晚策划'面包婚礼'，仅邀请十几位社区好友，份子钱是每人自烤的一个面包。 顾衍、季晴、吴阿姨等老顾客带着心意和故事到场，在面包香中见证两人的仪式。",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "林晚联合季晴、顾衍和吴阿姨筹集三十万",
+            "新空间开业由社区与老顾客共同见证"
+          ],
+          "source_id": "b675c871-c0a2-4481-a549-7d9bb2cabc7b",
+          "section": 3,
+          "subsection": 1,
+          "title": "暗夜蹲守",
+          "evidence_text": "周六凌晨三点，闹钟没响，林晚已经醒了。\n\n她盯着天花板裂缝，手指搭在相机上。失眠第三周，每次闭眼就是那封邮件——“感觉不对”。她坐起来，穿鞋，拿相机，关门。\n\n三点十五分，底商卷帘门都拉着，只有书店亮着灯。她蹲在槐树下，镜头对准野面包店门缝。没有光，没有声音。她想拍那个人的节奏，那种钟摆一样的专注。\n\n三点三十分整，卷帘门后亮了。橘色光从门缝漏出，然后是声音——金属碰撞，水流砸在不锈钢盆底。揉面声跟着来了，掌根推出去，案板吱呀一响，收回来，再推出去。节奏稳得像钟摆。她把镜头贴在百叶窗缝隙上，按下快门。照片里只有模糊的光影。\n\n四点十分，声音停了。烤箱启动，黄油融化的气味从门缝下渗出来。她站起来，膝盖咔嗒一响，转身看见书店门口站着个人。\n\n顾衍靠在门框上，端着杯茶。“他四点半会开窗。”\n\n“你怎么知道。”\n\n“我值夜班。”顾衍转身推开门，“进来坐。”\n\n书店里暖黄灯光铺在木地板上。靠窗桌上搁着半根法棍。从这个角度能看见面包店侧窗。\n\n“三点半揉面，四点半开窗通风，五点整形，六点进烤箱。每天一样。”\n\n“每天？”\n\n“周一到周五也做，只是不卖。”顾衍掰了块法棍递给她，“周六才开门。”",
+          "evidence_text_hash": "4e035744875e1031af752d045195118b7d696c7017c1c1f3a9a5a8fd52d26ade",
+          "selection_reason": "selected:intents=event,scene;strongest=vector",
+          "matched_intents": [
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.140845,
+            "title": 0.0,
+            "character": 0.5,
+            "chapter_proximity": 0.066667
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.467996,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q04-c03",
+          "query_index": 4,
+          "query": "周六面包店与凌晨三点半 第16章：按时吃饭 面包婚礼 林晚策划'面包婚礼'，仅邀请十几位社区好友，份子钱是每人自烤的一个面包。 顾衍、季晴、吴阿姨等老顾客带着心意和故事到场，在面包香中见证两人的仪式。",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "林晚联合季晴、顾衍和吴阿姨筹集三十万",
+            "新空间开业由社区与老顾客共同见证"
+          ],
+          "source_id": "776aa783-78fb-4555-8c20-b0b3525b15de",
+          "section": 1,
+          "subsection": 1,
+          "title": "第一卷",
+          "evidence_text": "桌子靠墙摆着，柜台是原木色的，面包码在藤编筐里。她扫了一眼，法棍，吐司，可颂，还有几个圆面包叫不出名字。\n\n“哪个卖最好。”\n\n周野看了她一眼。\n\n“都行。”\n\n林晚等了两秒，发现他没有继续说的意思。\n“那我随便拿。”\n\n她指了一个圆面包。周野取出来，用油纸包好，放在柜台上。她扫码付钱，拎着纸袋往外走。走到门口又停下来。\n\n“隔壁书店几点开。”\n\n“一直开着。”\n\n“二十四小时？”\n\n周野点了一下头。林晚推门出去，门铃又响了一声。\n\n她站在面包店门口，往书店那边看了一眼。玻璃窗后面是一排排书架，暖黄色的灯光铺在木地板上。有个男人坐在靠窗的位置翻书，手边搁着半根法棍。\n\n她没进去。拎着面包往回走，经过广场舞的人群，吴阿姨朝她招手。\n\n“小林，今天起这么早。”\n\n“嗯。”\n\n“买面包了？小周家的面包好，你多买几次就知道了。”\n\n林晚笑了一下，上楼。\n\n回到房间，她把面包放在桌上。油纸打开，面包皮是深褐色的，按下去有弹性。掰开，里面是浅黄色的组织，气孔大小不一。咬了一口，外壳硬，里面软，嚼起来有麦子的甜味。\n\n她坐在床边吃完半个面包。楼下广场舞的音乐停了，吴阿姨的声音从窗户传进来，在跟谁打招呼。远处二环上的车流声像条河，一直响着。\n\n手机屏幕亮起来。季晴又发了消息。\n\n“买了吗？”\n\n“买了。”\n\n“什么味的。”\n\n“圆的。不知道叫什么。”\n\n“下周见面给我。对了，你觉得怎么样？”",
+          "evidence_text_hash": "e53077ebe86523f6876c9e0772c08daac0268ff9973fb8dec510b8290f90bf5c",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.126761,
+            "title": 0.0,
+            "character": 0.75,
+            "chapter_proximity": 0.058824
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.459508,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q04-c04",
+          "query_index": 4,
+          "query": "周六面包店与凌晨三点半 第16章：按时吃饭 面包婚礼 林晚策划'面包婚礼'，仅邀请十几位社区好友，份子钱是每人自烤的一个面包。 顾衍、季晴、吴阿姨等老顾客带着心意和故事到场，在面包香中见证两人的仪式。",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "林晚联合季晴、顾衍和吴阿姨筹集三十万",
+            "新空间开业由社区与老顾客共同见证"
+          ],
+          "source_id": "cb40d4f0-76cf-4dee-b6ec-2c0bc2ae4e73",
+          "section": 14,
+          "subsection": 2,
+          "title": "围堵与告示",
+          "evidence_text": "没有表情。\n\n截图下：“你那个面包店火了。”\n\n林晚扣上手机。打开笔记本，《一袋吐司》那页还摊着。她写的是凌晨三点半的背影，掌根压进面团，面粉在橘光里浮沉。现在那些字被截成九宫格，标红，挂上“偷窥”。\n下午两点。季晴又发图。店门口贴了告示，硬纸板，记号笔字迹凹进纸面——“禁止店内拍摄。面包是给人吃的，不是给人拍的。”字很大，占满整张纸。周野站在旁边，冷着脸，手臂交叉。三个博主举着手机站在门口，补光灯还亮着，镜头对着告示拍。\n\n林晚盯着告示。字迹和“每人限购两个”一样，笔锋压得重，纸板边缘戳出凹痕。她点开周野的对话框。上次对话停在“明天还来吗”“来”。她打几个字，删掉。光标在闪。\n\n她锁屏，手机塞进抽屉。震动隔着木板传过来。\n\n周日。周一。周二凌晨三点，林晚盯着天花板。槐树叶沙沙响，暖气管咕噜。她三天没下楼。冰箱剩半袋吐司，上周带回来的，封口拧着银色扎带。她撕着吃，面包皮发干。\n\n门锁响了。\n\n钥匙转动，锁舌弹开。季晴站在门口，西装没换，高跟鞋踩在门垫上。她按亮灯，走进卧室，掀开被子。\n\n“起来。”\n\n林晚坐起来，头发散在脸上。季晴把手机举到她眼前——店门口卷帘门拉着，告示还贴在玻璃上，边角被风吹卷。门口没人。\n\n“你躲了三天。”季晴把手机拍在床头柜。“那些探店的是你招来的，告示是你害人家贴的，现在你躲这儿啃干面包。”\n\n林晚盯着手机。屏幕暗下去，又亮起——凌晨三点十七分。",
+          "evidence_text_hash": "0bd30a69831b4a4359a9b95e481a56e24f8cf328d934506107213f5eab779208",
+          "selection_reason": "selected:intents=character,scene;strongest=vector",
+          "matched_intents": [
+            "character",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.526316,
+            "keyword": 0.140845,
+            "title": 0.0,
+            "character": 0.5,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.387326,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q04-c05",
+          "query_index": 4,
+          "query": "周六面包店与凌晨三点半 第16章：按时吃饭 面包婚礼 林晚策划'面包婚礼'，仅邀请十几位社区好友，份子钱是每人自烤的一个面包。 顾衍、季晴、吴阿姨等老顾客带着心意和故事到场，在面包香中见证两人的仪式。",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "林晚联合季晴、顾衍和吴阿姨筹集三十万",
+            "新空间开业由社区与老顾客共同见证"
+          ],
+          "source_id": "e0ef371b-7fef-42c8-ac8d-8b39e4fd3892",
+          "section": 1,
+          "subsection": 1,
+          "title": "第一卷",
+          "evidence_text": "谁打招呼。远处二环上的车流声像条河，一直响着。\n\n手机屏幕亮起来。季晴又发了消息。\n\n“买了吗？”\n\n“买了。”\n\n“什么味的。”\n\n“圆的。不知道叫什么。”\n\n“下周见面给我。对了，你觉得怎么样？”\n林晚看着最后那行字。季晴问的是面包，还是别的什么，她不确定。她把剩下的半个面包放回纸袋里，打字。\n\n“还行。”\n\n消息发出去，她把手机扣在床上。窗外的天已经全亮了，槐树叶子在风里翻出灰白色的背面。楼下有人按快递柜，电子音滴滴响。\n\n面包还剩半个，搁在桌上。她盯着看了很久，然后站起来，把纸袋口折好，放进冰箱。",
+          "evidence_text_hash": "5f5c12967a1276d6a2a036865deef4598b242bf8f909d0bea49c7f6cd9ef45e3",
+          "selection_reason": "selected:intents=character,event,scene;strongest=vector",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.056338,
+            "title": 0.0,
+            "character": 0.5,
+            "chapter_proximity": 0.058824
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.372392,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 5,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "review_item_id": "q05-c01",
+          "query_index": 5,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 面粉里的温度 林晚下班后走进隔壁书店，顾衍认出她是删帖的博主，两人聊起周野的往事 顾衍透露周野凌晨揉面时总哼童谣，那是他母亲教的，林晚触动 深夜林晚在合租房写下新笔记，决定不再做旁观者，橘猫蹭着她",
+          "query_intent": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "顾衍知道林晚删帖并谈到周野",
+            "周野揉面时的童谣来自母亲",
+            "林晚决定不再只做旁观者"
+          ],
+          "source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n她没按快门。\n\n周六早上六点，她会站在柜台后面，从取景器后面走出来，走进那个橘色光的房间。",
+          "evidence_text_hash": "d5359b1a4998863ec7a23669e06429149d1df4c916147b5ccbb7759e8205f927",
+          "selection_reason": "selected:intents=character,event,scene;strongest=vector",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.769231,
+            "keyword": 0.119565,
+            "title": 0.0,
+            "character": 0.666667,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.537099,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q05-c02",
+          "query_index": 5,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 面粉里的温度 林晚下班后走进隔壁书店，顾衍认出她是删帖的博主，两人聊起周野的往事 顾衍透露周野凌晨揉面时总哼童谣，那是他母亲教的，林晚触动 深夜林晚在合租房写下新笔记，决定不再做旁观者，橘猫蹭着她",
+          "query_intent": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "顾衍知道林晚删帖并谈到周野",
+            "周野揉面时的童谣来自母亲",
+            "林晚决定不再只做旁观者"
+          ],
+          "source_id": "91e847dc-4855-4365-9ba6-47eb7a3a4a96",
+          "section": 5,
+          "subsection": 3,
+          "title": "沉默的重量",
+          "evidence_text": "。\n\n她合上笔记本。啪地一声，像快门落下。\n\n以前合上是收工。这次不是。她站起来，走到操作间门口。\n\n周野在擦案板，抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味。\n\n“下周六我早点来。”\n\n他停下手。\n“三点半。”她靠在门框上，围裙还系着。“揉面你教，烤面包你教，收钱我会。”\n\n周野把抹布搭在水池边，转过身，手臂交叉。袖口沾着面粉，灰长袖洗得发白。\n\n“揉面一百下。翻面，再一百下。手劲要匀。”\n\n“我知道。看你揉了六周。”\n\n他点头。不是冷淡，是刻度。\n\n林晚摸出笔记本，翻到最后一页。上面写着“第五周。不只是面包店。整条街。凌晨三点半到七点。先拍，不发。”她在这行下加了一句。\n\n“第七周。三点半到店。揉面一百下。”\n\n笔尖顿住，又加一句。\n\n“从取景器后面走出来。”\n\n她合上笔记本。这次不是收工，是开始。\n\n周野从架上拿下新围裙，放在案板边。\n\n“你的。”\n\n林晚接过来。米白色，棉布，系带还没打结。左下角绣着“野面包”。\n\n“什么时候准备的。”\n\n“上周。”他拿起刮板铲面粉。“你记笔记的时候。”\n\n烤箱嘀一声。操作间安静下来，只有压缩机低鸣。林晚把围裙叠好放进包里，挨着笔记本。油纸还夹在里面，小圆面包的咸味散了，只剩纸的味道。\n\n她走到门口，回头。周野站在案板前，手插在围裙口袋里。橘光下，面粉扬起像凝固的雪。\n\n“周六见。”\n\n他点头。",
+          "evidence_text_hash": "e81ea0775456be8dd491f17bfa110cf045656816bea6e9cb0d9ac6870d4e9dec",
+          "selection_reason": "selected:intents=event,scene;strongest=vector",
+          "matched_intents": [
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.141304,
+            "title": 0.0,
+            "character": 0.666667,
+            "chapter_proximity": 0.333333
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.501412,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q05-c03",
+          "query_index": 5,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 面粉里的温度 林晚下班后走进隔壁书店，顾衍认出她是删帖的博主，两人聊起周野的往事 顾衍透露周野凌晨揉面时总哼童谣，那是他母亲教的，林晚触动 深夜林晚在合租房写下新笔记，决定不再做旁观者，橘猫蹭着她",
+          "query_intent": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "顾衍知道林晚删帖并谈到周野",
+            "周野揉面时的童谣来自母亲",
+            "林晚决定不再只做旁观者"
+          ],
+          "source_id": "85cda2bd-f853-41d2-bff0-b76520368fb9",
+          "section": 7,
+          "subsection": 2,
+          "title": "忐忑的赴约",
+          "evidence_text": "周六清晨五点二十，林晚站在野面包店门口。\n\n卷帘门半拉着，橘色光从底下漏出来。她蹲下，手指扣住门边。操作间里烤箱低鸣，发酵的酸味混着焦糖香。她比约定的三点半早了十分钟。\n\n周野推起卷帘门。他看了她一眼，从架上拿下围裙递过来。米白色，左下角绣着“野面包”。\n\n“系上。六点开门。”\n\n他转身回了操作间。没有多余的话。\n\n林晚系好围裙，带子在腰后打了个结。围裙有点长，她折了一道。操作间里案板上搁着分割好的面团，周野手掌压进面里，肩胛骨起伏。她站到案板对面。\n\n“揉面。”\n\n周野推过来一块面团。手掌示范——掌根压下去，往前推，折回来，再压。节奏像钟摆。\n\n林晚把手伸进面团。面粘在指缝里，她用力压下去，面团滑开，歪成椭圆形。她抓回来再压，手指陷得太深，面粘在案板上。周野伸手把面团翻过来，指节敲了敲案板。\n\n“轻点。掌根用力。”\n\n她又压下去。这次面团往前推开，折回来时边缘裂了。周野没说话，继续揉自己的面。操作间里只有手掌压面的闷响和压缩机低鸣。\n\n六点整，卷帘门哗啦推上去。\n\n吴阿姨排在第一个，后面跟着两个拎布袋的大姐。她跨进门，目光在林晚身上停住。\n\n“哟，换人了？”",
+          "evidence_text_hash": "fb7695ae8736fb36fd28d685307807f5ecd612bda79fd5e198490288cfdc343d",
+          "selection_reason": "selected:intents=character,event,scene;strongest=chapter_proximity",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.086957,
+            "title": 0.0,
+            "character": 0.666667,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.489402,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q05-c04",
+          "query_index": 5,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 面粉里的温度 林晚下班后走进隔壁书店，顾衍认出她是删帖的博主，两人聊起周野的往事 顾衍透露周野凌晨揉面时总哼童谣，那是他母亲教的，林晚触动 深夜林晚在合租房写下新笔记，决定不再做旁观者，橘猫蹭着她",
+          "query_intent": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "顾衍知道林晚删帖并谈到周野",
+            "周野揉面时的童谣来自母亲",
+            "林晚决定不再只做旁观者"
+          ],
+          "source_id": "097053c9-e158-4bc3-b103-4e305e1c5bd2",
+          "section": 6,
+          "subsection": 3,
+          "title": "错位镜头",
+          "evidence_text": "“我删了。”林晚站起来。“那篇图文。彻底删了。”\n\n周野没说话。\n\n“下周三点半。”她把笔记本塞回口袋。“揉面一百下。翻面，再一百下。你教，我学。”\n\n周野看了她片刻。然后点头。\n\n不是冷淡。是刻度。\n林晚转身往楼上走。槐树叶子沙沙响，天光从枝叶缝隙漏下来，在人行道上铺成碎金。笔记本在口袋里沉甸甸的。那些字不是记录，是重量。一个老爷爷，两个菠萝包，一趟头班车。还有一个人，话少，每个字都卡在刻度上。\n\n她摸到笔记本封面，还温热。",
+          "evidence_text_hash": "e66c37941a6da610bc8a3b7a8d8f416dda74edde78166ebf764c97c384bcf594",
+          "selection_reason": "selected:intents=character;strongest=character",
+          "matched_intents": [
+            "character"
+          ],
+          "score_components": {
+            "vector": 0.571429,
+            "keyword": 0.065217,
+            "title": 0.0,
+            "character": 0.666667,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.431025,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q05-c05",
+          "query_index": 5,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 面粉里的温度 林晚下班后走进隔壁书店，顾衍认出她是删帖的博主，两人聊起周野的往事 顾衍透露周野凌晨揉面时总哼童谣，那是他母亲教的，林晚触动 深夜林晚在合租房写下新笔记，决定不再做旁观者，橘猫蹭着她",
+          "query_intent": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "顾衍知道林晚删帖并谈到周野",
+            "周野揉面时的童谣来自母亲",
+            "林晚决定不再只做旁观者"
+          ],
+          "source_id": "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20",
+          "section": 1,
+          "subsection": 1,
+          "title": "第一卷",
+          "evidence_text": "让我买面包？”\n\n“加班。刚到家。”\n\n林晚盯着那三个字。季晴在互联网大厂做HRBP，加班是常态。但凌晨两点到家，早上八点半还得打卡。她打了一行字又删掉，最后只回了个“好”。\n\n七点整，烤箱叮的一声。\n周野戴上棉手套，拉出烤盘。热浪扑在脸上，面包壳是金褐色的，敲上去有空洞的回声。他把烤盘搁在架子上晾，开始做第二炉。法棍的面团昨晚就备好了，在冰箱里低温发酵了一夜。他取出来时，面团表面结了一层薄薄的硬皮，手指按下去，慢慢弹回来。\n\n割包刀在面团表面划出三道斜口。动作不快，刀锋走过，面皮裂开，露出底下湿润的组织。撒一层面粉，送进烤箱。蒸汽喷出来，在烤箱玻璃上凝成水珠。\n\n八点。他翻过门口的木牌——“野面包，周六营业”。\n\n顾衍在隔壁书店里听见了木牌翻动的声音。他正在整理书架，手指停在书脊上，偏头往窗外看了一眼。面包店的灯已经全亮了，暖黄色的光透过玻璃门照在人行道上。\n\n他把最后一摞书码好，推开书店的门。槐树底下，晨光碎了一地。\n\n“早。”\n\n周野在柜台后面抬起头，点了一下。\n\n顾衍走进面包店。法棍的焦香和黄油味混在一起，他站在柜台前，看周野把面包一个个摆进藤编筐里。\n\n“法棍留一根。”\n\n周野拿油纸包好，搁在柜台边上。顾衍没急着走，靠在门框上，掰了一小块法棍角放进嘴里。外壳碎裂的声音很轻。\n\n“昨晚有人半夜来还书。”顾衍说。\n\n“几点。”",
+          "evidence_text_hash": "fc9db0c0064dae10fdcc3e8c0b2fc076859eb0416e03d251ee6b55b585e7d0bc",
+          "selection_reason": "selected:intents=event,scene;strongest=character",
+          "matched_intents": [
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.454545,
+            "keyword": 0.141304,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.142857
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.402577,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 6,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "review_item_id": "q06-c01",
+          "query_index": 6,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 删帖与静默 林晚删帖并发新动态，评论区两极分化，她陷入自我怀疑 周六她没去面包店，在家闷着刷手机，橘猫陪伴却更显孤独 下午收到周野的微信邀请，她犹豫后回了好，开始翻看面包书做笔记",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚删帖后因争议陷入自我怀疑",
+            "周野主动邀请她再来",
+            "林晚开始阅读面包书做笔记"
+          ],
+          "source_id": "097053c9-e158-4bc3-b103-4e305e1c5bd2",
+          "section": 6,
+          "subsection": 3,
+          "title": "错位镜头",
+          "evidence_text": "“我删了。”林晚站起来。“那篇图文。彻底删了。”\n\n周野没说话。\n\n“下周三点半。”她把笔记本塞回口袋。“揉面一百下。翻面，再一百下。你教，我学。”\n\n周野看了她片刻。然后点头。\n\n不是冷淡。是刻度。\n林晚转身往楼上走。槐树叶子沙沙响，天光从枝叶缝隙漏下来，在人行道上铺成碎金。笔记本在口袋里沉甸甸的。那些字不是记录，是重量。一个老爷爷，两个菠萝包，一趟头班车。还有一个人，话少，每个字都卡在刻度上。\n\n她摸到笔记本封面，还温热。",
+          "evidence_text_hash": "e66c37941a6da610bc8a3b7a8d8f416dda74edde78166ebf764c97c384bcf594",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.064103,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.535849,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q06-c02",
+          "query_index": 6,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 删帖与静默 林晚删帖并发新动态，评论区两极分化，她陷入自我怀疑 周六她没去面包店，在家闷着刷手机，橘猫陪伴却更显孤独 下午收到周野的微信邀请，她犹豫后回了好，开始翻看面包书做笔记",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚删帖后因争议陷入自我怀疑",
+            "周野主动邀请她再来",
+            "林晚开始阅读面包书做笔记"
+          ],
+          "source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n她没按快门。\n\n周六早上六点，她会站在柜台后面，从取景器后面走出来，走进那个橘色光的房间。",
+          "evidence_text_hash": "d5359b1a4998863ec7a23669e06429149d1df4c916147b5ccbb7759e8205f927",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.089744,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.527964,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q06-c03",
+          "query_index": 6,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 删帖与静默 林晚删帖并发新动态，评论区两极分化，她陷入自我怀疑 周六她没去面包店，在家闷着刷手机，橘猫陪伴却更显孤独 下午收到周野的微信邀请，她犹豫后回了好，开始翻看面包书做笔记",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚删帖后因争议陷入自我怀疑",
+            "周野主动邀请她再来",
+            "林晚开始阅读面包书做笔记"
+          ],
+          "source_id": "0c20040a-51c5-4fc4-94d4-324bf62611bd",
+          "section": 6,
+          "subsection": 1,
+          "title": "排队长龙",
+          "evidence_text": "的灰。\n\n“今天人多。”\n\n周野点头。\n\n老爷爷把纸袋放进布袋里，布袋上印着“朝阳医院”的红字。他往门口走，经过三脚架时侧身让了一下。布鞋底踩在槐花上，右脚外侧磨得厉害。\n\n林晚看着他的背影拐过街角。\n十点，面包卖完。卷帘门拉下来。周野把限购告示翻过来扣在台面上。记号笔搁在旁边，笔尖的墨迹干了。\n\n林晚解下围裙，叠好放进包里。笔记本从口袋里滑出来，翻到最新一页。上面只写了一行字——“第七周。三点半到店。”后面空着。\n\n她合上笔记本。\n\n周野在擦案板。抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味，混着补光灯留下的臭氧味。\n\n“下周。”他停下手。\n\n“我早点来。三点半。”林晚把笔记本塞回口袋。“揉面一百下。翻面，再一百下。”\n\n周野把抹布搭在水池边上。转过身，手臂交叉。\n\n“那些人下周还会来。”\n\n“我知道。”\n\n林晚走到门口，回头。周野站在案板前，手插在围裙口袋里。橘光下，面粉扬起又落下。\n\n“周六见。”\n\n他点头。\n\n林晚推开门。槐树底下空了，三脚架和补光灯都撤走了。人行道上留着咖啡杯的纸托，被风吹到树根旁边。她弯腰捡起来，扔进垃圾桶。\n\n街口，老爷爷的背影已经走远。布袋挎在胳膊上，布鞋底沾着湿槐花。纸袋里两个菠萝包，糖霜泛哑光。\n\n她摸出手机，点开小红书。那篇图文还在，点赞数又涨了。拇指悬在删除键上，停了三秒。按下去。“确定删除？”确定。\n\n屏幕暗了。",
+          "evidence_text_hash": "80de49de37ab3b91a2e31053b43775207f3e4e5db21f53b5f69a7d41c4c701cb",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.102564,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.427212,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q06-c04",
+          "query_index": 6,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 删帖与静默 林晚删帖并发新动态，评论区两极分化，她陷入自我怀疑 周六她没去面包店，在家闷着刷手机，橘猫陪伴却更显孤独 下午收到周野的微信邀请，她犹豫后回了好，开始翻看面包书做笔记",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚删帖后因争议陷入自我怀疑",
+            "周野主动邀请她再来",
+            "林晚开始阅读面包书做笔记"
+          ],
+          "source_id": "3c939bbf-9269-40e8-8045-fdc92316df5d",
+          "section": 5,
+          "subsection": 3,
+          "title": "沉默的重量",
+          "evidence_text": "第六周周六，上午十点。\n\n卷帘门拉下。藤筐空了，面粉扫进垃圾桶。林晚坐在收银台后，笔记本摊开，笔尖停在空白页上。\n\n她翻回去。第一周，背影。第二周，侧脸。第三周，热水。第四周，小圆面包。第五周，老爷爷和两个菠萝包。第六周，八个菠萝包。\n\n她盯着“八个”。\n\n周野说“他走路有点跛”时，不是在陈述，是在解释。解释为什么多烤四个。他不说“我觉得他需要”，只说鞋底——右脚外侧磨损，布鞋底薄，通州头班车五点二十发。这些细节拼成一个完整的人。然后他多烤四个菠萝包。\n\n她往前翻。第三周，他递热水，她道谢，他只点头。那时她以为那是冷淡。现在她知道那个点头里装着什么——他看见她站在门口，手指冻红了。\n\n第四周，她问为什么只开周六。他说天然酵母得养五天，急不了。她以为在说面包。现在知道也在说别的。住院三个月，出院就不画图了。养酵母是养节奏，揉一百下面团也是。他的话也这样，每个字都卡在刻度上。\n\n她合上笔记本。啪地一声，像快门落下。\n\n以前合上是收工。这次不是。她站起来，走到操作间门口。\n\n周野在擦案板，抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味。\n\n“下周六我早点来。”\n\n他停下手。",
+          "evidence_text_hash": "00b4702f30c9ed006b8ed7a2c9a6189a842aa1cec7835e988916f2cf0fd1012a",
+          "selection_reason": "selected:intents=event;strongest=character",
+          "matched_intents": [
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.425532,
+            "keyword": 0.064103,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.333333
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.382248,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q06-c05",
+          "query_index": 6,
+          "query": "周六面包店与凌晨三点半 第6章：删帖与邀请 删帖与静默 林晚删帖并发新动态，评论区两极分化，她陷入自我怀疑 周六她没去面包店，在家闷着刷手机，橘猫陪伴却更显孤独 下午收到周野的微信邀请，她犹豫后回了好，开始翻看面包书做笔记",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "林晚删帖后因争议陷入自我怀疑",
+            "周野主动邀请她再来",
+            "林晚开始阅读面包书做笔记"
+          ],
+          "source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "evidence_text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。",
+          "evidence_text_hash": "5219df584111433f51ab0bfe9ae2c1dc3596cb78a33a428db40b347d7c74b004",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.487805,
+            "keyword": 0.179487,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.3531,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 7,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "review_item_id": "q07-c01",
+          "query_index": 7,
+          "query": "周六面包店与凌晨三点半 第5章：意外的流量 错位镜头 林晚对比周野揉面的专注与网红摆拍的热闹，感到深深的愧疚 她摸着猫思考记录的意义，最终决定删帖并直面周野",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "网红摆拍与周野真实揉面形成对照",
+            "林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"
+          ],
+          "source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "evidence_text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。",
+          "evidence_text_hash": "5219df584111433f51ab0bfe9ae2c1dc3596cb78a33a428db40b347d7c74b004",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.869565,
+            "keyword": 0.225806,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.333333
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.655572,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q07-c02",
+          "query_index": 7,
+          "query": "周六面包店与凌晨三点半 第5章：意外的流量 错位镜头 林晚对比周野揉面的专注与网红摆拍的热闹，感到深深的愧疚 她摸着猫思考记录的意义，最终决定删帖并直面周野",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "网红摆拍与周野真实揉面形成对照",
+            "林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"
+          ],
+          "source_id": "7714910d-01ee-478f-bd4a-c836a292fc4f",
+          "section": 6,
+          "subsection": 1,
+          "title": "排队长龙",
+          "evidence_text": "作间。门帘晃了一下。\n\n林晚跟进去。\n\n周野站在案板前，手掌撑在台面上，指关节泛白。\n\n“那些照片。”他开口，声音压在嗓子眼里。“上周你拍的。发到网上了。”\n\n林晚的手停在围裙系带上。\n\n“我删了。”\n周野转过身。手臂交叉在胸前，袖口沾着面粉。那双眼睛没有愤怒，只是某种更沉的东西。\n\n“删了没用。别人存了，转了。”他往门外看了一眼。补光灯的白光透过门帘缝隙，在墙上投下晃动的影子。“今天这些人，下周六还会来。”\n\n林晚靠在门框上。笔记本在围裙口袋里，封面硌着肋骨。\n\n“我去跟他们说。”\n\n“说什么。”\n\n“说面包店不是景点。”\n\n周野摇头。拿起刮板，铲起案板上的面粉，倒进垃圾桶。\n\n“不用说。限购就行。面包卖完，他们就走了。”\n\n他推开门帘，走回柜台。林晚看着他的背影。灰色长袖洗得发白，肩胛骨在布料下起伏。他拿起油纸，包好两个菠萝包，递给下一个顾客。折袋口的手指比平时用力，纸袋边缘压出折痕。\n\n老爷爷终于排到柜台前。\n\n“两个菠萝包。”\n\n周野拿油纸的手停了一下。包好两个，搁在柜台上。老爷爷从兜里掏出零钱，手指关节粗大，指甲缝里有洗不掉的灰。\n\n“今天人多。”\n\n周野点头。\n\n老爷爷把纸袋放进布袋里，布袋上印着“朝阳医院”的红字。他往门口走，经过三脚架时侧身让了一下。布鞋底踩在槐花上，右脚外侧磨得厉害。\n\n林晚看着他的背影拐过街角。",
+          "evidence_text_hash": "d8103d65f529e7f5c407dfa1cd676885dfcb8de341888e52093930150ea1a9e1",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.769231,
+            "keyword": 0.096774,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.610496,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q07-c03",
+          "query_index": 7,
+          "query": "周六面包店与凌晨三点半 第5章：意外的流量 错位镜头 林晚对比周野揉面的专注与网红摆拍的热闹，感到深深的愧疚 她摸着猫思考记录的意义，最终决定删帖并直面周野",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "网红摆拍与周野真实揉面形成对照",
+            "林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"
+          ],
+          "source_id": "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+          "section": 3,
+          "subsection": 2,
+          "title": "直面晨光",
+          "evidence_text": "第三周周六，凌晨三点四十分。\n\n林晚站在野面包店门口，相机挂在脖子上，镜头盖摘了。门缝漏出橘色光，揉面声从里面传出来——掌根推出去，案板吱呀一响，收回来，再推出去。节奏没变。她手指扣在相机边缘，胸口有什么东西在跳，不是恐惧，是某种更尖锐的、卡在肋骨之间的东西。\n\n卷帘门哗啦一响。\n\n周野拎着垃圾袋出来，袖口卷到小臂，面粉沾在手腕上。他看见她，停住。槐树叶子沙沙响。他看了她三秒，转身进了操作间，出来时端着杯热水，递给她。\n\n林晚接过来。一次性纸杯，杯壁薄得透光。\n\n“你在拍我。”不是问句。\n\n林晚握紧杯子。“拍了两周。”\n\n周野靠在门框上。“拍到了什么。”\n\n“背影。揉面。四点半开窗。”\n\n他点了下头。“可以拍。”他转身往里走，“别开闪光灯。面粉怕爆。”\n\n林晚端起相机。取景器里，周野舀起一把面粉，手腕一抖，粉末扬起来。掌根推出去，面团在案板上展开又收拢。肩胛骨在灰色长袖下起伏，节奏像钟摆。她按下快门。咔嚓。再按下。咔嚓。面粉像凝固的雪。\n\n周野没回头。\n\n林晚退到门外，蹲下来，从包里掏出笔记本，翻到新的一页。",
+          "evidence_text_hash": "49bb5dcc1ca190d726dab324ded0a5ffaf31d3d695c2bb5c667892b2fca3a558",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.193548,
+            "title": 0.016129,
+            "character": 1.0,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.548262,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q07-c04",
+          "query_index": 7,
+          "query": "周六面包店与凌晨三点半 第5章：意外的流量 错位镜头 林晚对比周野揉面的专注与网红摆拍的热闹，感到深深的愧疚 她摸着猫思考记录的意义，最终决定删帖并直面周野",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "网红摆拍与周野真实揉面形成对照",
+            "林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"
+          ],
+          "source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n她没按快门。\n\n周六早上六点，她会站在柜台后面，从取景器后面走出来，走进那个橘色光的房间。",
+          "evidence_text_hash": "d5359b1a4998863ec7a23669e06429149d1df4c916147b5ccbb7759e8205f927",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.096774,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.333333
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.417836,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q07-c05",
+          "query_index": 7,
+          "query": "周六面包店与凌晨三点半 第5章：意外的流量 错位镜头 林晚对比周野揉面的专注与网红摆拍的热闹，感到深深的愧疚 她摸着猫思考记录的意义，最终决定删帖并直面周野",
+          "query_intent": [
+            "event",
+            "character"
+          ],
+          "must_recall_facts": [
+            "网红摆拍与周野真实揉面形成对照",
+            "林晚因记录造成的后果而愧疚",
+            "她决定删帖并直面周野"
+          ],
+          "source_id": "91e847dc-4855-4365-9ba6-47eb7a3a4a96",
+          "section": 5,
+          "subsection": 3,
+          "title": "沉默的重量",
+          "evidence_text": "。\n\n她合上笔记本。啪地一声，像快门落下。\n\n以前合上是收工。这次不是。她站起来，走到操作间门口。\n\n周野在擦案板，抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味。\n\n“下周六我早点来。”\n\n他停下手。\n“三点半。”她靠在门框上，围裙还系着。“揉面你教，烤面包你教，收钱我会。”\n\n周野把抹布搭在水池边，转过身，手臂交叉。袖口沾着面粉，灰长袖洗得发白。\n\n“揉面一百下。翻面，再一百下。手劲要匀。”\n\n“我知道。看你揉了六周。”\n\n他点头。不是冷淡，是刻度。\n\n林晚摸出笔记本，翻到最后一页。上面写着“第五周。不只是面包店。整条街。凌晨三点半到七点。先拍，不发。”她在这行下加了一句。\n\n“第七周。三点半到店。揉面一百下。”\n\n笔尖顿住，又加一句。\n\n“从取景器后面走出来。”\n\n她合上笔记本。这次不是收工，是开始。\n\n周野从架上拿下新围裙，放在案板边。\n\n“你的。”\n\n林晚接过来。米白色，棉布，系带还没打结。左下角绣着“野面包”。\n\n“什么时候准备的。”\n\n“上周。”他拿起刮板铲面粉。“你记笔记的时候。”\n\n烤箱嘀一声。操作间安静下来，只有压缩机低鸣。林晚把围裙叠好放进包里，挨着笔记本。油纸还夹在里面，小圆面包的咸味散了，只剩纸的味道。\n\n她走到门口，回头。周野站在案板前，手插在围裙口袋里。橘光下，面粉扬起像凝固的雪。\n\n“周六见。”\n\n他点头。",
+          "evidence_text_hash": "e81ea0775456be8dd491f17bfa110cf045656816bea6e9cb0d9ac6870d4e9dec",
+          "selection_reason": "selected:intents=event;strongest=character",
+          "matched_intents": [
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.425532,
+            "keyword": 0.16129,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.408075,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 8,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "review_item_id": "q08-c01",
+          "query_index": 8,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 微咸余味 林晚回忆小圆面包的咸味，联想到周野的专注与过往，内心产生共鸣 她决定继续记录生活切片，但思考如何平衡分享与尊重，为后续冲突铺垫",
+          "query_intent": [
+            "character",
+            "foreshadowing",
+            "event"
+          ],
+          "must_recall_facts": [
+            "小圆面包具有微咸余味",
+            "林晚把味道与周野的专注和过往联系起来",
+            "她开始思考分享与尊重的边界"
+          ],
+          "source_id": "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+          "section": 3,
+          "subsection": 2,
+          "title": "直面晨光",
+          "evidence_text": "第三周周六，凌晨三点四十分。\n\n林晚站在野面包店门口，相机挂在脖子上，镜头盖摘了。门缝漏出橘色光，揉面声从里面传出来——掌根推出去，案板吱呀一响，收回来，再推出去。节奏没变。她手指扣在相机边缘，胸口有什么东西在跳，不是恐惧，是某种更尖锐的、卡在肋骨之间的东西。\n\n卷帘门哗啦一响。\n\n周野拎着垃圾袋出来，袖口卷到小臂，面粉沾在手腕上。他看见她，停住。槐树叶子沙沙响。他看了她三秒，转身进了操作间，出来时端着杯热水，递给她。\n\n林晚接过来。一次性纸杯，杯壁薄得透光。\n\n“你在拍我。”不是问句。\n\n林晚握紧杯子。“拍了两周。”\n\n周野靠在门框上。“拍到了什么。”\n\n“背影。揉面。四点半开窗。”\n\n他点了下头。“可以拍。”他转身往里走，“别开闪光灯。面粉怕爆。”\n\n林晚端起相机。取景器里，周野舀起一把面粉，手腕一抖，粉末扬起来。掌根推出去，面团在案板上展开又收拢。肩胛骨在灰色长袖下起伏，节奏像钟摆。她按下快门。咔嚓。再按下。咔嚓。面粉像凝固的雪。\n\n周野没回头。\n\n林晚退到门外，蹲下来，从包里掏出笔记本，翻到新的一页。",
+          "evidence_text_hash": "49bb5dcc1ca190d726dab324ded0a5ffaf31d3d695c2bb5c667892b2fca3a558",
+          "selection_reason": "selected:intents=character,event,foreshadowing;strongest=vector",
+          "matched_intents": [
+            "character",
+            "event",
+            "foreshadowing"
+          ],
+          "score_components": {
+            "vector": 1.0,
+            "keyword": 0.125,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.7175,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q08-c02",
+          "query_index": 8,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 微咸余味 林晚回忆小圆面包的咸味，联想到周野的专注与过往，内心产生共鸣 她决定继续记录生活切片，但思考如何平衡分享与尊重，为后续冲突铺垫",
+          "query_intent": [
+            "character",
+            "foreshadowing",
+            "event"
+          ],
+          "must_recall_facts": [
+            "小圆面包具有微咸余味",
+            "林晚把味道与周野的专注和过往联系起来",
+            "她开始思考分享与尊重的边界"
+          ],
+          "source_id": "890a929d-ec95-4879-a46b-813607b3b827",
+          "section": 4,
+          "subsection": 1,
+          "title": "破晓等候",
+          "evidence_text": "不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”\n“什么病。”\n\n周野没回答。他转身从架子上取下一个藤编筐，拿油纸包了个小圆面包，递给她。“采访费。”\n\n林晚接过面包。油纸透出热度，面包壳硬挺，手指按下去能感觉到外壳的阻力。她掰开，里面是浅黄色的组织，气孔大小不一，蒸汽从断面涌出来。咬了一口，外壳碎裂的声音很轻，里面软得几乎不用嚼。咸味是慢慢渗出来的，藏在麦香后面，像海风混进面粉里。\n\n“盐。”\n\n“海盐。”周野靠在案板边，“揉面的时候加进去，烤完就融在组织里。”\n\n林晚吃完半个面包，把油纸折好。相机还挂在脖子上，第三个问题卡在喉咙里。她看着周野转身继续摆面包，肩胛骨在灰色长袖下起伏，节奏没变。\n\n“我还有一个问题。”\n\n周野回头看她。\n\n“下周问。”林晚把相机盖摘下来，“今天先拍。”她举起相机，取景框里周野正把一炉新面包拖出来，热气模糊了他的轮廓。",
+          "evidence_text_hash": "f7b16c45edef006b8cd5622dd256ae475e83b3cb6c557451a903b4da15010e73",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.571429,
+            "keyword": 0.138889,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.509286,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q08-c03",
+          "query_index": 8,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 微咸余味 林晚回忆小圆面包的咸味，联想到周野的专注与过往，内心产生共鸣 她决定继续记录生活切片，但思考如何平衡分享与尊重，为后续冲突铺垫",
+          "query_intent": [
+            "character",
+            "foreshadowing",
+            "event"
+          ],
+          "must_recall_facts": [
+            "小圆面包具有微咸余味",
+            "林晚把味道与周野的专注和过往联系起来",
+            "她开始思考分享与尊重的边界"
+          ],
+          "source_id": "b0fedefb-886e-4e19-8225-fc03c82c460c",
+          "section": 4,
+          "subsection": 1,
+          "title": "破晓等候",
+          "evidence_text": "第四周周六，清晨六点四十分。\n\n林晚站在野面包店门口，相机挂在脖子上。卷帘门拉着，门缝漏出橘色光。烤箱的低鸣从里面传出来，像某种持续的低音。槐树叶子在头顶沙沙响，人行道上还残留着昨夜的水渍。她没躲，就站在门口，手指扣在相机边缘。\n\n七点整，烤箱嘀了一声。脚步声靠近门口，卷帘门哗啦推上去。周野戴着棉手套，端出一盘小圆面包。面包壳是金褐色的，蒸汽从裂口涌出，带着焦糖和面粉混在一起的气味。他看见她，手套停在半空。\n\n“早。”\n\n林晚点了下头。“第一炉？”\n\n“嗯。”周野把烤盘搁在架子上，摘掉手套。他转身往操作间走，走到一半回头看她。“进来。”\n\n操作间比外面冷。面粉撒在案板上，不锈钢盆摞在角落。林晚站在门口，相机没举起来。\n\n“为什么只开周六。”\n\n周野拿起抹布擦案板，抹布在台面上画圈。“天然酵母得养五天。周一喂粉，周二发酵，周三续种，周四冷藏，周五回温。周六才够活性。”他把抹布搭在水池边上，“急不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”",
+          "evidence_text_hash": "18bece64e18b5f32ec6268d3eb04be2baef4f0ab7da57e2c5f1411f92bafcd92",
+          "selection_reason": "selected:intents=character;strongest=character",
+          "matched_intents": [
+            "character"
+          ],
+          "score_components": {
+            "vector": 0.454545,
+            "keyword": 0.111111,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.36,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 9,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "review_item_id": "q09-c01",
+          "query_index": 9,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 破晓等候 林晚等到七点第一炉面包出炉，提问为何只开周六，周野解释天然酵母需五天培养 周野透露曾为建筑师，住院三月后转行，林晚保留第三个问题 周野送小圆面包作为采访费，林晚品尝到外壳脆内软和微咸层次",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "天然酵母需要五天培养",
+            "周野曾是建筑师并住院三个月",
+            "小圆面包外脆内软且微咸"
+          ],
+          "source_id": "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+          "section": 3,
+          "subsection": 2,
+          "title": "直面晨光",
+          "evidence_text": "第三周周六，凌晨三点四十分。\n\n林晚站在野面包店门口，相机挂在脖子上，镜头盖摘了。门缝漏出橘色光，揉面声从里面传出来——掌根推出去，案板吱呀一响，收回来，再推出去。节奏没变。她手指扣在相机边缘，胸口有什么东西在跳，不是恐惧，是某种更尖锐的、卡在肋骨之间的东西。\n\n卷帘门哗啦一响。\n\n周野拎着垃圾袋出来，袖口卷到小臂，面粉沾在手腕上。他看见她，停住。槐树叶子沙沙响。他看了她三秒，转身进了操作间，出来时端着杯热水，递给她。\n\n林晚接过来。一次性纸杯，杯壁薄得透光。\n\n“你在拍我。”不是问句。\n\n林晚握紧杯子。“拍了两周。”\n\n周野靠在门框上。“拍到了什么。”\n\n“背影。揉面。四点半开窗。”\n\n他点了下头。“可以拍。”他转身往里走，“别开闪光灯。面粉怕爆。”\n\n林晚端起相机。取景器里，周野舀起一把面粉，手腕一抖，粉末扬起来。掌根推出去，面团在案板上展开又收拢。肩胛骨在灰色长袖下起伏，节奏像钟摆。她按下快门。咔嚓。再按下。咔嚓。面粉像凝固的雪。\n\n周野没回头。\n\n林晚退到门外，蹲下来，从包里掏出笔记本，翻到新的一页。",
+          "evidence_text_hash": "49bb5dcc1ca190d726dab324ded0a5ffaf31d3d695c2bb5c667892b2fca3a558",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.11236,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.5
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.508975,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q09-c02",
+          "query_index": 9,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 破晓等候 林晚等到七点第一炉面包出炉，提问为何只开周六，周野解释天然酵母需五天培养 周野透露曾为建筑师，住院三月后转行，林晚保留第三个问题 周野送小圆面包作为采访费，林晚品尝到外壳脆内软和微咸层次",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "天然酵母需要五天培养",
+            "周野曾是建筑师并住院三个月",
+            "小圆面包外脆内软且微咸"
+          ],
+          "source_id": "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20",
+          "section": 1,
+          "subsection": 1,
+          "title": "第一卷",
+          "evidence_text": "让我买面包？”\n\n“加班。刚到家。”\n\n林晚盯着那三个字。季晴在互联网大厂做HRBP，加班是常态。但凌晨两点到家，早上八点半还得打卡。她打了一行字又删掉，最后只回了个“好”。\n\n七点整，烤箱叮的一声。\n周野戴上棉手套，拉出烤盘。热浪扑在脸上，面包壳是金褐色的，敲上去有空洞的回声。他把烤盘搁在架子上晾，开始做第二炉。法棍的面团昨晚就备好了，在冰箱里低温发酵了一夜。他取出来时，面团表面结了一层薄薄的硬皮，手指按下去，慢慢弹回来。\n\n割包刀在面团表面划出三道斜口。动作不快，刀锋走过，面皮裂开，露出底下湿润的组织。撒一层面粉，送进烤箱。蒸汽喷出来，在烤箱玻璃上凝成水珠。\n\n八点。他翻过门口的木牌——“野面包，周六营业”。\n\n顾衍在隔壁书店里听见了木牌翻动的声音。他正在整理书架，手指停在书脊上，偏头往窗外看了一眼。面包店的灯已经全亮了，暖黄色的光透过玻璃门照在人行道上。\n\n他把最后一摞书码好，推开书店的门。槐树底下，晨光碎了一地。\n\n“早。”\n\n周野在柜台后面抬起头，点了一下。\n\n顾衍走进面包店。法棍的焦香和黄油味混在一起，他站在柜台前，看周野把面包一个个摆进藤编筐里。\n\n“法棍留一根。”\n\n周野拿油纸包好，搁在柜台边上。顾衍没急着走，靠在门框上，掰了一小块法棍角放进嘴里。外壳碎裂的声音很轻。\n\n“昨晚有人半夜来还书。”顾衍说。\n\n“几点。”",
+          "evidence_text_hash": "fc9db0c0064dae10fdcc3e8c0b2fc076859eb0416e03d251ee6b55b585e7d0bc",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.625,
+            "keyword": 0.123596,
+            "title": 0.011236,
+            "character": 1.0,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.499621,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q09-c03",
+          "query_index": 9,
+          "query": "周六面包店与凌晨三点半 第3章：三个问题 破晓等候 林晚等到七点第一炉面包出炉，提问为何只开周六，周野解释天然酵母需五天培养 周野透露曾为建筑师，住院三月后转行，林晚保留第三个问题 周野送小圆面包作为采访费，林晚品尝到外壳脆内软和微咸层次",
+          "query_intent": [
+            "event",
+            "character",
+            "scene"
+          ],
+          "must_recall_facts": [
+            "天然酵母需要五天培养",
+            "周野曾是建筑师并住院三个月",
+            "小圆面包外脆内软且微咸"
+          ],
+          "source_id": "776aa783-78fb-4555-8c20-b0b3525b15de",
+          "section": 1,
+          "subsection": 1,
+          "title": "第一卷",
+          "evidence_text": "桌子靠墙摆着，柜台是原木色的，面包码在藤编筐里。她扫了一眼，法棍，吐司，可颂，还有几个圆面包叫不出名字。\n\n“哪个卖最好。”\n\n周野看了她一眼。\n\n“都行。”\n\n林晚等了两秒，发现他没有继续说的意思。\n“那我随便拿。”\n\n她指了一个圆面包。周野取出来，用油纸包好，放在柜台上。她扫码付钱，拎着纸袋往外走。走到门口又停下来。\n\n“隔壁书店几点开。”\n\n“一直开着。”\n\n“二十四小时？”\n\n周野点了一下头。林晚推门出去，门铃又响了一声。\n\n她站在面包店门口，往书店那边看了一眼。玻璃窗后面是一排排书架，暖黄色的灯光铺在木地板上。有个男人坐在靠窗的位置翻书，手边搁着半根法棍。\n\n她没进去。拎着面包往回走，经过广场舞的人群，吴阿姨朝她招手。\n\n“小林，今天起这么早。”\n\n“嗯。”\n\n“买面包了？小周家的面包好，你多买几次就知道了。”\n\n林晚笑了一下，上楼。\n\n回到房间，她把面包放在桌上。油纸打开，面包皮是深褐色的，按下去有弹性。掰开，里面是浅黄色的组织，气孔大小不一。咬了一口，外壳硬，里面软，嚼起来有麦子的甜味。\n\n她坐在床边吃完半个面包。楼下广场舞的音乐停了，吴阿姨的声音从窗户传进来，在跟谁打招呼。远处二环上的车流声像条河，一直响着。\n\n手机屏幕亮起来。季晴又发了消息。\n\n“买了吗？”\n\n“买了。”\n\n“什么味的。”\n\n“圆的。不知道叫什么。”\n\n“下周见面给我。对了，你觉得怎么样？”",
+          "evidence_text_hash": "e53077ebe86523f6876c9e0772c08daac0268ff9973fb8dec510b8290f90bf5c",
+          "selection_reason": "selected:intents=character,event,scene;strongest=character",
+          "matched_intents": [
+            "character",
+            "event",
+            "scene"
+          ],
+          "score_components": {
+            "vector": 0.526316,
+            "keyword": 0.089888,
+            "title": 0.011236,
+            "character": 1.0,
+            "chapter_proximity": 0.25
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.359277,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    },
+    {
+      "query_index": 10,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "review_item_id": "q10-c01",
+          "query_index": 10,
+          "query": "周六面包店与凌晨三点半 第12章：一袋吐司 那袋吐司 林晚走进操作间，看到周野盯着父亲离开的方向发呆，案板上放着刚烤好的同款白吐司 周野透露父亲年轻时也做面食，但认为面包是'洋玩意儿'，父子因职业选择产生隔阂 林晚默默收拾店铺，周野突然开口",
+          "query_intent": [
+            "character",
+            "event"
+          ],
+          "must_recall_facts": [
+            "周野父亲离开后案板边有同款白吐司",
+            "父子因面包职业选择存在长期隔阂",
+            "周野父亲年轻时也做面食"
+          ],
+          "source_id": "85cda2bd-f853-41d2-bff0-b76520368fb9",
+          "section": 7,
+          "subsection": 2,
+          "title": "忐忑的赴约",
+          "evidence_text": "周六清晨五点二十，林晚站在野面包店门口。\n\n卷帘门半拉着，橘色光从底下漏出来。她蹲下，手指扣住门边。操作间里烤箱低鸣，发酵的酸味混着焦糖香。她比约定的三点半早了十分钟。\n\n周野推起卷帘门。他看了她一眼，从架上拿下围裙递过来。米白色，左下角绣着“野面包”。\n\n“系上。六点开门。”\n\n他转身回了操作间。没有多余的话。\n\n林晚系好围裙，带子在腰后打了个结。围裙有点长，她折了一道。操作间里案板上搁着分割好的面团，周野手掌压进面里，肩胛骨起伏。她站到案板对面。\n\n“揉面。”\n\n周野推过来一块面团。手掌示范——掌根压下去，往前推，折回来，再压。节奏像钟摆。\n\n林晚把手伸进面团。面粘在指缝里，她用力压下去，面团滑开，歪成椭圆形。她抓回来再压，手指陷得太深，面粘在案板上。周野伸手把面团翻过来，指节敲了敲案板。\n\n“轻点。掌根用力。”\n\n她又压下去。这次面团往前推开，折回来时边缘裂了。周野没说话，继续揉自己的面。操作间里只有手掌压面的闷响和压缩机低鸣。\n\n六点整，卷帘门哗啦推上去。\n\n吴阿姨排在第一个，后面跟着两个拎布袋的大姐。她跨进门，目光在林晚身上停住。\n\n“哟，换人了？”",
+          "evidence_text_hash": "fb7695ae8736fb36fd28d685307807f5ecd612bda79fd5e198490288cfdc343d",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.869565,
+            "keyword": 0.139535,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.142857
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.63052,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q10-c02",
+          "query_index": 10,
+          "query": "周六面包店与凌晨三点半 第12章：一袋吐司 那袋吐司 林晚走进操作间，看到周野盯着父亲离开的方向发呆，案板上放着刚烤好的同款白吐司 周野透露父亲年轻时也做面食，但认为面包是'洋玩意儿'，父子因职业选择产生隔阂 林晚默默收拾店铺，周野突然开口",
+          "query_intent": [
+            "character",
+            "event"
+          ],
+          "must_recall_facts": [
+            "周野父亲离开后案板边有同款白吐司",
+            "父子因面包职业选择存在长期隔阂",
+            "周野父亲年轻时也做面食"
+          ],
+          "source_id": "a0d8a8b6-969d-4ee8-8797-09611cc9bc83",
+          "section": 9,
+          "subsection": 2,
+          "title": "七年面团",
+          "evidence_text": "林晚第三次当店员时，已经能闭着眼摸出高筋和低筋的区别。\n\n周六上午十点，面包卖完了。卷帘门拉下一半，操作间里烤箱还在低鸣。周野站在案板前揉下一批面团，掌根压下去，往前推，折回来。闷响之间有段旋律，很轻，从喉咙里漏出来。没有词，只有调子。三个音翻来覆去，往下沉，又浮上来。\n\n林晚擦货架的手停了。\n\n“你哼的是什么。”\n\n周野的手顿在半空。面团在掌根下压扁了，没弹回来。\n\n“什么。”\n\n“那个调子。三个音。你揉面的时候一直在哼。”\n\n他把手从面团上抽回来，在围裙上蹭了蹭。走到水槽边拧开水龙头，冲掉手上的面粉。水流声填满操作间。\n\n“我妈教的。”\n\n林晚没动。\n\n“小时候她在镇上开馒头作坊。凌晨三点起来和面，我睡在面粉袋上。”周野关上水龙头，手撑在水池边，背对着她。“她哼这个哄面团，也哄我。说面团听懂了会发得好。”\n\n他转过身，靠在案板上。手臂交叉，袖口沾着面粉。\n\n“七年前的秋天。肺癌。”\n\n操作间里压缩机低鸣。烤箱余温从背后裹上来，焦糖味混着蒸汽。林晚站在原地，手指扣在抹布边缘。窗外槐树叶子沙沙响，阳光从半拉的卷帘门底下漏进来，在地砖上切出一道明晃晃的光。\n\n周野走回案板前。",
+          "evidence_text_hash": "805045dacd6fa0ab7fc09ef1cb1adcf836dd6c97d04703f970cd5c86885649af",
+          "selection_reason": "selected:intents=character;strongest=character",
+          "matched_intents": [
+            "character"
+          ],
+          "score_components": {
+            "vector": 0.689655,
+            "keyword": 0.127907,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.2
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.532334,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q10-c03",
+          "query_index": 10,
+          "query": "周六面包店与凌晨三点半 第12章：一袋吐司 那袋吐司 林晚走进操作间，看到周野盯着父亲离开的方向发呆，案板上放着刚烤好的同款白吐司 周野透露父亲年轻时也做面食，但认为面包是'洋玩意儿'，父子因职业选择产生隔阂 林晚默默收拾店铺，周野突然开口",
+          "query_intent": [
+            "character",
+            "event"
+          ],
+          "must_recall_facts": [
+            "周野父亲离开后案板边有同款白吐司",
+            "父子因面包职业选择存在长期隔阂",
+            "周野父亲年轻时也做面食"
+          ],
+          "source_id": "7bf4842d-a053-421b-a38f-ab1c2990cc0e",
+          "section": 13,
+          "subsection": 1,
+          "title": "无声对峙",
+          "evidence_text": "指节陷在面团里。他面朝门口方向站着，围裙带子在背后系成松垮的结。烤箱压缩机嗡嗡响，发酵箱的指示灯跳了一下。一，二，三，四，五。五秒钟。他转回去，拿起面团，掌根重新压下去。节奏慢了半拍。\n\n老人推开门。\n风铃响了一声。布鞋底擦过地砖，一步一步走到货架前。周野没抬头。面团在案板上被翻过来，又折回去。老人拿起一袋白吐司——货架上只剩这一袋。他走到柜台前，掏出手机。扫码。叮的一声。\n\n林晚扯下油纸袋，把吐司装进去，折角，递过去。老人接过袋子，转身。布鞋底擦过地砖，风铃又响了一声。门关上了。\n\n全程没有一句话。\n\n林晚看向操作间。周野站在案板前，背对门口。灰色长袖，肩胛骨微微隆起，围裙系带在腰后打了个结。那个背影和揉面时的背影重合——掌根压下去，往前推，折回来。她见过这个背影无数次，凌晨三点半，橘光从操作间漏出来，铺在槐树叶子底下。现在它站在同一盏灯下，肩膀绷着，手搁在面团上，一动不动。\n\n烤箱嘀了一声。\n\n周野没去关。\n\n林晚把抹布搭在水池边。门口槐树叶子沙沙响，黄昏的光从玻璃门斜进来，落在空了的货架上。那袋白吐司被老人拎着，布鞋底擦过人行道地砖，一步一步走远。\n\n风铃没再响。",
+          "evidence_text_hash": "2ee07743a1d3aeb4bd106f5f89bb192e93e1273ef088b09e298aeff5303f1db1",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.526316,
+            "keyword": 0.174419,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.490869,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q10-c04",
+          "query_index": 10,
+          "query": "周六面包店与凌晨三点半 第12章：一袋吐司 那袋吐司 林晚走进操作间，看到周野盯着父亲离开的方向发呆，案板上放着刚烤好的同款白吐司 周野透露父亲年轻时也做面食，但认为面包是'洋玩意儿'，父子因职业选择产生隔阂 林晚默默收拾店铺，周野突然开口",
+          "query_intent": [
+            "character",
+            "event"
+          ],
+          "must_recall_facts": [
+            "周野父亲离开后案板边有同款白吐司",
+            "父子因面包职业选择存在长期隔阂",
+            "周野父亲年轻时也做面食"
+          ],
+          "source_id": "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20",
+          "section": 1,
+          "subsection": 1,
+          "title": "第一卷",
+          "evidence_text": "让我买面包？”\n\n“加班。刚到家。”\n\n林晚盯着那三个字。季晴在互联网大厂做HRBP，加班是常态。但凌晨两点到家，早上八点半还得打卡。她打了一行字又删掉，最后只回了个“好”。\n\n七点整，烤箱叮的一声。\n周野戴上棉手套，拉出烤盘。热浪扑在脸上，面包壳是金褐色的，敲上去有空洞的回声。他把烤盘搁在架子上晾，开始做第二炉。法棍的面团昨晚就备好了，在冰箱里低温发酵了一夜。他取出来时，面团表面结了一层薄薄的硬皮，手指按下去，慢慢弹回来。\n\n割包刀在面团表面划出三道斜口。动作不快，刀锋走过，面皮裂开，露出底下湿润的组织。撒一层面粉，送进烤箱。蒸汽喷出来，在烤箱玻璃上凝成水珠。\n\n八点。他翻过门口的木牌——“野面包，周六营业”。\n\n顾衍在隔壁书店里听见了木牌翻动的声音。他正在整理书架，手指停在书脊上，偏头往窗外看了一眼。面包店的灯已经全亮了，暖黄色的光透过玻璃门照在人行道上。\n\n他把最后一摞书码好，推开书店的门。槐树底下，晨光碎了一地。\n\n“早。”\n\n周野在柜台后面抬起头，点了一下。\n\n顾衍走进面包店。法棍的焦香和黄油味混在一起，他站在柜台前，看周野把面包一个个摆进藤编筐里。\n\n“法棍留一根。”\n\n周野拿油纸包好，搁在柜台边上。顾衍没急着走，靠在门框上，掰了一小块法棍角放进嘴里。外壳碎裂的声音很轻。\n\n“昨晚有人半夜来还书。”顾衍说。\n\n“几点。”",
+          "evidence_text_hash": "fc9db0c0064dae10fdcc3e8c0b2fc076859eb0416e03d251ee6b55b585e7d0bc",
+          "selection_reason": "selected:intents=event;strongest=character",
+          "matched_intents": [
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.487805,
+            "keyword": 0.104651,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 0.076923
+          },
+          "duplicate_section_penalty": 0.0,
+          "final_score": 0.410976,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        },
+        {
+          "review_item_id": "q10-c05",
+          "query_index": 10,
+          "query": "周六面包店与凌晨三点半 第12章：一袋吐司 那袋吐司 林晚走进操作间，看到周野盯着父亲离开的方向发呆，案板上放着刚烤好的同款白吐司 周野透露父亲年轻时也做面食，但认为面包是'洋玩意儿'，父子因职业选择产生隔阂 林晚默默收拾店铺，周野突然开口",
+          "query_intent": [
+            "character",
+            "event"
+          ],
+          "must_recall_facts": [
+            "周野父亲离开后案板边有同款白吐司",
+            "父子因面包职业选择存在长期隔阂",
+            "周野父亲年轻时也做面食"
+          ],
+          "source_id": "e34e92ff-7825-4ebb-9163-72dcade3a74b",
+          "section": 13,
+          "subsection": 1,
+          "title": "无声对峙",
+          "evidence_text": "周六下午五点四十分。\n\n面包店还剩最后一炉法棍。林晚在柜台后擦烤盘，抹布推过金属表面，焦糖渍化成褐色水痕。烤箱低鸣从操作间传过来，混着发酵黄油的焦香。\n\n门口有人站住了。\n\n不是走进来。是站在门槛外面。灰色夹克，布鞋底踩在人行道地砖上。老人盯着玻璃门里的货架，手抬起来，又放下。指节粗大，指甲缝里有洗不掉的灰。他往左挪了半步，又挪回来。肩膀绷着，像在工厂门口站了几十年。\n\n林晚认出那件夹克。上次它从操作间门框里撞出来，带翻了门口的面包筐。法棍和恰巴塔滚了一地。后来那双粗大的手把面包一个一个捡起来，码整齐，头也不回地走了。现在它又来了。站在门口，隔着玻璃，不进来。\n\n操作间里，周野在揉面。\n\n掌根压下去，往前推，折回来。林晚看见他偏了一下头——角度刚好能看见门口。然后他低下头，继续揉面。手上的动作没停，但面团在掌根底下变了形。不是揉，是反复捏同一块。\n\n然后面团停了。\n\n周野的手搁在案板上，指节陷在面团里。他面朝门口方向站着，围裙带子在背后系成松垮的结。烤箱压缩机嗡嗡响，发酵箱的指示灯跳了一下。一，二，三，四，五。五秒钟。他转回去，拿起面团，掌根重新压下去。节奏慢了半拍。\n\n老人推开门。",
+          "evidence_text_hash": "5794ec4173cd5c4b809602bc639a5a96e9e91e08a9cfe4f8df82c387280d11e1",
+          "selection_reason": "selected:intents=character,event;strongest=character",
+          "matched_intents": [
+            "character",
+            "event"
+          ],
+          "score_components": {
+            "vector": 0.487805,
+            "keyword": 0.139535,
+            "title": 0.0,
+            "character": 1.0,
+            "chapter_proximity": 1.0
+          },
+          "duplicate_section_penalty": 0.08,
+          "final_score": 0.383409,
+          "human_relevant": "",
+          "supports_which_fact": [],
+          "review_note": ""
+        }
+      ]
+    }
+  ]
+}
