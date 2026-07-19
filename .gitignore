@@ -15,6 +15,7 @@ chroma_data/
 # 输出目录
 output/
 .phase4_batch2_runtime/
+.phase4_restoration_runtime/
 
 # Python
 __pycache__/
