@@ -29,8 +29,8 @@ def _field_from_position(position: str) -> str | None:
 
 def assemble_shadow_messages(sample: dict, frozen_run: dict) -> dict:
     """Render B messages by deleting only complete P3 items from a frozen run."""
-    if frozen_run.get("profile") != "budgeted_broker":
-        raise ValueError("only the frozen budgeted_broker profile is supported")
+    if frozen_run.get("profile") not in {"budgeted_broker", "risk_guarded_broker"}:
+        raise ValueError("only frozen budgeted/risk-guarded profiles are supported")
     blocks = sample.get("blocks") or []
     runtime = sample.get("runtime") or {}
     legacy_messages = copy.deepcopy(runtime.get("messages") or [])

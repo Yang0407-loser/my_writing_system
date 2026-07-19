@@ -55,3 +55,26 @@ def test_shadow_assembly_rejects_protected_drop():
         assert "protected" in str(exc)
     else:
         raise AssertionError("protected drop should fail")
+
+
+def test_shadow_assembler_accepts_risk_guarded_profile():
+    template = "summary={summary_context}"
+    values = {"summary_context": "旧一\n\n紧邻"}
+    blocks = [
+        {"block_id": "recent:old", "category": "recent_original", "text": "旧一", "injection_position": "{summary_context}"},
+        {"block_id": "recent:previous", "category": "recent_original", "text": "紧邻", "injection_position": "{summary_context}"},
+    ]
+    run = {
+        "profile": "risk_guarded_broker",
+        "items": [
+            {"item_id": "recent:old", "source_id": "old", "priority": "P3", "keep": False},
+            {"item_id": "recent:previous", "source_id": "previous", "priority": "P1", "keep": True},
+        ],
+    }
+    legacy = [{"role": "system", "content": "SYSTEM"}, {"role": "user", "content": template.format(**values)}]
+    sample = {"blocks": blocks, "runtime": {"messages": legacy, "template": template, "values": values}}
+
+    result = assemble_shadow_messages(sample, run)
+
+    assert "旧一" not in result["shadow_messages"][1]["content"]
+    assert "紧邻" in result["shadow_messages"][1]["content"]

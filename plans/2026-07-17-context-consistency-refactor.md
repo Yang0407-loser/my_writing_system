@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 2 生成质量 A/B 已完成但未通过 canary 门槛，Broker 继续 shadow，等待用户选择整项预算调整、可追溯节级摘要实验或终止该路线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 3 连续性风险保护使完整旧小节整项路线仅节省4.31% token，按停止规则关闭该路线；生产继续 legacy，等待是否另行授权可追溯节级摘要实验
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -560,3 +560,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-19 | Phase 3 最终收口＋Phase 4 入口上下文 census | 冻结生产 legacy 检索并登记全部未晋级实验资产；按现有10条写作请求真实只读检索、重建当前Writer消息，逐块记录来源、位置、字符/token、必需级别和重复关系；不调用LLM、不修改Writer/ContextManager | 平均总输入12406.4 estimated token；最近3小节5127.1（41.33%）、RAG 3068.0（24.73%）、固定Prompt 1104.2；可证明整块重复=0；非必需数学上界7754.7（62.51%，非删除建议）；11项人工事实来源仅4项已在legacy输入 | Phase 3 以实验未晋级关闭；生产继续shared collection＋原task_id＋legacy top-k；45条隔离event保留且不清理；Phase 4可在另行授权后以shadow Broker启动，优先治理最近原文的注入而非做有损句子压缩 |
 | 2026-07-19 | Phase 4 Batch 1 整项选择与预算 shadow | 新增独立 ContextBroker，将完整上下文项分为 P0–P3；对10条冻结场景真实只读执行 legacy top-5，比较 legacy_full、continuity_first 与8500-token软预算；人工证据只在全部选择后验收；Writer/ContextManager/生产消息均不变 | budgeted平均12406.4→8392.4 token（-32.35%）；hard、紧邻上一小节、交接笔记、后期必需项、追溯均100%；legacy已有人工证据4/4保留，另7项继续记为检索上限；2条因P0/P1/P2本身超预算而软溢出；unit=175/0、integration=8/0、quality=51/0、compileall通过 | budgeted通过Batch 1机械门槛，但19个较早recent均未进入预算，尚无正文生成质量证据；继续shadow，不接入Writer、不切生产、不开始Batch 2；下一入口是另行授权的小规模同模型生成质量A/B |
 | 2026-07-19 | Phase 4 Batch 2 生成质量 shadow A/B | 固定 Batch 1 keep/drop、模型、Prompt、legacy RAG、规则及风格，对10个冻结场景生成20个匿名候选；先做确定性检查，再做 Codex 辅助盲审；原始生成正文仅存临时目录且不提交 | 真正渲染输入12406.4→8390.4 token（-32.37%）；legacy/Broker胜场6/3、平1，Broker胜+平=40%；目标完成均10/10，hard/关系违规均0，连续性缺陷1→2，因果缺陷1→1，事实错误2→1；后期Broker胜2/3但Q1映射提前暴露且Q4有世界事实错误；生产hash 10/10不变；unit=179/0、integration=8/0、quality=52/0、compileall通过 | 胜平与连续性门槛失败，不建议canary；失败集中在删除较早recent后丢失相对日期、死亡状态和事件顺序；保持shadow，不回调本批参数、不开始Batch 3或Phase 5，等待用户选择整项预算调整、可追溯节级摘要或终止Broker路线 |
+| 2026-07-20 | Phase 4 Batch 3 连续性风险保护 shadow | 在冻结B选择上新增确定性 ContinuityRiskGuard；遇到时间锚点、持久状态、未完成链、当前唯一来源、交接引用或无法排除风险时恢复完整旧小节；按冻结source ID只读取回legacy RAG，不重新查询、不调用LLM | A/B/C平均输入12406.4/8390.4/11871.6 token；C仅下降4.31%，10/10软预算溢出；19/19较早recent全部被保护；Q4/Q6/Q7/Q8问题小节均识别；P0/P1/P2、hard/关系、紧邻原文、交接、RAG、人工证据4/4、后期必需项、追溯及生产hash均100%；unit=185/0、integration=8/0、quality=57/0、compileall通过 | token主门槛失败，完整旧小节整项选择路线按停止规则关闭；不做A/C生成、不切生产、不开始Phase 5；下一候选只能是另行授权的可追溯节级摘要新假设 |
