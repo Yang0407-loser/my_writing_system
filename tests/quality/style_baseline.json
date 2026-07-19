@@ -23,7 +23,12 @@
       "status": "baseline_issue",
       "dimensions": ["mechanical_counting", "repetitive_sentence_patterns", "insufficient_emotional_layering"],
       "description": "部分段落呈现机械计数、重复句法模板和情绪层次不足，文字显得流水账且缺少圆润过渡。",
-      "measurement_status": "requires_dedicated_metrics_and_human_sampling",
+      "measurement_status": "partially_observable_with_human_judgment_required",
+      "deterministic_scope": {
+        "mechanical_counting": ["mechanical_start_ratio", "sentence_starts"],
+        "repetitive_sentence_patterns": ["exact_sentence_groups", "exact_paragraph_groups", "consecutive_isomorphic_sentence_runs"],
+        "insufficient_emotional_layering": []
+      },
       "contract_decision": "保留 emotion_intensity、dialogue_ratio、sentence_preference、sensory_density 四个主旋钮；不恢复旧 50 维字段，本轮不修改 Writer。"
     }
   ],

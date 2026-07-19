@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 3 的保守 ContinuityRiskGuard 仅节省4.31% token，但 Batch 3.5 复核确认19项保护只是理论判定，4个真实B场景中有3个净退化、1个A/B共同缺陷；当前不做架构跳转，生产继续 legacy，选择性整项恢复与节级摘要均未获晋级
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，不是架构失败，生产继续 `legacy_full` 并保留 ContextBroker、ContinuityRiskGuard 与全部实验记录；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已启动纯离线风格可观测性基线，不修改 Writer 或 Prompt
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -267,6 +267,8 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Phase 4：Context Broker 与 Writer 上下文减负
 
+> 当前状态：`paused_by_generation_evaluation_infrastructure`。现有执行环境无法继续完成合规的私有输入生成对照，因此暂停结论不等于 Context Broker 架构失败。生产继续使用 `legacy_full`；ContextBroker、ContinuityRiskGuard 和 Batch 1～3.5 全部实验资产保留，等待可用的生成质量评估基础设施。
+
 ### 目标
 
 减少重复和无关上下文，同时保持硬约束覆盖率。
@@ -309,7 +311,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Phase 5：Writer 受控工具调用
 
-> 前置门槛：Phase 4 Broker 策略必须已固定，并通过独立生成质量验证或有限 canary。未满足时 Phase 5 保持暂停，禁止把“Broker 是否删错信息”和“Writer 是否正确决定调用工具”两个未验证假设叠加在同一实验中。
+> 当前状态：暂停。前置门槛是 Phase 4 Broker 策略必须已固定，并通过独立生成质量验证或有限 canary。未满足时 Phase 5 保持暂停，禁止把“Broker 是否删错信息”和“Writer 是否正确决定调用工具”两个未验证假设叠加在同一实验中。
 
 ### 目标
 
@@ -350,6 +352,8 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 平均额外延迟和 token 成本有明确报告；没有收益则关闭该工具。
 
 ## Phase 6：真实事件图与因果检索
+
+> 当前状态：暂停。不得在 Phase 4 生成质量验证基础设施缺失、Phase 5 尚未解锁时叠加新的事件图生产假设。
 
 ### 目标
 
@@ -399,6 +403,8 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Phase 8：风格稳定性闭环
 
+> 当前状态：Batch 1 仅建立确定性可观测性基线。它不修改 Writer、Prompt 或正文，不恢复旧 50 维字段，不调用 LLM，也不触发风格纠正。
+
 ### 目标
 
 把风格从 Prompt 描述变成可测的控制回路。
@@ -411,6 +417,14 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 4. 对不可直接计算的风格维度使用固定 Prompt 的 Judge，并保留人工抽样。
 5. 区分“有意的节拍变化”和“无意的风格漂移”。
 6. 只有偏差超过阈值才触发局部修改，禁止整节无条件重写。
+
+### Batch 1 确定性基线
+
+- 固定黄金故事按 18 章、52 小节统计对话占比、句长/段长分布、机械起句、感官词、心理说明词、完全重复句/段，以及连续短句和连续结构签名。
+- `dialogue_ratio` 直接映射对话字符占比；`sentence_preference` 映射句长分布；`sensory_density` 只映射固定词表密度代理。
+- `emotion_intensity` 没有可靠的确定性反推指标；心理说明词频只作为观察信号。
+- “情绪层次不足”保持人工/LLM 判断项，不使用关键词启发式自动评分。
+- IQR 异常只表示章节相对全书的分布离群，不自动等同于质量缺陷；机械计数与重复句式的具体影响仍需人工阅读。
 
 ### 验收
 
@@ -562,3 +576,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-19 | Phase 4 Batch 2 生成质量 shadow A/B | 固定 Batch 1 keep/drop、模型、Prompt、legacy RAG、规则及风格，对10个冻结场景生成20个匿名候选；先做确定性检查，再做 Codex 辅助盲审；原始生成正文仅存临时目录且不提交 | 真正渲染输入12406.4→8390.4 token（-32.37%）；legacy/Broker胜场6/3、平1，Broker胜+平=40%；目标完成均10/10，hard/关系违规均0，连续性缺陷1→2，因果缺陷1→1，事实错误2→1；后期Broker胜2/3但Q1映射提前暴露且Q4有世界事实错误；生产hash 10/10不变；unit=179/0、integration=8/0、quality=52/0、compileall通过 | 胜平与连续性门槛失败，不建议canary；失败集中在删除较早recent后丢失相对日期、死亡状态和事件顺序；保持shadow，不回调本批参数、不开始Batch 3或Phase 5，等待用户选择整项预算调整、可追溯节级摘要或终止Broker路线 |
 | 2026-07-20 | Phase 4 Batch 3 连续性风险保护 shadow | 在冻结B选择上新增确定性 ContinuityRiskGuard；遇到时间锚点、持久状态、未完成链、当前唯一来源、交接引用或无法排除风险时恢复完整旧小节；按冻结source ID只读取回legacy RAG，不重新查询、不调用LLM | A/B/C平均输入12406.4/8390.4/11871.6 token；C仅下降4.31%，10/10软预算溢出；19/19较早recent全部被保护；Q4/Q6/Q7/Q8问题小节均识别；P0/P1/P2、hard/关系、紧邻原文、交接、RAG、人工证据4/4、后期必需项、追溯及生产hash均100%；unit=185/0、integration=8/0、quality=57/0、compileall通过 | token主门槛失败，只证明“任一风险即恢复全文”的保守Guard不可用；19项保护尚非实测退化，不能关闭全部整项选择路线或直接跳到节级摘要；不切生产、不开始Phase 5 |
 | 2026-07-20 | Phase 4 Batch 3.5 Guard 实测复核 | 原计划新跑Q4/Q6/Q7/Q8四次B生成；用户明确授权后，租户策略仍禁止向DeepSeek外发私有正文/规则/RAG/Prompt，故未绕过；改为复用Batch 2已完成且与Batch 3 B messages hash 4/4一致的四次真实Writer输出和A对照，只审计缺陷差值，不提交正文 | Q4新增世界事实错误、Q6新增连续状态错误、Q7新增日期顺序错误；Q8因果/越界缺陷A/B各1，不是Broker净退化；4场景中3个实测净退化、1个共同缺陷；目标完成、hard和关系违规均未新增；A/B还差异于部分world facts/软规则/风格项，故19个理论保护项及具体责任来源均无法据此归因；unit=185/0、integration=8/0、quality=60/0、compileall通过 | 撤销“19/19均必要”和“整项路线已失败”的过强结论；保持shadow与legacy生产，不开始Phase5；下一步须在允许真实生成的环境中对全部被删ContextItem做最小恢复验证，失败后才考虑可追溯节级摘要 |
+| 2026-07-20 | Phase 8 Batch 1 确定性风格可观测性 | 将 Phase 4 标记为 `paused_by_generation_evaluation_infrastructure`，保留 legacy_full、Broker/Guard及实验记录并暂停Phase5/6；复用固定SHA黄金故事，按18章/52小节离线统计对话、句长、段长、重复、机械起句、感官/心理词及连续结构；不调用LLM、不改Writer/Prompt | 全书58963可见字符、对话12.30%、机械时间/序数/数字起句7.79%、感官词22.54/千字、心理说明词2.48/千字、完全重复句组124、重复段组5；第8章感官词密度偏高，第10章机械起句偏高；`emotion_intensity`和情绪层次不做伪自动评分；unit=189/0、integration=8/0、quality=63/0、compileall通过 | 仅建立基线、报告和回归测试；异常是分布信号而非自动质量判决；旧50维字段保持删除，生产行为不变，不启动Phase5/6或正文重写 |

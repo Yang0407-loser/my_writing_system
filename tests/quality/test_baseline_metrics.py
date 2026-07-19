@@ -100,4 +100,6 @@ def test_style_human_issue_is_separate_from_four_control_contract():
         "repetitive_sentence_patterns",
         "insufficient_emotional_layering",
     }
+    assert issues[0]["deterministic_scope"]["insufficient_emotional_layering"] == []
+    assert issues[0]["measurement_status"] == "partially_observable_with_human_judgment_required"
     assert "不恢复旧 50 维字段" in issues[0]["contract_decision"]
