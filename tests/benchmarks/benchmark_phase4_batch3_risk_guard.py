@@ -367,11 +367,11 @@ def main() -> None:
             "production_promotion": False,
             "generation_validation_started": False,
             "phase5_started": False,
-            "status": "eligible_for_separately_authorized_small_ac_validation" if passed else "whole_item_selection_route_failed_stop",
+            "status": "eligible_for_separately_authorized_small_ac_validation" if passed else "conservative_any_signal_guard_failed_stop",
             "recommendation": (
                 "prepare_only_small_anonymous_A_C_generation_validation; do_not_call_model"
                 if passed else
-                "stop_whole_item_route_and_consider_separately_authorized_traceable_section_summary"
+                "do_not_decide_architecture_until_guard_rule_necessity_is_empirically_tested"
             ),
         },
         "samples": _public_samples(samples),

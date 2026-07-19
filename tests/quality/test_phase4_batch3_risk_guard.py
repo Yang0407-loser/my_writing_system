@@ -76,13 +76,13 @@ def test_every_c_decision_is_traceable_and_evaluation_free():
                 assert all(len(risk["evidence"]) <= 80 for risk in assessment["risks"])
 
 
-def test_failed_whole_item_route_stops_before_generation_and_phase5():
+def test_failed_conservative_guard_stops_without_deciding_architecture():
     decision = load_report()["decision"]
 
     assert decision == {
         "production_promotion": False,
         "generation_validation_started": False,
         "phase5_started": False,
-        "status": "whole_item_selection_route_failed_stop",
-        "recommendation": "stop_whole_item_route_and_consider_separately_authorized_traceable_section_summary",
+        "status": "conservative_any_signal_guard_failed_stop",
+        "recommendation": "do_not_decide_architecture_until_guard_rule_necessity_is_empirically_tested",
     }

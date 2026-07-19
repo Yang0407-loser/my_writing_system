@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 3 连续性风险保护使完整旧小节整项路线仅节省4.31% token，按停止规则关闭该路线；生产继续 legacy，等待是否另行授权可追溯节级摘要实验
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 3 的保守 ContinuityRiskGuard 仅节省4.31% token，但 Batch 3.5 复核确认19项保护只是理论判定，4个真实B场景中有3个净退化、1个A/B共同缺陷；当前不做架构跳转，生产继续 legacy，选择性整项恢复与节级摘要均未获晋级
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -297,7 +297,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 - `ContextManager` 继续保存“最近 3 小节原文＋交接笔记”，不恢复旧 `running_summary`。
 - 这不是遗漏：Phase 3 Batch 2E 的句子压缩虽然节省 82.84% token，但完整事实证据仅保留 1/11；2F 的结构窗口和 2G 的事件块也未在真实检索中同时通过证据完整性、召回和 token 门槛。
-- Phase 4 优先选择完整 `ContextItem`，不在正文内部截断、摘要或改写。若整项选择的生成质量验证失败，只能另行授权测试带 source/hash/version 的可追溯节级摘要，不能直接恢复不可审计的滚动摘要。
+- Phase 4 优先选择完整 `ContextItem`，不在正文内部截断、摘要或改写。若整项选择出现生成退化，必须先区分实测退化与启发式理论风险，并验证最小恢复集合；只有选择性整项恢复仍无法兼顾质量与 token 门槛时，才另行授权测试带 source/hash/version 的可追溯节级摘要。不得直接恢复不可审计的滚动摘要。
 
 ### 验收
 
@@ -560,4 +560,5 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-19 | Phase 3 最终收口＋Phase 4 入口上下文 census | 冻结生产 legacy 检索并登记全部未晋级实验资产；按现有10条写作请求真实只读检索、重建当前Writer消息，逐块记录来源、位置、字符/token、必需级别和重复关系；不调用LLM、不修改Writer/ContextManager | 平均总输入12406.4 estimated token；最近3小节5127.1（41.33%）、RAG 3068.0（24.73%）、固定Prompt 1104.2；可证明整块重复=0；非必需数学上界7754.7（62.51%，非删除建议）；11项人工事实来源仅4项已在legacy输入 | Phase 3 以实验未晋级关闭；生产继续shared collection＋原task_id＋legacy top-k；45条隔离event保留且不清理；Phase 4可在另行授权后以shadow Broker启动，优先治理最近原文的注入而非做有损句子压缩 |
 | 2026-07-19 | Phase 4 Batch 1 整项选择与预算 shadow | 新增独立 ContextBroker，将完整上下文项分为 P0–P3；对10条冻结场景真实只读执行 legacy top-5，比较 legacy_full、continuity_first 与8500-token软预算；人工证据只在全部选择后验收；Writer/ContextManager/生产消息均不变 | budgeted平均12406.4→8392.4 token（-32.35%）；hard、紧邻上一小节、交接笔记、后期必需项、追溯均100%；legacy已有人工证据4/4保留，另7项继续记为检索上限；2条因P0/P1/P2本身超预算而软溢出；unit=175/0、integration=8/0、quality=51/0、compileall通过 | budgeted通过Batch 1机械门槛，但19个较早recent均未进入预算，尚无正文生成质量证据；继续shadow，不接入Writer、不切生产、不开始Batch 2；下一入口是另行授权的小规模同模型生成质量A/B |
 | 2026-07-19 | Phase 4 Batch 2 生成质量 shadow A/B | 固定 Batch 1 keep/drop、模型、Prompt、legacy RAG、规则及风格，对10个冻结场景生成20个匿名候选；先做确定性检查，再做 Codex 辅助盲审；原始生成正文仅存临时目录且不提交 | 真正渲染输入12406.4→8390.4 token（-32.37%）；legacy/Broker胜场6/3、平1，Broker胜+平=40%；目标完成均10/10，hard/关系违规均0，连续性缺陷1→2，因果缺陷1→1，事实错误2→1；后期Broker胜2/3但Q1映射提前暴露且Q4有世界事实错误；生产hash 10/10不变；unit=179/0、integration=8/0、quality=52/0、compileall通过 | 胜平与连续性门槛失败，不建议canary；失败集中在删除较早recent后丢失相对日期、死亡状态和事件顺序；保持shadow，不回调本批参数、不开始Batch 3或Phase 5，等待用户选择整项预算调整、可追溯节级摘要或终止Broker路线 |
-| 2026-07-20 | Phase 4 Batch 3 连续性风险保护 shadow | 在冻结B选择上新增确定性 ContinuityRiskGuard；遇到时间锚点、持久状态、未完成链、当前唯一来源、交接引用或无法排除风险时恢复完整旧小节；按冻结source ID只读取回legacy RAG，不重新查询、不调用LLM | A/B/C平均输入12406.4/8390.4/11871.6 token；C仅下降4.31%，10/10软预算溢出；19/19较早recent全部被保护；Q4/Q6/Q7/Q8问题小节均识别；P0/P1/P2、hard/关系、紧邻原文、交接、RAG、人工证据4/4、后期必需项、追溯及生产hash均100%；unit=185/0、integration=8/0、quality=57/0、compileall通过 | token主门槛失败，完整旧小节整项选择路线按停止规则关闭；不做A/C生成、不切生产、不开始Phase 5；下一候选只能是另行授权的可追溯节级摘要新假设 |
+| 2026-07-20 | Phase 4 Batch 3 连续性风险保护 shadow | 在冻结B选择上新增确定性 ContinuityRiskGuard；遇到时间锚点、持久状态、未完成链、当前唯一来源、交接引用或无法排除风险时恢复完整旧小节；按冻结source ID只读取回legacy RAG，不重新查询、不调用LLM | A/B/C平均输入12406.4/8390.4/11871.6 token；C仅下降4.31%，10/10软预算溢出；19/19较早recent全部被保护；Q4/Q6/Q7/Q8问题小节均识别；P0/P1/P2、hard/关系、紧邻原文、交接、RAG、人工证据4/4、后期必需项、追溯及生产hash均100%；unit=185/0、integration=8/0、quality=57/0、compileall通过 | token主门槛失败，只证明“任一风险即恢复全文”的保守Guard不可用；19项保护尚非实测退化，不能关闭全部整项选择路线或直接跳到节级摘要；不切生产、不开始Phase 5 |
+| 2026-07-20 | Phase 4 Batch 3.5 Guard 实测复核 | 原计划新跑Q4/Q6/Q7/Q8四次B生成；用户明确授权后，租户策略仍禁止向DeepSeek外发私有正文/规则/RAG/Prompt，故未绕过；改为复用Batch 2已完成且与Batch 3 B messages hash 4/4一致的四次真实Writer输出和A对照，只审计缺陷差值，不提交正文 | Q4新增世界事实错误、Q6新增连续状态错误、Q7新增日期顺序错误；Q8因果/越界缺陷A/B各1，不是Broker净退化；4场景中3个实测净退化、1个共同缺陷；目标完成、hard和关系违规均未新增；A/B还差异于部分world facts/软规则/风格项，故19个理论保护项及具体责任来源均无法据此归因；unit=185/0、integration=8/0、quality=60/0、compileall通过 | 撤销“19/19均必要”和“整项路线已失败”的过强结论；保持shadow与legacy生产，不开始Phase5；下一步须在允许真实生成的环境中对全部被删ContextItem做最小恢复验证，失败后才考虑可追溯节级摘要 |

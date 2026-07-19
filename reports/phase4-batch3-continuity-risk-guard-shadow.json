@@ -397,8 +397,8 @@
     "production_promotion": false,
     "generation_validation_started": false,
     "phase5_started": false,
-    "status": "whole_item_selection_route_failed_stop",
-    "recommendation": "stop_whole_item_route_and_consider_separately_authorized_traceable_section_summary"
+    "status": "conservative_any_signal_guard_failed_stop",
+    "recommendation": "do_not_decide_architecture_until_guard_rule_necessity_is_empirically_tested"
   },
   "samples": [
     {
