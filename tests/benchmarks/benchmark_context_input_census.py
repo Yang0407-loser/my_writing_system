@@ -196,8 +196,9 @@ def build_sample(
     outline: list[dict],
     rag_items: list[dict],
     hard_annotation: dict,
-    evidence_review: dict,
+    evidence_review: dict | None,
     global_rules: str,
+    serialize_blocks: bool = True,
 ) -> dict:
     query_index = int(entry["query_index"])
     section_number = int(entry["section"])
@@ -333,11 +334,17 @@ def build_sample(
             source_id="unavailable:frozen-redis-state", injection_position=f"user prompt field {{{field}}}", available=False,
         ), field)
     for index, item in enumerate(rag_items, 1):
-        add_block(blocks, field_blocks, make_block(
+        rag_block = make_block(
             f"rag:{index}:{item.get('id', '')}", "rag", item.get("text", ""),
             source_id=item.get("id") or f"chroma:q{query_index}:rank{index}",
             injection_position="user prompt field {retrieved_context}",
-        ), "retrieved_context")
+        )
+        rag_block.update({
+            "section": item.get("section"),
+            "subsection": item.get("subsection"),
+            "title": item.get("title", ""),
+        })
+        add_block(blocks, field_blocks, rag_block, "retrieved_context")
     for field, text in (
         ("narrative_density_instruction", density_instruction),
         ("style_examples", style_examples),
@@ -372,7 +379,7 @@ def build_sample(
             "description": "immediately previous subsection original text",
             "text_hash": recent[-1]["text_hash"],
         })
-    evidence_items = human_evidence_manifest(evidence_review, query_index)
+    evidence_items = human_evidence_manifest(evidence_review, query_index) if evidence_review else []
     returned_rag_ids = {str(item.get("id", "")) for item in rag_items}
     for item in evidence_items:
         item["present_in_current_prompt"] = item["source_id"] in returned_rag_ids
@@ -410,7 +417,7 @@ def build_sample(
         "prompt_rendered_without_llm": True,
         "token_method": "estimated_token: Writer._estimate_prompt_tokens compatible",
         "ledger": ledger,
-        "blocks": [serialize_block(block) for block in blocks],
+        "blocks": [serialize_block(block) for block in blocks] if serialize_blocks else blocks,
         "duplicates": duplicates,
         "required_manifest": required,
         "theoretical_non_required_ceiling": {

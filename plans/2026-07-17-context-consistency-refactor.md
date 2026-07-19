@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 入口 census 完成，可在明确授权后启动 shadow Context Broker
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 1 整项预算 Broker 已通过机械门槛，但仍处于 shadow，等待生成质量 A/B 授权
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -543,3 +543,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-19 | Phase 3 Batch 2G-A 父子/事件块离线审计 | 仅用冻结审阅表正文建立23个唯一parent、45个确定性event及稳定ID/hash/字符区间；离线按真实query组装，不调用embedding、Chroma或数据库，不使用gold/must-recall参与切分 | 38个query-source出现与23个parent均可重建，偏移/覆盖=100%，空/孤立/重复/hash错误=0，已知对话/邀请/金额/动作链拆断=0；9/9可验证事实保留，470.3→369.5 token（-21.43%），全文fallback=0；两条基线上限保持单列；unit=159/0、integration=8/0、quality=39/0 | 离线可行性门槛全部通过，仅建议等待授权进入2G-B隔离shadow入库；尚无真实event检索P/R/延迟/隔离结论，不写Chroma、不切生产、不修改Writer、不开始Phase 4 |
 | 2026-07-19 | Phase 3 Batch 2G-B 事件块隔离 shadow 入库与真实检索 | 以确定性派生 task ID 和 `index_profile`/`chunk_level` 三重过滤，将冻结的45个event幂等写入共享collection；真实执行10条event向量召回、parent合并和上下文组装；生产默认过滤及Writer均未修改 | 双向串库=0，生产149条记录计数/hash变化=0，稳定ID重复=0，追溯=100%；parent闭集P=53.85%，已知相关保留=60.87%，后期P=27.27%，gold-section代理=70%；8/9事实parent被召回；token 470.3→516.2（增加9.76%），真实event延迟2636.083ms | 隔离机制通过但真实检索、事实和token门槛失败；25个未知候选无法修复固定失败门槛，故不制造额外人工审阅；保留45条外部shadow数据用于复跑，清理仅dry-run；继续shadow，不切生产、不修改Writer、不开始Phase 4 |
 | 2026-07-19 | Phase 3 最终收口＋Phase 4 入口上下文 census | 冻结生产 legacy 检索并登记全部未晋级实验资产；按现有10条写作请求真实只读检索、重建当前Writer消息，逐块记录来源、位置、字符/token、必需级别和重复关系；不调用LLM、不修改Writer/ContextManager | 平均总输入12406.4 estimated token；最近3小节5127.1（41.33%）、RAG 3068.0（24.73%）、固定Prompt 1104.2；可证明整块重复=0；非必需数学上界7754.7（62.51%，非删除建议）；11项人工事实来源仅4项已在legacy输入 | Phase 3 以实验未晋级关闭；生产继续shared collection＋原task_id＋legacy top-k；45条隔离event保留且不清理；Phase 4可在另行授权后以shadow Broker启动，优先治理最近原文的注入而非做有损句子压缩 |
+| 2026-07-19 | Phase 4 Batch 1 整项选择与预算 shadow | 新增独立 ContextBroker，将完整上下文项分为 P0–P3；对10条冻结场景真实只读执行 legacy top-5，比较 legacy_full、continuity_first 与8500-token软预算；人工证据只在全部选择后验收；Writer/ContextManager/生产消息均不变 | budgeted平均12406.4→8392.4 token（-32.35%）；hard、紧邻上一小节、交接笔记、后期必需项、追溯均100%；legacy已有人工证据4/4保留，另7项继续记为检索上限；2条因P0/P1/P2本身超预算而软溢出；unit=175/0、integration=8/0、quality=51/0、compileall通过 | budgeted通过Batch 1机械门槛，但19个较早recent均未进入预算，尚无正文生成质量证据；继续shadow，不接入Writer、不切生产、不开始Batch 2；下一入口是另行授权的小规模同模型生成质量A/B |
