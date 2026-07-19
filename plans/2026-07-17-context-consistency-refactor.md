@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 1 整项预算 Broker 已通过机械门槛，但仍处于 shadow，等待生成质量 A/B 授权
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 Batch 2 生成质量 A/B 已完成但未通过 canary 门槛，Broker 继续 shadow，等待用户选择整项预算调整、可追溯节级摘要实验或终止该路线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -293,6 +293,12 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 4. 先做“影子模式”：Broker 生成新上下文但 Writer 仍使用旧上下文，比较覆盖率后再切流量。
 5. 所有 ContextItem 记录选择原因和被裁剪原因。
 
+### 原文与摘要决策
+
+- `ContextManager` 继续保存“最近 3 小节原文＋交接笔记”，不恢复旧 `running_summary`。
+- 这不是遗漏：Phase 3 Batch 2E 的句子压缩虽然节省 82.84% token，但完整事实证据仅保留 1/11；2F 的结构窗口和 2G 的事件块也未在真实检索中同时通过证据完整性、召回和 token 门槛。
+- Phase 4 优先选择完整 `ContextItem`，不在正文内部截断、摘要或改写。若整项选择的生成质量验证失败，只能另行授权测试带 source/hash/version 的可追溯节级摘要，不能直接恢复不可审计的滚动摘要。
+
 ### 验收
 
 - 硬约束覆盖率 100%；
@@ -302,6 +308,8 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 能从 task 日志还原 Writer 实际看到的完整上下文。
 
 ## Phase 5：Writer 受控工具调用
+
+> 前置门槛：Phase 4 Broker 策略必须已固定，并通过独立生成质量验证或有限 canary。未满足时 Phase 5 保持暂停，禁止把“Broker 是否删错信息”和“Writer 是否正确决定调用工具”两个未验证假设叠加在同一实验中。
 
 ### 目标
 
@@ -469,6 +477,13 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 6. 如果数据不支持原方案，停止实施并更新本计划，不为完成清单强行上线。
 7. 不得在同一阶段同时更换 embedding 模型、改 query、改 reranker 和改 chunk；否则无法归因。
 
+### 统一停止规则
+
+1. 同一核心假设连续 3 个批次未通过主门槛，必须暂停并重新评估方向，不得继续扩大同类参数网格。
+2. 每个 Phase 默认最多 3 个实现批次＋1个验证批次；超过该上限必须向用户报告累计收益、失败归因和机会成本，并取得明确授权。
+3. 新批次必须验证新的可证伪假设；如果只会再次证明已有失败结论，不得立项。
+4. 达到停止条件后只能选择：关闭方向、改变核心假设，或等待外部条件变化；不得为完成计划清单而继续 shadow 实验。
+
 ## 9. 建议的执行批次
 
 ### 批次 A：先让问题可见
@@ -544,3 +559,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-19 | Phase 3 Batch 2G-B 事件块隔离 shadow 入库与真实检索 | 以确定性派生 task ID 和 `index_profile`/`chunk_level` 三重过滤，将冻结的45个event幂等写入共享collection；真实执行10条event向量召回、parent合并和上下文组装；生产默认过滤及Writer均未修改 | 双向串库=0，生产149条记录计数/hash变化=0，稳定ID重复=0，追溯=100%；parent闭集P=53.85%，已知相关保留=60.87%，后期P=27.27%，gold-section代理=70%；8/9事实parent被召回；token 470.3→516.2（增加9.76%），真实event延迟2636.083ms | 隔离机制通过但真实检索、事实和token门槛失败；25个未知候选无法修复固定失败门槛，故不制造额外人工审阅；保留45条外部shadow数据用于复跑，清理仅dry-run；继续shadow，不切生产、不修改Writer、不开始Phase 4 |
 | 2026-07-19 | Phase 3 最终收口＋Phase 4 入口上下文 census | 冻结生产 legacy 检索并登记全部未晋级实验资产；按现有10条写作请求真实只读检索、重建当前Writer消息，逐块记录来源、位置、字符/token、必需级别和重复关系；不调用LLM、不修改Writer/ContextManager | 平均总输入12406.4 estimated token；最近3小节5127.1（41.33%）、RAG 3068.0（24.73%）、固定Prompt 1104.2；可证明整块重复=0；非必需数学上界7754.7（62.51%，非删除建议）；11项人工事实来源仅4项已在legacy输入 | Phase 3 以实验未晋级关闭；生产继续shared collection＋原task_id＋legacy top-k；45条隔离event保留且不清理；Phase 4可在另行授权后以shadow Broker启动，优先治理最近原文的注入而非做有损句子压缩 |
 | 2026-07-19 | Phase 4 Batch 1 整项选择与预算 shadow | 新增独立 ContextBroker，将完整上下文项分为 P0–P3；对10条冻结场景真实只读执行 legacy top-5，比较 legacy_full、continuity_first 与8500-token软预算；人工证据只在全部选择后验收；Writer/ContextManager/生产消息均不变 | budgeted平均12406.4→8392.4 token（-32.35%）；hard、紧邻上一小节、交接笔记、后期必需项、追溯均100%；legacy已有人工证据4/4保留，另7项继续记为检索上限；2条因P0/P1/P2本身超预算而软溢出；unit=175/0、integration=8/0、quality=51/0、compileall通过 | budgeted通过Batch 1机械门槛，但19个较早recent均未进入预算，尚无正文生成质量证据；继续shadow，不接入Writer、不切生产、不开始Batch 2；下一入口是另行授权的小规模同模型生成质量A/B |
+| 2026-07-19 | Phase 4 Batch 2 生成质量 shadow A/B | 固定 Batch 1 keep/drop、模型、Prompt、legacy RAG、规则及风格，对10个冻结场景生成20个匿名候选；先做确定性检查，再做 Codex 辅助盲审；原始生成正文仅存临时目录且不提交 | 真正渲染输入12406.4→8390.4 token（-32.37%）；legacy/Broker胜场6/3、平1，Broker胜+平=40%；目标完成均10/10，hard/关系违规均0，连续性缺陷1→2，因果缺陷1→1，事实错误2→1；后期Broker胜2/3但Q1映射提前暴露且Q4有世界事实错误；生产hash 10/10不变；unit=179/0、integration=8/0、quality=52/0、compileall通过 | 胜平与连续性门槛失败，不建议canary；失败集中在删除较早recent后丢失相对日期、死亡状态和事件顺序；保持shadow，不回调本批参数、不开始Batch 3或Phase 5，等待用户选择整项预算调整、可追溯节级摘要或终止Broker路线 |

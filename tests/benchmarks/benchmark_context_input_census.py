@@ -199,6 +199,7 @@ def build_sample(
     evidence_review: dict | None,
     global_rules: str,
     serialize_blocks: bool = True,
+    include_runtime: bool = False,
 ) -> dict:
     query_index = int(entry["query_index"])
     section_number = int(entry["section"])
@@ -408,7 +409,7 @@ def build_sample(
         block for block in blocks
         if block["trimmable"] and block["block_id"] not in protected_block_ids and block.get("available", True)
     ]
-    return {
+    result = {
         "query_index": query_index,
         "section": section_number,
         "subsection": subsection_number,
@@ -428,6 +429,16 @@ def build_sample(
         "recent_original_count": len(recent),
         "rag_item_count": len(rag_items),
     }
+    if include_runtime:
+        result["runtime"] = {
+            "messages": [
+                {"role": "system", "content": WRITER_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            "template": template,
+            "values": values,
+        }
+    return result
 
 
 def aggregate(samples: list[dict]) -> dict:
