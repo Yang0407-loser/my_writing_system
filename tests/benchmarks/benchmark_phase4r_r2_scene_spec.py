@@ -53,7 +53,7 @@ def sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def build_scene(query_index: int, data: dict, task_id: str) -> dict:
+def compile_scene(query_index: int, data: dict, task_id: str):
     section, subsection = data["section"], data["subsection"]
     source_id = f"frozen-outline:q{query_index:02d}"
     sources = [{
@@ -103,7 +103,11 @@ def build_scene(query_index: int, data: dict, task_id: str) -> dict:
     snapshot = StoryStateView(task_id=task_id, section=section, subsection=subsection).project(sources, assertions)
     compiler = SceneCompiler()
     spec = compiler.compile(snapshot)
-    rendered = compiler.render(spec)
+    return spec, compiler.render(spec)
+
+
+def build_scene(query_index: int, data: dict, task_id: str) -> dict:
+    spec, rendered = compile_scene(query_index, data, task_id)
     trace_ids = {item.evidence_id for item in spec.evidence}
     referenced = {
         evidence_id

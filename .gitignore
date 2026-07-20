@@ -16,6 +16,7 @@ chroma_data/
 output/
 .phase4_batch2_runtime/
 .phase4_restoration_runtime/
+.phase4r_r3_runtime/
 
 # Python
 __pycache__/
