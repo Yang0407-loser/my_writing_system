@@ -298,7 +298,10 @@ def evaluate(runtime_dir: Path, review_path: Path | None = None) -> dict[str, An
             text = (query_dir / f"{candidate_id}.txt").read_text(encoding="utf-8")
             if _sha256_text(text) != candidate["output_sha256"]:
                 raise AssertionError("output changed after import")
-            candidates.append({**candidate, "arm": mapping[candidate_id]["arm"]})
+            public_candidate = dict(candidate)
+            if reviews:
+                public_candidate["arm"] = mapping[candidate_id]["arm"]
+            candidates.append(public_candidate)
         samples.append({
             "query_index": query_index, "candidates": candidates,
             "review": review_by_query.get(query_index),

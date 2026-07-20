@@ -79,6 +79,7 @@ def test_import_and_evaluate_validate_hashes_without_exposing_arm_order(tmp_path
     assert imported["validated_candidates"] == 12
     result = evaluate(runtime)
     assert result["status"] == "awaiting_blind_review"
+    assert all("arm" not in candidate for sample in result["samples"] for candidate in sample["candidates"])
     template = json.loads((runtime / "blind_review.template.json").read_text())
     assert "mapping" not in json.dumps(template)
 
