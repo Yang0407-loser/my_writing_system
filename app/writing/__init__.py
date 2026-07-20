@@ -13,6 +13,7 @@ from .contracts import (
     SubsectionPipelineArtifact,
 )
 from .generation_controller import GenerationController
+from .mandatory_event_policy import MandatoryEventDetection, MandatoryEventPolicy
 from .prompt_builder import PromptBuilder
 from .scene_spec_provider import (
     OutlineSceneSpecProvider,
@@ -29,6 +30,8 @@ __all__ = [
     "CommitArtifact",
     "GenerationArtifact",
     "GenerationController",
+    "MandatoryEventDetection",
+    "MandatoryEventPolicy",
     "PromptArtifact",
     "PromptBuilder",
     "OutlineSceneSpecProvider",

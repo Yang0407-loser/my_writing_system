@@ -65,6 +65,12 @@ class Settings:
     WRITER_SCENE_SPEC_CANARY_TASK_IDS: str = os.getenv(
         "WRITER_SCENE_SPEC_CANARY_TASK_IDS", ""
     )
+    WRITER_MANDATORY_EVENT_MODE: str = os.getenv(
+        "WRITER_MANDATORY_EVENT_MODE", "warn"
+    ).strip().lower()
+    WRITER_MANDATORY_EVENT_RETRY_TASK_IDS: str = os.getenv(
+        "WRITER_MANDATORY_EVENT_RETRY_TASK_IDS", ""
+    )
 
     # --- Coordinator tuning ---
     WORLD_STATE_EXTRACT_CHARS: int = int(os.getenv("WORLD_STATE_EXTRACT_CHARS", "3000"))
@@ -107,6 +113,11 @@ class Settings:
             warnings.append(
                 f"WRITER_SCENE_SPEC_MODE={self.WRITER_SCENE_SPEC_MODE} 无效，按 off 处理；"
                 "应为 off/shadow/canary"
+            )
+        if self.WRITER_MANDATORY_EVENT_MODE not in {"off", "warn", "retry"}:
+            warnings.append(
+                f"WRITER_MANDATORY_EVENT_MODE={self.WRITER_MANDATORY_EVENT_MODE} "
+                "无效，按 warn 处理；应为 off/warn/retry"
             )
         return warnings
 

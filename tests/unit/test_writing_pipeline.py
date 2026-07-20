@@ -8,6 +8,7 @@ import pytest
 from app.agents.writer import Writer
 from app.writing import (
     GenerationController,
+    MandatoryEventPolicy,
     PromptBuilder,
     StateCommitter,
     SubsectionInput,
@@ -75,11 +76,12 @@ class FakeLLM:
         raise RuntimeError("stream unavailable")
 
 
-def controller(llm):
+def controller(llm, mandatory_event_policy=None):
     return GenerationController(
         llm,
         character_violation_checker=lambda _text, _characters: [],
         fallback_splitter=lambda text: [text],
+        mandatory_event_policy=mandatory_event_policy,
     )
 
 
@@ -118,13 +120,16 @@ def test_generation_controller_preserves_initial_parameters():
 
 def test_generation_controller_retries_missing_mandatory_event():
     llm = FakeLLM(["没有目标事件。", "林晚删帖。"])
-    artifact = controller(llm).generate(
+    task_id = "11111111-1111-4111-8111-111111111111"
+    policy = MandatoryEventPolicy(mode="retry", retry_task_ids=task_id)
+    artifact = controller(llm, policy).generate(
         messages=[{"role": "user", "content": "写作"}],
         call_max_tokens=900,
         stream_callback=None,
         section_num=2,
         sub_num=1,
         mandatory_events_text="1. 【必须】林晚删帖",
+        task_id=task_id,
     )
     assert artifact.draft == "林晚删帖。"
     assert [item[1]["temperature"] for item in llm.calls] == [0.5, 0.3]

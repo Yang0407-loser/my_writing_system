@@ -746,6 +746,7 @@ class Writer(BaseAgent):
                     previous_texts=previous_sub_texts,
                     prev_sub_text=previous_sub_texts[-1] if previous_sub_texts else "",
                     target_goal=f"第{section_num}节{sec.get('title','')}: {sub_desc or '、'.join(key_points)}",
+                    task_id=task_id,
                 )
                 t_llm = time.time() - t_llm_start
                 out_chars = count_chinese_chars(raw_output)
@@ -1362,7 +1363,7 @@ class Writer(BaseAgent):
     def _generate_with_retry(self, messages, call_max_tokens, stream_callback,
                               section_num, sub_num, mandatory_events_text,
                               characters=None, previous_texts=None, prev_sub_text="",
-                              target_goal=""):
+                              target_goal="", task_id=""):
         """生成正文，若不满足硬约束则重试一次。"""
         controller = GenerationController(
             self.llm,
@@ -1380,6 +1381,7 @@ class Writer(BaseAgent):
             previous_texts=previous_texts,
             prev_sub_text=prev_sub_text,
             target_goal=target_goal,
+            task_id=task_id,
         )
         self._last_generation_artifact = artifact
         self._last_retry_count = max(0, len(artifact.generation_attempts) - 1)

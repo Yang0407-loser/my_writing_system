@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
-import re
 import time
 from collections.abc import Callable
 
 from ..config import settings
 from ..repetition_checker import check_subsection_quality
-from ..rule_checks import _extract_lock_keywords
 from ..utils.word_counter import count_chinese_chars
 from .contracts import GenerationArtifact
+from .mandatory_event_policy import MandatoryEventPolicy
 
 
 logger = logging.getLogger("writing_system.writer")
+mandatory_logger = logging.getLogger("writing_system.mandatory_event")
 
 
 class GenerationController:
@@ -25,10 +26,16 @@ class GenerationController:
         *,
         character_violation_checker: Callable[[str, list[dict]], list[str]],
         fallback_splitter: Callable[[str], list[str]],
+        mandatory_event_policy: MandatoryEventPolicy | None = None,
     ) -> None:
         self.llm = llm
         self.character_violation_checker = character_violation_checker
         self.fallback_splitter = fallback_splitter
+        self.mandatory_event_policy = mandatory_event_policy or MandatoryEventPolicy(
+            settings.WRITER_MANDATORY_EVENT_MODE,
+            settings.WRITER_MANDATORY_EVENT_RETRY_TASK_IDS,
+        )
+        self.last_mandatory_observation: dict | None = None
 
     def generate(
         self,
@@ -43,6 +50,7 @@ class GenerationController:
         previous_texts=None,
         prev_sub_text="",
         target_goal="",
+        task_id="",
     ) -> GenerationArtifact:
         started = time.perf_counter()
         attempts: list[dict] = []
@@ -72,33 +80,22 @@ class GenerationController:
             return raw
 
         raw_output = do_generate(messages, 0.5, "initial")
-        events = mandatory_events_text
         outline_retries = 0
-        while events and events != "（本节无硬性事件约束）" and outline_retries < 2:
-            event_descs = re.findall(r"【必须】(.+)", events)
-            if not event_descs:
-                break
-            violations = []
-            for event in event_descs:
-                keywords = _extract_lock_keywords({"title": event, "description": event})
-                if keywords and sum(keyword in raw_output for keyword in keywords) < len(keywords) * 0.5:
-                    violations.append(event)
-            if not violations:
-                break
-            logger.warning(
-                "[writer] 第%s.%s小节硬约束违规 %s项，重试%s/2",
-                section_num, sub_num, len(violations), outline_retries + 1,
-            )
-            violation_text = "\n".join(f"  - 【缺失】{item}" for item in violations)
-            retry_messages = messages + [
-                {"role": "assistant", "content": raw_output[:500]},
-                {"role": "user", "content": (
-                    "【强制重写】上一版以下事件未出现在正文中：\n"
-                    f"{violation_text}\n\n请严格确保上述所有事件出现在正文中。不要省略。"
-                )},
-            ]
-            raw_output = do_generate(retry_messages, 0.3, "mandatory_events")
-            outline_retries += 1
+        if self.mandatory_event_policy.effective_mode(task_id) == "retry":
+            try:
+                raw_output, outline_retries = self._run_legacy_mandatory_retries(
+                    raw_output=raw_output,
+                    messages=messages,
+                    mandatory_events_text=mandatory_events_text,
+                    task_id=task_id,
+                    section_num=section_num,
+                    sub_num=sub_num,
+                    do_generate=do_generate,
+                )
+            except Exception as exc:
+                mandatory_logger.warning(
+                    "mandatory_event_retry_check_error=%s", type(exc).__name__
+                )
 
         if characters:
             char_violations = self.character_violation_checker(raw_output, characters)
@@ -144,6 +141,16 @@ class GenerationController:
             ]
             raw_output = do_generate(retry_messages, 0.3, "repetition")
 
+        if self.mandatory_event_policy.effective_mode(task_id) != "off":
+            self._record_final_mandatory_observation(
+                candidate=raw_output,
+                mandatory_events_text=mandatory_events_text,
+                task_id=task_id,
+                section_num=section_num,
+                sub_num=sub_num,
+                actual_retry_count=outline_retries,
+            )
+
         return GenerationArtifact(
             raw_output=raw_output,
             draft=raw_output,
@@ -151,6 +158,83 @@ class GenerationController:
             finish_reason="generated",
             latency_ms=round((time.perf_counter() - started) * 1000, 3),
             output_hash=hashlib.sha256(raw_output.encode("utf-8")).hexdigest(),
+        )
+
+    def _run_legacy_mandatory_retries(
+        self,
+        *,
+        raw_output,
+        messages,
+        mandatory_events_text,
+        task_id,
+        section_num,
+        sub_num,
+        do_generate,
+    ):
+        events = mandatory_events_text
+        outline_retries = 0
+        while events and events != "（本节无硬性事件约束）" and outline_retries < 2:
+            detection = self.mandatory_event_policy.detect(
+                candidate=raw_output,
+                mandatory_events_text=events,
+                task_id=task_id,
+                section=section_num,
+                subsection=sub_num,
+                actual_retry_count=outline_retries,
+            )
+            violations = list(detection.violations)
+            if not violations:
+                break
+            logger.warning(
+                "[writer] 第%s.%s小节硬约束违规 %s项，重试%s/2",
+                section_num, sub_num, len(violations), outline_retries + 1,
+            )
+            violation_text = "\n".join(f"  - 【缺失】{item}" for item in violations)
+            retry_messages = messages + [
+                {"role": "assistant", "content": raw_output[:500]},
+                {"role": "user", "content": (
+                    "【强制重写】上一版以下事件未出现在正文中：\n"
+                    f"{violation_text}\n\n请严格确保上述所有事件出现在正文中。不要省略。"
+                )},
+            ]
+            raw_output = do_generate(retry_messages, 0.3, "mandatory_events")
+            outline_retries += 1
+        return raw_output, outline_retries
+
+    def _record_final_mandatory_observation(
+        self,
+        *,
+        candidate,
+        mandatory_events_text,
+        task_id,
+        section_num,
+        sub_num,
+        actual_retry_count,
+    ) -> None:
+        try:
+            detection = self.mandatory_event_policy.detect(
+                candidate=candidate,
+                mandatory_events_text=mandatory_events_text,
+                task_id=task_id,
+                section=section_num,
+                subsection=sub_num,
+                actual_retry_count=actual_retry_count,
+            )
+            observation = detection.observation
+        except Exception as exc:
+            observation = self.mandatory_event_policy.error_observation(
+                candidate=candidate,
+                mandatory_events_text=mandatory_events_text,
+                task_id=task_id,
+                section=section_num,
+                subsection=sub_num,
+                actual_retry_count=actual_retry_count,
+                error=exc,
+            )
+        self.last_mandatory_observation = observation
+        mandatory_logger.warning(
+            "mandatory_event_observation=%s",
+            json.dumps(observation, ensure_ascii=False, separators=(",", ":")),
         )
 
     def adjust_length(
