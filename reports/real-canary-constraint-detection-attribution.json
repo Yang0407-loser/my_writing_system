@@ -1,0 +1,298 @@
+{
+  "schema_version": "real_canary_constraint_attribution.v1",
+  "date": "2026-07-21",
+  "task_id": "e7cb9ac2-c76c-44e8-a9de-4d470c238872",
+  "scope": {
+    "subsections": 4,
+    "writer_llm_calls": 0,
+    "new_generation_runs": 0,
+    "production_changes": 0,
+    "sample_limit": "single real task with four consecutive subsections"
+  },
+  "sources": {
+    "run_log": {
+      "sha256": "69c363e9ba4a61a75175b2f7c479559922a78f6cc9695989dd9c542e35b32fd1",
+      "committed": false
+    },
+    "final_output": {
+      "source_id": "output:real-canary:e7cb9ac2",
+      "path": "output/周六面包店与凌晨3点_20260721_015719.md",
+      "sha256": "c01cb93da26e3662b74346bda34dcbc4bdf1a0592e3c6a04230decc218fef443",
+      "committed": false
+    },
+    "task_history": {
+      "source_id": "task_history:e7cb9ac2-c76c-44e8-a9de-4d470c238872",
+      "fields_used": ["outline_json", "events_json", "characters_json", "output_file"],
+      "committed": false
+    },
+    "intermediate_generation_candidates": {
+      "available": false,
+      "reason": "GenerationController records only reason, temperature, and output_chars in memory; replaced drafts and violated event identities were not persisted."
+    }
+  },
+  "detector_chains": {
+    "mandatory_event": {
+      "implementation": "app/writing/generation_controller.py",
+      "contract_builder": "Writer._build_mandatory_events",
+      "behavior": "up to two whole-subsection rewrites",
+      "keyword_behavior": "regex 2-4 CJK characters, converted to set, arbitrary first five, 50 percent literal-match threshold",
+      "final_retry_revalidated": false
+    },
+    "arc_post_check": {
+      "implementation": "app/rule_checks.py::post_check",
+      "contract_builder": "pre_check(EventGraph arc_milestone)",
+      "behavior": "warning only; no retry, rollback, checkpoint, or return-value effect",
+      "keyword_behavior": "all regex 2-4 CJK chunks in positional order, 50 percent literal-match threshold"
+    }
+  },
+  "mandatory_event_detection": {
+    "contracts": [
+      {
+        "contract_id": "mandatory:S1.1",
+        "section": 1,
+        "subsection": 1,
+        "required_events": [
+          {"source_id": "outline:S1.1:description", "text": "凌晨两点，林晚在工位上收到第20版文案的驳回邮件，理由是「整体感觉还是不太对」。她盯着屏幕看了三分钟，写完辞职信发送到私人邮箱，收拾工位离开。下楼时路过「野面包」，闻到凌晨特有的黄油与面粉烘烤的香气——这家店只在周六营业，小黑板上写着「凌晨三点半开始揉面」。那天是周三，店没开门，但气味在她脑子里存了三天。回到家，橘猫「老板」蜷在沙发上，她翻手机相册，最近一张非工作照片就是三周前拍的那块小黑板。她决定第一个「生活切片」就拍它。"}
+        ]
+      },
+      {
+        "contract_id": "mandatory:S1.2",
+        "section": 1,
+        "subsection": 2,
+        "required_events": [
+          {"source_id": "outline:S1.2:keypoint:1", "text": "第一个周六，林晚凌晨三点蹲点，百叶窗严实，只闻揉面声不见人"},
+          {"source_id": "outline:S1.2:keypoint:2", "text": "第二个周六，经顾衍指点，在四点半通风时远远拍到模糊背影"},
+          {"source_id": "outline:S1.2:keypoint:3", "text": "第三个周六，她直接站到门口，周野递来热水，她拍到面粉飞舞中的背影"},
+          {"source_id": "outline:S1.2:description", "text": "林晚连续三个周六凌晨蹲守面包店，从百叶窗紧闭到终于拍下第一张背影，并写下记录草稿。"}
+        ]
+      },
+      {
+        "contract_id": "mandatory:S1.3",
+        "section": 1,
+        "subsection": 3,
+        "required_events": [
+          {"source_id": "outline:S1.3:keypoint:1", "text": "周野只叮嘱别开闪光灯，转身继续揉面，林晚在门外感受凌晨社区的独特氛围"},
+          {"source_id": "outline:S1.3:keypoint:2", "text": "林晚坐在书店外台阶上，用手机写下《一个只肯把时间分给面包的人》"},
+          {"source_id": "outline:S1.3:keypoint:3", "text": "记录中融入对周野专注姿态的细节描写，以及她自己对生活意义的初步反思"},
+          {"source_id": "outline:S1.3:description", "text": "林晚与周野短暂交流后退出店外，在凌晨的社区里完成第一篇记录，确立观察者视角。"}
+        ]
+      },
+      {
+        "contract_id": "mandatory:S1.4",
+        "section": 1,
+        "subsection": 4,
+        "required_events": [
+          {"source_id": "outline:S1.4:keypoint:1", "text": "失眠顾客偶遇面包店"},
+          {"source_id": "outline:S1.4:keypoint:2", "text": "凌晨揉面的仪式感"},
+          {"source_id": "outline:S1.4:keypoint:3", "text": "书店暖光下的静默"},
+          {"source_id": "outline:S1.4:keypoint:4", "text": "社区夜归人交汇"},
+          {"source_id": "outline:S1.4:description", "text": "失眠者与凌晨开工的面包师在夜色中初次相遇。"}
+        ]
+      }
+    ],
+    "records": [
+      {"section": 1, "subsection": 1, "generation_attempt": 1, "attempt_reason": "initial", "contract_id": "mandatory:S1.1", "detected_violation_count": 1, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 1, "generation_attempt": 2, "attempt_reason": "mandatory_events", "contract_id": "mandatory:S1.1", "detected_violation_count": 1, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 2, "generation_attempt": 1, "attempt_reason": "initial", "contract_id": "mandatory:S1.2", "detected_violation_count": 3, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 2, "generation_attempt": 2, "attempt_reason": "mandatory_events", "contract_id": "mandatory:S1.2", "detected_violation_count": 3, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 3, "generation_attempt": 1, "attempt_reason": "initial", "contract_id": "mandatory:S1.3", "detected_violation_count": 3, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 3, "generation_attempt": 2, "attempt_reason": "mandatory_events", "contract_id": "mandatory:S1.3", "detected_violation_count": 3, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 4, "generation_attempt": 1, "attempt_reason": "initial", "contract_id": "mandatory:S1.4", "detected_violation_count": 5, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true},
+      {"section": 1, "subsection": 4, "generation_attempt": 2, "attempt_reason": "mandatory_events", "contract_id": "mandatory:S1.4", "detected_violation_count": 5, "detector_selected_keywords": null, "detector_decision": "violation", "candidate_persisted": false, "evidence_spans": [], "actually_completed": null, "attribution": "unavailable_generation_attempt", "confidence": "high", "triggered_extra_writer_call": true}
+    ],
+    "metrics": {
+      "confirmed_precision": null,
+      "confirmed_precision_denominator": 0,
+      "false_positive_rate": null,
+      "unavailable_checks": 8,
+      "reason": "Neither replaced candidate text nor the violating event identities/selected keywords were persisted; final prose is not used as a proxy."
+    }
+  },
+  "arc_post_check": {
+    "records": [
+      {
+        "event_id": "1550d19a-913d-4be6-ac86-e7b2759e7067", "section": 1, "subsection": 1, "character": "吴阿姨",
+        "required_event": "吴阿姨在楼下组织广场舞，音乐声隐约传到林晚的房间，她并未直接出场，但她的存在通过声音被感知",
+        "detector_keywords": ["吴阿姨在", "楼下组织", "广场舞", "音乐声隐", "约传到林", "晚的房间", "她并未直", "接出场", "但她的存", "在通过声", "音被感知"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "semantic_paraphrase_false_negative", "milestone_requiredness": "observational_texture", "confidence": "high",
+        "evidence_spans": [{"start": 572, "end": 604, "excerpt": "她摸出那盆多肉，放上窗台。楼下广场舞的鼓点闷闷传来，像隔了层水。"}],
+        "source_id": "event_graph:1550d19a-913d-4be6-ac86-e7b2759e7067", "text_hash": "5f3c6eff1ec09264414ceed601d7b6b947f027d26d01b9607b868f14c063e40d"
+      },
+      {
+        "event_id": "a2193c79-599e-401c-8422-4dc8874fad1c", "section": 1, "subsection": 1, "character": "季晴",
+        "required_event": "季晴在微信上得知林晚裸辞，发来一连串消息，语气中带着担忧和不解，认为林晚在逃避现实",
+        "detector_keywords": ["季晴在微", "信上得知", "林晚裸辞", "发来一连", "串消息", "语气中带", "着担忧和", "不解", "认为林晚", "在逃避现"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "cross_sentence_false_negative", "milestone_requiredness": "soft_arc_progress", "confidence": "high",
+        "evidence_spans": [{"start": 620, "end": 627, "excerpt": "“你裸辞了？”"}, {"start": 664, "end": 675, "excerpt": "“这不是逃避是什么。”"}],
+        "source_id": "event_graph:a2193c79-599e-401c-8422-4dc8874fad1c", "text_hash": "5713c0613a2f0ff32f4c9dfec33fb2ebb96c3f789175bd135831086f9d5fe548"
+      },
+      {
+        "event_id": "a95e0027-2705-4da3-8efd-9c34a6cfac88", "section": 1, "subsection": 1, "character": "林晚",
+        "required_event": "林晚在凌晨收到第20版文案驳回，写完辞职信后离开公司，路过「野面包」闻到香气，决定拍摄小黑板作为第一个生活切片",
+        "detector_keywords": ["林晚在凌", "晨收到第", "版文案驳", "写完辞职", "信后离开", "公司", "路过", "野面包", "闻到香气", "决定拍摄", "小黑板作", "为第一个", "生活切片"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "cross_sentence_false_negative", "milestone_requiredness": "hard_arc_transition", "confidence": "high",
+        "evidence_spans": [{"start": 153, "end": 199, "excerpt": "光标在“第20版”末尾闪了三分钟。她把邮件转给自己，标题“辞职信”，正文两句话。发送。关机。"}, {"start": 360, "end": 405, "excerpt": "但黄油和面粉烘烤过的气味从门缝渗出来，不浓，像隔夜的余韵，混着槐树叶子的青涩。肺里凉凉的。"}, {"start": 735, "end": 749, "excerpt": "第一个“生活切片”，就拍它。"}],
+        "source_id": "event_graph:a95e0027-2705-4da3-8efd-9c34a6cfac88", "text_hash": "12ae92bb1c1454212fb2a2546dde0ba36b5c0988b1d11e2d8cffdf89380b53b7"
+      },
+      {
+        "event_id": "df101306-1115-4a73-bd06-45bee3adef4f", "section": 1, "subsection": 1, "character": "周野",
+        "required_event": "周野在凌晨揉面，他的面包香气无意中触动了路过的林晚，但他本人并未察觉",
+        "detector_keywords": ["周野在凌", "晨揉面", "他的面包", "香气无意", "中触动了", "路过的林", "但他本人", "并未察觉"],
+        "detector_decision": "missing", "actually_completed": "partial", "attribution": "partial_event_completion", "milestone_requiredness": "observational_texture", "confidence": "high",
+        "evidence_spans": [{"start": 360, "end": 405, "excerpt": "但黄油和面粉烘烤过的气味从门缝渗出来，不浓，像隔夜的余韵，混着槐树叶子的青涩。肺里凉凉的。"}],
+        "missing_components": ["the prose does not identify Zhou Ye as the current baker", "his lack of awareness is not stated"],
+        "source_id": "event_graph:df101306-1115-4a73-bd06-45bee3adef4f", "text_hash": "74e75078c5193096b7891c764b5768039ae8f1ed5117f6593c7b0c71c6774da7"
+      },
+      {
+        "event_id": "682763a6-e60b-46fa-bb63-16a42c6baed5", "section": 1, "subsection": 2, "character": "顾衍",
+        "required_event": "顾衍在书店里注意到林晚连续蹲守面包店，他主动指点林晚在四点半通风时拍摄，并递上一杯热茶",
+        "detector_keywords": ["顾衍在书", "店里注意", "到林晚连", "续蹲守面", "包店", "他主动指", "点林晚在", "四点半通", "风时拍摄", "并递上一", "杯热茶"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "cross_sentence_false_negative", "milestone_requiredness": "observational_texture", "confidence": "high",
+        "evidence_spans": [{"start": 1726, "end": 1771, "excerpt": "“通风时间是四点半。”他把其中一杯递过来，“你上周也来了。百叶窗四点半会开，只开十分钟。”"}],
+        "source_id": "event_graph:682763a6-e60b-46fa-bb63-16a42c6baed5", "text_hash": "1c4419d8d22021316503d54b95c98fb6bbcde3a449c10d9bc2439bfdcd6582b8"
+      },
+      {
+        "event_id": "6552ec3a-c5cf-4041-904c-9f2a07468aa6", "section": 1, "subsection": 2, "character": "林晚",
+        "required_event": "林晚连续三个周六蹲守面包店，从失败到成功拍下周野背影，过程中克服自我怀疑",
+        "detector_keywords": ["林晚连续", "三个周六", "蹲守面包", "从失败到", "成功拍下", "周野背影", "过程中克", "服自我怀"],
+        "detector_decision": "missing", "actually_completed": "partial", "attribution": "partial_event_completion", "milestone_requiredness": "hard_arc_transition", "confidence": "medium",
+        "evidence_spans": [{"start": 2627, "end": 2675, "excerpt": "Day 21. 第三个周六。百叶窗开了。他递来一杯水。杯口缺瓷。面粉落在围裙上。快门声没吓跑他。"}],
+        "missing_components": ["the three attempts and successful photograph are explicit", "overcoming self-doubt is inferred rather than stated or behaviorally closed"],
+        "source_id": "event_graph:6552ec3a-c5cf-4041-904c-9f2a07468aa6", "text_hash": "a78406f9945f4df6403fdbb1fc776915fa5523b17c7e552c4bdaa4edd1739f94"
+      },
+      {
+        "event_id": "36e9d71f-16ca-412a-bb24-29ea7652cf45", "section": 1, "subsection": 2, "character": "周野",
+        "required_event": "周野在第三个周六注意到林晚的蹲守，他未驱赶，反而在四点半通风时默许她的拍摄，并最终递上一杯热水",
+        "detector_keywords": ["周野在第", "三个周六", "注意到林", "晚的蹲守", "他未驱赶", "反而在四", "点半通风", "时默许她", "的拍摄", "并最终递", "上一杯热"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "cross_sentence_false_negative", "milestone_requiredness": "soft_arc_progress", "confidence": "high",
+        "evidence_spans": [{"start": 2174, "end": 2213, "excerpt": "然后他侧身，让出操作间一角。案板上撒着新面粉，烤盘在烤箱里细微膨胀。他继续揉面"}, {"start": 2362, "end": 2368, "excerpt": "“晾温了。”"}],
+        "source_id": "event_graph:36e9d71f-16ca-412a-bb24-29ea7652cf45", "text_hash": "6c3dafa2b333ea0ac4ed0f396f9b6c1508f32830829bbc70aed8a2e0b0c67e2e"
+      },
+      {
+        "event_id": "a004b99f-8b26-4c09-a167-dd5d8f7d568d", "section": 1, "subsection": 3, "character": "季晴",
+        "required_event": "季晴看到林晚发的第一篇生活记录草稿，她快速浏览后，在评论区留下一个简短的“？”，内心却闪过一丝对林晚勇气的复杂情绪",
+        "detector_keywords": ["季晴看到", "林晚发的", "第一篇生", "活记录草", "她快速浏", "览后", "在评论区", "留下一个", "简短的", "内心却闪", "过一丝对", "林晚勇气", "的复杂情"],
+        "detector_decision": "missing", "actually_completed": false, "attribution": "true_missing_event", "milestone_requiredness": "soft_arc_progress", "confidence": "high",
+        "evidence_spans": [{"start": 4409, "end": 4427, "excerpt": "然后打开和季晴的对话框，转发了一份。"}],
+        "missing_components": ["no reading reaction", "no question-mark comment", "no complex emotional response in subsection 1.3"],
+        "source_id": "event_graph:a004b99f-8b26-4c09-a167-dd5d8f7d568d", "text_hash": "007c548f18a42de1a644a5d9473e51bdef3353be8fc2336c17354b77827760e2"
+      },
+      {
+        "event_id": "a649cb86-3edb-4ea5-852d-f53ae2b46d28", "section": 1, "subsection": 3, "character": "顾衍",
+        "required_event": "顾衍看到林晚坐在书店外台阶上写记录，他默默调亮店外暖灯，为她提供光亮，并在打烊后与她简短交谈",
+        "detector_keywords": ["顾衍看到", "林晚坐在", "书店外台", "阶上写记", "他默默调", "亮店外暖", "为她提供", "光亮", "并在打烊", "后与她简", "短交谈"],
+        "detector_decision": "missing", "actually_completed": "partial", "attribution": "partial_event_completion", "milestone_requiredness": "observational_texture", "confidence": "medium",
+        "evidence_spans": [{"start": 4039, "end": 4085, "excerpt": "书店门开了。顾衍走出来，手里拎着一盏暖色小台灯。他把灯搁在台阶旁，插头从门缝牵进去。光晕扩开"}],
+        "missing_components": ["lamp and brief utterance are present", "a completed post-closing exchange is not explicit"],
+        "source_id": "event_graph:a649cb86-3edb-4ea5-852d-f53ae2b46d28", "text_hash": "f76e0cf3a55439e2a16b35e4aaa78f7d77a4333a1db5d48cde580507507c788d"
+      },
+      {
+        "event_id": "ec5ac543-ac75-470c-b786-9eeff43042cf", "section": 1, "subsection": 3, "character": "林晚",
+        "required_event": "林晚与周野短暂交流后，在书店外台阶上写下第一篇记录，将观察转化为文字，并反思自己的生活意义",
+        "detector_keywords": ["林晚与周", "野短暂交", "流后", "在书店外", "台阶上写", "下第一篇", "记录", "将观察转", "化为文字", "并反思自", "己的生活", "意义"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "cross_sentence_false_negative", "milestone_requiredness": "hard_arc_transition", "confidence": "high",
+        "evidence_spans": [{"start": 3486, "end": 3512, "excerpt": "她没回家。转身走到隔壁“夜航船”门口，在台阶上坐下。"}, {"start": 3788, "end": 3826, "excerpt": "我以前也这样吗。对着电脑屏幕，手指在键盘上敲，一遍遍改客户说的“感觉不对”。"}],
+        "source_id": "event_graph:ec5ac543-ac75-470c-b786-9eeff43042cf", "text_hash": "00ab67362ec56c639cdc0abb4ead9a459aef183c26feed3a9358d0c8a7cdedf7"
+      },
+      {
+        "event_id": "4a8affff-9cff-426f-af8a-9b27b6a5d80d", "section": 1, "subsection": 3, "character": "周野",
+        "required_event": "周野叮嘱林晚别开闪光灯后继续揉面，他的专注姿态成为林晚记录的核心，他虽未多言，但动作中透出接纳",
+        "detector_keywords": ["周野叮嘱", "林晚别开", "闪光灯后", "继续揉面", "他的专注", "姿态成为", "林晚记录", "的核心", "他虽未多", "但动作中", "透出接纳"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "cross_sentence_false_negative", "milestone_requiredness": "soft_arc_progress", "confidence": "high",
+        "evidence_spans": [{"start": 2844, "end": 2852, "excerpt": "“别开闪光灯。”"}, {"start": 2897, "end": 2924, "excerpt": "周野已转回去，手掌重新压上案板。面团在他掌下展开又收拢"}],
+        "source_id": "event_graph:4a8affff-9cff-426f-af8a-9b27b6a5d80d", "text_hash": "02dde577ea65cbebee29f87d86add6f586a0a50ba222da4c0075e026b2e8e5ba"
+      },
+      {
+        "event_id": "79fcfaa0-8874-41d6-9e3a-3346a86b35d4", "section": 1, "subsection": 4, "character": "吴阿姨",
+        "required_event": "吴阿姨在凌晨社区中偶遇夜归人，她刚结束晚间活动，与失眠者简短交谈，流露出对年轻人作息的好奇与关心",
+        "detector_keywords": ["吴阿姨在", "凌晨社区", "中偶遇夜", "归人", "她刚结束", "晚间活动", "与失眠者", "简短交谈", "流露出对", "年轻人作", "息的好奇", "与关心"],
+        "detector_decision": "missing", "actually_completed": "partial", "attribution": "partial_event_completion", "milestone_requiredness": "observational_texture", "confidence": "high",
+        "evidence_spans": [{"start": 5259, "end": 5293, "excerpt": "吴阿姨把音箱搁下，摸出一包纸巾递过去。女人抽出一张，慢慢擦脚底的灰。"}],
+        "missing_components": ["care and interaction are explicit", "having just finished an evening activity and curiosity about the stranger's schedule are not explicit"],
+        "source_id": "event_graph:79fcfaa0-8874-41d6-9e3a-3346a86b35d4", "text_hash": "e6ededb812c8e3370cf1aaf6d7f2a5f2012d38f13bacd49125a9e79ae5e68ec8"
+      },
+      {
+        "event_id": "2811b718-ca24-42db-81b0-24fc00fa47c1", "section": 1, "subsection": 4, "character": "顾衍",
+        "required_event": "顾衍在书店内接待失眠的夜归人，他推荐了一本诗集，并注意到吴阿姨与陌生人的互动，意识到社区需要更多连接",
+        "detector_keywords": ["顾衍在书", "店内接待", "失眠的夜", "归人", "他推荐了", "一本诗集", "并注意到", "吴阿姨与", "陌生人的", "互动", "意识到社", "区需要更", "多连接"],
+        "detector_decision": "missing", "actually_completed": "partial", "attribution": "partial_event_completion", "milestone_requiredness": "soft_arc_progress", "confidence": "high",
+        "evidence_spans": [{"start": 5686, "end": 5740, "excerpt": "“这本也许合适。”他把书放在女人旁边的台阶上——《二十首情诗与绝望的歌》。“不用买。看完放回门口书架就行。”"}],
+        "missing_components": ["the recommendation and observation are explicit", "the conclusion that the community needs more connection is not explicit"],
+        "source_id": "event_graph:2811b718-ca24-42db-81b0-24fc00fa47c1", "text_hash": "394fb2c5e486723b4ae1da3afda9416af5ac7c7080ea03db4a53ab92a0954550"
+      },
+      {
+        "event_id": "3e73e695-d3c1-4e30-85a1-8e761a59ca4a", "section": 1, "subsection": 4, "character": "林晚",
+        "required_event": "林晚在凌晨社区中偶遇失眠者和吴阿姨，她以旁观者身份记录下这些碎片，意识到自己并非唯一孤独的人",
+        "detector_keywords": ["林晚在凌", "晨社区中", "偶遇失眠", "者和吴阿", "她以旁观", "者身份记", "录下这些", "碎片", "意识到自", "己并非唯", "一孤独的"],
+        "detector_decision": "missing", "actually_completed": true, "attribution": "semantic_paraphrase_false_negative", "milestone_requiredness": "soft_arc_progress", "confidence": "medium",
+        "evidence_spans": [{"start": 7297, "end": 7359, "excerpt": "今天来了四个人。一个加班到两点，光脚走回来，手掌贴着卷帘门等揉面声响起。一个刚打完麻将，保温杯里泡着枸杞，把杯盖递给陌生人。"}],
+        "source_id": "event_graph:3e73e695-d3c1-4e30-85a1-8e761a59ca4a", "text_hash": "a641c314d03bd21e7a75ca066bfcef09651e3017833939f90b7160080c5b23b8"
+      },
+      {
+        "event_id": "f0d66899-8a23-4797-b76d-91cb88f7c1e9", "section": 1, "subsection": 4, "character": "周野",
+        "required_event": "周野在凌晨为失眠的顾客递上一块刚出炉的面包，未说一句话，但眼神中闪过一丝理解",
+        "detector_keywords": ["周野在凌", "晨为失眠", "的顾客递", "上一块刚", "出炉的面", "未说一句", "但眼神中", "闪过一丝", "理解"],
+        "detector_decision": "missing", "actually_completed": "partial", "attribution": "partial_event_completion", "milestone_requiredness": "soft_arc_progress", "confidence": "high",
+        "evidence_spans": [{"start": 6594, "end": 6647, "excerpt": "第一片递给年轻女人。她接过来，烫得手指缩了一下，但没松手。咬一口，脆皮碎裂，里面的组织冒着热气，软得像云。"}],
+        "missing_components": ["fresh bread is handed to the customer", "Zhou later speaks and no understanding gaze is described"],
+        "source_id": "event_graph:f0d66899-8a23-4797-b76d-91cb88f7c1e9", "text_hash": "e7a87cf9dbfde72e23cfd0da6b7f689a3f1c34a95af84ba528cce058b26e6697"
+      }
+    ],
+    "metrics": {
+      "warnings": 15,
+      "true_missing": 1,
+      "partial_completion": 6,
+      "complete_semantic_false_negatives": 8,
+      "strict_missing_precision": 0.0667,
+      "actionable_missing_or_partial_precision": 0.4667,
+      "complete_false_positive_rate": 0.5333,
+      "unavailable": 0,
+      "extra_writer_calls": 0
+    }
+  },
+  "runtime_cost": {
+    "planned_subsection_draft_calls": 4,
+    "actual_subsection_draft_calls": 12,
+    "mandatory_retry_calls": 8,
+    "extra_call_share": 0.6667,
+    "retry_calls_by_subsection": {"1.1": 2, "1.2": 2, "1.3": 2, "1.4": 2},
+    "retry_stream_latency_seconds_by_subsection": {"1.1": 20.6, "1.2": 55.1, "1.3": 55.7, "1.4": 110.8},
+    "retry_stream_latency_seconds": 242.2,
+    "all_draft_stream_latency_seconds": 373.4,
+    "retry_share_of_observed_draft_stream_latency": 0.6486,
+    "retry_share_of_total_wall_time": 0.3735,
+    "writer_stage_seconds": 568.5,
+    "total_wall_seconds": 648.5,
+    "total_tokens": 46280,
+    "writer_agent_tokens": 34413,
+    "estimated_total_cost_usd": 0.0201,
+    "incremental_retry_tokens": null,
+    "incremental_retry_cost_usd": null,
+    "incremental_cost_reason": "Streaming draft calls log duration/chunk counts but do not persist per-attempt token usage."
+  },
+  "arc_planning": {
+    "characters": 5,
+    "milestones": 15,
+    "milestones_by_character": {"吴阿姨": 2, "季晴": 2, "顾衍": 3, "林晚": 4, "周野": 4},
+    "milestones_by_subsection": {"1.1": 4, "1.2": 3, "1.3": 4, "1.4": 4},
+    "requiredness_counts": {"hard_arc_transition": 3, "soft_arc_progress": 7, "observational_texture": 5, "ordinary_plot_event": 0, "unsupported_planning_inference": 0},
+    "link_operations": 115,
+    "same_character_consecutive_links": 10,
+    "same_section_pairwise_links": 105,
+    "links_with_explicit_direction_type_and_evidence": 0,
+    "proven_causal_links": 0,
+    "storage_semantics": "Each link operation creates a bidirectional related_events relation; the graph stores neither direction, causal type, nor causal evidence.",
+    "density_finding": "The prompt requires every character to cover every subsection in which they appear, promoting ambient actions and supporting-character texture into mandatory milestones."
+  },
+  "responsibility": {
+    "mandatory_detector": "Caused all eight expensive rewrites, uses unstable literal keyword selection, and lacks persisted evidence needed to estimate precision.",
+    "arc_detector": "Produced 15 warnings; 8 were confirmed complete semantic false negatives, 6 partial completions, and 1 true omission. It caused no retries.",
+    "arc_planner": "Created an over-dense contract: only 3 of 15 milestones were classified as hard transitions, while 12 were soft progress or observational texture."
+  },
+  "decision": {
+    "recommended_next_step": "A",
+    "recommendation": "First downgrade mandatory-event automatic whole-subsection rewrite to observation-only.",
+    "reason": "It is the only chain that caused eight costly calls, its precision is not auditable from persisted data, keyword selection is unstable, and the final retry is not revalidated.",
+    "not_executed": true
+  }
+}
