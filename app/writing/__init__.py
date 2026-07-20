@@ -14,6 +14,12 @@ from .contracts import (
 )
 from .generation_controller import GenerationController
 from .prompt_builder import PromptBuilder
+from .scene_spec_provider import (
+    OutlineSceneSpecProvider,
+    SceneSpecApplication,
+    SceneSpecBuildResult,
+    SceneSpecCanaryController,
+)
 from .state_committer import StateCommitter
 from .subsection_pipeline import SubsectionPipeline
 from .shadow_validation import ShadowBoundaryValidationRunner
@@ -25,7 +31,11 @@ __all__ = [
     "GenerationController",
     "PromptArtifact",
     "PromptBuilder",
+    "OutlineSceneSpecProvider",
     "SceneSpec",
+    "SceneSpecApplication",
+    "SceneSpecBuildResult",
+    "SceneSpecCanaryController",
     "SourceEvidence",
     "StateFrame",
     "StateFrameCompiler",

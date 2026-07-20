@@ -61,6 +61,10 @@ class Settings:
     WRITER_BOUNDARY_VALIDATOR_SHADOW: bool = os.getenv(
         "WRITER_BOUNDARY_VALIDATOR_SHADOW", "false"
     ).lower() in ("true", "1", "yes")
+    WRITER_SCENE_SPEC_MODE: str = os.getenv("WRITER_SCENE_SPEC_MODE", "off").strip().lower()
+    WRITER_SCENE_SPEC_CANARY_TASK_IDS: str = os.getenv(
+        "WRITER_SCENE_SPEC_CANARY_TASK_IDS", ""
+    )
 
     # --- Coordinator tuning ---
     WORLD_STATE_EXTRACT_CHARS: int = int(os.getenv("WORLD_STATE_EXTRACT_CHARS", "3000"))
@@ -99,6 +103,11 @@ class Settings:
             warnings.append("RAG_PHASE3_CANDIDATE_K 不应小于 RAG_TOP_K")
         if not 0 <= self.RAG_PHASE3_MIN_SCORE <= 1:
             warnings.append("RAG_PHASE3_MIN_SCORE 必须在 0..1")
+        if self.WRITER_SCENE_SPEC_MODE not in {"off", "shadow", "canary"}:
+            warnings.append(
+                f"WRITER_SCENE_SPEC_MODE={self.WRITER_SCENE_SPEC_MODE} 无效，按 off 处理；"
+                "应为 off/shadow/canary"
+            )
         return warnings
 
 

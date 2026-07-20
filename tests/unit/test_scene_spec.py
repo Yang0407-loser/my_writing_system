@@ -67,14 +67,20 @@ def test_scene_compilation_is_deterministic():
     assert first == second
 
 
-def test_production_writer_does_not_import_r2_shadow_modules():
+def test_production_writer_uses_canary_boundary_not_r2_low_level_modules():
     path = Path("app/agents/writer.py")
     tree = ast.parse(path.read_text(encoding="utf-8"))
     imports = [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))]
     rendered = "\n".join(ast.unparse(node) for node in imports)
+    imported_names = {
+        alias.name
+        for node in imports
+        for alias in node.names
+    }
     assert "scene_compiler" not in rendered
     assert "story_state_view" not in rendered
-    assert "SceneSpec" not in rendered
+    assert "SceneSpec" not in imported_names
+    assert "SceneSpecCanaryController" in imported_names
 
 
 def test_runtime_projection_uses_only_read_apis_and_keeps_unverified_unknown():

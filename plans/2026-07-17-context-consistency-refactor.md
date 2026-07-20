@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 最终真实写作试验通过并保留 SceneSpec 实验路线；StateFrame Batch 2 真实覆盖审计诊断为 `upstream_state_contract_required`，不得进入生成 A/B；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成默认关闭、task_id 白名单的最小 canary 工程接入，尚无真实 canary 样本，生产默认继续 `legacy_full`；StateFrame 状态为 `paused_by_upstream_state_contract`，不得进入生成 A/B；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -385,6 +385,13 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 人工修改字符数和时间未测量，均明确记录为 `not_measured`，不作为 go/no-go 门槛，也没有把 `null` 当作 0。
 - 全部七项门槛通过，最终建议为 `retain_scene_spec_experimental_route`。该结果只支持保留路线并另行设计最小生产接入，不授权直接切换生产、启用 Validator、实现 Repair 或开始 Phase 5/6；Phase 4R 到此强制停止，不追加解释性批次。
 
+### SceneSpec 最小生产 Canary 接入
+
+- 冻结最终真实试验语义，将 outline-only `OutlineSceneSpecProvider` 迁入生产；历史试验 helper 改为调用同一 provider，四个真实 SceneSpec hash 与 230/351/277/93 token 全部保持。
+- 新增 `WRITER_SCENE_SPEC_MODE=off` 与空白 task allowlist；`off` 不调用 provider，`shadow` 只编译不注入，`canary` 只对白名单 task 在最终 user message 末尾追加完整 SceneSpec。
+- 编译或注入失败、非白名单、结构缺失、超过400 estimated tokens、来源不可追溯时返回原 PromptArtifact；不阻断、重试或改变提交顺序。日志只含 task hash、spec hash/token/source IDs和fallback，不含正文/messages/Prompt。
+- 当前只完成工程接入，真实 canary 样本仍为0；默认生产继续`legacy_full`，不授权全面切换，不启用StateFrame、ContextBroker、BoundaryValidator或Repair。
+
 ## StateFrame：Writer 当前状态职责拆分
 
 > 当前状态：Batch 2 已完成真实冻结状态源覆盖审计，诊断为 `upstream_state_contract_required`。StateFrame 未进入 Writer messages，未调用 LLM，生产继续 `legacy_full`；未获得进入生成 A/B 的条件。
@@ -690,3 +697,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4R 最终真实写作试验 | 对真实连续4小节固定A=`legacy_full`、B=`legacy_full+SceneSpec`，共8次主调用；人工匿名审阅原始输出，不测试budgeted Broker，不测人工改稿成本，不修改生产 | B不差于A为3/4；目标完成A/B=2/3；总缺陷A/B=10/4；hard=1/0、关系=1/0、连续性=3/1、事实=3/2、事件顺序=1/1、越界=1/0；3个场景有具体正面作用；七项门槛全部通过；定向测试22 passed、compileall通过 | 最终建议保留SceneSpec实验路线，但4小节不足以证明全面生产质量；生产继续legacy_full，Validator默认关闭，不开始Repair、Phase5/6，不追加Phase4R批次 |
 | 2026-07-20 | StateFrame Batch 1 只读契约基线 | 在现有StoryStateSnapshot上新增StateFrame与确定性compiler，只表达时间、地点、在场、持久状态、关系、open loops和unknown/conflicted；planned/hard/arc与未知predicate显式排除；不接Writer、不调用LLM | 4类合成契约场景追溯率100%，unknown/conflicted保留，planned/hard排除；平均33 estimated token（26～40，仅结构指标）；unit含SceneSpec回归12 passed、quality 3 passed、compileall通过 | 只证明契约和责任边界成立，不证明真实状态覆盖或生成质量；下一入口仅为另行授权的真实状态源覆盖审计，不直接注入Writer |
 | 2026-07-20 | StateFrame Batch 2 真实状态源覆盖审计 | 只读Phase4R最终试验单一节前checkpoint及4个真实小节outline；审计WorldState、EventGraph、character arcs、handover和冻结上下文，不读取候选/映射/人工结果，不调用LLM | 每帧explicit/generic/unclassified=7/15/2～5，generic占68.18%，平均1768 token；WorldState 14条均为generic，handover 3字段非结构化，relations/foreshadowing/locations无可用状态；追溯、unknown保留、planned/hard排除和hash确定性通过；接管SceneSpec confirmed/open后仍净增约754 token；unit=11、quality=4、compileall通过 | 诊断`upstream_state_contract_required`；不得进入生成A/B或扩关键词。只提出state_id/predicate/subject/value/status/effective range/source/hash最小上游契约，等待用户授权 |
+| 2026-07-20 | SceneSpec 最小生产 Canary 接入 | 将最终真实试验 outline-only 语义迁入生产 provider；新增默认off、shadow只编译、task_id白名单canary三态；在PromptBuilder后、GenerationController前可选追加完整SceneSpec；所有失败回退原PromptArtifact | 四个真实golden hash及230/351/277/93 token全部保持；off provider调用0且messages不变，shadow messages不变；生成参数、返回正文、checkpoint顺序/版本和幂等键相关回归通过；定向测试68 passed，compileall通过，Writer/LLM调用0 | 默认生产继续legacy_full；真实canary样本0，只允许用户显式指定单一task_id后有限运行；StateFrame继续`paused_by_upstream_state_contract`，Validator默认关闭，不开始其他优化 |

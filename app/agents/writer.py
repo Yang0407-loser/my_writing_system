@@ -25,6 +25,7 @@ from ..writing import (
     GenerationArtifact,
     GenerationController,
     PromptBuilder,
+    SceneSpecCanaryController,
     StateCommitter,
     ShadowBoundaryValidationRunner,
     SubsectionInput,
@@ -135,6 +136,10 @@ class Writer(BaseAgent):
         cm = ContextManager(self.llm)
         state_committer = StateCommitter()
         shadow_boundary_validator = self._build_shadow_boundary_validation_runner()
+        scene_spec_canary = SceneSpecCanaryController(
+            mode=settings.WRITER_SCENE_SPEC_MODE,
+            canary_task_ids=settings.WRITER_SCENE_SPEC_CANARY_TASK_IDS,
+        )
         if resume_context:
             cm.deserialize(resume_context)
         full_draft = ""
@@ -706,6 +711,23 @@ class Writer(BaseAgent):
                 prompt_artifact = PromptBuilder().build(
                     prepared, token_by_source=context_token_estimates
                 )
+                if scene_spec_canary.enabled:
+                    next_subsection = next(
+                        (
+                            item for item in subsections
+                            if int(item.get("subsection", 0)) == sub_num + 1
+                        ),
+                        None,
+                    )
+                    scene_spec_application = scene_spec_canary.apply(
+                        prompt_artifact,
+                        task_id=task_id,
+                        section=section_num,
+                        current_subsection=sub,
+                        next_subsection=next_subsection,
+                        is_last_subsection=sub is subsections[-1],
+                    )
+                    prompt_artifact = scene_spec_application.prompt
                 subsection_pipeline.record_prompt(prompt_artifact)
                 messages = prompt_artifact.messages
                 input_tokens_estimate = prompt_artifact.estimated_tokens

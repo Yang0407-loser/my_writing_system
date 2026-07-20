@@ -29,8 +29,7 @@ from app.utils.prompt_templates import HANDOVER_BRIEF_PROMPT, STYLE_BEHAVIOR_PRO
 from app.utils.text_chunker import chunk_text
 from app.vector_store import VectorStore
 from app.writing.contracts import GenerationArtifact
-from app.writing.scene_compiler import SceneCompiler
-from app.writing.story_state_view import StoryStateView
+from app.writing.scene_spec_provider import OutlineSceneSpecProvider
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -152,46 +151,21 @@ def _scene_query(private: dict[str, Any], subsection: dict[str, Any]) -> str:
 def _compile_real_scene_spec(private: dict[str, Any], subsection: dict[str, Any]):
     section = int(private["outline"][0].get("section", 1))
     sub_number = int(subsection.get("subsection", 0))
-    source_id = str(subsection.get("source_id", f"outline:S{section}.{sub_number}"))
-    points = [str(value).strip() for value in subsection.get("key_points", []) if str(value).strip()]
-    target = "；".join(points) or str(subsection.get("title", ""))
-    next_sub = next(
+    subsections = private["outline"][0]["subsections"]
+    next_subsection = next(
         (item for item in private["outline"][0]["subsections"] if int(item.get("subsection", 0)) == sub_number + 1),
         None,
     )
-    source_text = str(subsection.get("description", "")).strip() or target
-    if next_sub:
-        next_points = [str(value).strip() for value in next_sub.get("key_points", []) if str(value).strip()]
-        next_target = "；".join(next_points) or str(next_sub.get("title", ""))
-        source_text += "\nNEXT:" + next_target
-    evidence_id = f"ev:{source_id}"
-    sources = [{
-        "evidence_id": evidence_id, "source_id": source_id, "source_type": "current_outline",
-        "text": source_text, "section": section, "subsection": sub_number,
-        "span_start": 0, "span_end": len(source_text),
-    }]
-    assertions = [{
-        "assertion_id": f"planned:{source_id}", "subject": "current_scene",
-        "predicate": "planned_event", "value": target, "status": "planned",
-        "evidence_ids": [evidence_id],
-    }]
-    if next_sub:
-        next_points = [str(value).strip() for value in next_sub.get("key_points", []) if str(value).strip()]
-        next_target = "；".join(next_points) or str(next_sub.get("title", ""))
-        assertions.append({
-            "assertion_id": f"boundary:{source_id}", "subject": "writer",
-            "predicate": "future_event_status",
-            "value": f"本小节止于当前目标，不得提前完成下一小节事件：{next_target}",
-            "status": "unknown", "evidence_ids": [evidence_id],
-        })
-    snapshot = StoryStateView(task_id=private["task_id"], section=section, subsection=sub_number).project(
-        sources, assertions
+    built = OutlineSceneSpecProvider().build(
+        task_id=private["task_id"],
+        section=section,
+        current_subsection=subsection,
+        next_subsection=next_subsection,
+        is_last_subsection=subsection is subsections[-1],
     )
-    spec = SceneCompiler().compile(snapshot)
-    rendered = SceneCompiler().render(spec)
-    if spec.estimated_tokens > 400:
+    if built.spec.estimated_tokens > 400:
         raise ValueError(f"SceneSpec for subsection {sub_number} exceeds 400 estimated tokens")
-    return spec, rendered
+    return built.spec, built.rendered
 
 
 def prepare_trial(runtime_dir: Path) -> dict[str, Any]:
