@@ -1,0 +1,395 @@
+{
+  "schema_version": "phase4r-r5-evaluation-v1",
+  "phase": "Phase 4R Batch R5",
+  "mode": "offline_post_generation_validation",
+  "status": "completed_stopped",
+  "prediction_sha256": "fb6e21589d362b9e43f8da00ed8f99709c2d90804a2c72be63e691553baa42c0",
+  "prediction_frozen_before_evaluation": true,
+  "review_provenance": "independent_agent_blind_review",
+  "candidate_count": 12,
+  "writer_generation_calls": 0,
+  "llm_calls": 0,
+  "production_behavior_changed": false,
+  "production_messages_hash_unchanged": true,
+  "private_generated_prose_emitted": false,
+  "metrics": {
+    "boundary": {
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "tn": 9,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "required_event_q7": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "tn": 2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "unsupported_fact_q4_exploratory": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "evidence_traceability_rate": 1.0,
+  "gates": {
+    "boundary_recall_100": true,
+    "boundary_precision_at_least_80": true,
+    "q7_all_states_correct": true,
+    "q8_all_boundary_violations_detected": true,
+    "evidence_traceability_100": true,
+    "production_messages_hash_unchanged": true,
+    "prediction_answer_fields_unused": true,
+    "writer_llm_calls_zero": true
+  },
+  "all_mechanical_gates_passed": true,
+  "per_candidate": [
+    {
+      "query_index": 4,
+      "candidate_id": "candidate_01",
+      "arm": "budgeted_broker",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": true,
+      "expected_unsupported_fact": true,
+      "required_event_states": [],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": [
+        {
+          "start": 1333,
+          "end": 1350,
+          "excerpt": "麦面包，切开来颜色发灰，有股酸味。“黑麦粉是老家寄来的。我爹种了一辈子黑麦，去年走了，留下半袋面粉。我一直舍不得用。”  藤椅上坐满了，有人靠在梧桐树干上，有人蹲在石阶边。每个人手里都拿",
+          "source_id": "generated_candidate",
+          "text_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+          "rule_id": "unknown:q04:relative_fact"
+        }
+      ]
+    },
+    {
+      "query_index": 4,
+      "candidate_id": "candidate_02",
+      "arm": "broker_scene_spec",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": true,
+      "expected_unsupported_fact": true,
+      "required_event_states": [],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": [
+        {
+          "start": 2008,
+          "end": 2012,
+          "excerpt": "站声传来。下一班要等四十分钟。  但这里没人赶时间。  周野父亲站在院门口。灰色夹克，手里拎着塑料袋。他看见院子里的人，往后退了半步。  林晚朝他招手。“进来坐",
+          "source_id": "generated_candidate",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "rule_id": "unknown:q04:relative_fact"
+        },
+        {
+          "start": 2178,
+          "end": 2182,
+          "excerpt": "了很久。  “爸。”  “嗯。”  “明天还来吗。”  周野父亲看着长桌上的面包。吴阿姨的圆面包，季晴的可颂，顾衍的法棍，陈师傅的芝麻面包，站长的红豆餐包，老刘",
+          "source_id": "generated_candidate",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "rule_id": "unknown:q04:relative_fact"
+        },
+        {
+          "start": 2339,
+          "end": 2343,
+          "excerpt": "盘推到他面前。“尝尝我这个。糊底刮掉了，里面还行。”  周野父亲掰了一块。嚼了两下，点头。  “气孔好。比我揉得细。”  “你揉面？”  “以前不揉。她走了以后",
+          "source_id": "generated_candidate",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "rule_id": "unknown:q04:relative_fact"
+        },
+        {
+          "start": 2478,
+          "end": 2482,
+          "excerpt": "手掌在围裙上擦了两下。  “天快亮了。再揉一会儿。”  周野父亲抬起头。父子俩隔着长桌，隔着十五个面包，隔着石窑炉里跳动的火光。  “好。”  他拿起塑料袋，转",
+          "source_id": "generated_candidate",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "rule_id": "unknown:q04:relative_fact"
+        },
+        {
+          "start": 2654,
+          "end": 2658,
+          "excerpt": "截，包装纸在午后的阳光里泛黄。  “放最上面一格。”  周野父亲点了一下头。铁门推开，脚步声慢慢远去，消失在梧桐树叶子的沙沙声里。  季晴站起来，把剩下的可颂码",
+          "source_id": "generated_candidate",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "rule_id": "unknown:q04:relative_fact"
+        },
+        {
+          "start": 2486,
+          "end": 2489,
+          "excerpt": "两下。  “天快亮了。再揉一会儿。”  周野父亲抬起头。父子俩隔着长桌，隔着十五个面包，隔着石窑炉里跳动的火光。  “好。”  他拿起塑料袋，转身往院门走。走",
+          "source_id": "generated_candidate",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "rule_id": "unknown:q04:relative_fact"
+        }
+      ]
+    },
+    {
+      "query_index": 4,
+      "candidate_id": "candidate_03",
+      "arm": "legacy_full",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 6,
+      "candidate_id": "candidate_01",
+      "arm": "broker_scene_spec",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 6,
+      "candidate_id": "candidate_02",
+      "arm": "legacy_full",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 6,
+      "candidate_id": "candidate_03",
+      "arm": "budgeted_broker",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 7,
+      "candidate_id": "candidate_01",
+      "arm": "legacy_full",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": false,
+      "expected_required_complete": false,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [
+        {
+          "event_id": "delete_record",
+          "observed_state": "missing",
+          "passed": false
+        },
+        {
+          "event_id": "face_zhou",
+          "observed_state": "missing",
+          "passed": false
+        }
+      ],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 7,
+      "candidate_id": "candidate_02",
+      "arm": "budgeted_broker",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": false,
+      "expected_required_complete": false,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [
+        {
+          "event_id": "delete_record",
+          "observed_state": "conflicted_past_original_and_current_backup",
+          "passed": false
+        },
+        {
+          "event_id": "face_zhou",
+          "observed_state": "current",
+          "passed": true
+        }
+      ],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 7,
+      "candidate_id": "candidate_03",
+      "arm": "broker_scene_spec",
+      "predicted_boundary_violation": false,
+      "expected_boundary_violation": false,
+      "predicted_required_complete": true,
+      "expected_required_complete": true,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [
+        {
+          "event_id": "delete_record",
+          "observed_state": "current",
+          "passed": true
+        },
+        {
+          "event_id": "face_zhou",
+          "observed_state": "current",
+          "passed": true
+        }
+      ],
+      "boundary_evidence": [],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 8,
+      "candidate_id": "candidate_01",
+      "arm": "broker_scene_spec",
+      "predicted_boundary_violation": true,
+      "expected_boundary_violation": true,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [
+        {
+          "start": 1102,
+          "end": 1115,
+          "excerpt": "的时候连烤箱计时器都不设，全靠手感。  她撤回消息。  第二天周六，她七点到面包店。卷帘门拉着，操作间的灯亮着。她站在槐树下等了十分钟，门从里面推开。  周野拎着垃圾袋出来，看见",
+          "source_id": "generated_candidate",
+          "text_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+          "rule_id": "boundary:q08:return_to_store"
+        },
+        {
+          "start": 1488,
+          "end": 1492,
+          "excerpt": "看着她笔记本上密密麻麻的字。第三十七条下面补了一行：周六来当店员。七点到。别带相机。他让观察者变成参与者。  “发。”他转身推开门。“别写地址。”  林晚抬头。",
+          "source_id": "generated_candidate",
+          "text_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+          "rule_id": "boundary:q08:store_participation"
+        },
+        {
+          "start": 517,
+          "end": 520,
+          "excerpt": "开又收拢。  光标停在“上传”按钮上。  她想起那条图文发出去那晚。点赞破万的时候她盯着屏幕，评论区挤满“求地址”。一个美食博主转发加了句“老板以前是建筑师”",
+          "source_id": "generated_candidate",
+          "text_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+          "rule_id": "boundary:q08:publish_content"
+        }
+      ],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 8,
+      "candidate_id": "candidate_02",
+      "arm": "legacy_full",
+      "predicted_boundary_violation": true,
+      "expected_boundary_violation": true,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [
+        {
+          "start": 1319,
+          "end": 1324,
+          "excerpt": "头，他正把面团翻过来，拇指陷进面里，停了一秒。  “在想第三个问题。”  “想好了？”  “还没。”她把笔记本合上。“在想怎么问。”  周野没说话。手掌压下去，往",
+          "source_id": "generated_candidate",
+          "text_hash": "c76658f045e3ea90ada452e5c9fb34620ee8cb761bd6b7c6c8bcd39e5d147dd7",
+          "rule_id": "boundary:q08:ask_zhou"
+        },
+        {
+          "start": 1802,
+          "end": 1807,
+          "excerpt": "她合上笔记本，拿起相机。取景器里，周野的背影一起一伏。她按下快门。咔嚓。面粉在半空中凝固成细密的光点。  “这张不发。”  周野回头看她。  “只存在硬盘里。”",
+          "source_id": "generated_candidate",
+          "text_hash": "c76658f045e3ea90ada452e5c9fb34620ee8cb761bd6b7c6c8bcd39e5d147dd7",
+          "rule_id": "boundary:q08:current_photograph"
+        }
+      ],
+      "unsupported_fact_evidence": []
+    },
+    {
+      "query_index": 8,
+      "candidate_id": "candidate_03",
+      "arm": "budgeted_broker",
+      "predicted_boundary_violation": true,
+      "expected_boundary_violation": true,
+      "predicted_required_complete": null,
+      "expected_required_complete": null,
+      "predicted_unsupported_fact": false,
+      "expected_unsupported_fact": false,
+      "required_event_states": [],
+      "boundary_evidence": [
+        {
+          "start": 2459,
+          "end": 2463,
+          "excerpt": "前，翻开笔记本。  第三十七条下面补的那行字还在——周六来当店员。七点到。别带相机。她翻到新的一页，写下：第三十八条。记录，不是曝光。记住，不是消费。  笔尖顿",
+          "source_id": "generated_candidate",
+          "text_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+          "rule_id": "boundary:q08:store_participation"
+        }
+      ],
+      "unsupported_fact_evidence": []
+    }
+  ],
+  "false_cases": {
+    "boundary": [],
+    "required_event_q7": [],
+    "unsupported_fact_q4_exploratory": []
+  },
+  "decision": "eligible_to_propose_separately_authorized_validator_shadow_integration",
+  "unsupported_fact_scope": "exploratory_not_a_release_gate",
+  "limitations": [
+    "The sample contains four scenes and twelve candidates; it cannot establish general production quality.",
+    "Rules are deterministic and contract-specific; semantic paraphrases outside the frozen anchors may be missed.",
+    "No Repair behavior was implemented or evaluated."
+  ],
+  "verification": {
+    "unit": {
+      "passed": 223,
+      "failed": 0
+    },
+    "integration": {
+      "passed": 8,
+      "failed": 0
+    },
+    "quality": {
+      "passed": 81,
+      "failed": 0
+    },
+    "compileall": "passed"
+  }
+}
