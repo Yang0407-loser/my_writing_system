@@ -26,6 +26,7 @@ from ..writing import (
     GenerationController,
     PromptBuilder,
     StateCommitter,
+    ShadowBoundaryValidationRunner,
     SubsectionInput,
     SubsectionPipeline,
 )
@@ -133,6 +134,7 @@ class Writer(BaseAgent):
 
         cm = ContextManager(self.llm)
         state_committer = StateCommitter()
+        shadow_boundary_validator = self._build_shadow_boundary_validation_runner()
         if resume_context:
             cm.deserialize(resume_context)
         full_draft = ""
@@ -941,6 +943,14 @@ class Writer(BaseAgent):
                 if commit_artifact.warnings:
                     logger.warning(f"[{task_id[:8]}] token 消耗写入黑板失败")
                 subsection_pipeline.record_commit(commit_artifact)
+                shadow_boundary_validator.observe_committed(
+                    task_id=task_id,
+                    section=section_num,
+                    subsection=sub_num,
+                    text=sub_text,
+                    output_hash=commit_artifact.output_hash,
+                    source_manifest=prompt_artifact.source_manifest,
+                )
 
             # B2: 子节循环内检测到停止信号，跳出外层 while
             if should_stop:
@@ -1096,6 +1106,12 @@ class Writer(BaseAgent):
         }
 
     # ═══ P0: 硬约束构建 ═══
+
+    @staticmethod
+    def _build_shadow_boundary_validation_runner():
+        return ShadowBoundaryValidationRunner(
+            enabled=settings.WRITER_BOUNDARY_VALIDATOR_SHADOW,
+        )
 
     @staticmethod
     def _build_mandatory_events(key_points, section_key_points, sub_desc,

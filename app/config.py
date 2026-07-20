@@ -58,6 +58,9 @@ class Settings:
     WRITER_MAX_TOKENS_FLOOR: int = int(os.getenv("WRITER_MAX_TOKENS_FLOOR", "2048"))
     WRITER_MAX_TOKENS_CEIL: int = int(os.getenv("WRITER_MAX_TOKENS_CEIL", "16384"))
     WRITER_AWAIT_QUEUE_TIMEOUT: int = int(os.getenv("WRITER_AWAIT_QUEUE_TIMEOUT", "600"))
+    WRITER_BOUNDARY_VALIDATOR_SHADOW: bool = os.getenv(
+        "WRITER_BOUNDARY_VALIDATOR_SHADOW", "false"
+    ).lower() in ("true", "1", "yes")
 
     # --- Coordinator tuning ---
     WORLD_STATE_EXTRACT_CHARS: int = int(os.getenv("WORLD_STATE_EXTRACT_CHARS", "3000"))
