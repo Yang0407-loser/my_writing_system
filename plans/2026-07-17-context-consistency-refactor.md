@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 最终真实写作试验已完成，4 个真实小节中 SceneSpec 版 3 个不差于 legacy 且全部质量门槛通过，结论为保留 SceneSpec 实验路线，但尚未接入生产；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 最终真实写作试验通过并保留 SceneSpec 实验路线；StateFrame Batch 1 已完成只读契约和结构基线，但未接入 Writer；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -385,6 +385,25 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 人工修改字符数和时间未测量，均明确记录为 `not_measured`，不作为 go/no-go 门槛，也没有把 `null` 当作 0。
 - 全部七项门槛通过，最终建议为 `retain_scene_spec_experimental_route`。该结果只支持保留路线并另行设计最小生产接入，不授权直接切换生产、启用 Validator、实现 Repair 或开始 Phase 5/6；Phase 4R 到此强制停止，不追加解释性批次。
 
+## StateFrame：Writer 当前状态职责拆分
+
+> 当前状态：Batch 1 只读契约和离线结构基线已完成；未进入 Writer messages，未调用 LLM，生产继续 `legacy_full`。
+
+### 职责边界
+
+- StateFrame 只回答“本小节开始前，当前世界是什么状态”，字段限定为时间、地点、人物在场、持久状态、关系阶段、未闭合事件和 unknown/conflicted。
+- SceneSpec 继续回答“本小节应该发生什么”，持有 planned events 与写作边界；hard 角色/关系规则继续由现有规则系统与 SceneSpec 消费。
+- StateFrame 复用 `StoryStateSnapshot`、`StateAssertion` 和 `SourceEvidence`，不建立第二套数据库，不解析自然语言关键词来猜状态。
+- planned events、hard constraints、历史 arc milestone 和未识别 predicate 必须进入 `excluded_assertion_ids`，不得静默混入当前状态。
+
+### Batch 1 结果
+
+- 新增不可变 `StateFrame` 和确定性 `StateFrameCompiler`；分类完全依赖显式 predicate，unknown/conflicted 保持原认识状态。
+- 4 类合成契约场景覆盖时间/未知、地点/在场、持久状态/关系、未闭合事件/冲突；来源追溯率 100%，规划事件与 hard 规则排除检查通过。
+- 合成结构平均 33 estimated tokens（26～40），仅用于确认渲染器不会异常膨胀，不得解释为真实 Writer token 降幅。
+- Writer、Prompt、SceneSpec compiler、ContextManager、RAG、Validator 和生产调用链均未修改；Writer/LLM 调用 0。
+- 下一步只有另行授权的“真实状态源覆盖审计”：统计现有 WorldState、handover、关系和事件源中有多少状态具备可分类 predicate，以及缺失来自数据契约还是状态本身。不得直接注入 Writer 或开始生成 A/B。
+
 ## Phase 5：Writer 受控工具调用
 
 > 当前状态：暂停。前置门槛是 Phase 4 Broker 策略必须已固定，并通过独立生成质量验证或有限 canary。未满足时 Phase 5 保持暂停，禁止把“Broker 是否删错信息”和“Writer 是否正确决定调用工具”两个未验证假设叠加在同一实验中。
@@ -661,3 +680,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4R Batch R5 BoundaryValidator离线基线 | Predictor只读冻结SceneSpec、当前需求、匿名生成清单和12份正文，先冻结私有预测hash；独立evaluator随后读取盲审并按候选概念缺陷去重；不调用LLM、不修改生产、不实现Repair | boundary TP/FP/FN/TN=3/0/0/9；Q7 required-event=1/0/0/2；Q4 unsupported-fact exploratory=2/0/0/1；三项P/R/F1均100%，Q7状态分类、Q8越界检出和证据追溯均100%；原始字节预测hash=`fb6e2158…a42c0`；unit=223、integration=8、quality=81、compileall通过 | 小样本机械门槛通过，只建议等待另行授权Validator shadow接入；不宣称通用Validator成熟，不切生产，不开始Repair、Phase5或Phase6 |
 | 2026-07-20 | Phase 4R Batch R6A Validator默认关闭shadow接入 | R5规则迁入app并保持冻结hash；Writer在StateCommitter和record_commit成功后调用失败隔离runner；flag默认false，NoOp sink，不创建数据库，不调用LLM | R5原始预测hash完全不变；disabled调用/记录为0；异常不回滚正文或checkpoint；记录无全文/messages/Prompt且excerpt≤140字；真实样本0；unit=229、integration=9、quality=85、compileall通过 | 结构接入完成但不切生产；仅建议等待另行授权R6B真实shadow采样，不开始Repair、Phase5或Phase6 |
 | 2026-07-20 | Phase 4R 最终真实写作试验 | 对真实连续4小节固定A=`legacy_full`、B=`legacy_full+SceneSpec`，共8次主调用；人工匿名审阅原始输出，不测试budgeted Broker，不测人工改稿成本，不修改生产 | B不差于A为3/4；目标完成A/B=2/3；总缺陷A/B=10/4；hard=1/0、关系=1/0、连续性=3/1、事实=3/2、事件顺序=1/1、越界=1/0；3个场景有具体正面作用；七项门槛全部通过；定向测试22 passed、compileall通过 | 最终建议保留SceneSpec实验路线，但4小节不足以证明全面生产质量；生产继续legacy_full，Validator默认关闭，不开始Repair、Phase5/6，不追加Phase4R批次 |
+| 2026-07-20 | StateFrame Batch 1 只读契约基线 | 在现有StoryStateSnapshot上新增StateFrame与确定性compiler，只表达时间、地点、在场、持久状态、关系、open loops和unknown/conflicted；planned/hard/arc与未知predicate显式排除；不接Writer、不调用LLM | 4类合成契约场景追溯率100%，unknown/conflicted保留，planned/hard排除；平均33 estimated token（26～40，仅结构指标）；unit含SceneSpec回归12 passed、quality 3 passed、compileall通过 | 只证明契约和责任边界成立，不证明真实状态覆盖或生成质量；下一入口仅为另行授权的真实状态源覆盖审计，不直接注入Writer |

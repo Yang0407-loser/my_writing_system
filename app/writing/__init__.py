@@ -4,6 +4,7 @@ from .contracts import (
     CommitArtifact,
     SceneSpec,
     SourceEvidence,
+    StateFrame,
     StateAssertion,
     StoryStateSnapshot,
     GenerationArtifact,
@@ -16,6 +17,7 @@ from .prompt_builder import PromptBuilder
 from .state_committer import StateCommitter
 from .subsection_pipeline import SubsectionPipeline
 from .shadow_validation import ShadowBoundaryValidationRunner
+from .state_frame import StateFrameCompiler
 
 __all__ = [
     "CommitArtifact",
@@ -25,6 +27,8 @@ __all__ = [
     "PromptBuilder",
     "SceneSpec",
     "SourceEvidence",
+    "StateFrame",
+    "StateFrameCompiler",
     "StateAssertion",
     "StoryStateSnapshot",
     "StateCommitter",

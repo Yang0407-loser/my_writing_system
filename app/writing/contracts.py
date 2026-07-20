@@ -98,6 +98,26 @@ class StoryStateSnapshot(FrozenArtifact):
     source_hash: str
 
 
+class StateFrame(FrozenArtifact):
+    frame_id: str
+    task_id: str
+    section: int
+    subsection: int
+    temporal_state: list[StateAssertion] = Field(default_factory=list)
+    location_state: list[StateAssertion] = Field(default_factory=list)
+    character_presence: list[StateAssertion] = Field(default_factory=list)
+    persistent_state: list[StateAssertion] = Field(default_factory=list)
+    relationship_state: list[StateAssertion] = Field(default_factory=list)
+    open_loops: list[StateAssertion] = Field(default_factory=list)
+    unknowns_and_conflicts: list[StateAssertion] = Field(default_factory=list)
+    evidence: list[SourceEvidence] = Field(default_factory=list)
+    excluded_assertion_ids: list[str] = Field(default_factory=list)
+    source_hash: str
+    frame_hash: str
+    estimated_tokens: int
+    schema_version: str = "state-frame-v1"
+
+
 class SceneSpec(FrozenArtifact):
     scene_id: str
     task_id: str
