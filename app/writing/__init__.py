@@ -2,6 +2,10 @@
 
 from .contracts import (
     CommitArtifact,
+    SceneSpec,
+    SourceEvidence,
+    StateAssertion,
+    StoryStateSnapshot,
     GenerationArtifact,
     PromptArtifact,
     SubsectionInput,
@@ -18,6 +22,10 @@ __all__ = [
     "GenerationController",
     "PromptArtifact",
     "PromptBuilder",
+    "SceneSpec",
+    "SourceEvidence",
+    "StateAssertion",
+    "StoryStateSnapshot",
     "StateCommitter",
     "SubsectionInput",
     "SubsectionPipeline",

@@ -66,7 +66,7 @@ typed artifacts：`SubsectionInput`、`PromptArtifact`、`GenerationArtifact`、
 ## 遗留风险
 
 1. `Writer.run` 仍保留章节循环、上下文查询和部分告警/审阅逻辑；R1 只建立边界，没有完成最终瘦身。
-2. 旧 `_generate_with_retry` 实现暂作为 R1 等价性测试 oracle 保留，生产路径不再使用；R2 前应删除并由冻结测试接管，避免永久双份逻辑。
+2. R1 完成时暂留的 `_legacy_generate_with_retry` 等价性 oracle 已在 R2 删除；冻结 hash、参数、重试和 fallback 测试继续接管回归保护。
 3. StateCommitter 记录部分提交，但不伪装成跨 Chroma/Redis/内存的事务；现有失败语义保持不变。
 4. source manifest 在 R1 只能追溯到 Writer prompt field；真实领域 source ID 需要 R2 的 StoryStateView 提供。
 5. integration 测试保留既有 pytest return-value 与依赖弃用 warning，本批不顺带修复。

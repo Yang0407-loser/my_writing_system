@@ -1,0 +1,199 @@
+{
+  "phase": "Phase 4R Batch R2",
+  "mode": "shadow_only",
+  "schema_version": "phase4r-r2-v1",
+  "writer_generation_calls": 0,
+  "llm_calls": 0,
+  "runtime_evaluation_fields_used": [],
+  "production_writer_imports_scene_spec": false,
+  "production_messages_hash_unchanged": true,
+  "production_hash_baseline_count": 10,
+  "summary": {
+    "scene_count": 4,
+    "mean_estimated_tokens": 273,
+    "min_estimated_tokens": 225,
+    "max_estimated_tokens": 311,
+    "all_sources_traceable": true,
+    "all_unknowns_preserved": true
+  },
+  "scenes": [
+    {
+      "query_index": 4,
+      "section": 17,
+      "subsection": 3,
+      "scene_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6:S17.3",
+      "source_hash": "e5612760130d5386b6656af09ec6efe9345061947731b8cb7279579834e9eb6c",
+      "spec_hash": "06c45881257f3e53059544f277b839431a6ed1d78750eb45287687a7153752e6",
+      "rendered_hash": "7b8cf54d869f2b121b54fd11a235fa8cb2de978b2edbd6e4be552b1b2a8c994e",
+      "estimated_tokens": 253,
+      "counts": {
+        "confirmed": 1,
+        "planned": 1,
+        "open_loops": 0,
+        "hard_constraints": 1,
+        "forbidden_inferences": 2,
+        "unknowns_conflicts": 1
+      },
+      "statuses": [
+        "confirmed",
+        "planned",
+        "unknown"
+      ],
+      "forbidden_inference_ids": [
+        "forbid:planned_event:future_event_status",
+        "forbid:unverified_character_fact:unverified_character_fact"
+      ],
+      "unknown_assertion_ids": [
+        "q04:unknown:1"
+      ],
+      "source_manifest": [
+        {
+          "evidence_id": "ev:q04:outline",
+          "source_id": "frozen-outline:q04",
+          "source_type": "current_outline",
+          "text_hash": "dc9581881c340293c325db62ea719a080eddc9eb72c8c6438db600e4c3d2b7bf",
+          "section": 17,
+          "subsection": 3,
+          "span_start": 0,
+          "span_end": 27
+        }
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "query_index": 6,
+      "section": 7,
+      "subsection": 1,
+      "scene_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6:S7.1",
+      "source_hash": "f7e8a9af63a53461b197605cd9b52b8af99d3da1db19b6b69c87a494332410e5",
+      "spec_hash": "fe2fc6787ebc203d61e5090a2a307de94d51c58f490301b0fa54680afce98e4f",
+      "rendered_hash": "094df62f8f00acbde49ea11e9bb1b36e6e403d2c5cd765788fc5dbbbbc4ec0aa",
+      "estimated_tokens": 303,
+      "counts": {
+        "confirmed": 2,
+        "planned": 1,
+        "open_loops": 0,
+        "hard_constraints": 1,
+        "forbidden_inferences": 3,
+        "unknowns_conflicts": 1
+      },
+      "statuses": [
+        "confirmed",
+        "planned",
+        "unknown"
+      ],
+      "forbidden_inference_ids": [
+        "forbid:character_absence:location_operation",
+        "forbid:current_time_anchor:future_time_relation",
+        "forbid:planned_event:future_event_status"
+      ],
+      "unknown_assertion_ids": [
+        "q06:unknown:1"
+      ],
+      "source_manifest": [
+        {
+          "evidence_id": "ev:q06:outline",
+          "source_id": "frozen-outline:q06",
+          "source_type": "current_outline",
+          "text_hash": "76fcdb187ec61fbeff9be570b8b3d4e235a07e09af861afc23ea4143b3a7f2d8",
+          "section": 7,
+          "subsection": 1,
+          "span_start": 0,
+          "span_end": 32
+        }
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "query_index": 7,
+      "section": 6,
+      "subsection": 3,
+      "scene_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6:S6.3",
+      "source_hash": "1475b47ab7925df520f8dd042f0d4041cf5a298a950a7bfb897c910e87d3dc73",
+      "spec_hash": "f0c8251ce7cde15c8b64a006b83b23cf305aea8bb375cb7304e38a26669f0894",
+      "rendered_hash": "59eb26a27012a79fb6b849a729f0daca8a52243a34130a51a4d170379cc04ba3",
+      "estimated_tokens": 311,
+      "counts": {
+        "confirmed": 1,
+        "planned": 1,
+        "open_loops": 1,
+        "hard_constraints": 1,
+        "forbidden_inferences": 3,
+        "unknowns_conflicts": 1
+      },
+      "statuses": [
+        "confirmed",
+        "planned",
+        "unknown"
+      ],
+      "forbidden_inference_ids": [
+        "forbid:current_time_anchor:future_time_relation",
+        "forbid:planned_event:future_event_status",
+        "forbid:open_loop:open_loop_resolution"
+      ],
+      "unknown_assertion_ids": [
+        "q07:unknown:1"
+      ],
+      "source_manifest": [
+        {
+          "evidence_id": "ev:q07:outline",
+          "source_id": "frozen-outline:q07",
+          "source_type": "current_outline",
+          "text_hash": "ff4ce31c8e9cf1bdc0b9fc81311dd96b19f55eb282980e9e4b335c5772df4c9b",
+          "section": 6,
+          "subsection": 3,
+          "span_start": 0,
+          "span_end": 25
+        }
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "query_index": 8,
+      "section": 4,
+      "subsection": 3,
+      "scene_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6:S4.3",
+      "source_hash": "f04d2c48bd9e34e3e037f631f94aeaf973b13d5c603f525e6db1e642ad0cfd85",
+      "spec_hash": "96d38cd84337377cf55c3caade80f930255b46e418b195c0b285e1a27a2a9166",
+      "rendered_hash": "dc84ca8b938f990b929c40cded048b8e803ff3ea98fdc6d33b5082311e41de6f",
+      "estimated_tokens": 225,
+      "counts": {
+        "confirmed": 1,
+        "planned": 1,
+        "open_loops": 0,
+        "hard_constraints": 1,
+        "forbidden_inferences": 1,
+        "unknowns_conflicts": 1
+      },
+      "statuses": [
+        "confirmed",
+        "planned",
+        "unknown"
+      ],
+      "forbidden_inference_ids": [
+        "forbid:planned_event:future_event_status"
+      ],
+      "unknown_assertion_ids": [
+        "q08:unknown:1"
+      ],
+      "source_manifest": [
+        {
+          "evidence_id": "ev:q08:outline",
+          "source_id": "frozen-outline:q08",
+          "source_type": "current_outline",
+          "text_hash": "9cba7e07155e6d89d2c3d0fb04c2869b3661dd8437ec70873598a8ab7b097930",
+          "section": 4,
+          "subsection": 3,
+          "span_start": 0,
+          "span_end": 31
+        }
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    }
+  ],
+  "decision": "R2 shadow contract ready for R3 authorization; production remains legacy_full"
+}

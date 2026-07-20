@@ -131,35 +131,6 @@ def test_generation_controller_retries_missing_mandatory_event():
     assert artifact.generation_attempts[-1]["reason"] == "mandatory_events"
 
 
-@pytest.mark.parametrize(
-    ("responses", "mandatory"),
-    [
-        (["正文完成。"], "（本节无硬性事件约束）"),
-        (["没有目标事件。", "林晚删帖。"], "1. 【必须】林晚删帖"),
-    ],
-)
-def test_extracted_generation_boundary_matches_r1_legacy_reference(responses, mandatory):
-    extracted = Writer()
-    extracted.llm = FakeLLM(responses)
-    legacy = Writer()
-    legacy.llm = FakeLLM(responses)
-    kwargs = {
-        "messages": [{"role": "user", "content": "写作"}],
-        "call_max_tokens": 900,
-        "stream_callback": None,
-        "section_num": 2,
-        "sub_num": 1,
-        "mandatory_events_text": mandatory,
-    }
-
-    extracted_output = extracted._generate_with_retry(**kwargs)
-    legacy_output = legacy._legacy_generate_with_retry(**kwargs)
-
-    assert extracted_output == legacy_output
-    assert extracted.llm.calls == legacy.llm.calls
-    assert extracted._last_retry_count == legacy._last_retry_count
-
-
 def test_generation_controller_stream_fallback_preserves_callbacks():
     llm = FakeLLM(["回退正文。"])
     events = []

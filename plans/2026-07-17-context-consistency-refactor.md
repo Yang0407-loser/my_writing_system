@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R Batch R1 已完成 Writer 写作内环的行为等价边界提取，尚未接入 SceneSpec 或 ContextBroker；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R Batch R2 已完成只读 StoryStateView 与 shadow SceneSpec，尚未接入生产 Writer 或 ContextBroker；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -311,7 +311,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Phase 4R：Writer 职责拆分
 
-> 当前状态：Batch R1 已完成，等待用户授权 R2。Phase 4R 改变的是 Writer 内部职责边界，不代表 Phase 4 Context Broker 已恢复或晋级；生产继续使用 `legacy_full`。
+> 当前状态：Batch R2 已完成并停止，等待用户另行决定是否授权 R3。Phase 4R 改变的是 Writer 内部职责边界，不代表 Phase 4 Context Broker 已恢复或晋级；生产继续使用 `legacy_full`。
 
 ### 核心假设
 
@@ -339,6 +339,15 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - R2：SceneSpec 仅 shadow，字段来源可追溯率 100%，unknown 不得升级为事实，平均 200～500 estimated token，生产 messages hash 不变。
 - R3：Broker+SceneSpec 相对 legacy 输入至少下降 20%，连续性不差于 legacy，新增 hard/关系违规为 0。
 - 任一批完成后停止；不得自动开始下一批、Phase 5 或 Phase 6。
+
+### Batch R2 结果
+
+- 新增不可变 `SourceEvidence`、`StateAssertion`、`StoryStateSnapshot` 和 `SceneSpec` 契约；状态严格区分 `confirmed/planned/unknown/conflicted`。
+- `StoryStateView` 只调用现有 WorldState、EventGraph、规则、关系、伏笔和 handover 的查询接口；不消费 warning、不写 Redis/SQLite/Chroma，也不建立第二套永久事实源。
+- Q4/Q6/Q7/Q8 的 shadow SceneSpec 平均 273.0 estimated token（225～311）；来源追溯率 100%，unknown 保留率 100%。
+- Writer 未导入 R2 模块，未调用 LLM，R1 冻结的 10/10 production messages hash 保持不变。
+- R1 暂留的 `_legacy_generate_with_retry` 测试 oracle 已删除，避免生成逻辑永久双份维护。
+- R2 只证明状态契约、保守编译和追溯机制可用；没有生成正文质量证据，不得据此切换生产。R3 仍须另行授权。
 
 ## Phase 5：Writer 受控工具调用
 
@@ -609,3 +618,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4 Batch 3.5 Guard 实测复核 | 原计划新跑Q4/Q6/Q7/Q8四次B生成；用户明确授权后，租户策略仍禁止向DeepSeek外发私有正文/规则/RAG/Prompt，故未绕过；改为复用Batch 2已完成且与Batch 3 B messages hash 4/4一致的四次真实Writer输出和A对照，只审计缺陷差值，不提交正文 | Q4新增世界事实错误、Q6新增连续状态错误、Q7新增日期顺序错误；Q8因果/越界缺陷A/B各1，不是Broker净退化；4场景中3个实测净退化、1个共同缺陷；目标完成、hard和关系违规均未新增；A/B还差异于部分world facts/软规则/风格项，故19个理论保护项及具体责任来源均无法据此归因；unit=185/0、integration=8/0、quality=60/0、compileall通过 | 撤销“19/19均必要”和“整项路线已失败”的过强结论；保持shadow与legacy生产，不开始Phase5；下一步须在允许真实生成的环境中对全部被删ContextItem做最小恢复验证，失败后才考虑可追溯节级摘要 |
 | 2026-07-20 | Phase 8 Batch 1 确定性风格可观测性 | 将 Phase 4 标记为 `paused_by_generation_evaluation_infrastructure`，保留 legacy_full、Broker/Guard及实验记录并暂停Phase5/6；复用固定SHA黄金故事，按18章/52小节离线统计对话、句长、段长、重复、机械起句、感官/心理词及连续结构；不调用LLM、不改Writer/Prompt | 全书58963可见字符、对话12.30%、机械时间/序数/数字起句7.79%、感官词22.54/千字、心理说明词2.48/千字、完全重复句组124、重复段组5；第8章感官词密度偏高，第10章机械起句偏高；`emotion_intensity`和情绪层次不做伪自动评分；unit=189/0、integration=8/0、quality=63/0、compileall通过 | 仅建立基线、报告和回归测试；异常是分布信号而非自动质量判决；旧50维字段保持删除，生产行为不变，不启动Phase5/6或正文重写 |
 | 2026-07-20 | Phase 4R Batch R1 Writer 职责边界提取 | 新增 typed artifacts、纯 PromptBuilder、GenerationController、StateCommitter 和 SubsectionPipeline；Writer.run/revise_subsection 保持兼容；Prompt、生成参数、RAG、ContextManager和存储模型不变；不调用 Writer LLM | 10条冻结场景 content/messages/runtime 三重 hash 均10/10不变；模拟小节 facade、生成重试参数、提交顺序、部分失败、幂等、checkpoint和依赖边界均有测试；修改前 unit=192/integration=8/quality=63，修改后 unit=208/integration=8/quality=65，compileall通过 | R1门槛全部通过；生产仍为legacy_full，未接入ContextBroker/SceneSpec；旧生成实现仅作为R1测试oracle暂留，R2前应删除；停止并等待R2明确授权，不开始Phase5/6 |
+| 2026-07-20 | Phase 4R Batch R2 StoryStateView/SceneSpec shadow | 增加只读状态投影、四态事实契约、确定性 SceneCompiler 和 source/hash/span provenance；覆盖 Q4/Q6/Q7/Q8；删除 R1 暂留生成 oracle；不调用 LLM、不接入 Writer | 4个 SceneSpec 平均273.0 token（225～311）；source trace=100%，unknown保留=100%；10/10冻结生产hash不变；unit=213、integration=8、quality=68、compileall通过 | R2机械门槛通过，但未验证生成质量；生产继续legacy_full，ContextBroker仍暂停；完成后停止，不自动开始R3、Phase5或Phase6 |
