@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R Batch R3 的外部生成执行包已准备但尚未生成，R2 SceneSpec仍未接入生产；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 已完成 R3 外部 A/B/C 生成、独立盲审及 R4 离线归因，SceneSpec 仍未接入生产；下一入口仅为另行授权的生成后边界 Validator 离线检测实验；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -311,7 +311,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Phase 4R：Writer 职责拆分
 
-> 当前状态：Batch R3 准备阶段已完成并停止，等待获准处理私有输入的外部 Agent 执行 12 次 A/B/C 生成。尚无 R3 质量结论；Phase 4R 改变的是 Writer 内部职责边界，不代表 Context Broker 已恢复或晋级；生产继续使用 `legacy_full`。
+> 当前状态：Batch R3 已由获准处理私有输入的外部 Agent 完成 12 次 A/B/C 生成，并由独立 Agent 完成匿名盲审；Batch R4 已完成离线失败归因。C=`budgeted_broker+SceneSpec` 平均输入较 A 下降 28.55%，但新增亲属事实补写、连续性问题且盲审只获 1/4 首选，未通过生产或 canary 门槛。R4 判断 SceneSpec 主要问题是 Writer 执行不稳定，而非普遍缺少约束；生产继续使用 `legacy_full`。
 
 ### 核心假设
 
@@ -338,6 +338,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - R1：10/10 Writer messages hash 不变；公开接口、生成参数、状态写入顺序和 checkpoint 兼容；全量测试零失败。
 - R2：SceneSpec 仅 shadow，字段来源可追溯率 100%，unknown 不得升级为事实，平均 200～500 estimated token，生产 messages hash 不变。
 - R3：Broker+SceneSpec 相对 legacy 输入至少下降 20%，连续性不差于 legacy，新增 hard/关系违规为 0。
+- R4：只读现有 R3 产物，逐缺陷给出允许枚举内的归因、source/hash 和职责所有者；不得调用 LLM、恢复上下文或修改生产；完成后停止。
 - 任一批完成后停止；不得自动开始下一批、Phase 5 或 Phase 6。
 
 ### Batch R2 结果
@@ -349,6 +350,15 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - R1 暂留的 `_legacy_generate_with_retry` 测试 oracle 已删除，避免生成逻辑永久双份维护。
 - R2 只证明状态契约、保守编译和追溯机制可用；没有生成正文质量证据，不得据此切换生产。R3 仍须另行授权。
 - R3 准备阶段已冻结 Q4/Q6/Q7/Q8 的 A=`legacy_full`、B=`budgeted_broker`、C=`budgeted_broker+SceneSpec`，总计12次；公开清单不含私有正文，实际生成必须由获准环境显式确认后执行。
+
+### Batch R3/R4 结果
+
+- 外部 Agent 已按冻结配置完成 12 次生成，独立盲审 provenance 为 `independent_agent_blind_review`；原始正文、messages 与匿名映射继续只保存在 gitignored runtime。
+- A/B/C 平均输入分别为 12428.75 / 8591.25 / 8880.50 estimated token；B、C 相对 A 分别下降 30.88% / 28.55%。
+- 盲审首选：A 赢 Q4、Q6，C 赢 Q7，B 在 Q8 仅为三组失败中的相对较优；A/B/C 目标完成分别为 2/4、2/4、3/4，但 C 没有满足“连续性不差于 A、无新增 hard/关系问题”的 R3 门槛。
+- R4 对 22 条盲审分类标签建立逐项 source/hash 归因，合并重复分类后得到 15 个概念缺陷：`writer_instruction_noncompliance` 4、`writing_request_boundary_ambiguity` 2、`missing_scene_spec_fact` 1、`unrelated_generation_variance` 8；没有证据支持 `dropped_context_dependency`。
+- Q4 的 C 明确违反 SceneSpec 的未知亲属禁令；Q8 的 C 明确违反“止于边界反思”的截止点；Q7 的 C 则是唯一完成本节两个关键动作的候选。现有证据不能证明 token 减少直接造成 Q4/Q8 退化，约 9k token 的 budgeted 上下文只保留为 shadow 候选。
+- 下一优先级是使用现有 12 份输出离线验证生成后 `boundary_validator` 的检测能力；不得同时加入 Repair、恢复旧小节或修改 SceneSpec。需另行授权，不自动开始。
 
 ## Phase 5：Writer 受控工具调用
 
@@ -621,3 +631,5 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4R Batch R1 Writer 职责边界提取 | 新增 typed artifacts、纯 PromptBuilder、GenerationController、StateCommitter 和 SubsectionPipeline；Writer.run/revise_subsection 保持兼容；Prompt、生成参数、RAG、ContextManager和存储模型不变；不调用 Writer LLM | 10条冻结场景 content/messages/runtime 三重 hash 均10/10不变；模拟小节 facade、生成重试参数、提交顺序、部分失败、幂等、checkpoint和依赖边界均有测试；修改前 unit=192/integration=8/quality=63，修改后 unit=208/integration=8/quality=65，compileall通过 | R1门槛全部通过；生产仍为legacy_full，未接入ContextBroker/SceneSpec；旧生成实现仅作为R1测试oracle暂留，R2前应删除；停止并等待R2明确授权，不开始Phase5/6 |
 | 2026-07-20 | Phase 4R Batch R2 StoryStateView/SceneSpec shadow | 增加只读状态投影、四态事实契约、确定性 SceneCompiler 和 source/hash/span provenance；覆盖 Q4/Q6/Q7/Q8；删除 R1 暂留生成 oracle；不调用 LLM、不接入 Writer | 4个 SceneSpec 平均273.0 token（225～311）；source trace=100%，unknown保留=100%；10/10冻结生产hash不变；unit=213、integration=8、quality=68、compileall通过 | R2机械门槛通过，但未验证生成质量；生产继续legacy_full，ContextBroker仍暂停；完成后停止，不自动开始R3、Phase5或Phase6 |
 | 2026-07-20 | Phase 4R Batch R3 生成实验准备 | 构建Q4/Q6/Q7/Q8的legacy/Broker/Broker+SceneSpec三臂可移交包；提供prepare/run/import/evaluate命令、匿名顺序、双hash校验和外部Agent说明；私有内容仅进gitignored runtime | 计划12次、实际0次；A/B/C输入合计49715/34365/35522 token，C较A预计下降28.55%；A/B冻结hash逐项不变；公开manifest无Prompt/query/正文；unit=218、integration=8、quality=71、compileall通过 | 只完成准备，尚无生成质量结论；等待获准环境执行run，随后import和匿名评估；不切生产，不开始Phase5/6 |
+| 2026-07-20 | Phase 4R Batch R3 外部生成与独立盲审 | 获准外部Agent按冻结包完成Q4/Q6/Q7/Q8三臂共12次生成；新对话独立Agent只读取匿名候选并完成盲审；揭盲前评审文件不含arm映射，私有正文不进Git | A/B/C平均输入12428.75/8591.25/8880.50 token；目标完成2/4、2/4、3/4；盲审首选A/B/C=2/1/1；C虽降28.55%，但出现新增亲属扩写和更多连续性缺陷；Q8三臂均越界 | R3质量门槛失败，不建议canary；SceneSpec对Q7有局部收益，但未稳定约束Q4事实与Q8边界；生产继续legacy_full，不开始Phase5/6 |
+| 2026-07-20 | Phase 4R Batch R4 SceneSpec失败归因 | 只读R3三臂messages manifest、12份生成hash、SceneSpec、ContextItem和独立盲审；逐条建立允许枚举内的因果归因、confidence、source/hash及Writer职责所有者；不调用LLM、不重新生成或修改生产 | 22条盲审标签合并为15个概念缺陷：Writer明确指令不服从4、写作边界含糊2、SceneSpec局部事实缺失1、其他生成波动8；已证实的dropped_context_dependency=0；Q4/Q8的SceneSpec明确违规簇=2；unit=218、integration=8、quality=76、compileall通过 | token删减不是Q8失败的必要原因，也不能由当前样本证明直接造成Q4退化；保留约9k budgeted shadow候选，下一优先级仅为另行授权的生成后boundary validator离线检测；Repair和上下文恢复均不自动开始 |

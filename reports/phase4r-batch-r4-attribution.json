@@ -1,0 +1,1156 @@
+{
+  "schema_version": "phase4r-r4-v1",
+  "phase": "Phase 4R Batch R4",
+  "mode": "offline_attribution_only",
+  "status": "completed_stopped",
+  "writer_generation_calls": 0,
+  "llm_calls": 0,
+  "production_behavior_changed": false,
+  "production_messages_hash_unchanged": true,
+  "private_generated_prose_emitted": false,
+  "review_provenance": "independent_agent_blind_review",
+  "sample_count": 4,
+  "candidate_count": 12,
+  "allowed_attributions": [
+    "ambiguous_scene_spec",
+    "dropped_context_dependency",
+    "incorrect_scene_spec",
+    "missing_scene_spec_fact",
+    "unrelated_generation_variance",
+    "writer_instruction_noncompliance",
+    "writing_request_boundary_ambiguity"
+  ],
+  "input_tokens": {
+    "totals": {
+      "legacy_full": 49715,
+      "budgeted_broker": 34365,
+      "broker_scene_spec": 35522
+    },
+    "averages": {
+      "legacy_full": 12428.75,
+      "budgeted_broker": 8591.25,
+      "broker_scene_spec": 8880.5
+    },
+    "reductions_vs_legacy": {
+      "budgeted_broker": 0.3088,
+      "broker_scene_spec": 0.2855
+    }
+  },
+  "summary": {
+    "review_label_count": 22,
+    "unique_defect_cluster_count": 15,
+    "attribution_label_counts": {
+      "missing_scene_spec_fact": 1,
+      "unrelated_generation_variance": 9,
+      "writer_instruction_noncompliance": 8,
+      "writing_request_boundary_ambiguity": 4
+    },
+    "attribution_cluster_counts": {
+      "missing_scene_spec_fact": 1,
+      "unrelated_generation_variance": 8,
+      "writer_instruction_noncompliance": 4,
+      "writing_request_boundary_ambiguity": 2
+    },
+    "explicit_scene_spec_noncompliance_clusters": 2,
+    "scene_spec_success_case": "Q7 completed both required current-subsection actions only in broker_scene_spec"
+  },
+  "dropped_context_audit": [
+    {
+      "query_index": 4,
+      "dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "causal_conclusion": "related_family_history_exists_but_does_not_prohibit_the_observed_inventions"
+    },
+    {
+      "query_index": 8,
+      "dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "causal_conclusion": "legacy_full_also_crossed_the_boundary_so_deletion_is_not_a_necessary_cause"
+    }
+  ],
+  "issues": [
+    {
+      "issue_id": "q04:candidate_01:hard_violations:1",
+      "query_index": 4,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_01",
+      "defect_type": "hard_violations",
+      "defect_evidence": "无依据补造物业老刘父亲去年去世、留下黑麦粉及生前烤面包等亲属事实。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "high",
+      "cluster_id": "q04:budgeted:invented_relative",
+      "rationale": "The deleted older sections contain some Zhou-family history, but do not establish the invented Liu-family fact, invitation timing, or headcount. Deletion is therefore not a demonstrated dependency.",
+      "source_id": "r3-output:q04:candidate_01",
+      "source_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_01",
+          "text_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q04:candidate_01:relationship_violations:1",
+      "query_index": 4,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_01",
+      "defect_type": "relationship_violations",
+      "defect_evidence": "擅自建立并扩写老刘与已故父亲的关系背景。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "high",
+      "cluster_id": "q04:budgeted:invented_relative",
+      "rationale": "The deleted older sections contain some Zhou-family history, but do not establish the invented Liu-family fact, invitation timing, or headcount. Deletion is therefore not a demonstrated dependency.",
+      "source_id": "r3-output:q04:candidate_01",
+      "source_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_01",
+          "text_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q04:candidate_01:continuity_defects:1",
+      "query_index": 4,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_01",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "周六两点仍在投递三点婚礼请柬，吴阿姨两点半到场却称昨天收到请柬。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "high",
+      "cluster_id": "q04:budgeted:invitation_timing",
+      "rationale": "The deleted older sections contain some Zhou-family history, but do not establish the invented Liu-family fact, invitation timing, or headcount. Deletion is therefore not a demonstrated dependency.",
+      "source_id": "r3-output:q04:candidate_01",
+      "source_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_01",
+          "text_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q04:candidate_01:continuity_defects:2",
+      "query_index": 4,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_01",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "开头十五位受邀者加新人共十七人，仪式时又写成十五个人、十五个面包。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "high",
+      "cluster_id": "q04:budgeted:headcount",
+      "rationale": "The deleted older sections contain some Zhou-family history, but do not establish the invented Liu-family fact, invitation timing, or headcount. Deletion is therefore not a demonstrated dependency.",
+      "source_id": "r3-output:q04:candidate_01",
+      "source_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_01",
+          "text_hash": "fe06fe4838103baf0b5fd97a8fc999ce40584fd0cb8810397c6c4ca1bb251da5",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q04:candidate_02:hard_violations:1",
+      "query_index": 4,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_02",
+      "defect_type": "hard_violations",
+      "defect_evidence": "无依据让周野父亲到场，并大段补造父母、遗物、母亲临终饮食等亲属事实。",
+      "scene_spec_explicitly_covers_constraint": true,
+      "legacy_context_contains_corresponding_evidence": true,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q04:scene_spec:invented_family",
+      "rationale": "SceneSpec explicitly forbids inventing unconfirmed relatives or life/death facts, yet the candidate introduces the father's attendance and additional family history as facts.",
+      "source_id": "r3-output:q04:candidate_02",
+      "source_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_02",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "frozen-outline:q04",
+          "text_hash": "dc9581881c340293c325db62ea719a080eddc9eb72c8c6438db600e4c3d2b7bf",
+          "role": "scene_spec_constraint"
+        },
+        {
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "role": "related_deleted_context_not_causal"
+        },
+        {
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "role": "related_deleted_context_not_causal"
+        }
+      ]
+    },
+    {
+      "issue_id": "q04:candidate_02:relationship_violations:1",
+      "query_index": 4,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_02",
+      "defect_type": "relationship_violations",
+      "defect_evidence": "擅自扩写周野父亲到场、父子互动及已故母亲的家庭往事。",
+      "scene_spec_explicitly_covers_constraint": true,
+      "legacy_context_contains_corresponding_evidence": true,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q04:scene_spec:invented_family",
+      "rationale": "SceneSpec explicitly forbids inventing unconfirmed relatives or life/death facts, yet the candidate introduces the father's attendance and additional family history as facts.",
+      "source_id": "r3-output:q04:candidate_02",
+      "source_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_02",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "frozen-outline:q04",
+          "text_hash": "dc9581881c340293c325db62ea719a080eddc9eb72c8c6438db600e4c3d2b7bf",
+          "role": "scene_spec_constraint"
+        },
+        {
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "role": "related_deleted_context_not_causal"
+        },
+        {
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "role": "related_deleted_context_not_causal"
+        }
+      ]
+    },
+    {
+      "issue_id": "q04:candidate_02:continuity_defects:1",
+      "query_index": 4,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_02",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "婚礼明确发生在周六下午，周野父亲却在同一场景中说“天快亮了”，时段突兀。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S16:U3",
+          "source_id": "golden:S16:U3",
+          "text_hash": "60ddc2e12506cd424c8172789bc99750a311ce65e69b866ab49ecaa62858f465",
+          "section": 16,
+          "subsection": 3,
+          "estimated_tokens": 1140
+        },
+        {
+          "item_id": "recent:golden:S17:U1",
+          "source_id": "golden:S17:U1",
+          "text_hash": "c6630878937e68a9e5ce4e6f5a48e6ae99f28d2fa3b1f92a4b4a83d07a9e0344",
+          "section": 17,
+          "subsection": 1,
+          "estimated_tokens": 2185
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "high",
+      "cluster_id": "q04:scene_spec:time_of_day",
+      "rationale": "The abrupt time-of-day statement is unrelated to any removed recent-original dependency.",
+      "source_id": "r3-output:q04:candidate_02",
+      "source_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q04:candidate_02",
+          "text_hash": "8946b13f03b4eb8d48469356a71b7d62a242837c98a988268e4a29af9c4a9eda",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q06:candidate_02:continuity_defects:1",
+      "query_index": 6,
+      "arm": "legacy_full",
+      "candidate_id": "candidate_02",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "由天然酵母喂养五天进一步想象“周一早上，他站在案板前”这一具体行动，虽属人物推想，但对未知状态写得过实。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "medium",
+      "cluster_id": "q06:legacy:over_specific_inference",
+      "rationale": "The issue occurs in legacy_full and is an over-specific imagined action, not a Broker deletion effect.",
+      "source_id": "r3-output:q06:candidate_02",
+      "source_hash": "cecc2d8a28a2b137769e85fea75465d02b952c740eba1d8eae7dbdefb5bb2ff2",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q06:candidate_02",
+          "text_hash": "cecc2d8a28a2b137769e85fea75465d02b952c740eba1d8eae7dbdefb5bb2ff2",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q07:candidate_01:hard_violations:1",
+      "query_index": 7,
+      "arm": "legacy_full",
+      "candidate_id": "candidate_01",
+      "defect_type": "hard_violations",
+      "defect_evidence": "虽然删除了内容，但把直面周野推迟到未来的下个周六，没有在当前小节完成。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q07:legacy_full:deferred_required_action",
+      "rationale": "The frozen mandatory event requires deletion and directly facing Zhou Ye in the current subsection; the candidate defers or relocates that action.",
+      "source_id": "r3-output:q07:candidate_01",
+      "source_hash": "5ce5c5a86300fc966184c9c1b556a0610ed5604f98c3bc1b23b9bde4fdf83b72",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q07:candidate_01",
+          "text_hash": "5ce5c5a86300fc966184c9c1b556a0610ed5604f98c3bc1b23b9bde4fdf83b72",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q07",
+          "text_hash": "fb317d8ad26112eb19d2c5e910426fe437cfb0974eb9ad5101afd93bcfa8a796",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q07:candidate_01:event_order_defects:1",
+      "query_index": 7,
+      "arm": "legacy_full",
+      "candidate_id": "candidate_01",
+      "defect_type": "event_order_defects",
+      "defect_evidence": "结尾明确写“下个周六”才会下楼并“然后直面他”，关键事件被推迟。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q07:legacy_full:deferred_required_action",
+      "rationale": "The frozen mandatory event requires deletion and directly facing Zhou Ye in the current subsection; the candidate defers or relocates that action.",
+      "source_id": "r3-output:q07:candidate_01",
+      "source_hash": "5ce5c5a86300fc966184c9c1b556a0610ed5604f98c3bc1b23b9bde4fdf83b72",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q07:candidate_01",
+          "text_hash": "5ce5c5a86300fc966184c9c1b556a0610ed5604f98c3bc1b23b9bde4fdf83b72",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q07",
+          "text_hash": "fb317d8ad26112eb19d2c5e910426fe437cfb0974eb9ad5101afd93bcfa8a796",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q07:candidate_02:hard_violations:1",
+      "query_index": 7,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_02",
+      "defect_type": "hard_violations",
+      "defect_evidence": "公开帖子在五天前已删除，本小节只删除草稿备份，未在当前行动中完成所要求的删帖。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S5:U3",
+          "source_id": "golden:S5:U3",
+          "text_hash": "ef04b0b4f87f5bc1e8e6c495badfae07545b63a2f2d305015313e61580632bc0",
+          "section": 5,
+          "subsection": 3,
+          "estimated_tokens": 1432
+        },
+        {
+          "item_id": "recent:golden:S6:U1",
+          "source_id": "golden:S6:U1",
+          "text_hash": "e4a00d110860a00dfb50d6be4fb73865d9ffa7714a181cd0e067651974f33817",
+          "section": 6,
+          "subsection": 1,
+          "estimated_tokens": 1608
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q07:budgeted_broker:deferred_required_action",
+      "rationale": "The frozen mandatory event requires deletion and directly facing Zhou Ye in the current subsection; the candidate defers or relocates that action.",
+      "source_id": "r3-output:q07:candidate_02",
+      "source_hash": "c6d7f77aab49cf9ef19be2e29ea0d6a326b02b63d8cd67e9e8c34060f8d632a1",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q07:candidate_02",
+          "text_hash": "c6d7f77aab49cf9ef19be2e29ea0d6a326b02b63d8cd67e9e8c34060f8d632a1",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q07",
+          "text_hash": "fb317d8ad26112eb19d2c5e910426fe437cfb0974eb9ad5101afd93bcfa8a796",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q07:candidate_02:event_order_defects:1",
+      "query_index": 7,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_02",
+      "defect_type": "event_order_defects",
+      "defect_evidence": "把原帖删除放在五天前的既往事件，当前小节删除的是草稿备份。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S5:U3",
+          "source_id": "golden:S5:U3",
+          "text_hash": "ef04b0b4f87f5bc1e8e6c495badfae07545b63a2f2d305015313e61580632bc0",
+          "section": 5,
+          "subsection": 3,
+          "estimated_tokens": 1432
+        },
+        {
+          "item_id": "recent:golden:S6:U1",
+          "source_id": "golden:S6:U1",
+          "text_hash": "e4a00d110860a00dfb50d6be4fb73865d9ffa7714a181cd0e067651974f33817",
+          "section": 6,
+          "subsection": 1,
+          "estimated_tokens": 1608
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q07:budgeted_broker:deferred_required_action",
+      "rationale": "The frozen mandatory event requires deletion and directly facing Zhou Ye in the current subsection; the candidate defers or relocates that action.",
+      "source_id": "r3-output:q07:candidate_02",
+      "source_hash": "c6d7f77aab49cf9ef19be2e29ea0d6a326b02b63d8cd67e9e8c34060f8d632a1",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q07:candidate_02",
+          "text_hash": "c6d7f77aab49cf9ef19be2e29ea0d6a326b02b63d8cd67e9e8c34060f8d632a1",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q07",
+          "text_hash": "fb317d8ad26112eb19d2c5e910426fe437cfb0974eb9ad5101afd93bcfa8a796",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q07:candidate_03:continuity_defects:1",
+      "query_index": 7,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_03",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "猫在街边及面包店场景中无交代地出现并蹭林晚脚踝，空间衔接不清。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S5:U3",
+          "source_id": "golden:S5:U3",
+          "text_hash": "ef04b0b4f87f5bc1e8e6c495badfae07545b63a2f2d305015313e61580632bc0",
+          "section": 5,
+          "subsection": 3,
+          "estimated_tokens": 1432
+        },
+        {
+          "item_id": "recent:golden:S6:U1",
+          "source_id": "golden:S6:U1",
+          "text_hash": "e4a00d110860a00dfb50d6be4fb73865d9ffa7714a181cd0e067651974f33817",
+          "section": 6,
+          "subsection": 1,
+          "estimated_tokens": 1608
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "medium",
+      "cluster_id": "q07:scene_spec:local_continuity:0",
+      "rationale": "SceneSpec correctly constrained the required action and date, but does not govern the candidate's local cat or apron staging detail.",
+      "source_id": "r3-output:q07:candidate_03",
+      "source_hash": "f03b83dce68f86702bf00c3125f0a9c468ef59297786d8647309e0e820c7fbfc",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q07:candidate_03",
+          "text_hash": "f03b83dce68f86702bf00c3125f0a9c468ef59297786d8647309e0e820c7fbfc",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q07:candidate_03:continuity_defects:2",
+      "query_index": 7,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_03",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "林晚被写成从“围裙口袋”取物，但本段未交代她穿上围裙。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S5:U3",
+          "source_id": "golden:S5:U3",
+          "text_hash": "ef04b0b4f87f5bc1e8e6c495badfae07545b63a2f2d305015313e61580632bc0",
+          "section": 5,
+          "subsection": 3,
+          "estimated_tokens": 1432
+        },
+        {
+          "item_id": "recent:golden:S6:U1",
+          "source_id": "golden:S6:U1",
+          "text_hash": "e4a00d110860a00dfb50d6be4fb73865d9ffa7714a181cd0e067651974f33817",
+          "section": 6,
+          "subsection": 1,
+          "estimated_tokens": 1608
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "medium",
+      "cluster_id": "q07:scene_spec:local_continuity:1",
+      "rationale": "SceneSpec correctly constrained the required action and date, but does not govern the candidate's local cat or apron staging detail.",
+      "source_id": "r3-output:q07:candidate_03",
+      "source_hash": "f03b83dce68f86702bf00c3125f0a9c468ef59297786d8647309e0e820c7fbfc",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q07:candidate_03",
+          "text_hash": "f03b83dce68f86702bf00c3125f0a9c468ef59297786d8647309e0e820c7fbfc",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_01:hard_violations:1",
+      "query_index": 8,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_01",
+      "defect_type": "hard_violations",
+      "defect_evidence": "越过本节边界，写了向周野提问、次日再次到店、当店员及发布切片内容。",
+      "scene_spec_explicitly_covers_constraint": true,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q08:scene_spec:crossed_explicit_boundary",
+      "rationale": "SceneSpec explicitly stops at the sharing-boundary reflection and marks questioning, deletion, store participation, and publication as unconfirmed future events; the candidate continues anyway.",
+      "source_id": "r3-output:q08:candidate_01",
+      "source_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_01",
+          "text_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "frozen-outline:q08",
+          "text_hash": "9cba7e07155e6d89d2c3d0fb04c2869b3661dd8437ec70873598a8ab7b097930",
+          "role": "scene_spec_constraint"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_01:continuity_defects:1",
+      "query_index": 8,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_01",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "称文件夹里是三周照片，随后列出第一周至第四周。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "missing_scene_spec_fact",
+      "confidence": "medium",
+      "cluster_id": "q08:scene_spec:three_vs_four_weeks",
+      "rationale": "SceneSpec does not resolve the internally inconsistent three-versus-four-week reference count, so it cannot protect this local continuity fact.",
+      "source_id": "r3-output:q08:candidate_01",
+      "source_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_01",
+          "text_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "frozen-outline:q08",
+          "text_hash": "9cba7e07155e6d89d2c3d0fb04c2869b3661dd8437ec70873598a8ab7b097930",
+          "role": "scene_spec_constraint"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_01:event_order_defects:1",
+      "query_index": 8,
+      "arm": "broker_scene_spec",
+      "candidate_id": "candidate_01",
+      "defect_type": "event_order_defects",
+      "defect_evidence": "在微咸面包引发边界反思后继续推进到征询许可、再次到店和实际发布。",
+      "scene_spec_explicitly_covers_constraint": true,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": true,
+      "attribution": "writer_instruction_noncompliance",
+      "confidence": "high",
+      "cluster_id": "q08:scene_spec:crossed_explicit_boundary",
+      "rationale": "SceneSpec explicitly stops at the sharing-boundary reflection and marks questioning, deletion, store participation, and publication as unconfirmed future events; the candidate continues anyway.",
+      "source_id": "r3-output:q08:candidate_01",
+      "source_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_01",
+          "text_hash": "d63e5788ece4e2e9280d823a2edf359ed5de1d5374a7d46efde468cb74f9ec3e",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "frozen-outline:q08",
+          "text_hash": "9cba7e07155e6d89d2c3d0fb04c2869b3661dd8437ec70873598a8ab7b097930",
+          "role": "scene_spec_constraint"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_02:hard_violations:1",
+      "query_index": 8,
+      "arm": "legacy_full",
+      "candidate_id": "candidate_02",
+      "defect_type": "hard_violations",
+      "defect_evidence": "越过本节边界，写了删帖、再次到店、作为店员参与、提出第三个问题并拍摄。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "writing_request_boundary_ambiguity",
+      "confidence": "high",
+      "cluster_id": "q08:legacy_full:crossed_subsection_boundary",
+      "rationale": "The base request names the current reflection goal but does not express an explicit negative stop contract; nearby context contains later events that the Writer continues into.",
+      "source_id": "r3-output:q08:candidate_02",
+      "source_hash": "c76658f045e3ea90ada452e5c9fb34620ee8cb761bd6b7c6c8bcd39e5d147dd7",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_02",
+          "text_hash": "c76658f045e3ea90ada452e5c9fb34620ee8cb761bd6b7c6c8bcd39e5d147dd7",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q08",
+          "text_hash": "e82127a4733e3361797d0db5dafe4fb11ce1df012dd7a01dc766bc2d212f8c34",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_02:event_order_defects:1",
+      "query_index": 8,
+      "arm": "legacy_full",
+      "candidate_id": "candidate_02",
+      "defect_type": "event_order_defects",
+      "defect_evidence": "在反思后继续推进到删帖、第三个问题、店内参与及下周计划。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "writing_request_boundary_ambiguity",
+      "confidence": "high",
+      "cluster_id": "q08:legacy_full:crossed_subsection_boundary",
+      "rationale": "The base request names the current reflection goal but does not express an explicit negative stop contract; nearby context contains later events that the Writer continues into.",
+      "source_id": "r3-output:q08:candidate_02",
+      "source_hash": "c76658f045e3ea90ada452e5c9fb34620ee8cb761bd6b7c6c8bcd39e5d147dd7",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_02",
+          "text_hash": "c76658f045e3ea90ada452e5c9fb34620ee8cb761bd6b7c6c8bcd39e5d147dd7",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q08",
+          "text_hash": "e82127a4733e3361797d0db5dafe4fb11ce1df012dd7a01dc766bc2d212f8c34",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_03:hard_violations:1",
+      "query_index": 8,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_03",
+      "defect_type": "hard_violations",
+      "defect_evidence": "提前写出“周六来当店员。七点到。别带相机”及明天到店的安排，越过只写反思的截止点。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "writing_request_boundary_ambiguity",
+      "confidence": "high",
+      "cluster_id": "q08:budgeted_broker:crossed_subsection_boundary",
+      "rationale": "The base request names the current reflection goal but does not express an explicit negative stop contract; nearby context contains later events that the Writer continues into.",
+      "source_id": "r3-output:q08:candidate_03",
+      "source_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_03",
+          "text_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q08",
+          "text_hash": "e82127a4733e3361797d0db5dafe4fb11ce1df012dd7a01dc766bc2d212f8c34",
+          "role": "current_writing_requirement"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_03:continuity_defects:1",
+      "query_index": 8,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_03",
+      "defect_type": "continuity_defects",
+      "defect_evidence": "称文件夹里是三周照片，随后列出第一周至第四周。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "unrelated_generation_variance",
+      "confidence": "high",
+      "cluster_id": "q08:budgeted_broker:three_vs_four_weeks",
+      "rationale": "The three-versus-four-week inconsistency is already present in supplied reference material and is not caused by dropping an older recent original.",
+      "source_id": "r3-output:q08:candidate_03",
+      "source_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_03",
+          "text_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+          "role": "generated_candidate_hash"
+        }
+      ]
+    },
+    {
+      "issue_id": "q08:candidate_03:event_order_defects:1",
+      "query_index": 8,
+      "arm": "budgeted_broker",
+      "candidate_id": "candidate_03",
+      "defect_type": "event_order_defects",
+      "defect_evidence": "虽未实际再次到店，但已预告并确认次日以店员身份到店。",
+      "scene_spec_explicitly_covers_constraint": false,
+      "legacy_context_contains_corresponding_evidence": false,
+      "broker_dropped_recent_items": [
+        {
+          "item_id": "recent:golden:S3:U3",
+          "source_id": "golden:S3:U3",
+          "text_hash": "3a68ac8a6766365127768b5c9a69711753eace1db300b94e9932b583d89383f6",
+          "section": 3,
+          "subsection": 3,
+          "estimated_tokens": 2702
+        },
+        {
+          "item_id": "recent:golden:S4:U1",
+          "source_id": "golden:S4:U1",
+          "text_hash": "64da72ccd9c71a121b8cb9d48b9288f9896d8fbbbae572cc682e5307f40340fd",
+          "section": 4,
+          "subsection": 1,
+          "estimated_tokens": 1427
+        }
+      ],
+      "broker_dropped_context_dependency": false,
+      "writer_violated_explicit_instruction": false,
+      "attribution": "writing_request_boundary_ambiguity",
+      "confidence": "high",
+      "cluster_id": "q08:budgeted_broker:crossed_subsection_boundary",
+      "rationale": "The base request names the current reflection goal but does not express an explicit negative stop contract; nearby context contains later events that the Writer continues into.",
+      "source_id": "r3-output:q08:candidate_03",
+      "source_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+      "source_refs": [
+        {
+          "source_id": "r3-output:q08:candidate_03",
+          "text_hash": "435581f2cbda82ded84643dd8d75e867ce8b20df3bb2113db439209484019ffa",
+          "role": "generated_candidate_hash"
+        },
+        {
+          "source_id": "rag-annotation:q08",
+          "text_hash": "e82127a4733e3361797d0db5dafe4fb11ce1df012dd7a01dc766bc2d212f8c34",
+          "role": "current_writing_requirement"
+        }
+      ]
+    }
+  ],
+  "writer_responsibility_map": [
+    {
+      "responsibility": "fact_recall",
+      "writer_role": "consume_only",
+      "primary_owner": "Context Broker",
+      "secondary_controls": [
+        "Scene Planner",
+        "Validator"
+      ]
+    },
+    {
+      "responsibility": "continuity_state_recovery",
+      "writer_role": "consume_only",
+      "primary_owner": "Context Broker",
+      "secondary_controls": [
+        "Scene Planner",
+        "Validator"
+      ]
+    },
+    {
+      "responsibility": "scene_planning",
+      "writer_role": "execute_plan",
+      "primary_owner": "Scene Planner",
+      "secondary_controls": [
+        "Validator"
+      ]
+    },
+    {
+      "responsibility": "event_order_control",
+      "writer_role": "realize_order",
+      "primary_owner": "Scene Planner",
+      "secondary_controls": [
+        "Validator"
+      ]
+    },
+    {
+      "responsibility": "subsection_boundary_control",
+      "writer_role": "stop_at_boundary",
+      "primary_owner": "Validator",
+      "secondary_controls": [
+        "Scene Planner"
+      ]
+    },
+    {
+      "responsibility": "character_relationship_compliance",
+      "writer_role": "honor_constraints",
+      "primary_owner": "Validator",
+      "secondary_controls": [
+        "Context Broker",
+        "Scene Planner"
+      ]
+    },
+    {
+      "responsibility": "prose_generation",
+      "writer_role": "primary",
+      "primary_owner": "Writer",
+      "secondary_controls": []
+    },
+    {
+      "responsibility": "style_control",
+      "writer_role": "primary",
+      "primary_owner": "Writer",
+      "secondary_controls": [
+        "Validator"
+      ]
+    },
+    {
+      "responsibility": "self_check",
+      "writer_role": "none",
+      "primary_owner": "Validator",
+      "secondary_controls": [
+        "Repair"
+      ]
+    }
+  ],
+  "decisions": {
+    "token_reduction_directly_caused_q4_or_q8_regression": "not_established",
+    "q4_reason": "Reduced-context arms correlate with Q4 defects, but the SceneSpec arm violated an explicit unknown-relative guard; the deleted sections do not deterministically prohibit all observed inventions or arithmetic/timing errors.",
+    "q8_reason": "All three arms crossed the boundary, so token reduction is not a necessary cause of Q8 failure.",
+    "scene_spec_failure_mode": "primarily_writer_instruction_noncompliance_with_one_missing_local_fact",
+    "keep_budgeted_context_candidate": true,
+    "budgeted_context_scope": "shadow_only_approximately_9k_estimated_tokens",
+    "next_priority": "boundary_validator",
+    "next_priority_reason": "Validate explicit subsection stops and unsupported-fact violations before testing Repair; do not restore all older originals.",
+    "context_restoration_priority": "not_supported_by_current_evidence",
+    "repair_priority": "after_validator_detection_is_measured",
+    "production_decision": "remain_legacy_full",
+    "phase5_phase6": "paused",
+    "sample_limit": "Four scenes support a targeted next experiment, not a general production-quality claim."
+  },
+  "verification": {
+    "unit": {
+      "passed": 218,
+      "failed": 0
+    },
+    "integration": {
+      "passed": 8,
+      "failed": 0
+    },
+    "quality": {
+      "passed": 76,
+      "failed": 0
+    },
+    "compileall": "passed"
+  }
+}
