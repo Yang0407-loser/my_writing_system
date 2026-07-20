@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "phase": "Phase 4R Batch R1",
+  "purpose": "behavior-preserving PromptBuilder boundary audit",
+  "writer_generation_calls": 0,
+  "llm_calls": 0,
+  "query_count": 10,
+  "production_behavior_changed": false,
+  "rules_snapshot": {
+    "available": true,
+    "count": 9,
+    "database_sha256": "014d70f1190e49b028544534cb8d50b604be7b1764f5d37d078c1646ed07cba1"
+  },
+  "samples": [
+    {
+      "query_index": 1,
+      "content_hash": "0c68beb08a654e7c2a247bcc5035e873edae651008b182d921726a35e0ca1f2b",
+      "expected_content_hash": "0c68beb08a654e7c2a247bcc5035e873edae651008b182d921726a35e0ca1f2b",
+      "content_hash_unchanged": true,
+      "messages_hash": "a27e946b5666d7ce96c864b3f8b4926a890d7c7d4b6c5fe23e3b11474996788f",
+      "expected_messages_hash": "a27e946b5666d7ce96c864b3f8b4926a890d7c7d4b6c5fe23e3b11474996788f",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 12289,
+      "source_manifest_count": 11
+    },
+    {
+      "query_index": 2,
+      "content_hash": "80548d383bc864b1c2508cb581b11a46ad43eb98e74c363105c54063c56b27c0",
+      "expected_content_hash": "80548d383bc864b1c2508cb581b11a46ad43eb98e74c363105c54063c56b27c0",
+      "content_hash_unchanged": true,
+      "messages_hash": "c1fc080ffa238c9b971b0029d5a5b7c878299b3a3a0d2ae46a997868c18f4414",
+      "expected_messages_hash": "c1fc080ffa238c9b971b0029d5a5b7c878299b3a3a0d2ae46a997868c18f4414",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 13683,
+      "source_manifest_count": 18
+    },
+    {
+      "query_index": 3,
+      "content_hash": "55640ea561eab4a000a1f9bd124a23ced8498cb12f7cb016e82984378aa1cde0",
+      "expected_content_hash": "55640ea561eab4a000a1f9bd124a23ced8498cb12f7cb016e82984378aa1cde0",
+      "content_hash_unchanged": true,
+      "messages_hash": "6c0276385be9c830c07e1dd22dcf714818b3df5abe2593ed21d41594616405db",
+      "expected_messages_hash": "6c0276385be9c830c07e1dd22dcf714818b3df5abe2593ed21d41594616405db",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 10511,
+      "source_manifest_count": 11
+    },
+    {
+      "query_index": 4,
+      "content_hash": "9c76f911bf6a284c3cb57baa19a0ca2ab86eff254418c9b1ad587f5217297d15",
+      "expected_content_hash": "9c76f911bf6a284c3cb57baa19a0ca2ab86eff254418c9b1ad587f5217297d15",
+      "content_hash_unchanged": true,
+      "messages_hash": "7e90177039029a302c4ac1e170092e7b8577b052e26aaa0310e34a791e8d1c3e",
+      "expected_messages_hash": "7e90177039029a302c4ac1e170092e7b8577b052e26aaa0310e34a791e8d1c3e",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 13851,
+      "source_manifest_count": 18
+    },
+    {
+      "query_index": 5,
+      "content_hash": "72a0f2c40ec7c3a7a6d86147d4650669e7dec7e0cadada05188a134c6131fd84",
+      "expected_content_hash": "72a0f2c40ec7c3a7a6d86147d4650669e7dec7e0cadada05188a134c6131fd84",
+      "content_hash_unchanged": true,
+      "messages_hash": "22e1af23003c2579611119b9a3ee64698991c5c92512feb3374c05da03942a8b",
+      "expected_messages_hash": "22e1af23003c2579611119b9a3ee64698991c5c92512feb3374c05da03942a8b",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 11893,
+      "source_manifest_count": 22
+    },
+    {
+      "query_index": 6,
+      "content_hash": "f8e00c6df22c67f04965da6f28d5e8266817ecaa26c08f2f3ceb914c1665aa41",
+      "expected_content_hash": "f8e00c6df22c67f04965da6f28d5e8266817ecaa26c08f2f3ceb914c1665aa41",
+      "content_hash_unchanged": true,
+      "messages_hash": "cbc8e8e2cd9af29a71fc2ccccfa67c873a27b9d14538be1591e0b11973d07ef7",
+      "expected_messages_hash": "cbc8e8e2cd9af29a71fc2ccccfa67c873a27b9d14538be1591e0b11973d07ef7",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 11768,
+      "source_manifest_count": 20
+    },
+    {
+      "query_index": 7,
+      "content_hash": "ae897837284dc5f03213ba90892b619d004504b618d3e5ae68c90514e8beeaae",
+      "expected_content_hash": "ae897837284dc5f03213ba90892b619d004504b618d3e5ae68c90514e8beeaae",
+      "content_hash_unchanged": true,
+      "messages_hash": "d04f58e66a35ff38dc4ab096ee1b2dfa3abb44ec4a91411d03a8d0e98aedeca7",
+      "expected_messages_hash": "d04f58e66a35ff38dc4ab096ee1b2dfa3abb44ec4a91411d03a8d0e98aedeca7",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 11559,
+      "source_manifest_count": 21
+    },
+    {
+      "query_index": 8,
+      "content_hash": "da4a16f878ec245c0c0c210f4701f04a3550284eae7c1e70fea0f0c1c33aba11",
+      "expected_content_hash": "da4a16f878ec245c0c0c210f4701f04a3550284eae7c1e70fea0f0c1c33aba11",
+      "content_hash_unchanged": true,
+      "messages_hash": "a55893071f64fac4e83e7baf64e6287d7d14cc2ca62aec4cab7aef85429b23e6",
+      "expected_messages_hash": "a55893071f64fac4e83e7baf64e6287d7d14cc2ca62aec4cab7aef85429b23e6",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 12537,
+      "source_manifest_count": 19
+    },
+    {
+      "query_index": 9,
+      "content_hash": "c5cb03ba840e8791163a32239248e5849f13a0b2dc320084f4625f486875f36b",
+      "expected_content_hash": "c5cb03ba840e8791163a32239248e5849f13a0b2dc320084f4625f486875f36b",
+      "content_hash_unchanged": true,
+      "messages_hash": "51e7c77d1df6d63386853c53fd551c9405904b2371ab3fbdc3498b294ff45a4a",
+      "expected_messages_hash": "51e7c77d1df6d63386853c53fd551c9405904b2371ab3fbdc3498b294ff45a4a",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 14480,
+      "source_manifest_count": 18
+    },
+    {
+      "query_index": 10,
+      "content_hash": "57b5f8afdf2d8466344b86d15571e704b36632d433c7a52778c6e279da4adbe2",
+      "expected_content_hash": "57b5f8afdf2d8466344b86d15571e704b36632d433c7a52778c6e279da4adbe2",
+      "content_hash_unchanged": true,
+      "messages_hash": "55b12f2575537d1ccd8eca6acaeecb06dcbd2fb3da19cfb5156a7c0bb88ff0b6",
+      "expected_messages_hash": "55b12f2575537d1ccd8eca6acaeecb06dcbd2fb3da19cfb5156a7c0bb88ff0b6",
+      "messages_hash_unchanged": true,
+      "messages_equal_legacy_runtime": true,
+      "estimated_tokens": 11493,
+      "source_manifest_count": 18
+    }
+  ],
+  "acceptance": {
+    "all_ten_content_hashes_unchanged": true,
+    "all_ten_messages_hashes_unchanged": true,
+    "all_ten_messages_equal_legacy_runtime": true,
+    "all_r1_hash_gates": true
+  }
+}

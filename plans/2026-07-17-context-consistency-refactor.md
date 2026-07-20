@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，不是架构失败，生产继续 `legacy_full` 并保留 ContextBroker、ContinuityRiskGuard 与全部实验记录；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已启动纯离线风格可观测性基线，不修改 Writer 或 Prompt
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R Batch R1 已完成 Writer 写作内环的行为等价边界提取，尚未接入 SceneSpec 或 ContextBroker；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -309,6 +309,37 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 角色违反率和风格偏差不得恶化；
 - 能从 task 日志还原 Writer 实际看到的完整上下文。
 
+## Phase 4R：Writer 职责拆分
+
+> 当前状态：Batch R1 已完成，等待用户授权 R2。Phase 4R 改变的是 Writer 内部职责边界，不代表 Phase 4 Context Broker 已恢复或晋级；生产继续使用 `legacy_full`。
+
+### 核心假设
+
+先把当前单体写作内环拆成可验证边界，再单独验证短小、可追溯的 SceneSpec 是否能降低 Writer 的事实推理负担。不得把职责拆分回归与上下文策略效果混在同一批次归因。
+
+### 目标结构
+
+`Coordinator → SubsectionPipeline → StoryStateView → SceneCompiler → ContextBroker → PromptBuilder → ProseWriter → SceneValidator → StateCommitter`
+
+- R1 只提取 `PromptBuilder`、`GenerationController`、`StateCommitter` 和 `SubsectionPipeline`；Writer 保持兼容 facade。
+- R2 才允许实现只读 `StoryStateView` 和 shadow-only `SceneSpec`，不新建第二套永久事实库。
+- R3 才允许比较 legacy、budgeted Broker 和 Broker+SceneSpec 的生成质量。
+- Validation 仅允许单任务有限 canary；每批必须单独授权。
+
+### 存储边界
+
+- EventGraph 当前只可靠承载 `arc_milestone`，不得描述为全部故事事实的权威库。
+- WorldState、规则、关系、伏笔、地图、物品、支线、经历、handover、ContextManager 和 Chroma 保持现有所有权。
+- R2 的 StoryStateView 只做只读投影和来源追溯，不迁移数据库，不静默解决冲突。
+- ContextManager 保持最近 3 小节原文＋交接笔记，不恢复 `running_summary`。
+
+### 批次门槛
+
+- R1：10/10 Writer messages hash 不变；公开接口、生成参数、状态写入顺序和 checkpoint 兼容；全量测试零失败。
+- R2：SceneSpec 仅 shadow，字段来源可追溯率 100%，unknown 不得升级为事实，平均 200～500 estimated token，生产 messages hash 不变。
+- R3：Broker+SceneSpec 相对 legacy 输入至少下降 20%，连续性不差于 legacy，新增 hard/关系违规为 0。
+- 任一批完成后停止；不得自动开始下一批、Phase 5 或 Phase 6。
+
 ## Phase 5：Writer 受控工具调用
 
 > 当前状态：暂停。前置门槛是 Phase 4 Broker 策略必须已固定，并通过独立生成质量验证或有限 canary。未满足时 Phase 5 保持暂停，禁止把“Broker 是否删错信息”和“Writer 是否正确决定调用工具”两个未验证假设叠加在同一实验中。
@@ -577,3 +608,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4 Batch 3 连续性风险保护 shadow | 在冻结B选择上新增确定性 ContinuityRiskGuard；遇到时间锚点、持久状态、未完成链、当前唯一来源、交接引用或无法排除风险时恢复完整旧小节；按冻结source ID只读取回legacy RAG，不重新查询、不调用LLM | A/B/C平均输入12406.4/8390.4/11871.6 token；C仅下降4.31%，10/10软预算溢出；19/19较早recent全部被保护；Q4/Q6/Q7/Q8问题小节均识别；P0/P1/P2、hard/关系、紧邻原文、交接、RAG、人工证据4/4、后期必需项、追溯及生产hash均100%；unit=185/0、integration=8/0、quality=57/0、compileall通过 | token主门槛失败，只证明“任一风险即恢复全文”的保守Guard不可用；19项保护尚非实测退化，不能关闭全部整项选择路线或直接跳到节级摘要；不切生产、不开始Phase 5 |
 | 2026-07-20 | Phase 4 Batch 3.5 Guard 实测复核 | 原计划新跑Q4/Q6/Q7/Q8四次B生成；用户明确授权后，租户策略仍禁止向DeepSeek外发私有正文/规则/RAG/Prompt，故未绕过；改为复用Batch 2已完成且与Batch 3 B messages hash 4/4一致的四次真实Writer输出和A对照，只审计缺陷差值，不提交正文 | Q4新增世界事实错误、Q6新增连续状态错误、Q7新增日期顺序错误；Q8因果/越界缺陷A/B各1，不是Broker净退化；4场景中3个实测净退化、1个共同缺陷；目标完成、hard和关系违规均未新增；A/B还差异于部分world facts/软规则/风格项，故19个理论保护项及具体责任来源均无法据此归因；unit=185/0、integration=8/0、quality=60/0、compileall通过 | 撤销“19/19均必要”和“整项路线已失败”的过强结论；保持shadow与legacy生产，不开始Phase5；下一步须在允许真实生成的环境中对全部被删ContextItem做最小恢复验证，失败后才考虑可追溯节级摘要 |
 | 2026-07-20 | Phase 8 Batch 1 确定性风格可观测性 | 将 Phase 4 标记为 `paused_by_generation_evaluation_infrastructure`，保留 legacy_full、Broker/Guard及实验记录并暂停Phase5/6；复用固定SHA黄金故事，按18章/52小节离线统计对话、句长、段长、重复、机械起句、感官/心理词及连续结构；不调用LLM、不改Writer/Prompt | 全书58963可见字符、对话12.30%、机械时间/序数/数字起句7.79%、感官词22.54/千字、心理说明词2.48/千字、完全重复句组124、重复段组5；第8章感官词密度偏高，第10章机械起句偏高；`emotion_intensity`和情绪层次不做伪自动评分；unit=189/0、integration=8/0、quality=63/0、compileall通过 | 仅建立基线、报告和回归测试；异常是分布信号而非自动质量判决；旧50维字段保持删除，生产行为不变，不启动Phase5/6或正文重写 |
+| 2026-07-20 | Phase 4R Batch R1 Writer 职责边界提取 | 新增 typed artifacts、纯 PromptBuilder、GenerationController、StateCommitter 和 SubsectionPipeline；Writer.run/revise_subsection 保持兼容；Prompt、生成参数、RAG、ContextManager和存储模型不变；不调用 Writer LLM | 10条冻结场景 content/messages/runtime 三重 hash 均10/10不变；模拟小节 facade、生成重试参数、提交顺序、部分失败、幂等、checkpoint和依赖边界均有测试；修改前 unit=192/integration=8/quality=63，修改后 unit=208/integration=8/quality=65，compileall通过 | R1门槛全部通过；生产仍为legacy_full，未接入ContextBroker/SceneSpec；旧生成实现仅作为R1测试oracle暂留，R2前应删除；停止并等待R2明确授权，不开始Phase5/6 |

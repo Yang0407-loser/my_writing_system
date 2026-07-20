@@ -2,19 +2,16 @@ import re
 import logging
 import time
 import threading
+import hashlib
 from typing import Callable
 from .base import BaseAgent
 from .character_manager import CharacterManager
 from .character_formatter import CharacterFormatter
 from .context_manager import ContextManager
 from ..utils.prompt_templates import (
-    WRITING_PROMPT,
-    WRITING_SECTION1_PROMPT,
-    WRITER_SYSTEM_PROMPT,
     TARGETED_REVISE_PROMPT,
     HANDOVER_EXTRACTION_PROMPT,
 )
-from ..utils.text_chunker import chunk_text
 from ..utils.word_counter import count_chinese_chars
 from ..utils.style_brief import StyleSummarizer
 from ..utils.json_parser import parse_json
@@ -24,6 +21,14 @@ from ..narrative_event import EventGraph, rank_and_fill, format_events_for_promp
 from ..rule_checks import pre_check, post_check
 from ..retrieval_observability import measure_retrieval_usage
 from ..retrieval_pipeline import QueryPlanner, ShadowRetriever
+from ..writing import (
+    GenerationArtifact,
+    GenerationController,
+    PromptBuilder,
+    StateCommitter,
+    SubsectionInput,
+    SubsectionPipeline,
+)
 from .. import foreshadowing_store
 from .. import rule_store
 
@@ -127,6 +132,7 @@ class Writer(BaseAgent):
         set_cost_label("writer")
 
         cm = ContextManager(self.llm)
+        state_committer = StateCommitter()
         if resume_context:
             cm.deserialize(resume_context)
         full_draft = ""
@@ -621,47 +627,39 @@ class Writer(BaseAgent):
                     if focus:
                         beat_reminder += f" 本节的叙事重心是: {focus}。"
 
-                # --- 选择 prompt ---
-                template = WRITING_SECTION1_PROMPT if (section_num == 1 and sub_num == 1) else WRITING_PROMPT
-
-                prompt = template.format(
-                    mandatory_events=mandatory_events,
-                    character_constraints=self._build_character_constraints(characters),
-                    style_constraints=style_constraints,
-                    progress_context=progress_context,
-                    rules_context=rules_ctx if rules_ctx else "",
-                    topic=topic,
-                    section=section_num,
-                    subsection=sub_num,
-                    subsection_title=sub_title,
-                    section_outline=section_outline,
-                    key_points="、".join(key_points),
-                    sub_description=sub_desc if sub_desc else "（按大意自由发挥）",
-                    world_setting=world_setting if world_setting.strip() else "",
-                    world_facts=world_facts_str,
-                    world_contradictions=world_contradictions_str,
-                    style_structured=style_structured,
-                    narrative_density_instruction=density_instruction,
-                    ranked_events=ranked_events_str,
-                    emotion_intensity=style.get("emotion_intensity", 50) if isinstance(style, dict) else 50,
-                    sentence_preference=style.get("sentence_preference", "balanced") if isinstance(style, dict) else "balanced",
-                    sensory_density=style.get("sensory_density", "medium") if isinstance(style, dict) else "medium",
-                    dialogue_ratio=int((style.get("dialogue_ratio", 0.2) if isinstance(style, dict) else 0.2) * 100),
-                    character_context=character_context,
-                    arc_context=arc_context,
-                    handover_context=handover_context,
-                    summary_context=summary_context if summary_context else "（故事开头）",
-                    retrieved_context=retrieved_context if retrieved_context else "（无相关段落）",
-                    target_words=target_words,
-                    beat_reminder=beat_reminder,
-                    style_examples=(reference_passages + "\n" + style_examples).strip(),
-                )
-
-                system_msg = WRITER_SYSTEM_PROMPT
-                messages = [
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": prompt},
-                ]
+                # --- 确定性 Prompt 边界（R1：字段和值保持原样） ---
+                prompt_values = {
+                    "mandatory_events": mandatory_events,
+                    "character_constraints": self._build_character_constraints(characters),
+                    "style_constraints": style_constraints,
+                    "progress_context": progress_context,
+                    "rules_context": rules_ctx if rules_ctx else "",
+                    "topic": topic,
+                    "section": section_num,
+                    "subsection": sub_num,
+                    "subsection_title": sub_title,
+                    "section_outline": section_outline,
+                    "key_points": "、".join(key_points),
+                    "sub_description": sub_desc if sub_desc else "（按大意自由发挥）",
+                    "world_setting": world_setting if world_setting.strip() else "",
+                    "world_facts": world_facts_str,
+                    "world_contradictions": world_contradictions_str,
+                    "style_structured": style_structured,
+                    "narrative_density_instruction": density_instruction,
+                    "ranked_events": ranked_events_str,
+                    "emotion_intensity": style.get("emotion_intensity", 50) if isinstance(style, dict) else 50,
+                    "sentence_preference": style.get("sentence_preference", "balanced") if isinstance(style, dict) else "balanced",
+                    "sensory_density": style.get("sensory_density", "medium") if isinstance(style, dict) else "medium",
+                    "dialogue_ratio": int((style.get("dialogue_ratio", 0.2) if isinstance(style, dict) else 0.2) * 100),
+                    "character_context": character_context,
+                    "arc_context": arc_context,
+                    "handover_context": handover_context,
+                    "summary_context": summary_context if summary_context else "（故事开头）",
+                    "retrieved_context": retrieved_context if retrieved_context else "（无相关段落）",
+                    "target_words": target_words,
+                    "beat_reminder": beat_reminder,
+                    "style_examples": (reference_passages + "\n" + style_examples).strip(),
+                }
                 context_token_estimates = {
                     "outline": _estimate_prompt_tokens(
                         f"{section_outline}\n{sub_desc}\n{'、'.join(key_points)}"
@@ -680,9 +678,35 @@ class Writer(BaseAgent):
                         + reference_passages + "\n" + style_examples
                     ),
                 }
-                input_tokens_estimate = sum(
-                    _estimate_prompt_tokens(message["content"]) for message in messages
+                source_manifest = [
+                    {
+                        "source_id": f"writer-field:{field}",
+                        "field": field,
+                        "text_hash": hashlib.sha256(str(value).encode("utf-8")).hexdigest(),
+                    }
+                    for field, value in prompt_values.items()
+                ]
+                prepared = SubsectionInput(
+                    task_id=task_id,
+                    section=section_num,
+                    subsection=sub_num,
+                    outline_target=f"第{section_num}节{sec.get('title', '')}: {sub_desc or '、'.join(key_points)}",
+                    target_words=target_words,
+                    generation_settings={
+                        "max_tokens": call_max_tokens,
+                        "temperature": 0.5,
+                        "top_p": 0.9,
+                    },
+                    prepared_context_fields=prompt_values,
+                    source_manifest=source_manifest,
                 )
+                subsection_pipeline = SubsectionPipeline(prepared)
+                prompt_artifact = PromptBuilder().build(
+                    prepared, token_by_source=context_token_estimates
+                )
+                subsection_pipeline.record_prompt(prompt_artifact)
+                messages = prompt_artifact.messages
+                input_tokens_estimate = prompt_artifact.estimated_tokens
 
                 # --- LLM 调用（支持重试） ---
                 t_llm_start = time.time()
@@ -743,38 +767,26 @@ class Writer(BaseAgent):
                     event_graph=event_graph,
                 )
                 backref = handover_note.get("found_contradictions", "") if handover_note else ""
-                new_facts = handover_note.get("new_facts", []) if handover_note else []
-                # 弧线进度更新（v3.1：从 handover 提取的 arc_progress 回写 EventGraph）
-                arc_progress = handover_note.get("arc_progress", {}) if handover_note else {}
-                if event_graph and arc_progress and isinstance(arc_progress, dict):
-                    for cid, status in arc_progress.items():
-                        if status in ("done", "deviated"):
-                            n = event_graph.update_arc_status(str(cid), status)
-                            if n:
-                                logger.info(f"[{task_id[:8]}] 弧线更新: {cid} → {status} ({n} 里程碑)")
-
-                # --- 持久化 new_facts → WorldStateManager ---
-                if new_facts and world_state and settings.ENABLE_WORLD_STATE:
-                    for fact_text in new_facts:
-                        if isinstance(fact_text, str) and fact_text.strip():
-                            try:
-                                fid = world_state.add_fact(
-                                    category="subplot_derived",
-                                    fact=fact_text.strip(),
-                                    source_section=section_num,
-                                    source_subsection=sub_num,
-                                )
-                                if fid:
-                                    logger.debug(f"[{task_id[:8]}] 新事实已写入 WorldState: {fact_text[:50]}")
-                            except Exception:
-                                logger.debug(
-                                    f"[{task_id[:8]}] 世界事实写入失败: {fact_text[:50]}",
-                                    exc_info=True
-                                )
+                state_committer.commit_handover_effects(
+                    idempotency_key=f"handover-effects:{task_id}:{section_num}:{sub_num}",
+                    handover_note=handover_note,
+                    event_graph=event_graph,
+                    world_state=world_state,
+                    world_state_enabled=settings.ENABLE_WORLD_STATE,
+                    task_id=task_id,
+                    section=section_num,
+                    subsection=sub_num,
+                    logger=logger,
+                )
 
                 # --- 写作后规则检查 ---
+                validation_result = {"complete": True, "warnings": []}
                 if required_events:
                     pc = post_check(sub_text, required_events)
+                    validation_result = {
+                        "complete": True,
+                        "warnings": list(pc.get("warnings", [])),
+                    }
                     if pc["warnings"]:
                         for w in pc["warnings"]:
                             logger.warning(f"[{task_id[:8]}] 第{section_num}.{sub_num}小节: {w}")
@@ -782,84 +794,44 @@ class Writer(BaseAgent):
                         if blackboard:
                             blackboard.xadd_event(task_id, {"event": "rule_warning", "section": section_num, "subsection": sub_num, "warnings": pc["warnings"]})
 
-                # --- 续写（字数不足时自动触发，最多2次） ---
-                sub_words = count_chinese_chars(sub_text)
-                expand_attempts = 0
-                while sub_words < target_words * settings.WRITER_EXPAND_THRESHOLD and expand_attempts < settings.WRITER_MAX_EXPAND_ATTEMPTS:
-                    expand_attempts += 1
-                    if stream_callback:
-                        stream_callback("", section_num, sub_num, "expand_start")
-                    continue_msg = [
-                        {"role": "system", "content": "请继续上面的内容往下写，保持风格一致。"},
-                        {"role": "user", "content": f"已写 {sub_words} 字，目标 {target_words} 字。继续：\n{sub_text[-200:]}"},
-                    ]
-                    continuation = ""
-                    if stream_callback:
-                        try:
-                            for token in self.llm.chat_completion_stream(
-                                continue_msg, temperature=0.7, max_tokens=call_max_tokens // 2
-                            ):
-                                continuation += token
-                                stream_callback(token, section_num, sub_num, "token")
-                        except Exception:
-                            continuation = self.llm.chat_completion(
-                                continue_msg, temperature=0.7, max_tokens=call_max_tokens // 2
-                            )
-                            if continuation:
-                                for sent_chunk in _split_for_fallback(continuation):
-                                    stream_callback(sent_chunk, section_num, sub_num, "token")
-                    else:
-                        continuation = self.llm.chat_completion(
-                            continue_msg, temperature=0.7, max_tokens=call_max_tokens // 2
-                        )
-                    if continuation:
-                        sub_text += "\n" + continuation
-                        sub_words = count_chinese_chars(sub_text)
-                if sub_words < target_words * settings.WRITER_ACCEPT_THRESHOLD:
-                    logger.info(f"[{task_id[:8]}] 第{section_num}.{sub_num}小节续写{expand_attempts}次后仍不足 ({sub_words}/{target_words}字)，接受当前长度")
-
-                # --- 句子完整性补全 ---
-                _last_chars = sub_text.rstrip()[-20:]
-                _sentence_ends = {'。', '！', '？', '」', '』', '"', '"', '…', '~', '——'}
-                if _last_chars and not any(_last_chars.rstrip().endswith(c) for c in _sentence_ends):
-                    try:
-                        _finish_msg = [
-                            {"role": "system", "content": "请完成上一段文字中未写完的最后一句话。只输出剩余部分，不要重复已有内容。"},
-                            {"role": "user", "content": f"上文：...{sub_text[-200:]}"},
-                        ]
-                        _finish = self.llm.chat_completion(
-                            _finish_msg, temperature=0.3, max_tokens=200
-                        )
-                        if _finish and len(_finish) < 200:
-                            sub_text += _finish
-                    except Exception:
-                        logger.warning(
-                            f"[{task_id[:8]}] 段落收尾补全失败 (第{section_num}.{sub_num}节)，"
-                            f"跳过补全", exc_info=True
-                        )
-
-                # --- 精简（超出目标 30% 时触发） ---
-                if sub_words > target_words * 1.3:
-                    condense_msg = [
-                        {"role": "system", "content": "请精简以下文本，保持核心情节和风格不变，删除冗余描述。"},
-                        {"role": "user", "content": f"目标 {target_words} 字，当前 {sub_words} 字。精简：\n{sub_text}"},
-                    ]
-                    condensed = self.llm.chat_completion(
-                        condense_msg, temperature=0.3, max_tokens=call_max_tokens
-                    )
-                    if condensed:
-                        sub_text = condensed
-                        sub_words = count_chinese_chars(sub_text)
+                # --- 长度与句尾控制（R1：调用参数和顺序保持原样） ---
+                adjusted_artifact = self._adjust_generated_length(
+                    sub_text,
+                    target_words=target_words,
+                    call_max_tokens=call_max_tokens,
+                    stream_callback=stream_callback,
+                    section_num=section_num,
+                    sub_num=sub_num,
+                    task_id=task_id,
+                )
+                initial_artifact = self._last_generation_artifact
+                sub_text = adjusted_artifact.draft
+                generation_artifact = GenerationArtifact(
+                    raw_output=initial_artifact.raw_output,
+                    draft=sub_text,
+                    generation_attempts=(
+                        initial_artifact.generation_attempts
+                        + adjusted_artifact.generation_attempts
+                    ),
+                    finish_reason=adjusted_artifact.finish_reason,
+                    latency_ms=initial_artifact.latency_ms + adjusted_artifact.latency_ms,
+                    output_hash=adjusted_artifact.output_hash,
+                )
+                subsection_pipeline.record_generation(generation_artifact)
+                subsection_pipeline.record_validation(validation_result)
 
                 # --- 累积 ---
                 section_text += f"【{sub_title}】\n{sub_text}\n\n"
                 full_draft += f"【{sub_title}】\n{sub_text}\n\n"
                 previous_sub_texts.append(sub_text)  # P2: 追踪用于重复检测
 
-                if handover_note:
-                    section_handover_parts.append(handover_note)
-                if backref:
-                    backref_suggestions.extend(backref)
+                state_committer.commit_local_handover(
+                    idempotency_key=f"handover-local:{task_id}:{section_num}:{sub_num}",
+                    handover_note=handover_note,
+                    section_handover_parts=section_handover_parts,
+                    backref=backref,
+                    backref_suggestions=backref_suggestions,
+                )
 
                 # --- 进度更新 ---
                 if blackboard:
@@ -945,30 +917,30 @@ class Writer(BaseAgent):
                     except Exception:
                         logger.warning(f"[{task_id[:8]}] 启动审阅线程失败", exc_info=True)
 
-                # --- 切块入库 ---
-                chunks = chunk_text(sub_text, settings.CHUNK_SIZE, settings.CHUNK_OVERLAP)
-                for chunk in chunks:
-                    vector_store.add_text(text=chunk, metadata={
-                        "task_id": task_id,
-                        "section": section_num,
-                        "subsection": sub_num,
-                        "title": sub_title,
-                        "topic": topic,
-                    })
-                vector_store.enforce_task_limit(task_id)
-
-                cm.add_subsection(sub_text, section_num)
-
-                # --- v0.9.1: 更新 token 消耗到黑板 ---
-                try:
+                # --- 有序提交小节副作用（R1：顺序与 fallback 保持原样） ---
+                def _token_usage_provider():
                     from ..utils.llm_client import get_cumulative_tokens
-                    blackboard.set(task_id, "token_usage", get_cumulative_tokens())
-                except Exception:
-                    logger.warning(f"[{task_id[:8]}] token 消耗写入黑板失败", exc_info=True)
+                    return get_cumulative_tokens()
 
-                # --- 小节完成事件 ---
-                if stream_callback:
-                    stream_callback(sub_text, section_num, sub_num, "section_end")
+                commit_artifact = state_committer.commit_subsection(
+                    idempotency_key=f"{task_id}:{section_num}:{sub_num}",
+                    source_hash=prompt_artifact.messages_hash,
+                    draft=sub_text,
+                    validation_complete=True,
+                    vector_store=vector_store,
+                    context_manager=cm,
+                    blackboard=blackboard,
+                    task_id=task_id,
+                    section=section_num,
+                    subsection=sub_num,
+                    title=sub_title,
+                    topic=topic,
+                    stream_callback=stream_callback,
+                    token_usage_provider=_token_usage_provider,
+                )
+                if commit_artifact.warnings:
+                    logger.warning(f"[{task_id[:8]}] token 消耗写入黑板失败")
+                subsection_pipeline.record_commit(commit_artifact)
 
             # B2: 子节循环内检测到停止信号，跳出外层 while
             if should_stop:
@@ -978,22 +950,13 @@ class Writer(BaseAgent):
             # --- 节尾汇总 ---
             section_texts[section_num] = section_text
             if section_handover_parts:
-                prev_handover = {
-                    "from_section": section_num,
-                    "to_section": section_num + 1,
-                    "foreshadowing": "; ".join(
-                        h.get("foreshadowing", "") for h in section_handover_parts if h.get("foreshadowing")
-                    ) or "无",
-                    "character_state": "; ".join(
-                        h.get("character_state", "") for h in section_handover_parts if h.get("character_state")
-                    ) or "无",
-                    "open_threads": "; ".join(
-                        h.get("open_threads", "") for h in section_handover_parts if h.get("open_threads")
-                    ) or "无",
-                }
-                handover_notes.append(prev_handover)
-                if stream_callback:
-                    stream_callback("", section_num, 0, "handover")
+                prev_handover, _ = state_committer.commit_section_handover(
+                    idempotency_key=f"handover-section:{task_id}:{section_num}",
+                    section=section_num,
+                    section_handover_parts=section_handover_parts,
+                    handover_notes=handover_notes,
+                    stream_callback=stream_callback,
+                )
 
             # --- 角色状态更新 ---
             if character_arcs:
@@ -1049,7 +1012,7 @@ class Writer(BaseAgent):
             # --- 自动模式检查点 (v0.9.2: 每节存档，不挂起) ---
             if not interactive and blackboard:
                 try:
-                    blackboard.save_checkpoint(task_id, {
+                    state_committer.save_checkpoint(blackboard, task_id, {
                         "task_id": task_id,
                         "phase": "writing",
                         "section_texts": dict(section_texts),
@@ -1363,6 +1326,49 @@ class Writer(BaseAgent):
                               characters=None, previous_texts=None, prev_sub_text="",
                               target_goal=""):
         """生成正文，若不满足硬约束则重试一次。"""
+        controller = GenerationController(
+            self.llm,
+            character_violation_checker=self._check_character_violations,
+            fallback_splitter=_split_for_fallback,
+        )
+        artifact = controller.generate(
+            messages=messages,
+            call_max_tokens=call_max_tokens,
+            stream_callback=stream_callback,
+            section_num=section_num,
+            sub_num=sub_num,
+            mandatory_events_text=mandatory_events_text,
+            characters=characters,
+            previous_texts=previous_texts,
+            prev_sub_text=prev_sub_text,
+            target_goal=target_goal,
+        )
+        self._last_generation_artifact = artifact
+        self._last_retry_count = max(0, len(artifact.generation_attempts) - 1)
+        return artifact.draft
+
+    def _adjust_generated_length(self, draft, *, target_words, call_max_tokens,
+                                 stream_callback, section_num, sub_num, task_id=""):
+        controller = GenerationController(
+            self.llm,
+            character_violation_checker=self._check_character_violations,
+            fallback_splitter=_split_for_fallback,
+        )
+        return controller.adjust_length(
+            draft,
+            target_words=target_words,
+            call_max_tokens=call_max_tokens,
+            stream_callback=stream_callback,
+            section_num=section_num,
+            sub_num=sub_num,
+            task_id=task_id,
+        )
+
+    def _legacy_generate_with_retry(self, messages, call_max_tokens, stream_callback,
+                                    section_num, sub_num, mandatory_events_text,
+                                    characters=None, previous_texts=None, prev_sub_text="",
+                                    target_goal=""):
+        """R1 audit reference; remove only after the extracted boundary is validated."""
         import time as _time
         retry_count = 0
 
