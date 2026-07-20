@@ -1,0 +1,1638 @@
+{
+  "phase": "StateFrame Batch 2",
+  "mode": "real_frozen_source_coverage_audit",
+  "schema_version": "state-frame-real-source-audit-v1",
+  "source_snapshot_sha256": "56c56523a63bd0dd5ea85fa0eccbbf6cb5a95a6343b5c0e071f43000bbda0f0a",
+  "scene_count": 4,
+  "writer_generation_calls": 0,
+  "llm_calls": 0,
+  "redis_writes": 0,
+  "sqlite_writes": 0,
+  "chroma_writes": 0,
+  "runtime_evaluation_fields_used": [],
+  "production_messages_changed": false,
+  "source_availability": {
+    "current_outline": {
+      "available": true,
+      "shape": "structured_outline",
+      "raw_count": 1
+    },
+    "world_state": {
+      "available": true,
+      "shape": "facts_with_verified_flag",
+      "raw_count": 14
+    },
+    "event_graph": {
+      "available": true,
+      "shape": "typed_events",
+      "raw_count": 15
+    },
+    "character_arcs": {
+      "available": true,
+      "shape": "structured_arc_with_string_current_state",
+      "raw_count": 5
+    },
+    "handover": {
+      "available": true,
+      "shape": "structured_envelope_with_unstructured_strings",
+      "raw_count": 1
+    },
+    "rules": {
+      "available": true,
+      "shape": "rendered_context_string",
+      "raw_count": 1
+    },
+    "relations": {
+      "available": false,
+      "shape": "rendered_context_string",
+      "raw_count": 0
+    },
+    "foreshadowing": {
+      "available": false,
+      "shape": "rendered_context_string",
+      "raw_count": 0
+    },
+    "locations": {
+      "available": false,
+      "shape": "rendered_context_string",
+      "raw_count": 0
+    },
+    "characters": {
+      "available": true,
+      "shape": "character_profiles_without_effective_state",
+      "raw_count": 5
+    }
+  },
+  "summary": {
+    "mean_estimated_tokens": 1768,
+    "min_estimated_tokens": 1768,
+    "max_estimated_tokens": 1768,
+    "classification_counts": {
+      "explicit_structured_state": 28,
+      "generic_state": 60,
+      "unclassified_state": 15
+    },
+    "generic_state_ratio": 0.6818,
+    "empty_frame_count": 0,
+    "generic_only_frame_count": 0,
+    "non_structured_handover_entries": 12,
+    "single_pre_section_checkpoint_reused_for_four_subsections": true
+  },
+  "mechanical_checks": {
+    "all_sources_traceable": true,
+    "unknown_conflicted_retention_100": true,
+    "planned_hard_intrusions_zero": true,
+    "duplicate_classification_zero": true,
+    "frame_hash_deterministic": true,
+    "three_of_four_have_explicit_state": true,
+    "generic_state_not_majority": false,
+    "keyword_inference_not_used": true
+  },
+  "scenes": [
+    {
+      "trial_index": 1,
+      "section": 2,
+      "subsection": 1,
+      "frame_hash": "50081450c51433503d8526b4c31e70d695c7692f66b0492adcf4662a6c3e2150",
+      "source_hash": "86933552570b8b6fca4e1b9a215c169e73f8e7b258d24eca577135e7ec3bbb08",
+      "rendered_hash": "4f01ff1f588a3ae5d3042a32203714dea464a5ad5e599586c9229aa33b34f499",
+      "frame_hash_deterministic": true,
+      "rendered_characters": 2542,
+      "estimated_tokens": 1768,
+      "counts": {
+        "temporal_state": 0,
+        "location_state": 0,
+        "character_presence": 0,
+        "persistent_state": 7,
+        "relationship_state": 0,
+        "open_loops": 2,
+        "unknowns_conflicts": 13,
+        "excluded": 2
+      },
+      "classification_counts": {
+        "explicit_structured_state": 7,
+        "generic_state": 15,
+        "unclassified_state": 2
+      },
+      "empty_frame": false,
+      "generic_only_frame": false,
+      "status_preserved": true,
+      "traceability_rate": 1.0,
+      "unknown_conflicted_preserved": 13,
+      "planned_hard_intrusions": 0,
+      "duplicate_classification_count": 0,
+      "duplicate_value_hash_count": 0,
+      "unreferenced_frame_evidence_count": 0,
+      "missing_evidence_reference_count": 0,
+      "source_metrics": {
+        "current_outline": {
+          "available": true,
+          "shape": "structured_outline",
+          "raw_record_count": 1,
+          "eligible_record_count": 1,
+          "evidence_count": 1,
+          "assertion_count": 1,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 1,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 1,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "planned_event": 1
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 1,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 1,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "world_state": {
+          "available": true,
+          "shape": "facts_with_verified_flag",
+          "raw_record_count": 14,
+          "eligible_record_count": 14,
+          "evidence_count": 14,
+          "assertion_count": 14,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 13,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 14,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "world_fact": 14
+          },
+          "generic_world_fact_count": 14,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 14,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "event_graph": {
+          "available": true,
+          "shape": "typed_events",
+          "raw_record_count": 15,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        },
+        "character_arcs": {
+          "available": true,
+          "shape": "structured_arc_with_string_current_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 5,
+          "evidence_count": 5,
+          "assertion_count": 5,
+          "statuses": {
+            "confirmed": 5,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 5,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "character_state": 5
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 5,
+          "missing_section_subsection": 5,
+          "missing_epistemic_status": 5,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "handover": {
+          "available": true,
+          "shape": "structured_envelope_with_unstructured_strings",
+          "raw_record_count": 1,
+          "eligible_record_count": 3,
+          "evidence_count": 3,
+          "assertion_count": 3,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 2,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 2,
+            "generic_state": 1,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "continuity_state": 1,
+            "open_loop": 2
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 3,
+          "missing_section_subsection": 3,
+          "missing_epistemic_status": 3,
+          "unstructured_handover_entries": 3,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "rules": {
+          "available": true,
+          "shape": "rendered_context_string",
+          "raw_record_count": 1,
+          "eligible_record_count": 1,
+          "evidence_count": 1,
+          "assertion_count": 1,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 1,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "hard_constraint": 1
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 1,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 1,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "relations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "foreshadowing": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "locations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "characters": {
+          "available": true,
+          "shape": "character_profiles_without_effective_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        }
+      },
+      "duplication": {
+        "stateframe_vs_scene_confirmed_open_assertions": 9,
+        "stateframe_vs_legacy_world_source_ids": 14,
+        "stateframe_vs_handover_source_ids": 3,
+        "stateframe_vs_relation_context": 0,
+        "unique_state_count": 22,
+        "direct_stack_added_tokens": 1768,
+        "scene_spec_tokens": 2691,
+        "stateframe_plus_plan_only_scene_tokens": 3445,
+        "confirmed_open_takeover_net_tokens": 754
+      },
+      "contains_story_text": false
+    },
+    {
+      "trial_index": 2,
+      "section": 2,
+      "subsection": 2,
+      "frame_hash": "66eae7a87db013f39a2d93fd79a1bded00a38a555ffe88be8fc7bbc5b494e750",
+      "source_hash": "cf9ca8d27ce989c70a19908282f2cc1ec06418566e32240696f353534e590968",
+      "rendered_hash": "8a6bf5cc46a57cf190b5befd00b09785f9f4382e066238637cf491b3afd2a8d4",
+      "frame_hash_deterministic": true,
+      "rendered_characters": 2542,
+      "estimated_tokens": 1768,
+      "counts": {
+        "temporal_state": 0,
+        "location_state": 0,
+        "character_presence": 0,
+        "persistent_state": 7,
+        "relationship_state": 0,
+        "open_loops": 2,
+        "unknowns_conflicts": 13,
+        "excluded": 4
+      },
+      "classification_counts": {
+        "explicit_structured_state": 7,
+        "generic_state": 15,
+        "unclassified_state": 4
+      },
+      "empty_frame": false,
+      "generic_only_frame": false,
+      "status_preserved": true,
+      "traceability_rate": 1.0,
+      "unknown_conflicted_preserved": 13,
+      "planned_hard_intrusions": 0,
+      "duplicate_classification_count": 0,
+      "duplicate_value_hash_count": 0,
+      "unreferenced_frame_evidence_count": 0,
+      "missing_evidence_reference_count": 0,
+      "source_metrics": {
+        "current_outline": {
+          "available": true,
+          "shape": "structured_outline",
+          "raw_record_count": 1,
+          "eligible_record_count": 3,
+          "evidence_count": 3,
+          "assertion_count": 3,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 3,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 3,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "planned_event": 3
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 3,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 3,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "world_state": {
+          "available": true,
+          "shape": "facts_with_verified_flag",
+          "raw_record_count": 14,
+          "eligible_record_count": 14,
+          "evidence_count": 14,
+          "assertion_count": 14,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 13,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 14,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "world_fact": 14
+          },
+          "generic_world_fact_count": 14,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 14,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "event_graph": {
+          "available": true,
+          "shape": "typed_events",
+          "raw_record_count": 15,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        },
+        "character_arcs": {
+          "available": true,
+          "shape": "structured_arc_with_string_current_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 5,
+          "evidence_count": 5,
+          "assertion_count": 5,
+          "statuses": {
+            "confirmed": 5,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 5,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "character_state": 5
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 5,
+          "missing_section_subsection": 5,
+          "missing_epistemic_status": 5,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "handover": {
+          "available": true,
+          "shape": "structured_envelope_with_unstructured_strings",
+          "raw_record_count": 1,
+          "eligible_record_count": 3,
+          "evidence_count": 3,
+          "assertion_count": 3,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 2,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 2,
+            "generic_state": 1,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "continuity_state": 1,
+            "open_loop": 2
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 3,
+          "missing_section_subsection": 3,
+          "missing_epistemic_status": 3,
+          "unstructured_handover_entries": 3,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "rules": {
+          "available": true,
+          "shape": "rendered_context_string",
+          "raw_record_count": 1,
+          "eligible_record_count": 1,
+          "evidence_count": 1,
+          "assertion_count": 1,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 1,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "hard_constraint": 1
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 1,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 1,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "relations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "foreshadowing": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "locations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "characters": {
+          "available": true,
+          "shape": "character_profiles_without_effective_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        }
+      },
+      "duplication": {
+        "stateframe_vs_scene_confirmed_open_assertions": 9,
+        "stateframe_vs_legacy_world_source_ids": 14,
+        "stateframe_vs_handover_source_ids": 3,
+        "stateframe_vs_relation_context": 0,
+        "unique_state_count": 22,
+        "direct_stack_added_tokens": 1768,
+        "scene_spec_tokens": 2822,
+        "stateframe_plus_plan_only_scene_tokens": 3576,
+        "confirmed_open_takeover_net_tokens": 754
+      },
+      "contains_story_text": false
+    },
+    {
+      "trial_index": 3,
+      "section": 2,
+      "subsection": 3,
+      "frame_hash": "e0e758447bfa250fea915568735644cc8c1cc9d5ae729497e89fb706e25e0933",
+      "source_hash": "655afc1d684e3051794be4e11740042ee7ab99348483ca133bc85c5f92d59f00",
+      "rendered_hash": "4cd453343886c87fc4858243e7e6217a84b02ca0a21a742424079a043a85628c",
+      "frame_hash_deterministic": true,
+      "rendered_characters": 2542,
+      "estimated_tokens": 1768,
+      "counts": {
+        "temporal_state": 0,
+        "location_state": 0,
+        "character_presence": 0,
+        "persistent_state": 7,
+        "relationship_state": 0,
+        "open_loops": 2,
+        "unknowns_conflicts": 13,
+        "excluded": 4
+      },
+      "classification_counts": {
+        "explicit_structured_state": 7,
+        "generic_state": 15,
+        "unclassified_state": 4
+      },
+      "empty_frame": false,
+      "generic_only_frame": false,
+      "status_preserved": true,
+      "traceability_rate": 1.0,
+      "unknown_conflicted_preserved": 13,
+      "planned_hard_intrusions": 0,
+      "duplicate_classification_count": 0,
+      "duplicate_value_hash_count": 0,
+      "unreferenced_frame_evidence_count": 0,
+      "missing_evidence_reference_count": 0,
+      "source_metrics": {
+        "current_outline": {
+          "available": true,
+          "shape": "structured_outline",
+          "raw_record_count": 1,
+          "eligible_record_count": 3,
+          "evidence_count": 3,
+          "assertion_count": 3,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 3,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 3,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "planned_event": 3
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 3,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 3,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "world_state": {
+          "available": true,
+          "shape": "facts_with_verified_flag",
+          "raw_record_count": 14,
+          "eligible_record_count": 14,
+          "evidence_count": 14,
+          "assertion_count": 14,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 13,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 14,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "world_fact": 14
+          },
+          "generic_world_fact_count": 14,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 14,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "event_graph": {
+          "available": true,
+          "shape": "typed_events",
+          "raw_record_count": 15,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        },
+        "character_arcs": {
+          "available": true,
+          "shape": "structured_arc_with_string_current_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 5,
+          "evidence_count": 5,
+          "assertion_count": 5,
+          "statuses": {
+            "confirmed": 5,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 5,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "character_state": 5
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 5,
+          "missing_section_subsection": 5,
+          "missing_epistemic_status": 5,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "handover": {
+          "available": true,
+          "shape": "structured_envelope_with_unstructured_strings",
+          "raw_record_count": 1,
+          "eligible_record_count": 3,
+          "evidence_count": 3,
+          "assertion_count": 3,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 2,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 2,
+            "generic_state": 1,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "continuity_state": 1,
+            "open_loop": 2
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 3,
+          "missing_section_subsection": 3,
+          "missing_epistemic_status": 3,
+          "unstructured_handover_entries": 3,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "rules": {
+          "available": true,
+          "shape": "rendered_context_string",
+          "raw_record_count": 1,
+          "eligible_record_count": 1,
+          "evidence_count": 1,
+          "assertion_count": 1,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 1,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "hard_constraint": 1
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 1,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 1,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "relations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "foreshadowing": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "locations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "characters": {
+          "available": true,
+          "shape": "character_profiles_without_effective_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        }
+      },
+      "duplication": {
+        "stateframe_vs_scene_confirmed_open_assertions": 9,
+        "stateframe_vs_legacy_world_source_ids": 14,
+        "stateframe_vs_handover_source_ids": 3,
+        "stateframe_vs_relation_context": 0,
+        "unique_state_count": 22,
+        "direct_stack_added_tokens": 1768,
+        "scene_spec_tokens": 2840,
+        "stateframe_plus_plan_only_scene_tokens": 3594,
+        "confirmed_open_takeover_net_tokens": 754
+      },
+      "contains_story_text": false
+    },
+    {
+      "trial_index": 4,
+      "section": 2,
+      "subsection": 4,
+      "frame_hash": "b92a3f505ae592ea4939ef1cd26e489bb9ef52d43642e014251478a58cbc27b2",
+      "source_hash": "167e8a95c6b47f9de406d7a37673f31165aff48fa6acf71069affff4dce7c04a",
+      "rendered_hash": "299ab9b77c692bdae90d0f94a517343d4cbf4aa1155c3645c9d02f06dff9e3c0",
+      "frame_hash_deterministic": true,
+      "rendered_characters": 2542,
+      "estimated_tokens": 1768,
+      "counts": {
+        "temporal_state": 0,
+        "location_state": 0,
+        "character_presence": 0,
+        "persistent_state": 7,
+        "relationship_state": 0,
+        "open_loops": 2,
+        "unknowns_conflicts": 13,
+        "excluded": 5
+      },
+      "classification_counts": {
+        "explicit_structured_state": 7,
+        "generic_state": 15,
+        "unclassified_state": 5
+      },
+      "empty_frame": false,
+      "generic_only_frame": false,
+      "status_preserved": true,
+      "traceability_rate": 1.0,
+      "unknown_conflicted_preserved": 13,
+      "planned_hard_intrusions": 0,
+      "duplicate_classification_count": 0,
+      "duplicate_value_hash_count": 0,
+      "unreferenced_frame_evidence_count": 0,
+      "missing_evidence_reference_count": 0,
+      "source_metrics": {
+        "current_outline": {
+          "available": true,
+          "shape": "structured_outline",
+          "raw_record_count": 1,
+          "eligible_record_count": 4,
+          "evidence_count": 4,
+          "assertion_count": 4,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 4,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 4,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "planned_event": 4
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 4,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 4,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "world_state": {
+          "available": true,
+          "shape": "facts_with_verified_flag",
+          "raw_record_count": 14,
+          "eligible_record_count": 14,
+          "evidence_count": 14,
+          "assertion_count": 14,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 13,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 14,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "world_fact": 14
+          },
+          "generic_world_fact_count": 14,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 14,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "event_graph": {
+          "available": true,
+          "shape": "typed_events",
+          "raw_record_count": 15,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        },
+        "character_arcs": {
+          "available": true,
+          "shape": "structured_arc_with_string_current_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 5,
+          "evidence_count": 5,
+          "assertion_count": 5,
+          "statuses": {
+            "confirmed": 5,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 5,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "character_state": 5
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 5,
+          "missing_section_subsection": 5,
+          "missing_epistemic_status": 5,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "handover": {
+          "available": true,
+          "shape": "structured_envelope_with_unstructured_strings",
+          "raw_record_count": 1,
+          "eligible_record_count": 3,
+          "evidence_count": 3,
+          "assertion_count": 3,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 2,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 2,
+            "generic_state": 1,
+            "unclassified_state": 0,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "continuity_state": 1,
+            "open_loop": 2
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 3,
+          "missing_section_subsection": 3,
+          "missing_epistemic_status": 3,
+          "unstructured_handover_entries": 3,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "rules": {
+          "available": true,
+          "shape": "rendered_context_string",
+          "raw_record_count": 1,
+          "eligible_record_count": 1,
+          "evidence_count": 1,
+          "assertion_count": 1,
+          "statuses": {
+            "confirmed": 1,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 1,
+            "unavailable_state": 0
+          },
+          "predicates": {
+            "hard_constraint": 1
+          },
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 1,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 1,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": []
+        },
+        "relations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "foreshadowing": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "locations": {
+          "available": false,
+          "shape": "rendered_context_string",
+          "raw_record_count": 0,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "source_empty"
+          ]
+        },
+        "characters": {
+          "available": true,
+          "shape": "character_profiles_without_effective_state",
+          "raw_record_count": 5,
+          "eligible_record_count": 0,
+          "evidence_count": 0,
+          "assertion_count": 0,
+          "statuses": {
+            "confirmed": 0,
+            "planned": 0,
+            "unknown": 0,
+            "conflicted": 0
+          },
+          "classifications": {
+            "explicit_structured_state": 0,
+            "generic_state": 0,
+            "unclassified_state": 0,
+            "unavailable_state": 1
+          },
+          "predicates": {},
+          "generic_world_fact_count": 0,
+          "excluded_count": 0,
+          "missing_stable_source_id": 0,
+          "missing_section_subsection": 0,
+          "missing_epistemic_status": 0,
+          "unstructured_handover_entries": 0,
+          "empty_value_count": 0,
+          "duplicate_source_id_count": 0,
+          "duplicate_value_hash_count": 0,
+          "skip_reasons": [
+            "no_current_state_contract"
+          ]
+        }
+      },
+      "duplication": {
+        "stateframe_vs_scene_confirmed_open_assertions": 9,
+        "stateframe_vs_legacy_world_source_ids": 14,
+        "stateframe_vs_handover_source_ids": 3,
+        "stateframe_vs_relation_context": 0,
+        "unique_state_count": 22,
+        "direct_stack_added_tokens": 1768,
+        "scene_spec_tokens": 2762,
+        "stateframe_plus_plan_only_scene_tokens": 3516,
+        "confirmed_open_takeover_net_tokens": 754
+      },
+      "contains_story_text": false
+    }
+  ],
+  "diagnosis": "upstream_state_contract_required",
+  "minimum_upstream_contract": [
+    "state_id",
+    "predicate",
+    "subject",
+    "value",
+    "epistemic_status",
+    "effective_from",
+    "effective_until",
+    "section",
+    "subsection",
+    "source_id",
+    "text_hash"
+  ],
+  "limitations": [
+    "The frozen artifact contains one pre-section checkpoint, not four post-subsection state snapshots.",
+    "WorldState facts expose category and verified flags but no explicit StateFrame predicate.",
+    "Handover state is stored as unstructured strings inside a structured envelope.",
+    "No generated candidate, arm mapping, human review, or evaluation result was read."
+  ],
+  "contains_story_text": false
+}

@@ -67,3 +67,7 @@ StateFrame 从 Writer 拆走“写前恢复当前状态”的职责，但不负�
 4. 问题来自 StateFrame 分类器，还是上游根本没有结构化状态。
 
 在覆盖审计完成前，不接入 Writer，不生成 A/B，不扩充关键词表，不创建新状态库。
+
+## Batch 2 后续状态
+
+真实状态源覆盖审计已完成，诊断为 `upstream_state_contract_required`。StateFrame compiler 的追溯、认识状态保留、规划/规则排除和确定性均通过，但真实输入中 generic state 占 68.18%，每个 Frame 约 1,768 estimated tokens；直接进入 Writer 只会重复 legacy world facts 与 handover。Batch 1 的下一入口已经执行完毕，当前不得进入生成 A/B。

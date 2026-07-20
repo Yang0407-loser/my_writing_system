@@ -18,6 +18,7 @@ output/
 .phase4_restoration_runtime/
 .phase4r_r3_runtime/
 .phase4r_final_trial_runtime/
+.phase4r_state_frame_runtime/
 
 # Python
 __pycache__/

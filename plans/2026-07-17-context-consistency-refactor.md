@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 最终真实写作试验通过并保留 SceneSpec 实验路线；StateFrame Batch 1 已完成只读契约和结构基线，但未接入 Writer；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 最终真实写作试验通过并保留 SceneSpec 实验路线；StateFrame Batch 2 真实覆盖审计诊断为 `upstream_state_contract_required`，不得进入生成 A/B；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -387,7 +387,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## StateFrame：Writer 当前状态职责拆分
 
-> 当前状态：Batch 1 只读契约和离线结构基线已完成；未进入 Writer messages，未调用 LLM，生产继续 `legacy_full`。
+> 当前状态：Batch 2 已完成真实冻结状态源覆盖审计，诊断为 `upstream_state_contract_required`。StateFrame 未进入 Writer messages，未调用 LLM，生产继续 `legacy_full`；未获得进入生成 A/B 的条件。
 
 ### 职责边界
 
@@ -403,6 +403,14 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 合成结构平均 33 estimated tokens（26～40），仅用于确认渲染器不会异常膨胀，不得解释为真实 Writer token 降幅。
 - Writer、Prompt、SceneSpec compiler、ContextManager、RAG、Validator 和生产调用链均未修改；Writer/LLM 调用 0。
 - 下一步只有另行授权的“真实状态源覆盖审计”：统计现有 WorldState、handover、关系和事件源中有多少状态具备可分类 predicate，以及缺失来自数据契约还是状态本身。不得直接注入 Writer 或开始生成 A/B。
+
+### Batch 2 结果
+
+- 使用 Phase 4R 最终试验冻结的单一章节生成前 checkpoint 审计4个真实连续小节；没有读取候选正文、A/B映射、人工评审或历史缺陷标签。
+- 每帧有7条 explicit、15条 generic 和2～5条 unclassified状态；generic占included state的68.18%，Frame平均1,768 estimated tokens。4个小节共享同一节前状态，不能视为4个独立连续快照。
+- WorldState 14条全部只能进入通用`world_fact`（13 unknown、1 confirmed）；5条character arc current state可显式分类但缺少有效期/认识状态；handover为一组3字段长字符串，relations/foreshadowing/locations均无可用状态。
+- 追溯、unknown保留、planned/hard排除、重复分类和确定性全部通过；但generic state多数门槛失败。每帧与SceneSpec confirmed/open重复9条、与legacy WorldState/handover重复14/3个source；接管confirmed/open后理论仍净增加约754 token。
+- 诊断固定为`upstream_state_contract_required`。不得扩关键词或进入生成A/B；下一步只能另行授权最小上游状态契约设计，不实现迁移或写入。
 
 ## Phase 5：Writer 受控工具调用
 
@@ -681,3 +689,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4R Batch R6A Validator默认关闭shadow接入 | R5规则迁入app并保持冻结hash；Writer在StateCommitter和record_commit成功后调用失败隔离runner；flag默认false，NoOp sink，不创建数据库，不调用LLM | R5原始预测hash完全不变；disabled调用/记录为0；异常不回滚正文或checkpoint；记录无全文/messages/Prompt且excerpt≤140字；真实样本0；unit=229、integration=9、quality=85、compileall通过 | 结构接入完成但不切生产；仅建议等待另行授权R6B真实shadow采样，不开始Repair、Phase5或Phase6 |
 | 2026-07-20 | Phase 4R 最终真实写作试验 | 对真实连续4小节固定A=`legacy_full`、B=`legacy_full+SceneSpec`，共8次主调用；人工匿名审阅原始输出，不测试budgeted Broker，不测人工改稿成本，不修改生产 | B不差于A为3/4；目标完成A/B=2/3；总缺陷A/B=10/4；hard=1/0、关系=1/0、连续性=3/1、事实=3/2、事件顺序=1/1、越界=1/0；3个场景有具体正面作用；七项门槛全部通过；定向测试22 passed、compileall通过 | 最终建议保留SceneSpec实验路线，但4小节不足以证明全面生产质量；生产继续legacy_full，Validator默认关闭，不开始Repair、Phase5/6，不追加Phase4R批次 |
 | 2026-07-20 | StateFrame Batch 1 只读契约基线 | 在现有StoryStateSnapshot上新增StateFrame与确定性compiler，只表达时间、地点、在场、持久状态、关系、open loops和unknown/conflicted；planned/hard/arc与未知predicate显式排除；不接Writer、不调用LLM | 4类合成契约场景追溯率100%，unknown/conflicted保留，planned/hard排除；平均33 estimated token（26～40，仅结构指标）；unit含SceneSpec回归12 passed、quality 3 passed、compileall通过 | 只证明契约和责任边界成立，不证明真实状态覆盖或生成质量；下一入口仅为另行授权的真实状态源覆盖审计，不直接注入Writer |
+| 2026-07-20 | StateFrame Batch 2 真实状态源覆盖审计 | 只读Phase4R最终试验单一节前checkpoint及4个真实小节outline；审计WorldState、EventGraph、character arcs、handover和冻结上下文，不读取候选/映射/人工结果，不调用LLM | 每帧explicit/generic/unclassified=7/15/2～5，generic占68.18%，平均1768 token；WorldState 14条均为generic，handover 3字段非结构化，relations/foreshadowing/locations无可用状态；追溯、unknown保留、planned/hard排除和hash确定性通过；接管SceneSpec confirmed/open后仍净增约754 token；unit=11、quality=4、compileall通过 | 诊断`upstream_state_contract_required`；不得进入生成A/B或扩关键词。只提出state_id/predicate/subject/value/status/effective range/source/hash最小上游契约，等待用户授权 |
