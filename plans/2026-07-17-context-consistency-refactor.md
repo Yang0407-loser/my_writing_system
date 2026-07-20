@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 已完成 R6A 默认关闭的 BoundaryValidator post-commit shadow 接入，SceneSpec 未接入生产输入，真实 shadow 样本仍为 0；只允许建议另行授权 R6B 采样；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`，生产继续 `legacy_full`；Phase 4R 最终真实写作试验已完成，4 个真实小节中 SceneSpec 版 3 个不差于 legacy 且全部质量门槛通过，结论为保留 SceneSpec 实验路线，但尚未接入生产；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -311,7 +311,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Phase 4R：Writer 职责拆分
 
-> 当前状态：R5 的 12 条冻结预测机械门槛已通过；R6A 已将同语义规则提取到生产模块，并以默认关闭、NoOp sink、post-commit 的方式接入，冻结预测 hash 完全不变。当前没有真实 shadow 样本，SceneSpec 不进入 Writer messages，生产继续使用 `legacy_full`。
+> 当前状态：最终真实写作试验已完成并通过全部预设门槛，Phase 4R 的最终建议为保留 SceneSpec 路线。该结论只来自 4 个连续真实小节，不能宣称全面生产质量已经证明；SceneSpec 仍未进入生产 Writer messages，BoundaryValidator 继续默认关闭，生产继续使用 `legacy_full`。
 
 ### 核心假设
 
@@ -376,6 +376,14 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - typed SceneSpec 适配保持 unknown 状态和 source/hash；缺少 provider、SceneSpec 或可执行规则时安全 skip。异常只形成脱敏 `shadow_error`，不传播、不回滚、不重试、不 Repair。
 - Writer messages、正文返回、Prompt、RAG、ContextManager、checkpoint 顺序和幂等键均不改变；本批 Writer/LLM 调用 0，真实 shadow 样本 0。
 - 全量回归 unit=229、integration=9、quality=85、compileall通过。完成后停止；只能等待另行授权 R6B 真实 shadow 采样，不开始 Repair、Phase5或Phase6。
+
+### Phase 4R 最终真实写作试验
+
+- 固定唯一变量：A=`legacy_full`，B=`legacy_full + SceneSpec`；使用接下来真实创作的 4 个连续小节，共完成 8 次 Writer 主调用。Prompt、RAG、ContextManager、规则、风格、模型和生成参数保持相同，候选正文及映射仅保存在 gitignored runtime。
+- 人工匿名审阅 provenance 为 `user_real_writing_acceptance`。B 在 4 个场景中 3 个不差于 A，具体首选为 B/A/B/B；B 的目标完成数为 3/4，A 为 2/4。
+- A/B 总缺陷分别为 10/4；hard 违规 1/0、关系违规 1/0、连续性错误 3/1、事实错误 3/2、事件顺序错误 1/1、越过停止边界 1/0。B 没有新增任何门槛内错误，3 个场景记录了具体正面作用。
+- 人工修改字符数和时间未测量，均明确记录为 `not_measured`，不作为 go/no-go 门槛，也没有把 `null` 当作 0。
+- 全部七项门槛通过，最终建议为 `retain_scene_spec_experimental_route`。该结果只支持保留路线并另行设计最小生产接入，不授权直接切换生产、启用 Validator、实现 Repair 或开始 Phase 5/6；Phase 4R 到此强制停止，不追加解释性批次。
 
 ## Phase 5：Writer 受控工具调用
 
@@ -652,3 +660,4 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | Phase 4R Batch R4 SceneSpec失败归因 | 只读R3三臂messages manifest、12份生成hash、SceneSpec、ContextItem和独立盲审；逐条建立允许枚举内的因果归因、confidence、source/hash及Writer职责所有者；不调用LLM、不重新生成或修改生产 | 22条盲审标签合并为15个概念缺陷：Writer明确指令不服从4、写作边界含糊2、SceneSpec局部事实缺失1、其他生成波动8；已证实的dropped_context_dependency=0；Q4/Q8的SceneSpec明确违规簇=2；unit=218、integration=8、quality=76、compileall通过 | token删减不是Q8失败的必要原因，也不能由当前样本证明直接造成Q4退化；保留约9k budgeted shadow候选，下一优先级仅为另行授权的生成后boundary validator离线检测；Repair和上下文恢复均不自动开始 |
 | 2026-07-20 | Phase 4R Batch R5 BoundaryValidator离线基线 | Predictor只读冻结SceneSpec、当前需求、匿名生成清单和12份正文，先冻结私有预测hash；独立evaluator随后读取盲审并按候选概念缺陷去重；不调用LLM、不修改生产、不实现Repair | boundary TP/FP/FN/TN=3/0/0/9；Q7 required-event=1/0/0/2；Q4 unsupported-fact exploratory=2/0/0/1；三项P/R/F1均100%，Q7状态分类、Q8越界检出和证据追溯均100%；原始字节预测hash=`fb6e2158…a42c0`；unit=223、integration=8、quality=81、compileall通过 | 小样本机械门槛通过，只建议等待另行授权Validator shadow接入；不宣称通用Validator成熟，不切生产，不开始Repair、Phase5或Phase6 |
 | 2026-07-20 | Phase 4R Batch R6A Validator默认关闭shadow接入 | R5规则迁入app并保持冻结hash；Writer在StateCommitter和record_commit成功后调用失败隔离runner；flag默认false，NoOp sink，不创建数据库，不调用LLM | R5原始预测hash完全不变；disabled调用/记录为0；异常不回滚正文或checkpoint；记录无全文/messages/Prompt且excerpt≤140字；真实样本0；unit=229、integration=9、quality=85、compileall通过 | 结构接入完成但不切生产；仅建议等待另行授权R6B真实shadow采样，不开始Repair、Phase5或Phase6 |
+| 2026-07-20 | Phase 4R 最终真实写作试验 | 对真实连续4小节固定A=`legacy_full`、B=`legacy_full+SceneSpec`，共8次主调用；人工匿名审阅原始输出，不测试budgeted Broker，不测人工改稿成本，不修改生产 | B不差于A为3/4；目标完成A/B=2/3；总缺陷A/B=10/4；hard=1/0、关系=1/0、连续性=3/1、事实=3/2、事件顺序=1/1、越界=1/0；3个场景有具体正面作用；七项门槛全部通过；定向测试22 passed、compileall通过 | 最终建议保留SceneSpec实验路线，但4小节不足以证明全面生产质量；生产继续legacy_full，Validator默认关闭，不开始Repair、Phase5/6，不追加Phase4R批次 |
