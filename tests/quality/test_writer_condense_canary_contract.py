@@ -21,9 +21,15 @@ def test_report_captures_fixed_cost_and_canary_limits():
     assert baseline["total_condense_known_tokens"] == 8998
     assert baseline["total_condense_latency_seconds"] == 46.1
     assert baseline["same_shape_warn_expected_http_post_count"] == 19
-    assert report["configuration"]["default"] == "legacy"
-    assert report["real_demo"]["status"] == "not_run"
-    assert report["real_demo"]["production_default_promotion_authorized"] is False
+    assert report["configuration"]["default"] == "warn"
+    assert report["real_demo"]["status"] == "passed"
+    assert report["real_demo"]["task_id"] == "4ce7e82f-d3b4-44a6-8dcf-ec1e638d77e9"
+    assert report["real_demo"]["http_post_count"] == 19
+    assert report["real_demo"]["condense_started_count"] == 0
+    assert report["real_demo"]["retained_original_count"] == 4
+    assert report["real_demo"]["mandatory_event_retry_count"] == 0
+    assert report["real_demo"]["user_usability_judgment"] == "usable"
+    assert report["real_demo"]["production_default_promotion_authorized"] is True
     assert report["scope"]["writer_llm_calls"] == 0
 
 

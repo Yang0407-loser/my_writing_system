@@ -17,10 +17,10 @@ The three calls consumed 8,998 known tokens and 46.1 seconds to remove 859 CJK c
 
 ## Integration
 
-`WRITER_CONDENSE_MODE` now has two modes:
+`WRITER_CONDENSE_MODE` has two modes:
 
-- `legacy` (default): preserves the existing LLM condensation above `target_words * 1.3`;
-- `warn`: records that condensation would have occurred, does not construct or call the condensation request, and retains the complete draft.
+- `warn` (default after the real canary): records that condensation would have occurred, does not construct or call the condensation request, and retains the complete draft;
+- `legacy`: preserves the existing LLM condensation above `target_words * 1.3` and remains the explicit rollback path.
 
 Invalid values fall back to `legacy` with a configuration warning. Expansion and unfinished-sentence completion are unchanged. Writer prompts, messages, generation parameters, handover, commits, checkpoints and final Review were not modified.
 
@@ -32,7 +32,19 @@ The current Writer extracts the handover and commits some handover effects befor
 
 ## Real canary
 
-No Writer or LLM was called during implementation. One normal four-subsection task may be run with:
+No Writer or LLM was called during implementation. The separately executed real task `4ce7e82f-d3b4-44a6-8dcf-ec1e638d77e9` then exercised `warn` on four normal subsections:
+
+- 19 HTTP calls, including exactly four main draft calls;
+- all four subsections exceeded the legacy threshold, and all four retained their original draft with zero condense calls;
+- zero Mandatory Event retries and zero incremental section reviews;
+- final section Review and global Review both completed;
+- task status, saved draft and checkpoint all reached `completed`;
+- original subsection lengths were 1,770, 1,895, 1,607 and 1,658 characters (6,930 total); persisted output reported 6,965 words/characters;
+- the user judged the resulting draft `usable`.
+
+The real acceptance conditions therefore passed and `warn` is promoted to the default. The run's 36,599 task tokens and 332.6 seconds are recorded for observability, but cross-run token and latency differences are not claimed as exact causal savings because generated content differed. The directly attributable result is the omission of four would-have-condensed calls.
+
+Normal CMD startup may state the promoted mode explicitly:
 
 ```cmd
 set WRITER_INCREMENTAL_SECTION_REVIEW=false
@@ -42,6 +54,11 @@ uv run celery -A app.celery_app worker --loglevel=info -P solo -Q writing
 
 If the lifecycle matches the baseline, the expected HTTP count is 19 rather than 22. A different lifecycle must be assessed by the number of omitted condense calls, not by forcing an exact total.
 
-Promotion requires zero condense calls, no new generation retries, a completed task with valid draft/checkpoint/final Review, acceptable total length and a user judgment that the draft remains usable. `warn` is not authorized as the production default until that run passes.
+To roll back in CMD:
+
+```cmd
+set WRITER_CONDENSE_MODE=legacy
+uv run celery -A app.celery_app worker --loglevel=info -P solo -Q writing
+```
 
 Engineering verification: 59 targeted tests passed, affected-module compileall passed, and implementation-time Writer/LLM calls were zero.

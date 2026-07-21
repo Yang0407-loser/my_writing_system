@@ -59,7 +59,7 @@ class Settings:
         WRITER_INCREMENTAL_SECTION_REVIEW_RAW in {"true", "1", "yes"}
     )
     WRITER_CONDENSE_MODE_RAW: str = os.getenv(
-        "WRITER_CONDENSE_MODE", "legacy"
+        "WRITER_CONDENSE_MODE", "warn"
     ).strip().lower()
     WRITER_CONDENSE_MODE: str = (
         WRITER_CONDENSE_MODE_RAW

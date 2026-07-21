@@ -154,6 +154,7 @@ def test_generation_controller_stream_fallback_preserves_callbacks():
 
 def test_generation_controller_condenses_with_existing_parameters(monkeypatch):
     monkeypatch.setattr("app.writing.generation_controller.settings.WRITER_EXPAND_THRESHOLD", 0.0)
+    monkeypatch.setattr("app.writing.generation_controller.settings.WRITER_CONDENSE_MODE", "legacy")
     llm = FakeLLM(["精简完成。"])
     artifact = controller(llm).adjust_length(
         "很长的正文。" * 20,

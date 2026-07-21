@@ -34,11 +34,12 @@
   },
   "configuration": {
     "name": "WRITER_CONDENSE_MODE",
-    "default": "legacy",
+    "default": "warn",
     "allowed_modes": ["legacy", "warn"],
     "invalid_effective_mode": "legacy",
     "legacy_semantics": "condense with the existing LLM call above 1.3 times target",
-    "warn_semantics": "record the overflow and retain the complete draft without constructing or calling the condense request"
+    "warn_semantics": "record the overflow and retain the complete draft without constructing or calling the condense request",
+    "rollback_command_cmd": "set WRITER_CONDENSE_MODE=legacy"
   },
   "observability": {
     "record_name": "writer_condense_observation",
@@ -69,11 +70,42 @@
     "reason_not_changed": "changing state ordering would introduce a second core variable"
   },
   "real_demo": {
-    "status": "not_run",
-    "allowed_runs": 1,
-    "expected_four_subsection_http_posts_if_shape_matches": 19,
+    "status": "passed",
+    "task_id": "4ce7e82f-d3b4-44a6-8dcf-ec1e638d77e9",
+    "source": "fixed external run log and persisted task metadata",
+    "subsection_count": 4,
+    "http_post_count": 19,
+    "draft_call_count": 4,
+    "target_words_by_subsection": [1000, 1000, 1000, 1000],
+    "original_characters_by_subsection": [1770, 1895, 1607, 1658],
+    "original_characters_total": 6930,
+    "persisted_word_count": 6965,
+    "would_have_condensed_count": 4,
+    "condense_started_count": 0,
+    "retained_original_count": 4,
+    "mandatory_event_retry_count": 0,
+    "incremental_section_review_started_count": 0,
+    "final_section_review_count": 1,
+    "global_review_completed": true,
+    "task_status": "completed",
+    "draft_saved": true,
+    "checkpoint_phase": "completed",
+    "task_tokens": 36599,
+    "writer_tokens": 24461,
+    "reviewer_tokens": 6080,
+    "elapsed_seconds": 332.6,
+    "auxiliary_review": {
+      "section_score": 8.0,
+      "global_score": 6.5,
+      "pacing_issue_count": 1,
+      "style_deviation": 0.719
+    },
+    "user_usability_judgment": "usable",
+    "acceptance_conditions_passed": true,
     "exact_count_required": false,
-    "production_default_promotion_authorized": false
+    "cross_run_cost_comparison_is_causal": false,
+    "cross_run_comparison_note": "generation content differs across runs; only the four observed omitted condense calls are directly attributable",
+    "production_default_promotion_authorized": true
   },
   "verification": {
     "targeted_tests_passed": 59,

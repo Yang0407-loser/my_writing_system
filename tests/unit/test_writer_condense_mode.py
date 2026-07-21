@@ -34,9 +34,9 @@ def adjust(controller, draft, *, target_words=10, task_id="private-task"):
     )
 
 
-def test_condense_mode_defaults_to_legacy():
-    assert settings.WRITER_CONDENSE_MODE_RAW == "legacy"
-    assert settings.WRITER_CONDENSE_MODE == "legacy"
+def test_condense_mode_defaults_to_warn():
+    assert settings.WRITER_CONDENSE_MODE_RAW == "warn"
+    assert settings.WRITER_CONDENSE_MODE == "warn"
 
 
 def test_invalid_condense_mode_warns_and_effective_value_is_legacy(monkeypatch):
