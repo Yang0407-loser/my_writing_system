@@ -89,6 +89,7 @@ export const saveDraft=(id,draft)=>req('/tasks/'+id+'/draft',{method:'PUT',heade
 export const getDraft=(id)=>req('/tasks/'+id+'/draft');
 export const saveOutlineNodes=(id,nodes)=>post('/tasks/'+id+'/outline',{nodes});
 export const getOutlineNodes=(id)=>req('/tasks/'+id+'/outline');
+export const getOutlineBudgetAdvice=(id,body)=>post('/tasks/'+id+'/outline/budget-advice',body);
 export const getOutlineVersions=(id)=>req('/tasks/'+id+'/outline/versions');
 export const restoreOutlineVersion=(id,vid)=>req('/tasks/'+id+'/outline/restore/'+vid,{method:'POST'});
 export const stageDeleteNode=(id,body)=>post('/tasks/'+id+'/outline/delete-node',body);

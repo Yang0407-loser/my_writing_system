@@ -43,10 +43,12 @@ export function createWriterApp() {
         narrative_density:0.5, adjective_density:0.15,
         paragraph_length_avg:200, dialogue_tag_style:'动作替代', pacing:'中等',
       });
+      const analyzedStyleBrief = ref('');
       const analyzingStyle = ref(false);
 
       // ── Outline ──
       const outline = ref(OT.initOutlineDefaults());
+      const outlineBudgetLoading = ref(false);
       const showSplitPopup = ref(null); const splitRequirement = ref(''); const splitNumChildren = ref(3);
       const aiSplitting = ref(false); const showDescEdit = ref(null); const editingKeyPoints = ref(''); const editingDesc = ref(''); const undoCount = ref(0);
       const injectMenu = ref({node:null}); const injectForm = ref({new_items_str:'',new_characters_str:'',new_factions_str:'',new_locations_str:'',foreshadowing_plant_str:'',foreshadowing_resolve_str:''});
@@ -201,7 +203,7 @@ export function createWriterApp() {
 
       // ═══ Style ═══
       async function applyStylePreset(name) { try{const d=await API.applyPreset(name);const p=d.style_profile||d;Object.keys(styleProfile.value).forEach(k=>{if(k in p)styleProfile.value[k]=p[k]});styleProfile.value.preset_name=name;toast('已应用风格: '+name,'success')}catch(e){toast('加载失败','error')} }
-      async function analyzeStyle() { if(!referenceText.value.trim()){toast('请先填入参考文本','error');return} analyzingStyle.value=true; agentStatus.value='正在分析参考文本风格...'; try{const d=await API.analyzeStyle(referenceText.value);const p=d.style_profile||d;Object.keys(styleProfile.value).forEach(k=>{if(k in p)styleProfile.value[k]=p[k]});toast('风格提取完成','success')}catch(e){toast('提取失败','error')}finally{analyzingStyle.value=false;agentStatus.value=''} }
+      async function analyzeStyle() { if(!referenceText.value.trim()){toast('请先填入参考文本','error');return} analyzingStyle.value=true; agentStatus.value='正在分析参考文本风格...'; try{const d=await API.analyzeStyle(referenceText.value);const p=d.style_profile||d;Object.keys(styleProfile.value).forEach(k=>{if(k in p)styleProfile.value[k]=p[k]});analyzedStyleBrief.value=p.style_brief||'';toast('风格提取完成','success')}catch(e){toast('提取失败','error')}finally{analyzingStyle.value=false;agentStatus.value=''} }
       async function genWorldSettingFn() { if(!topic.value.trim()){toast('请先输入主题','error');return} genWorld.value=true; try{const d=await API.genWorldSetting(topic.value);worldSetting.value=d.world_setting||d.setting||'';toast('世界观已生成','success')}catch(e){toast('生成失败','error')}finally{genWorld.value=false} }
       async function genStorySynopsisFn() { if(!topic.value.trim())return; genSynopsis.value=true; try{const d=await API.genStorySynopsis(topic.value,worldSetting.value);storySynopsis.value=d.synopsis||d.story_synopsis||''}catch(e){}finally{genSynopsis.value=false} }
 
@@ -294,6 +296,56 @@ export function createWriterApp() {
           await API.saveOutlineNodes(taskId.value, flatNodes);
           toast('大纲已保存', 'success');
         } catch(e) { toast('保存失败', 'error'); }
+      }
+      async function requestOutlineBudgetAdvice() {
+        outlineBudgetLoading.value = true;
+        try {
+          const nodes = [];
+          function flatten(ns, parentId) {
+            for (let i = 0; i < ns.length; i++) {
+              const n = ns[i];
+              nodes.push({
+                id:n.id, parent_id:parentId, title:n.title||'',
+                description:n.description||'', key_points:n.key_points||[],
+                target_words:n.target_words||0, sort_order:i,
+              });
+              if (n.children?.length) flatten(n.children, n.id);
+            }
+          }
+          flatten(outline.value, '');
+          const singleChapterBudget = outline.value.length === 1 ? Number(globalWordLimit.value || 0) : null;
+          const result = await API.getOutlineBudgetAdvice(taskId.value || 'preview', {
+            nodes,
+            style_profile: {
+              sentence_preference:styleProfile.value.sentence_preference,
+              sensory_density:styleProfile.value.sensory_density,
+              dialogue_ratio:styleProfile.value.dialogue_ratio,
+              emotion_intensity:styleProfile.value.emotion_intensity,
+            },
+            character_names:selectedChars.value.map(c=>c.name).filter(Boolean),
+            chapter_budget:singleChapterBudget > 0 ? singleChapterBudget : null,
+            style_brief:analyzedStyleBrief.value,
+          });
+          for (const chapter of result.chapters || []) {
+            const root = outline.value[(chapter.section || 1) - 1];
+            const leaves = root?.children || [];
+            for (const advice of chapter.subsections || []) {
+              const leaf = leaves[(advice.subsection || 1) - 1];
+              if (leaf) leaf._budgetAdvice = advice;
+            }
+          }
+          toast('篇幅建议已更新；未修改大纲', 'success');
+        } catch(e) {
+          toast('篇幅建议生成失败', 'error');
+        } finally {
+          outlineBudgetLoading.value = false;
+        }
+      }
+      function applyBudgetRecommendation(node) {
+        const advice = node?._budgetAdvice;
+        if (!advice) return;
+        node.target_words = advice.chapter_allocated_target || advice.recommended_preferred;
+        toast('已应用到当前大纲，请确认后保存', 'info');
       }
       async function undoDeleteFn() {
         if (!taskId.value) return;
@@ -989,8 +1041,8 @@ export function createWriterApp() {
       async function runOutlineEval(){evalLoading.value=true;agentStatus.value='正在评估大纲逻辑...';try{const d=await API.req('/api/analysis/evaluate?task_id='+taskId.value+'&from='+evalRange.value.from+'&to='+evalRange.value.to,{method:'POST'});evalResult.value=d}catch(e){toast('评估失败','error')}finally{evalLoading.value=false;agentStatus.value=''}}
 
       // ═══ Persistence ═══
-      function saveState(){try{const s={taskId:taskId.value,topic:topic.value,worldSetting:worldSetting.value,storySynopsis:storySynopsis.value,referenceText:referenceText.value,apiKey:apiKey.value,styleProfile:styleProfile.value,outline:outline.value,globalWordLimit:globalWordLimit.value,mode:mode.value,selectedCharIds:selectedCharIds.value,draftSnap:draftBlocks.value.map(b=>({...b,text:(b.text||'').slice(0,2000)})),savedAt:Date.now()};localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
-      function restoreSession(){try{const r=localStorage.getItem(PK);if(!r)return false;const s=JSON.parse(r);if(Date.now()-(s.savedAt||0)>7*24*60*60*1000){localStorage.removeItem(PK);return false}if(s.taskId)taskId.value=s.taskId;if(s.topic)topic.value=s.topic;if(s.worldSetting)worldSetting.value=s.worldSetting;if(s.storySynopsis)storySynopsis.value=s.storySynopsis;if(s.referenceText)referenceText.value=s.referenceText;if(s.apiKey)apiKey.value=s.apiKey;if(s.styleProfile)styleProfile.value=s.styleProfile;if(s.outline?.length)outline.value=s.outline;if(s.globalWordLimit)globalWordLimit.value=s.globalWordLimit;if(s.mode)mode.value=s.mode;if(s.selectedCharIds)selectedCharIds.value=s.selectedCharIds;if(s.draftSnap?.length){draftBlocks.value=s.draftSnap;taskDone.value=true}return!!s.taskId}catch(e){return false}}
+      function saveState(){try{const s={taskId:taskId.value,topic:topic.value,worldSetting:worldSetting.value,storySynopsis:storySynopsis.value,referenceText:referenceText.value,apiKey:apiKey.value,styleProfile:styleProfile.value,analyzedStyleBrief:analyzedStyleBrief.value,outline:outline.value,globalWordLimit:globalWordLimit.value,mode:mode.value,selectedCharIds:selectedCharIds.value,draftSnap:draftBlocks.value.map(b=>({...b,text:(b.text||'').slice(0,2000)})),savedAt:Date.now()};localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
+      function restoreSession(){try{const r=localStorage.getItem(PK);if(!r)return false;const s=JSON.parse(r);if(Date.now()-(s.savedAt||0)>7*24*60*60*1000){localStorage.removeItem(PK);return false}if(s.taskId)taskId.value=s.taskId;if(s.topic)topic.value=s.topic;if(s.worldSetting)worldSetting.value=s.worldSetting;if(s.storySynopsis)storySynopsis.value=s.storySynopsis;if(s.referenceText)referenceText.value=s.referenceText;if(s.apiKey)apiKey.value=s.apiKey;if(s.styleProfile)styleProfile.value=s.styleProfile;if(s.analyzedStyleBrief)analyzedStyleBrief.value=s.analyzedStyleBrief;if(s.outline?.length)outline.value=s.outline;if(s.globalWordLimit)globalWordLimit.value=s.globalWordLimit;if(s.mode)mode.value=s.mode;if(s.selectedCharIds)selectedCharIds.value=s.selectedCharIds;if(s.draftSnap?.length){draftBlocks.value=s.draftSnap;taskDone.value=true}return!!s.taskId}catch(e){return false}}
       function resetAll(){
         stopPolling();
         // 先清空 reactive 状态，beforeunload 即使触发也只保存空数据
@@ -1021,7 +1073,7 @@ export function createWriterApp() {
       return { refineMode,taskId,statusText,statusColor,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
-        outline,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
+        outline,outlineBudgetLoading,requestOutlineBudgetAdvice,applyBudgetRecommendation,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,

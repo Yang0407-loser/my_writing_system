@@ -428,6 +428,43 @@ textarea { resize: vertical; min-height: 60px; }
 
 .tree-row:hover .tree-del { color: var(--accent); }
 
+.tree-row.has-budget-advice { flex-wrap: wrap; }
+
+.budget-advice-row {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 4px 2px 34px;
+  color: var(--muted);
+  font-size: 9px;
+  cursor: default;
+}
+
+.budget-density {
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+}
+
+.density-dense, .density-overloaded { color: var(--orange); border-color: var(--orange); }
+.density-balanced { color: var(--green); border-color: var(--green); }
+.budget-range { white-space: nowrap; color: var(--text); }
+.budget-reasons { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.budget-apply {
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  padding: 1px 3px;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.budget-apply:hover { text-decoration: underline; }
+
 /* ═══ DRAFT / WRITING AREA ═══ */
 .draft-area {
   flex: 1;

@@ -8,7 +8,7 @@ import logging
 
 import redis
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,14 @@ class DeleteNodeBody(BaseModel):
 
 class DraftBody(BaseModel):
     draft: str = ""
+
+
+class OutlineBudgetAdviceBody(BaseModel):
+    nodes: list[dict] = Field(default_factory=list)
+    style_profile: dict = Field(default_factory=dict)
+    character_names: list[str] = Field(default_factory=list)
+    chapter_budget: int | None = None
+    style_brief: str = ""
 
 
 # ═══ 工具函数 ═══════════════════════════════════════════════════════
@@ -106,6 +114,29 @@ def _tree_to_outline_v2(tree: list[dict]) -> list[dict]:
             "section": i + 1,
             "title": node.get("title", ""),
             "key_points": node.get("key_points", []),
+            "subsections": subsections,
+        })
+    return result
+
+
+def _tree_to_budget_outline(tree: list[dict]) -> list[dict]:
+    """Build advisor input while preserving editor node IDs as provenance."""
+    result = []
+    for section_index, node in enumerate(tree, 1):
+        subsections = []
+        for subsection_index, child in enumerate(node.get("children", []), 1):
+            subsections.append({
+                "subsection": subsection_index,
+                "source_id": str(child.get("id") or f"outline:{section_index}:{subsection_index}"),
+                "title": child.get("title", ""),
+                "description": child.get("description", ""),
+                "key_points": child.get("key_points", []),
+                "target_words": child.get("target_words", 2000),
+            })
+        result.append({
+            "section": section_index,
+            "source_id": str(node.get("id") or f"outline:{section_index}"),
+            "title": node.get("title", ""),
             "subsections": subsections,
         })
     return result
@@ -232,6 +263,24 @@ def get_undo_count(task_id: str):
 
 
 # ═══ 大纲 CRUD ═══
+
+@router.post("/{task_id}/outline/budget-advice")
+def get_outline_budget_advice(task_id: str, body: OutlineBudgetAdviceBody):
+    """Return deterministic advice without reading or mutating task storage."""
+    del task_id  # The route stays task-scoped; analysis uses only the submitted draft.
+    from ..writing.outline_budget_advisor import OutlineBudgetAdvisor
+
+    tree = _build_tree_from_nodes([dict(node) for node in body.nodes])
+    outline = _tree_to_budget_outline(tree)
+    result = OutlineBudgetAdvisor().advise_outline(
+        outline=outline,
+        style_profile=body.style_profile,
+        character_names=body.character_names,
+        chapter_budget=body.chapter_budget,
+        style_brief=body.style_brief,
+    )
+    return result.model_dump(mode="json")
+
 
 @router.get("/{task_id}/outline")
 def get_outline(task_id: str):
