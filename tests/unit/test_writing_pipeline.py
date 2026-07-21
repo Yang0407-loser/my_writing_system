@@ -374,6 +374,13 @@ def test_writer_run_remains_a_compatible_facade(monkeypatch):
     monkeypatch.setattr("app.faction_store.build_faction_context", lambda *_: "")
     monkeypatch.setattr("app.map_manager.build_location_context", lambda *_: "")
     monkeypatch.setattr("app.item_manager.build_item_context", lambda *_: "")
+    original_arcs = [{"character_id": "c1", "current_state": "old"}]
+    monkeypatch.setattr(
+        "app.agents.writer.CharacterManager.update_states",
+        lambda _self, _characters, arcs, _text, _section: [
+            {**arcs[0], "current_state": "updated"}
+        ],
+    )
 
     class Blackboard:
         def __init__(self):
@@ -419,6 +426,8 @@ def test_writer_run_remains_a_compatible_facade(monkeypatch):
         vector_store=vector,
         blackboard=blackboard,
         task_id="task-1",
+        characters=[{"id": "c1", "name": "Character"}],
+        character_arcs=original_arcs,
         rules_context="测试规则",
     )
 
@@ -426,3 +435,6 @@ def test_writer_run_remains_a_compatible_facade(monkeypatch):
     assert result["context_state"]["buffer"] == ["完成测试，正文完成。"]
     assert vector.calls[-1] == ("enforce_task_limit", "task-1")
     assert blackboard.checkpoints[-1][1]["current_section"] == 1
+    assert result["character_arcs"][0]["current_state"] == "updated"
+    assert blackboard.checkpoints[-1][1]["character_arcs"] == result["character_arcs"]
+    assert original_arcs[0]["current_state"] == "old"

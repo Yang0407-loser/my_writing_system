@@ -28,6 +28,10 @@ from ..writing import (
     PromptBuilder,
     SceneSpecCanaryController,
     StateCommitter,
+    build_character_state_propagation_event,
+    character_arcs_hash,
+    copy_character_arcs,
+    is_valid_character_arcs,
     ShadowBoundaryValidationRunner,
     ShadowPostWriteExtractionRunner,
     SharedPostWriteExtractor,
@@ -149,6 +153,18 @@ class Writer(BaseAgent):
         )
         if resume_context:
             cm.deserialize(resume_context)
+        character_arcs = copy_character_arcs(character_arcs or [])
+        character_state_propagation = build_character_state_propagation_event(
+            task_id=task_id,
+            section=None,
+            subsection=None,
+            source="legacy_input_fallback",
+            input_state_hash=character_arcs_hash(character_arcs),
+            updated_state_hash=character_arcs_hash(character_arcs),
+            update_applied=False,
+            fallback_reason="no_character_state_update",
+            checkpoint_version=state_committer.CHECKPOINT_VERSION,
+        )
         full_draft = ""
         handover_notes = []
         backref_suggestions = []
@@ -973,11 +989,48 @@ class Writer(BaseAgent):
             # --- 角色状态更新 ---
             if character_arcs:
                 cm_char = CharacterManager()
-                character_arcs = cm_char.update_states(
-                    characters, character_arcs, section_text, section_num
+                prior_character_arcs = copy_character_arcs(character_arcs)
+                input_state_hash = character_arcs_hash(prior_character_arcs)
+                source = "writer_updated"
+                fallback_reason = None
+                try:
+                    candidate_arcs = cm_char.update_states(
+                        characters or [], prior_character_arcs, section_text, section_num
+                    )
+                    if not is_valid_character_arcs(candidate_arcs):
+                        source = "legacy_input_fallback"
+                        fallback_reason = "invalid_character_state_update"
+                        character_arcs = prior_character_arcs
+                    else:
+                        character_arcs = copy_character_arcs(candidate_arcs)
+                except Exception as exc:
+                    source = "legacy_input_fallback"
+                    fallback_reason = f"character_state_update_error:{type(exc).__name__}"
+                    character_arcs = prior_character_arcs
+                    logger.warning(
+                        "[%s] character state update failed; retaining prior state (%s)",
+                        task_id[:8],
+                        type(exc).__name__,
+                    )
+                updated_state_hash = character_arcs_hash(character_arcs)
+                character_state_propagation = build_character_state_propagation_event(
+                    task_id=task_id,
+                    section=section_num,
+                    subsection=None,
+                    source=source,
+                    input_state_hash=input_state_hash,
+                    updated_state_hash=updated_state_hash,
+                    checkpoint_state_hash=updated_state_hash,
+                    update_applied=updated_state_hash != input_state_hash,
+                    fallback_reason=fallback_reason,
+                    checkpoint_version=state_committer.CHECKPOINT_VERSION,
+                )
+                logger.info(
+                    "character_state_propagation %s",
+                    json.dumps(character_state_propagation, ensure_ascii=True, sort_keys=True),
                 )
                 if blackboard:
-                    blackboard.set(task_id, "character_arcs", character_arcs)
+                    blackboard.set(task_id, "character_arcs", copy_character_arcs(character_arcs))
 
             # --- AI 提取角色关系变化 ---
             try:
@@ -1032,6 +1085,8 @@ class Writer(BaseAgent):
                         "backref_suggestions": list(backref_suggestions),
                         "current_section": section_num,
                         "draft": full_draft,
+                        "character_arcs": copy_character_arcs(character_arcs),
+                        "_character_state_propagation": dict(character_state_propagation),
                     })
                 except Exception:
                     logger.warning(f"[{task_id[:8]}] 检查点保存失败 (第{section_num}节)，继续写作", exc_info=True)
@@ -1043,6 +1098,8 @@ class Writer(BaseAgent):
                     section_texts=dict(section_texts),
                     handover_notes=list(handover_notes),
                     backref_suggestions=list(backref_suggestions),
+                    character_arcs=copy_character_arcs(character_arcs),
+                    character_state_propagation=dict(character_state_propagation),
                 )
                 if not should_continue:
                     sec_idx += 1
@@ -1105,6 +1162,8 @@ class Writer(BaseAgent):
             "section_texts": section_texts,
             "context_state": cm.serialize(),
             "section_timings": section_timings,
+            "character_arcs": copy_character_arcs(character_arcs),
+            "character_state_propagation": dict(character_state_propagation),
         }
 
     # ═══ P0: 硬约束构建 ═══

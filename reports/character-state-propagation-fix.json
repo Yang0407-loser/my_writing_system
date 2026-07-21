@@ -1,0 +1,75 @@
+{
+  "report_id": "character-state-propagation-fix-2026-07-21",
+  "date": "2026-07-21",
+  "status": "engineering_fix_complete_real_demo_pending",
+  "scope": {
+    "production_correctness_fix": true,
+    "writer_or_llm_calls": 0,
+    "prompt_changed": false,
+    "generation_parameters_changed": false,
+    "character_state_prompt_changed": false,
+    "new_state_store": false
+  },
+  "original_break": {
+    "writer_local_updated": true,
+    "blackboard_updated": true,
+    "writer_result_carried_character_arcs": false,
+    "coordinator_adopted_updated_character_arcs": false,
+    "section_checkpoint_carried_character_arcs": false,
+    "final_reviewer_could_receive_stale_state": true
+  },
+  "fixed_flow": [
+    "subsection prose commit",
+    "section character state update",
+    "section checkpoint with prose and character_arcs",
+    "Writer result with character_arcs",
+    "Coordinator canonical state adoption",
+    "next-phase checkpoint",
+    "final Reviewer input",
+    "resume from checkpoint"
+  ],
+  "implementation": {
+    "atomic_llm_parse": "all expected character IDs and non-empty states are required; otherwise the whole update falls back",
+    "input_mutation": "Writer and CharacterManager use deep copies",
+    "writer_result": "adds character_arcs and character_state_propagation without changing existing fields",
+    "automatic_checkpoint": "adds character_arcs and hash-only propagation metadata",
+    "interactive_checkpoint": "receives the current Writer state instead of closing over the stale Coordinator value",
+    "coordinator": "validates and adopts Writer state; missing or invalid legacy results fall back",
+    "reviewer": "reads Coordinator state and records its deterministic hash",
+    "blackboard_role": "runtime sharing and observation, not the sole persistence source"
+  },
+  "compatibility": {
+    "checkpoint_version_changed": false,
+    "idempotency_key_changed": false,
+    "old_checkpoint_without_propagation_metadata": "supported",
+    "old_writer_result_without_character_arcs": "falls back to Coordinator input state",
+    "empty_character_arcs": "preserves legacy empty behavior",
+    "character_arc_contract_default_changed": false
+  },
+  "hash_contract": {
+    "algorithm": "sha256(canonical-json)",
+    "canonical_json": "UTF-8, sorted object keys, stable list order, compact separators",
+    "target": "Writer updated = Coordinator = checkpoint = final Reviewer",
+    "target_met_in_tests": true,
+    "private_state_logged": false
+  },
+  "checkpoint_semantics": {
+    "state_update_before_prose_commit": false,
+    "state_checkpoint_after_section_prose_commit": true,
+    "prose_and_state_in_same_checkpoint_payload": true,
+    "cross_store_transactional_rollback": false,
+    "note": "The existing StateCommitter explicitly exposes ordered side effects without fake rollback. This fix does not broaden that contract."
+  },
+  "verification": {
+    "targeted_tests": 52,
+    "targeted_tests_passed": 52,
+    "compileall": "passed",
+    "real_demo_run": false,
+    "new_writer_or_llm_calls": 0
+  },
+  "next_step": {
+    "maximum_authorized_demo_count": 1,
+    "demo_purpose": "verify state hash propagation and resume behavior in one normal task",
+    "automatic_demo": false
+  }
+}

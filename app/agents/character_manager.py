@@ -118,6 +118,7 @@ class CharacterManager(BaseAgent):
         if not arcs:
             return arcs
 
+        original_arcs = [copy.deepcopy(a) for a in arcs]
         updated_arcs = [copy.deepcopy(a) for a in arcs]
 
         # 按角色分组
@@ -158,18 +159,34 @@ class CharacterManager(BaseAgent):
 
             try:
                 results = parse_json(response)
-                if isinstance(results, dict):
-                    results = [results]
-                if isinstance(results, list):
-                    for item in results:
-                        cid = item.get("character_id", "")
-                        new_state = item.get("current_state", "")
-                        if new_state:
-                            for arc in updated_arcs:
-                                if arc.get("character_id") == cid:
-                                    arc["current_state"] = new_state
-                                    break
-            except ValueError:
-                pass
+            except (TypeError, ValueError):
+                return original_arcs
+            if isinstance(results, dict):
+                results = [results]
+            if not isinstance(results, list):
+                return original_arcs
+
+            expected_ids = {arc.get("character_id", "") for arc, _ in batch}
+            parsed_states: dict[str, str] = {}
+            for item in results:
+                if not isinstance(item, dict):
+                    return original_arcs
+                cid = item.get("character_id", "")
+                new_state = item.get("current_state", "")
+                if (
+                    cid not in expected_ids
+                    or cid in parsed_states
+                    or not isinstance(new_state, str)
+                    or not new_state.strip()
+                ):
+                    return original_arcs
+                parsed_states[cid] = new_state
+            if set(parsed_states) != expected_ids:
+                return original_arcs
+
+            for arc in updated_arcs:
+                cid = arc.get("character_id", "")
+                if cid in parsed_states:
+                    arc["current_state"] = parsed_states[cid]
 
         return updated_arcs

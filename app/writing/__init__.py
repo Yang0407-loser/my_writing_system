@@ -25,6 +25,13 @@ from .scene_spec_provider import (
     SceneSpecCanaryController,
 )
 from .state_committer import StateCommitter
+from .character_state_propagation import (
+    build_character_state_propagation_event,
+    character_arcs_hash,
+    copy_character_arcs,
+    is_valid_character_arcs,
+    resolve_writer_character_arcs,
+)
 from .subsection_pipeline import SubsectionPipeline
 from .shadow_validation import ShadowBoundaryValidationRunner
 from .post_write_extraction import SharedPostWriteExtractor
@@ -53,6 +60,11 @@ __all__ = [
     "StateAssertion",
     "StoryStateSnapshot",
     "StateCommitter",
+    "build_character_state_propagation_event",
+    "character_arcs_hash",
+    "copy_character_arcs",
+    "is_valid_character_arcs",
+    "resolve_writer_character_arcs",
     "SubsectionInput",
     "SubsectionPipeline",
     "SubsectionPipelineArtifact",

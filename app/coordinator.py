@@ -26,6 +26,13 @@ from .character_arc_contract import (
     normalize_v2_arcs,
     resolve_contract_version,
 )
+from .writing.character_state_propagation import (
+    build_character_state_propagation_event,
+    character_arcs_hash,
+    copy_character_arcs,
+    is_valid_character_arcs,
+    resolve_writer_character_arcs,
+)
 
 logger = logging.getLogger("writing_system.coordinator")
 
@@ -39,6 +46,38 @@ def _safe_serialize(obj):
     if isinstance(obj, dict):
         return obj
     return {}
+
+
+def _apply_writer_character_state(bb, task_id: str, state: dict, result: dict, fallback):
+    """Adopt Writer state without relying on Blackboard as the source of truth."""
+    character_arcs, source = resolve_writer_character_arcs(result, fallback)
+    propagation = result.get("character_state_propagation")
+    state_hash = character_arcs_hash(character_arcs)
+    if not isinstance(propagation, dict):
+        propagation = build_character_state_propagation_event(
+            task_id=task_id,
+            section=None,
+            subsection=None,
+            source=source,
+            input_state_hash=state_hash,
+            updated_state_hash=state_hash,
+            coordinator_state_hash=state_hash,
+            checkpoint_state_hash=state_hash,
+            update_applied=False,
+            fallback_reason=source,
+            checkpoint_version="phase4r-r1",
+        )
+    else:
+        propagation = dict(propagation)
+        if source != "writer_updated":
+            propagation["source"] = source
+            propagation["fallback_reason"] = source
+        propagation["coordinator_state_hash"] = state_hash
+        propagation["checkpoint_state_hash"] = state_hash
+    state["character_arcs"] = copy_character_arcs(character_arcs)
+    state["_character_state_propagation"] = propagation
+    bb.set(task_id, "character_arcs", copy_character_arcs(character_arcs))
+    return character_arcs, propagation
 
 
 def _add_timeline(bb, task_id, stage, agent, action, detail="", section=None):
@@ -774,22 +813,47 @@ def _phase_writing(bb, task_id, state):
             bb.set(task_id, "draft", current_draft + new_section)
 
     # 用可变容器收集写作过程中的累积数据，供 on_section_done 和后续代码访问
-    _accum = {"section_texts": {}, "handover_notes": [], "backref_suggestions": []}
+    _accum = {
+        "section_texts": {},
+        "handover_notes": [],
+        "backref_suggestions": [],
+        "character_arcs": None,
+        "character_state_propagation": None,
+    }
 
-    def on_section_done(section_num, section_texts=None, handover_notes=None, backref_suggestions=None):
+    def on_section_done(
+        section_num,
+        section_texts=None,
+        handover_notes=None,
+        backref_suggestions=None,
+        character_arcs=None,
+        character_state_propagation=None,
+    ):
         """交互模式：每节完成后保存检查点并挂起。"""
         _accum["section_texts"].update(section_texts or {})
         if handover_notes:
             _accum["handover_notes"] = handover_notes
         if backref_suggestions:
             _accum["backref_suggestions"] = backref_suggestions
+        checkpoint_character_arcs = (
+            copy_character_arcs(character_arcs)
+            if is_valid_character_arcs(character_arcs)
+            else copy_character_arcs(state.get("character_arcs") or [])
+        )
+        _accum["character_arcs"] = checkpoint_character_arcs
+        if isinstance(character_state_propagation, dict):
+            _accum["character_state_propagation"] = dict(character_state_propagation)
         state["draft"] = existing_draft
         state["section_texts"] = {str(k): v for k, v in _accum["section_texts"].items()}
         state["handover_chain"] = _accum["handover_notes"]
         state["backref_suggestions"] = _accum["backref_suggestions"]
-        state["character_arcs"] = character_arcs
+        state["character_arcs"] = checkpoint_character_arcs
+        if _accum["character_state_propagation"]:
+            state["_character_state_propagation"] = dict(
+                _accum["character_state_propagation"]
+            )
         state["phase"] = "writing"
-        bb.set(task_id, "character_arcs", character_arcs)
+        bb.set(task_id, "character_arcs", copy_character_arcs(checkpoint_character_arcs))
         bb.save_checkpoint(task_id, state)
         bb.xadd_event(task_id, {
             "event": "awaiting_decision", "phase": "section",
@@ -860,6 +924,13 @@ def _phase_writing(bb, task_id, state):
         raise
 
     section_texts = result.get("section_texts", {})
+    character_arcs, writer_propagation = _apply_writer_character_state(
+        bb, task_id, state, result, character_arcs
+    )
+    logger.info(
+        "character_state_propagation %s",
+        _json.dumps(writer_propagation, ensure_ascii=True, sort_keys=True),
+    )
     all_handover = result.get("handover_notes", [])
     all_backrefs = result.get("backref_suggestions", [])
     section_timings = result.get("section_timings", [])
@@ -1094,6 +1165,15 @@ def _phase_review(bb, task_id, state):
     characters = state.get("characters") or []
     character_arcs = state.get("character_arcs") or []
     outline_v2 = state.get("outline_v2") or []
+    propagation = state.get("_character_state_propagation")
+    if isinstance(propagation, dict):
+        propagation = dict(propagation)
+        propagation["reviewer_state_hash"] = character_arcs_hash(character_arcs)
+        state["_character_state_propagation"] = propagation
+        logger.info(
+            "character_state_propagation %s",
+            _json.dumps(propagation, ensure_ascii=True, sort_keys=True),
+        )
 
     bb.set(task_id, "status", "reviewing")
     bb.xadd_event(task_id, {"event": "phase_change", "phase": "reviewing"})
