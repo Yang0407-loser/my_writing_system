@@ -1,4 +1,5 @@
 import copy
+import inspect
 import json
 from unittest.mock import MagicMock
 
@@ -116,3 +117,8 @@ def test_coordinator_rejects_invalid_writer_state_and_keeps_fallback():
     assert resolved == fallback
     assert propagation["source"] == "invalid_writer_state"
     assert propagation["fallback_reason"] == "invalid_writer_state"
+
+
+def test_phase_writing_does_not_shadow_module_json_alias():
+    source = inspect.getsource(coordinator._phase_writing)
+    assert "import json as _json" not in source

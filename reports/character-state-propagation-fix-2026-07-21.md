@@ -1,7 +1,7 @@
 # Character State Update 状态传播断链修复
 
 日期：2026-07-21
-状态：`engineering_fix_complete_real_demo_pending`
+状态：`logging_scope_regression_fixed_real_demo_rerun_required`
 
 ## 原断点
 
@@ -35,9 +35,15 @@ Blackboard 仍负责运行时共享和观测，但不再是人物更新的唯一
 
 ## 验证
 
-- 定向 unit/integration：52 passed；受影响模块 compileall 通过。
+- 定向 unit/integration：53 passed；受影响模块 compileall 通过。
 - Writer/LLM 新增调用：0。
 - Prompt、messages、生成参数、Mandatory Event、SceneSpec、Condense 和 Review 语义均未修改。
 - 修改后的真实任务尚未运行。
 
-下一步最多运行一个正常真实任务，只验证 hash 贯通、checkpoint 恢复和 final Reviewer 输入；不得借此启动其他优化。
+## 首次真实运行结果
+
+Worker 中实际执行了两个任务。两者都完成了 Writer 人物状态更新并记录了新的 `updated_state_hash`，但随后在 Coordinator 记录传播事件时触发 `UnboundLocalError`。根因是 `_phase_writing` 后部原有的局部 `import json as _json` 遮蔽了模块级 `_json`，而新增观测日志在该局部导入执行前调用了 `_json.dumps`。
+
+因此，这两次运行均为无效 Demo：Coordinator、最终 checkpoint 和 Reviewer 链路没有完成，不能作为传播成功证据。该问题属于本次观测接入引入的 Python 作用域错误，不是人物状态内容或检测器问题。
+
+已删除函数内重复导入并增加禁止 `_phase_writing` 局部遮蔽 `_json` 的回归测试。修复后仍需重启 Worker，最多重新运行一个正常真实任务，只验证 hash 贯通、checkpoint 和 final Reviewer 输入；不得借此启动其他优化。

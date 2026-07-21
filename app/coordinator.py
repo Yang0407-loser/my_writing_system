@@ -1037,7 +1037,6 @@ def _phase_writing(bb, task_id, state):
     # 全部完成
     assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
     bb.set(task_id, "draft", assembled)
-    import json as _json
     bb.set(task_id, "section_texts", _json.dumps({str(k): v for k, v in section_texts.items()}, ensure_ascii=False))
     state["draft"] = existing_draft
     state["section_texts"] = {str(k): v for k, v in section_texts.items()}
