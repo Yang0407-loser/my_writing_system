@@ -1,44 +1,64 @@
 {
-  "schema_version": "foreshadowing_resolve_chapter_normalization.v1",
+  "schema_version": "foreshadowing_resolve_chapter_normalization.v2",
   "date": "2026-07-21",
-  "incident_task_id": "3454d80e-02b9-48b6-b160-da614768da9b",
-  "root_cause": "SQLite INTEGER affinity accepted a non-numeric string written from handover to_section; Python summary code compared that raw string with current_chapter int.",
-  "schema_declared_type": "INTEGER",
-  "write_sources_audited": [
-    "app.foreshadowing_store.create_foreshadowing",
-    "app.foreshadowing_store.update_foreshadowing",
-    "app.coordinator handover auto-archive",
-    "app.routers.foreshadowings ForeshadowingBody"
-  ],
+  "status": "production_normalization_complete",
+  "latest_incident": {
+    "task_id": "3530d835-6b1e-4b46-94cc-94fc856c5cb6",
+    "task_completed": true,
+    "draft_and_checkpoint_saved": true,
+    "writer_retry_triggered": false,
+    "review_health_summary_failed": true,
+    "unrelated_to": [
+      "character_state",
+      "character_arc",
+      "scene_spec",
+      "prose_generation"
+    ]
+  },
+  "prior_incident_task_id": "3454d80e-02b9-48b6-b160-da614768da9b",
+  "root_cause": {
+    "previous_report_status": "implemented_but_incomplete_root_cause",
+    "resolve_operand": "normalized_positive_integer",
+    "comparison_operand": "current_chapter_string_from_section_text_keys",
+    "remaining_bypasses": [
+      "get_active_for_chapter raw SQLite comparison",
+      "get_unresolved_foreshadowings raw SQLite comparison"
+    ]
+  },
   "normalization": [
-    {"input":"positive_int","output":"same_positive_int"},
-    {"input":"ascii_digit_string","output":"positive_int_or_null_for_zero"},
-    {"input":"null_or_empty_string","output":null},
-    {"input":"bool_float_non_positive_or_other_string","output":null}
+    {"input": "positive_int", "output": "same_positive_int"},
+    {"input": "ascii_digit_string", "output": "positive_int_or_null_for_zero"},
+    {"input": "null_or_blank_string", "output": null},
+    {"input": "bool_float_non_positive_or_other_string", "output": null}
   ],
   "write_behavior": {
-    "persisted_types":["positive_integer","null"],
-    "invalid_value_warning_redacted":true,
-    "other_fields_modified":false
+    "persisted_types": ["positive_integer", "null"],
+    "invalid_value_warning_redacted": true,
+    "other_fields_modified": false
   },
   "read_behavior": {
-    "summary_normalizes_before_comparison":true,
-    "invalid_values_skipped_for_overdue_and_upcoming":true,
-    "invalid_resolve_chapter_count_reported":true,
-    "historical_rows_rewritten":false
+    "resolve_values_normalized": true,
+    "comparison_chapter_normalized": true,
+    "raw_sql_resolve_comparisons": 0,
+    "invalid_values_skipped_for_overdue_and_upcoming": true,
+    "invalid_resolve_chapter_count_reported": true
+  },
+  "database_actions": {
+    "schema_changed": false,
+    "migration_run": false,
+    "historical_rows_rewritten": false,
+    "records_deleted": false
+  },
+  "runtime_calls": {
+    "writer": 0,
+    "llm": 0
   },
   "forbidden_actions": {
-    "database_migration":false,
-    "bulk_rewrite":false,
-    "record_deletion":false,
-    "chroma_changes":false,
-    "llm_calls":0
+    "database_migration": false,
+    "bulk_rewrite": false,
+    "record_deletion": false,
+    "chroma_changes": false,
+    "llm_calls": 0
   },
-  "incident_effect": {
-    "task_completed":true,
-    "draft_saved":true,
-    "writer_retry_triggered":false,
-    "review_foreshadowing_health_missing":true,
-    "character_arc_v2_related":false
-  }
+  "operational_note": "Restart a running Celery worker before subsequent tasks load this code; no writing demo is required for this deterministic boundary fix."
 }

@@ -204,21 +204,30 @@ def delete_foreshadowing(fs_id: str) -> bool:
         conn.close()
 
 
-def get_active_for_chapter(task_id: str, chapter: int) -> list[dict]:
+def get_active_for_chapter(task_id: str, chapter: int | str) -> list[dict]:
     """获取某章节相关的所有活跃伏笔。"""
+    normalized_chapter = normalize_resolve_chapter(chapter)
+    if normalized_chapter is None:
+        return []
+
     conn = _get_conn()
     try:
         rows = conn.execute("""
             SELECT * FROM foreshadowings
             WHERE task_id = ?
               AND status IN ('pending', 'planted', 'hinted')
-              AND (
-                plant_chapter = ? OR
-                (resolve_chapter IS NOT NULL AND resolve_chapter >= ? AND plant_chapter <= ?)
-              )
             ORDER BY importance DESC
-        """, (task_id, chapter, chapter, chapter)).fetchall()
-        return [_row_to_dict(r) for r in rows]
+        """, (task_id,)).fetchall()
+        normalized_rows = [_row_to_dict(r) for r in rows]
+        return [
+            row for row in normalized_rows
+            if row["plant_chapter"] == normalized_chapter
+            or (
+                row.get("resolve_chapter") is not None
+                and row["resolve_chapter"] >= normalized_chapter
+                and row["plant_chapter"] <= normalized_chapter
+            )
+        ]
     finally:
         conn.close()
 
@@ -353,7 +362,9 @@ def _extract_world_anchors(world_setting_text: str, characters: list[dict]) -> l
 
 # ── 伏笔回收验证 ──────────────────────────────────────────────────────
 
-def get_unresolved_foreshadowings(task_id: str, current_chapter: int) -> list[dict]:
+def get_unresolved_foreshadowings(
+    task_id: str, current_chapter: int | str
+) -> list[dict]:
     """查找应在当前章节前回收但尚未回收的伏笔。
 
     Args:
@@ -363,23 +374,30 @@ def get_unresolved_foreshadowings(task_id: str, current_chapter: int) -> list[di
     Returns:
         断裂伏笔列表 [{name, plant_chapter, resolve_chapter, status, importance, ...}]
     """
+    normalized_current_chapter = normalize_resolve_chapter(current_chapter)
+    if normalized_current_chapter is None:
+        return []
+
     conn = _get_conn()
     try:
         rows = conn.execute("""
             SELECT * FROM foreshadowings
             WHERE task_id = ?
               AND status != 'resolved'
-              AND resolve_chapter IS NOT NULL
-              AND resolve_chapter <= ?
-              AND resolve_chapter != 999
             ORDER BY importance DESC
-        """, (task_id, current_chapter)).fetchall()
-        return [_row_to_dict(r) for r in rows]
+        """, (task_id,)).fetchall()
+        normalized_rows = [_row_to_dict(r) for r in rows]
+        return [
+            row for row in normalized_rows
+            if row.get("resolve_chapter") is not None
+            and row["resolve_chapter"] != 999
+            and row["resolve_chapter"] <= normalized_current_chapter
+        ]
     finally:
         conn.close()
 
 
-def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
+def get_foreshadowing_summary(task_id: str, current_chapter: int | str) -> dict:
     """伏笔健康度汇总。
 
     Returns:
@@ -395,6 +413,7 @@ def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
             "health": "健康" | "注意" | "断裂",
         }
     """
+    normalized_current_chapter = normalize_resolve_chapter(current_chapter)
     conn = _get_conn()
     try:
         # 全部伏笔
@@ -422,7 +441,8 @@ def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
             if f["status"] != "resolved"
             and f.get("resolve_chapter") is not None
             and f["resolve_chapter"] != 999
-            and f["resolve_chapter"] <= current_chapter
+            and normalized_current_chapter is not None
+            and f["resolve_chapter"] <= normalized_current_chapter
         ]
         broken = len(broken_list)
 
@@ -432,7 +452,10 @@ def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
             if f["status"] != "resolved"
             and f.get("resolve_chapter") is not None
             and f["resolve_chapter"] != 999
-            and current_chapter < f["resolve_chapter"] <= current_chapter + 3
+            and normalized_current_chapter is not None
+            and normalized_current_chapter
+            < f["resolve_chapter"]
+            <= normalized_current_chapter + 3
         )
 
         if broken == 0:

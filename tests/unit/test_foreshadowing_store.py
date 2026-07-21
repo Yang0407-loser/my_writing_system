@@ -58,6 +58,21 @@ def test_create_and_update_only_persist_int_or_null(isolated_store):
     assert raw is None
 
 
+def test_invalid_write_warning_does_not_include_private_value(
+    isolated_store, caplog
+):
+    private_value = "private chapter label"
+
+    store.create_foreshadowing({
+        "task_id": "task-redacted-warning",
+        "name": "invalid value",
+        "resolve_chapter": private_value,
+    })
+
+    assert private_value not in caplog.text
+    assert "input_type=str" in caplog.text
+
+
 def test_invalid_historical_values_do_not_break_summary_or_get_rewritten(isolated_store):
     store.create_foreshadowing({
         "id": "valid-int",
@@ -129,3 +144,76 @@ def test_empty_and_invalid_historical_values_are_skipped(isolated_store):
     assert summary["broken"] == 0
     assert summary["upcoming"] == 0
     assert summary["invalid_resolve_chapter_count"] == 4
+
+
+def test_summary_normalizes_string_current_chapter(isolated_store):
+    store.create_foreshadowing({
+        "id": "due",
+        "task_id": "task-string-current",
+        "name": "due event",
+        "resolve_chapter": 3,
+        "status": "planted",
+    })
+
+    summary = store.get_foreshadowing_summary(
+        "task-string-current", current_chapter="3"
+    )
+
+    assert summary["broken"] == 1
+    assert summary["upcoming"] == 0
+
+
+def test_invalid_current_chapter_skips_comparisons(isolated_store):
+    store.create_foreshadowing({
+        "id": "future",
+        "task_id": "task-invalid-current",
+        "name": "future event",
+        "resolve_chapter": 3,
+        "status": "planted",
+    })
+
+    summary = store.get_foreshadowing_summary(
+        "task-invalid-current", current_chapter="chapter two"
+    )
+
+    assert summary["broken"] == 0
+    assert summary["upcoming"] == 0
+
+
+def test_active_and_unresolved_filters_normalize_legacy_values(isolated_store):
+    store.create_foreshadowing({
+        "id": "seed",
+        "task_id": "task-filter",
+        "name": "seed",
+        "plant_chapter": 1,
+        "resolve_chapter": None,
+        "status": "planted",
+    })
+    with sqlite3.connect(isolated_store) as conn:
+        conn.execute(
+            "INSERT INTO foreshadowings "
+            "(id, task_id, name, plant_chapter, resolve_chapter, status, importance) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("valid", "task-filter", "valid", 1, "3", "planted", 8),
+        )
+        conn.execute(
+            "INSERT INTO foreshadowings "
+            "(id, task_id, name, plant_chapter, resolve_chapter, status, importance) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("invalid", "task-filter", "invalid", 1, "later", "planted", 9),
+        )
+        conn.commit()
+
+    active = store.get_active_for_chapter("task-filter", chapter="2")
+    unresolved = store.get_unresolved_foreshadowings(
+        "task-filter", current_chapter="3"
+    )
+
+    assert [row["id"] for row in active] == ["valid"]
+    assert [row["id"] for row in unresolved] == ["valid"]
+    with sqlite3.connect(isolated_store) as conn:
+        raw = conn.execute(
+            "SELECT resolve_chapter FROM foreshadowings WHERE id = ?",
+            ("invalid",),
+        ).fetchone()[0]
+    assert raw == "later"
