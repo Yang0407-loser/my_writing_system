@@ -518,6 +518,55 @@ CHARACTER_ARC_PROMPT = """你是一位故事结构专家。请根据人物设定
 4. location 和 time 要具体、有画面感
 5. emotional_shift 要渐进合理，避免突兀跳跃"""
 
+
+CHARACTER_ARC_PROMPT_V2 = """你是一位克制的故事结构编辑。请只规划真正属于人物变化弧线的节点，不要把普通剧情动作或环境活动包装成强制里程碑。
+
+人物设定：
+{characters_json}
+
+大纲（含小节结构）：
+{outline_json}
+
+请严格输出 JSON 数组，每个角色一个元素。每个 milestone 使用本角色内唯一的 milestone_id：
+[
+  {{
+    "character_id": "必须与输入一致",
+    "starting_state": "起点状态",
+    "ending_state": "终点状态",
+    "key_milestones": [
+      {{
+        "milestone_id": "角色内唯一ID，如 char1-m1",
+        "section": 1,
+        "subsection": 1,
+        "event": "具体事件",
+        "location": "地点",
+        "time": "时间",
+        "emotional_shift": "状态A→状态B",
+        "classification": "hard_arc_transition|soft_arc_progress|observational_texture|ordinary_plot_event|unsupported_planning_inference",
+        "before_state": "事件前状态；非hard可为空",
+        "trigger": "触发变化的事件；非hard可为空",
+        "after_state": "事件后状态；非hard可为空",
+        "observable_evidence": "正文中可观察到的变化证据；非hard可为空",
+        "rationale": "为何属于此分类",
+        "depends_on": ["明确依赖的同角色milestone_id"],
+        "dependency_rationale": "依赖依据；无依赖则为空",
+        "causes": ["明确导致的同角色milestone_id"],
+        "causal_rationale": "因果依据；无因果则为空"
+      }}
+    ]
+  }}
+]
+
+分类规则：
+1. hard_arc_transition 只用于人物内部状态、关系立场、长期目标或关键选择发生显著变化；每个角色每章最多2个，也可以为0个。
+2. hard 必须完整填写 before_state、trigger、after_state、observable_evidence 和 rationale。
+3. soft_arc_progress 可以改写、延后或被其他事件替代，不得表述为本节必须发生。
+4. 日常动作、神态、环境互动和配角氛围活动属于 observational_texture。
+5. 已由 outline/key_points 管理的剧情事件属于 ordinary_plot_event，不要重复升级为角色弧硬约束。
+6. 缺少人物设定或大纲依据的推断属于 unsupported_planning_inference。
+7. 只有文本明确表达依赖或因果时才能填写 depends_on/causes；不得仅因处在同一小节建立关系。
+8. section 和 subsection 必须来自输入大纲，character_id 必须与输入一致。"""
+
 # ----------------------------------------------------------------
 # 角色状态更新
 # ----------------------------------------------------------------

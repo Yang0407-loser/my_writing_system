@@ -5,9 +5,12 @@ from .base import BaseAgent
 from ..utils.prompt_templates import (
     CHARACTER_EXTRACTION_PROMPT,
     CHARACTER_ARC_PROMPT,
+    CHARACTER_ARC_PROMPT_V2,
     CHARACTER_STATE_UPDATE_PROMPT,
 )
 from ..utils.json_parser import parse_json
+from ..character_arc_contract import normalize_v2_arcs, resolve_contract_version
+from ..config import settings
 
 
 class CharacterManager(BaseAgent):
@@ -72,7 +75,9 @@ class CharacterManager(BaseAgent):
         characters_json = json.dumps(characters, ensure_ascii=False, indent=2)
         outline_json = json.dumps(outline, ensure_ascii=False, indent=2)
 
-        prompt = CHARACTER_ARC_PROMPT.format(
+        contract_version = resolve_contract_version(settings.CHARACTER_ARC_CONTRACT_VERSION)
+        prompt_template = CHARACTER_ARC_PROMPT_V2 if contract_version == "v2" else CHARACTER_ARC_PROMPT
+        prompt = prompt_template.format(
             characters_json=characters_json,
             outline_json=outline_json,
         )
@@ -91,6 +96,9 @@ class CharacterManager(BaseAgent):
                 raise ValueError(f"LLM 返回了非数组格式: {type(result)}")
         except ValueError:
             return []
+
+        if contract_version == "v2":
+            result = normalize_v2_arcs(result, outline)
 
         # 确保 current_state 初始等于 starting_state
         for arc in result:

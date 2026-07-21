@@ -20,6 +20,12 @@ from .utils.json_parser import parse_json
 from .utils.word_counter import count_chinese_chars
 from .utils.llm_client import set_api_key, reset_token_counter, get_cumulative_tokens, get_token_breakdown, set_cost_label
 from .config import settings, set_task_id
+from .character_arc_contract import (
+    build_v2_edge_plan,
+    iter_v2_event_milestones,
+    normalize_v2_arcs,
+    resolve_contract_version,
+)
 
 logger = logging.getLogger("writing_system.coordinator")
 
@@ -644,41 +650,83 @@ def _phase_writing(bb, task_id, state):
     # 将角色弧线里程碑注入 EventGraph
     arc_event_ids: dict[str, list[str]] = {}  # character_id -> [event_id, ...]
     section_event_ids: dict[int, list[str]] = {}  # section -> [event_id, ...]
-
-    for arc in (character_arcs or []):
-        if isinstance(arc, dict) and arc.get("key_milestones"):
-            cid = arc.get("character_id", "")
-            eids: list[str] = []
-            for ms in arc["key_milestones"]:
-                desc = ms.get("event", ms.get("description", ""))
-                if desc:
-                    eid = event_graph.add_arc_milestone(
-                        description=desc,
-                        section=ms.get("section", 0), subsection=ms.get("subsection", 0),
-                        character_id=cid,
-                        weight=5,
-                    )
-                    eids.append(eid)
-                    sec = ms.get("section", 0)
-                    if sec:
-                        section_event_ids.setdefault(sec, []).append(eid)
-            if eids:
-                arc_event_ids[cid] = eids
-
-    # v0.9.4: 创建事件边 —— 同角色连续里程碑 + 同章节事件互连
+    contract_version = resolve_contract_version(settings.CHARACTER_ARC_CONTRACT_VERSION)
     edge_count = 0
-    for eids in arc_event_ids.values():
-        for i in range(len(eids) - 1):
-            event_graph.link_events(eids[i], eids[i + 1])
+
+    if contract_version == "v2":
+        # Old checkpoints are interpreted through a compatibility view only;
+        # their stored character_arcs payload is not rewritten.
+        character_arcs = normalize_v2_arcs(
+            character_arcs,
+            outline,
+            legacy_unclassified_as_soft=True,
+        )
+        event_ids_by_milestone: dict[str, str] = {}
+        for cid, ms in iter_v2_event_milestones(character_arcs):
+            desc = ms.get("event", ms.get("description", ""))
+            if not desc:
+                continue
+            eid = event_graph.add_arc_milestone(
+                description=desc,
+                section=ms.get("section", 0),
+                subsection=ms.get("subsection", 0),
+                character_id=cid,
+                weight=9 if ms.get("requiredness") == "hard" else 3,
+                classification=ms.get("classification", ""),
+                requiredness=ms.get("requiredness", ""),
+                contract_version="v2",
+                source_id=ms.get("source_id", ""),
+                source_hash=ms.get("source_hash", ""),
+                rationale=ms.get("rationale", ""),
+            )
+            event_ids_by_milestone[str(ms.get("milestone_id", ""))] = eid
+            arc_event_ids.setdefault(cid, []).append(eid)
+
+        for edge in build_v2_edge_plan(character_arcs):
+            from_event_id = event_ids_by_milestone.get(edge["from_milestone_id"])
+            to_event_id = event_ids_by_milestone.get(edge["to_milestone_id"])
+            if not from_event_id or not to_event_id:
+                continue
+            event_graph.link_events(from_event_id, to_event_id, metadata=edge)
             edge_count += 1
-    for eids in section_event_ids.values():
-        for i in range(len(eids)):
-            for j in range(i + 1, len(eids)):
-                event_graph.link_events(eids[i], eids[j])
+    else:
+        for arc in (character_arcs or []):
+            if isinstance(arc, dict) and arc.get("key_milestones"):
+                cid = arc.get("character_id", "")
+                eids: list[str] = []
+                for ms in arc["key_milestones"]:
+                    desc = ms.get("event", ms.get("description", ""))
+                    if desc:
+                        eid = event_graph.add_arc_milestone(
+                            description=desc,
+                            section=ms.get("section", 0), subsection=ms.get("subsection", 0),
+                            character_id=cid,
+                            weight=5,
+                        )
+                        eids.append(eid)
+                        sec = ms.get("section", 0)
+                        if sec:
+                            section_event_ids.setdefault(sec, []).append(eid)
+                if eids:
+                    arc_event_ids[cid] = eids
+
+        # v0.9.4 legacy behavior: same-character chain + same-section pairwise links.
+        for eids in arc_event_ids.values():
+            for i in range(len(eids) - 1):
+                event_graph.link_events(eids[i], eids[i + 1])
                 edge_count += 1
+        for eids in section_event_ids.values():
+            for i in range(len(eids)):
+                for j in range(i + 1, len(eids)):
+                    event_graph.link_events(eids[i], eids[j])
+                    edge_count += 1
     if edge_count > 0:
-        logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条事件因果边 "
-                    f"({len(arc_event_ids)} 个角色弧, {len(section_event_ids)} 个章节)")
+        if contract_version == "v2":
+            logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条显式事件边 "
+                        f"({len(arc_event_ids)} 个角色弧, contract=v2)")
+        else:
+            logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条事件因果边 "
+                        f"({len(arc_event_ids)} 个角色弧, {len(section_event_ids)} 个章节)")
 
     bb.set(task_id, "status", "writing")
     bb.xadd_event(task_id, {"event": "phase_change", "phase": "writing"})

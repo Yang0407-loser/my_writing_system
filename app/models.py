@@ -108,6 +108,18 @@ class ArcMilestone(BaseModel):
     location: str = ""       # 地点
     time: str = ""           # 时间（季节/时刻）
     emotional_shift: str = ""  # 情感转折：从X → Y
+    milestone_id: str = ""
+    classification: str = ""
+    requiredness: str = ""
+    before_state: str = ""
+    trigger: str = ""
+    after_state: str = ""
+    observable_evidence: str = ""
+    source_id: str = ""
+    source_hash: str = ""
+    rationale: str = ""
+    depends_on: list[str] = []
+    causes: list[str] = []
 
 
 class CharacterArc(BaseModel):
@@ -136,6 +148,13 @@ class NarrativeEventModel(BaseModel):
     urgency: str = "low"  # low | medium | high
     related_events: list[str] = []
     tags: list[str] = []
+    classification: str = ""
+    requiredness: str = ""
+    contract_version: str = ""
+    source_id: str = ""
+    source_hash: str = ""
+    rationale: str = ""
+    relation_metadata: dict[str, dict] = {}
 
 
 # ============================================================

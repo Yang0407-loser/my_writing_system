@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成默认关闭、task_id 白名单的最小 canary 工程接入，尚无真实 canary 样本，生产默认继续 `legacy_full`；StateFrame 状态为 `paused_by_upstream_state_contract`，不得进入生成 A/B；BoundaryValidator 继续默认关闭；Phase 5、Phase 6 暂停；Phase 8 Batch 1 已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成最小 canary 接入并取得 1 个真实任务样本，生产默认继续 `legacy_full`；Mandatory Event 已经真实验证为默认 warn、自动重写 0；角色弧 Contract V2 已完成默认 v1 的工程实现与离线影响审计，尚未运行 V2 Demo；StateFrame 状态为 `paused_by_upstream_state_contract`；BoundaryValidator继续默认关闭；Phase 5、Phase 6暂停；Phase 8 Batch 1已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -390,7 +390,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 冻结最终真实试验语义，将 outline-only `OutlineSceneSpecProvider` 迁入生产；历史试验 helper 改为调用同一 provider，四个真实 SceneSpec hash 与 230/351/277/93 token 全部保持。
 - 新增 `WRITER_SCENE_SPEC_MODE=off` 与空白 task allowlist；`off` 不调用 provider，`shadow` 只编译不注入，`canary` 只对白名单 task 在最终 user message 末尾追加完整 SceneSpec。
 - 编译或注入失败、非白名单、结构缺失、超过400 estimated tokens、来源不可追溯时返回原 PromptArtifact；不阻断、重试或改变提交顺序。日志只含 task hash、spec hash/token/source IDs和fallback，不含正文/messages/Prompt。
-- 当前只完成工程接入，真实 canary 样本仍为0；默认生产继续`legacy_full`，不授权全面切换，不启用StateFrame、ContextBroker、BoundaryValidator或Repair。
+- 已完成1个真实canary任务，但样本仍不足以授权全面切换；默认生产继续`legacy_full`，不启用StateFrame、ContextBroker、BoundaryValidator或Repair。
 
 ## StateFrame：Writer 当前状态职责拆分
 
@@ -418,6 +418,18 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - WorldState 14条全部只能进入通用`world_fact`（13 unknown、1 confirmed）；5条character arc current state可显式分类但缺少有效期/认识状态；handover为一组3字段长字符串，relations/foreshadowing/locations均无可用状态。
 - 追溯、unknown保留、planned/hard排除、重复分类和确定性全部通过；但generic state多数门槛失败。每帧与SceneSpec confirmed/open重复9条、与legacy WorldState/handover重复14/3个source；接管confirmed/open后理论仍净增加约754 token。
 - 诊断固定为`upstream_state_contract_required`。不得扩关键词或进入生成A/B；下一步只能另行授权最小上游状态契约设计，不实现迁移或写入。
+
+## Character Arc Contract V2：规划噪声收缩
+
+> 当前状态：影响链审计与默认关闭的 V2 工程实现完成。生产默认 `CHARACTER_ARC_CONTRACT_VERSION=v1`；未调用 Writer/LLM，未运行 V2 Demo。
+
+- 角色弧不是纯观测资产：`CharacterFormatter.build_arc_context`、`EventGraph.query_relevant/pre_check` 会把 milestone 注入 Writer，边还参与 RAG 因果扩展；handover提取会额外读取最多10个弧线事件。
+- 两个固定真实任务合计27个legacy milestone、188次建边操作；其中171次来自同节两两连接，带方向、类型、来源和因果依据的边为0；弧线事件文本合计约1,795 estimated tokens。
+- V2只允许`hard_arc_transition`、`soft_arc_progress`进入事件上下文；只有字段完整且来源可追溯的hard进入`pre_check`强制块。observational、ordinary plot、unsupported和unresolved不进入弧线事件上下文。
+- 每角色每章/section最多2个hard，超限或字段不完整时降级为soft并记录原因；旧checkpoint无classification时只通过非持久化兼容视图解释为soft，不回写、不自动升级hard。
+- V2禁止同节两两建边和隐式同节因果扩展，只保留explicit causal、explicit dependency和状态连续的ordered hard transition；每条边必须有rationale和source/hash。
+- legacy结构缺少before/trigger/after和provenance，因此离线审计中27项均为unresolved、结构可证明hard为0；不复用旧人工/辅助评估标签反向分类。
+- 下一步只允许另行授权1个真实任务设置`CHARACTER_ARC_CONTRACT_VERSION=v2`，观察边数、分类分布、Writer调用/token、弧线告警、目标完成和用户可用性；不得重新使用冻结Precision/Recall作为主结论。
 
 ## Phase 5：Writer 受控工具调用
 
@@ -700,3 +712,5 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-20 | SceneSpec 最小生产 Canary 接入 | 将最终真实试验 outline-only 语义迁入生产 provider；新增默认off、shadow只编译、task_id白名单canary三态；在PromptBuilder后、GenerationController前可选追加完整SceneSpec；所有失败回退原PromptArtifact | 四个真实golden hash及230/351/277/93 token全部保持；off provider调用0且messages不变，shadow messages不变；生成参数、返回正文、checkpoint顺序/版本和幂等键相关回归通过；定向测试68 passed，compileall通过，Writer/LLM调用0 | 默认生产继续legacy_full；真实canary样本0，只允许用户显式指定单一task_id后有限运行；StateFrame继续`paused_by_upstream_state_contract`，Validator默认关闭，不开始其他优化 |
 | 2026-07-21 | 真实 SceneSpec Canary 约束检测归因 | 只读任务 `e7cb9ac2…` 的真实日志、终稿、outline 和15条 EventGraph milestone；严格分离 mandatory 重试与角色弧 post-check；未保存的8份中间候选全部记为 unavailable，不调用LLM、不改生产 | 4个计划正文调用实际变12个，mandatory重试8次、确认流式耗时242.2秒；mandatory Precision因缺中间稿/缺失事件ID/实际关键词不可估；15条弧线告警中完整误报8、部分6、真缺失1，严格P=6.67%；15个milestone仅3个hard，115条边=10条时间相邻+105条同章两两互连，已证实因果边0 | 唯一下一步建议A：先将mandatory自动整节重写降级为告警；角色弧post-check继续只告警，随后另行授权收缩角色弧契约；本轮不执行建议、不开始Phase5/6 |
 | 2026-07-21 | Mandatory Event 自动重写降级 | 新增默认`warn`、`off/warn/retry`三态和规范UUID精确白名单；warn只对角色/重复检查后的最终候选记录脱敏hash与计数，检测异常fail-open；检测算法、事件来源、SceneSpec和角色弧均冻结 | 默认无其他重写时Writer正文调用固定1次、mandatory额外调用0；白名单retry保留旧版最多2次；输出/messages/生成参数/checkpoint除移除默认mandatory重写外保持，私有正文不入观测；定向测试与compileall通过，真实warn样本0 | 完成执行权限降级，不宣称检测准确率改善；下一次只需正常Demo观察would-have-retried、实际mandatory retry=0及outline完成度；不修改角色弧预编排，不开始Repair、Phase5/6 |
+| 2026-07-21 | Mandatory Event真实warn验证 | 两个完整任务均保持mode=warn；其中最新任务4个小节不发生自动重写；中断任务的Redis重投递单独归因，不混算检测器成本 | 每任务第2/3/4小节would-have-retried=true，actual_retry_count均0；最新任务总Token 44,686、耗时355.7秒；第4小节存在真实目标遗漏，但第2/3小节同时显示literal检测过严 | 工程降级真实生效，检测器继续只告警；不恢复自动整节重写，不再扩大该检测器Demo |
+| 2026-07-21 | Character Arc Contract V2影响审计与实现 | 审计CharacterManager→CharacterFormatter/EventGraph→pre/post-check→handover/commit链；新增默认v1、V2分类/来源/降级和显式边契约；不调用Writer/LLM | 固定任务`e7cb9ac2…`/`b5ddb41c…`共27 milestones、188建边操作，其中同节两两连接171，已证实因果边0，弧线事件约1,795 estimated tokens；legacy结构可证明hard=0、unresolved=27；V1默认且旧存储不回写 | 角色弧确实增加Writer上下文和handover输入，满足V2实施门槛；下一步最多授权1个真实V2 Demo，不自动开始Phase5/6 |

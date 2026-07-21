@@ -34,11 +34,18 @@ class NarrativeEvent:
     urgency: str = "low"       # low|medium|high，动态紧迫度
     related_events: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    classification: str = ""
+    requiredness: str = ""
+    contract_version: str = ""
+    source_id: str = ""
+    source_hash: str = ""
+    rationale: str = ""
+    relation_metadata: dict[str, dict] = field(default_factory=dict)
 
     # ── 序列化 ──
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "event_id": self.event_id,
             "type": self.type,
             "description": self.description,
@@ -52,6 +59,17 @@ class NarrativeEvent:
             "related_events": self.related_events,
             "tags": self.tags,
         }
+        optional = {
+            "classification": self.classification,
+            "requiredness": self.requiredness,
+            "contract_version": self.contract_version,
+            "source_id": self.source_id,
+            "source_hash": self.source_hash,
+            "rationale": self.rationale,
+            "relation_metadata": self.relation_metadata,
+        }
+        data.update({key: value for key, value in optional.items() if value})
+        return data
 
     @classmethod
     def from_dict(cls, d: dict) -> "NarrativeEvent":
@@ -68,6 +86,13 @@ class NarrativeEvent:
             urgency=d.get("urgency", "low"),
             related_events=d.get("related_events", []),
             tags=d.get("tags", []),
+            classification=d.get("classification", ""),
+            requiredness=d.get("requiredness", ""),
+            contract_version=d.get("contract_version", ""),
+            source_id=d.get("source_id", ""),
+            source_hash=d.get("source_hash", ""),
+            rationale=d.get("rationale", ""),
+            relation_metadata=d.get("relation_metadata", {}),
         )
 
 
@@ -141,7 +166,7 @@ class EventGraph:
     # ── 弧线 CRUD ──
 
     def add_arc_milestone(self, description: str, section: int, subsection: int = 0,
-                          character_id: str = "", weight: int = 5) -> str:
+                          character_id: str = "", weight: int = 5, **metadata) -> str:
         """添加一个弧线里程碑事件。"""
         event = NarrativeEvent(
             event_id=str(uuid.uuid4()), type="arc_milestone",
@@ -149,12 +174,18 @@ class EventGraph:
             section=section, subsection=subsection,
             character_id=character_id, status="pending",
             weight=weight,
+            classification=metadata.get("classification", ""),
+            requiredness=metadata.get("requiredness", ""),
+            contract_version=metadata.get("contract_version", ""),
+            source_id=metadata.get("source_id", ""),
+            source_hash=metadata.get("source_hash", ""),
+            rationale=metadata.get("rationale", ""),
         )
         self._events[event.event_id] = event
         self._save()
         return event.event_id
 
-    def link_events(self, event_id1: str, event_id2: str) -> None:
+    def link_events(self, event_id1: str, event_id2: str, metadata: dict | None = None) -> None:
         """创建双向因果关联边。"""
         if event_id1 in self._events and event_id2 in self._events:
             e1, e2 = self._events[event_id1], self._events[event_id2]
@@ -162,6 +193,11 @@ class EventGraph:
                 e1.related_events.append(event_id2)
             if event_id1 not in e2.related_events:
                 e2.related_events.append(event_id1)
+            if metadata:
+                e1.relation_metadata[event_id2] = dict(metadata)
+                reverse = dict(metadata)
+                reverse["reverse_view"] = True
+                e2.relation_metadata[event_id1] = reverse
             self._save()
 
     def update_arc_status(self, character_id: str, status: str) -> int:
@@ -235,11 +271,12 @@ class EventGraph:
         expanded = list(events)
         seen = {e.event_id for e in events}
         for event in events:
-            # 同章节事件：同一节内的事件在叙事上强关联
-            for e in self._events.values():
-                if e.section == event.section and e.event_id not in seen:
-                    expanded.append(e)
-                    seen.add(e.event_id)
+            # V1 保留旧行为；V2 只信任带来源的显式边。
+            if event.contract_version != "v2":
+                for e in self._events.values():
+                    if e.section == event.section and e.event_id not in seen:
+                        expanded.append(e)
+                        seen.add(e.event_id)
             # related_events 显式关联（coordinator 写入边时填充）
             for neighbor_id in event.related_events:
                 if neighbor_id in self._events and neighbor_id not in seen:
