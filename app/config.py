@@ -58,6 +58,14 @@ class Settings:
     WRITER_INCREMENTAL_SECTION_REVIEW: bool = (
         WRITER_INCREMENTAL_SECTION_REVIEW_RAW in {"true", "1", "yes"}
     )
+    WRITER_CONDENSE_MODE_RAW: str = os.getenv(
+        "WRITER_CONDENSE_MODE", "legacy"
+    ).strip().lower()
+    WRITER_CONDENSE_MODE: str = (
+        WRITER_CONDENSE_MODE_RAW
+        if WRITER_CONDENSE_MODE_RAW in {"legacy", "warn"}
+        else "legacy"
+    )
     WRITER_EXPAND_THRESHOLD: float = float(os.getenv("WRITER_EXPAND_THRESHOLD", "0.7"))
     WRITER_ACCEPT_THRESHOLD: float = float(os.getenv("WRITER_ACCEPT_THRESHOLD", "0.6"))
     WRITER_MAX_EXPAND_ATTEMPTS: int = int(os.getenv("WRITER_MAX_EXPAND_ATTEMPTS", "2"))
@@ -124,6 +132,11 @@ class Settings:
             warnings.append(
                 "WRITER_INCREMENTAL_SECTION_REVIEW="
                 f"{self.WRITER_INCREMENTAL_SECTION_REVIEW_RAW} 无效，按 false 处理"
+            )
+        if self.WRITER_CONDENSE_MODE_RAW not in {"legacy", "warn"}:
+            warnings.append(
+                f"WRITER_CONDENSE_MODE={self.WRITER_CONDENSE_MODE_RAW} invalid; "
+                "using legacy (expected legacy/warn)"
             )
         if self.WRITER_SCENE_SPEC_MODE not in {"off", "shadow", "canary"}:
             warnings.append(

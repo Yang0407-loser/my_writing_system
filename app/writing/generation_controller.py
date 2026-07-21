@@ -17,6 +17,7 @@ from .mandatory_event_policy import MandatoryEventPolicy
 
 logger = logging.getLogger("writing_system.writer")
 mandatory_logger = logging.getLogger("writing_system.mandatory_event")
+CONDENSE_THRESHOLD = 1.3
 
 
 class GenerationController:
@@ -36,6 +37,7 @@ class GenerationController:
             settings.WRITER_MANDATORY_EVENT_RETRY_TASK_IDS,
         )
         self.last_mandatory_observation: dict | None = None
+        self.last_condense_observation: dict | None = None
 
     def generate(
         self,
@@ -311,17 +313,44 @@ class GenerationController:
                     task_id[:8] or "writer", section_num, sub_num, exc_info=True,
                 )
 
-        if sub_words > target_words * 1.3:
+        would_have_condensed = sub_words > target_words * CONDENSE_THRESHOLD
+        condense_started = False
+        retained_original = True
+        if would_have_condensed and settings.WRITER_CONDENSE_MODE == "legacy":
             condense_msg = [
                 {"role": "system", "content": "请精简以下文本，保持核心情节和风格不变，删除冗余描述。"},
                 {"role": "user", "content": f"目标 {target_words} 字，当前 {sub_words} 字。精简：\n{sub_text}"},
             ]
+            condense_started = True
             condensed = self.llm.chat_completion(
                 condense_msg, temperature=0.3, max_tokens=call_max_tokens
             )
             attempts.append({"reason": "condense", "temperature": 0.3, "output_chars": len(condensed or "")})
             if condensed:
                 sub_text = condensed
+                retained_original = False
+
+        observation = {
+            "task_id_hash": hashlib.sha256(task_id.encode("utf-8")).hexdigest(),
+            "section": section_num,
+            "subsection": sub_num,
+            "mode": settings.WRITER_CONDENSE_MODE,
+            "target_words": target_words,
+            "original_characters": sub_words,
+            "overflow_ratio": round(sub_words / target_words, 4) if target_words > 0 else None,
+            "threshold": CONDENSE_THRESHOLD,
+            "would_have_condensed": would_have_condensed,
+            "condense_started": condense_started,
+            "retained_original": retained_original,
+            "output_sha256": hashlib.sha256(sub_text.encode("utf-8")).hexdigest(),
+            "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
+            "production_effect": would_have_condensed,
+        }
+        self.last_condense_observation = observation
+        logger.info(
+            "writer_condense_observation=%s",
+            json.dumps(observation, ensure_ascii=False, separators=(",", ":")),
+        )
 
         return GenerationArtifact(
             raw_output=draft,
