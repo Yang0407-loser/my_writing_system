@@ -51,6 +51,14 @@ Engineering verification uses targeted tests only. The next authorized action is
 
 After that single canary, the route must be retained or closed. It must not be expanded into additional experimental batches.
 
+## Real canary closure (2026-07-22)
+
+The single authorized real canary completed, but V1 injected only S1.3 and S1.4; S1.1/S1.2 exceeded the 450-token contract cap. Successful injection did not control length: S1.3 produced 1,592 characters and S1.4 produced 3,095 against a 1,000-character target.
+
+V1.1 adds fail-safe attempted-token/component observability, normalized exact rendered-list deduplication, an explicit whole-subsection length instruction and a final immediate-stop instruction. It does not change typed semantics, source provenance or the 450-token cap. Offline reconstruction yields 888/579/496/339 tokens, so only S1.4 can inject. The S1.3/S1.4 semantic hashes remain unchanged.
+
+Status is now `v11_engineering_complete_not_eligible_for_demo`. Production remains `off`; no additional real demo is authorized. The next independent direction is outline event-density auditing.
+
 ## Canary command
 
 ```cmd

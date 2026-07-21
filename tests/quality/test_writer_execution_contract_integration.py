@@ -7,6 +7,9 @@ PROVIDER = ROOT / "app" / "writing" / "writer_execution_contract.py"
 WRITER = ROOT / "app" / "agents" / "writer.py"
 CONFIG = ROOT / "app" / "config.py"
 REPORT = ROOT / "reports" / "writer-first-draft-execution-contract.json"
+ATTRIBUTION_REPORT = (
+    ROOT / "reports" / "writer-execution-contract-canary-attribution.json"
+)
 
 
 def test_production_contract_does_not_import_tests_or_evaluation_answers():
@@ -79,3 +82,55 @@ def test_public_report_freezes_scope_and_zero_runtime_calls():
     assert report["verification"]["real_canary_samples"] == 0
     assert report["stop_rule"]["real_four_subsection_canaries_allowed"] == 1
     assert report["stop_rule"]["additional_batches_authorized"] is False
+
+
+def test_v11_attribution_report_closes_demo_without_changing_cap_or_semantics():
+    report = json.loads(ATTRIBUTION_REPORT.read_text(encoding="utf-8"))
+    assert report["status"] == "v11_engineering_complete_not_eligible_for_demo"
+    assert report["default_mode"] == "off"
+    assert report["token_cap"] == 450
+    assert [
+        item["attempted_estimated_tokens"]
+        for item in report["v11_reconstruction"]
+    ] == [888, 579, 496, 339]
+    assert [item["injected"] for item in report["v11_reconstruction"]] == [
+        False,
+        False,
+        False,
+        True,
+    ]
+    assert all(
+        item["source_traceable"] and item["semantic_hash_stable"]
+        for item in report["v11_reconstruction"]
+    )
+    assert report["semantic_hash_regression"] == {
+        "S1.3": "f3a74abfeaf7c33d34de21c74cec80a6f4cf13476f77133ceab5b93f9b4c77cc",
+        "S1.4": "b737888054bf25b37bd58052e867cc2740302de6cedc303a8ca0079e21fc4e9b",
+        "preserved": True,
+    }
+    assert report["promotion_gate"]["token_cap_raised"] is False
+    assert report["promotion_gate"]["required_events_deleted"] is False
+    assert report["promotion_gate"]["allow_one_more_real_demo"] is False
+    assert report["runtime_calls"] == {
+        "writer": 0,
+        "llm": 0,
+        "new_generation": 0,
+    }
+
+
+def test_v11_observability_is_redacted_and_keeps_failed_attempt_budget():
+    source = PROVIDER.read_text(encoding="utf-8")
+    assert '"attempted_estimated_tokens"' in source
+    assert '"component_token_breakdown"' in source
+    assert '"characters_per_required_event"' in source
+    assert "EXECUTION_CONTRACT_TOKEN_CAP = 450" in source
+
+    report_text = ATTRIBUTION_REPORT.read_text(encoding="utf-8")
+    forbidden_private_text = (
+        "一个只肯把时间分给面包的人",
+        "老板从沙发上跳下来",
+        "完整 Writer messages",
+        "api.deepseek.com",
+        "sk-",
+    )
+    assert all(value not in report_text for value in forbidden_private_text)

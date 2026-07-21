@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import time
+import unicodedata
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -71,6 +72,7 @@ class WriterExecutionContract(BaseModel):
 class WriterExecutionContractBuildResult:
     contract: WriterExecutionContract
     rendered: str
+    component_token_breakdown: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -160,35 +162,132 @@ class WriterExecutionContractProvider:
         preliminary = WriterExecutionContract(
             **semantic_payload, estimated_tokens=0, contract_hash=contract_hash
         )
-        rendered = self.render(preliminary)
+        rendered, component_token_breakdown = self.render_with_breakdown(preliminary)
         contract = preliminary.model_copy(
             update={"estimated_tokens": estimate_prompt_tokens(rendered)}
         )
-        return WriterExecutionContractBuildResult(contract=contract, rendered=rendered)
+        component_token_breakdown["total"] = contract.estimated_tokens
+        return WriterExecutionContractBuildResult(
+            contract=contract,
+            rendered=rendered,
+            component_token_breakdown=component_token_breakdown,
+        )
 
     @staticmethod
     def render(contract: WriterExecutionContract) -> str:
-        lines = [f"目标：{contract.objective}", "必须按顺序完成："]
-        lines.extend(
-            f"{index}. {event}"
-            for index, event in enumerate(contract.ordered_required_events, 1)
+        rendered, _ = WriterExecutionContractProvider.render_with_breakdown(contract)
+        return rendered
+
+    @staticmethod
+    def render_with_breakdown(
+        contract: WriterExecutionContract,
+    ) -> tuple[str, dict[str, Any]]:
+        events = WriterExecutionContractProvider._unique_render_values(
+            contract.ordered_required_events
         )
-        if contract.confirmed_continuity:
-            lines.append("\n已确认连续状态：")
-            lines.extend(f"- {value}" for value in contract.confirmed_continuity)
-        if contract.prohibited_inventions:
-            lines.append("\n禁止补造：")
-            lines.extend(f"- {value}" for value in contract.prohibited_inventions)
+        objective_and_events = (contract.objective, *contract.ordered_required_events)
+        confirmed = WriterExecutionContractProvider._unique_render_values(
+            contract.confirmed_continuity,
+            excluded=objective_and_events,
+        )
+        prohibited = WriterExecutionContractProvider._unique_render_values(
+            contract.prohibited_inventions,
+            excluded=objective_and_events,
+        )
+
+        lines = [f"目标：{contract.objective}", "按序完成："]
+        lines.extend(f"{index}. {value}" for index, value in events)
+        if confirmed:
+            lines.append("连续状态：")
+            lines.extend(f"- {value}" for _, value in confirmed)
+        if prohibited:
+            lines.append("禁止补造：")
+            lines.extend(f"- {value}" for _, value in prohibited)
+
+        length_instruction = (
+            "以下范围指本小节全文总长度，不是单段长度。"
+            f"目标约{contract.target_characters}字，建议保持在"
+            f"{contract.soft_min_characters}～{contract.soft_max_characters}字；"
+            "优先压缩描写完成既定事件，不增加合同外人物、场景或后续事件。"
+        )
+        stop_instruction = "完成上述事件后立即结束本小节。"
         lines.extend([
-            "\n停止边界：",
+            f"篇幅：{length_instruction}",
+            "停止边界：",
             f"- {contract.stop_boundary}",
-            "\n篇幅：",
-            (
-                f"目标约{contract.target_characters}字，建议"
-                f"{contract.soft_min_characters}～{contract.soft_max_characters}字。"
-            ),
+            f"- {stop_instruction}",
         ])
-        return "\n".join(lines)
+        rendered = "\n".join(lines)
+
+        required_event_tokens = [
+            {
+                "index": index,
+                "tokens": estimate_prompt_tokens(value),
+                "rendered": any(item_index == index for item_index, _ in events),
+            }
+            for index, value in enumerate(contract.ordered_required_events, 1)
+        ]
+        confirmed_tokens = [
+            {
+                "index": index,
+                "tokens": estimate_prompt_tokens(value),
+                "rendered": any(item_index == index for item_index, _ in confirmed),
+            }
+            for index, value in enumerate(contract.confirmed_continuity, 1)
+        ]
+        prohibited_tokens = [
+            {
+                "index": index,
+                "tokens": estimate_prompt_tokens(value),
+                "rendered": any(item_index == index for item_index, _ in prohibited),
+            }
+            for index, value in enumerate(contract.prohibited_inventions, 1)
+        ]
+        component_values = {
+            "objective": estimate_prompt_tokens(contract.objective),
+            "required_events": required_event_tokens,
+            "confirmed_continuity": confirmed_tokens,
+            "prohibited_inventions": prohibited_tokens,
+            "length_instruction": estimate_prompt_tokens(length_instruction),
+            "stop_boundary": estimate_prompt_tokens(
+                contract.stop_boundary + "\n" + stop_instruction
+            ),
+        }
+        rendered_content_tokens = (
+            component_values["objective"]
+            + sum(item["tokens"] for item in required_event_tokens if item["rendered"])
+            + sum(item["tokens"] for item in confirmed_tokens if item["rendered"])
+            + sum(item["tokens"] for item in prohibited_tokens if item["rendered"])
+            + component_values["length_instruction"]
+            + component_values["stop_boundary"]
+        )
+        component_values["wrapper_and_labels"] = max(
+            0, estimate_prompt_tokens(rendered) - rendered_content_tokens
+        )
+        return rendered, component_values
+
+    @staticmethod
+    def _unique_render_values(
+        values: Sequence[str], *, excluded: Sequence[str] = ()
+    ) -> tuple[tuple[int, str], ...]:
+        seen = {
+            WriterExecutionContractProvider._normalized_exact(value)
+            for value in excluded
+            if WriterExecutionContractProvider._normalized_exact(value)
+        }
+        rendered: list[tuple[int, str]] = []
+        for index, raw in enumerate(values, 1):
+            value = str(raw).strip()
+            normalized = WriterExecutionContractProvider._normalized_exact(value)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            rendered.append((index, value))
+        return tuple(rendered)
+
+    @staticmethod
+    def _normalized_exact(value: str) -> str:
+        return " ".join(unicodedata.normalize("NFKC", str(value)).split())
 
     @staticmethod
     def contract_hash(contract: WriterExecutionContract) -> str:
@@ -291,6 +390,7 @@ class WriterExecutionContractController:
             return WriterExecutionContractApplication(prompt, None, None)
 
         started = time.perf_counter()
+        built: WriterExecutionContractBuildResult | None = None
         try:
             built = self.provider.build(
                 task_id=task_id,
@@ -312,6 +412,7 @@ class WriterExecutionContractController:
                 current_subsection=current_subsection,
                 error=exc,
                 started=started,
+                built=built,
             )
 
         record = self._record(
@@ -321,6 +422,7 @@ class WriterExecutionContractController:
             compiled=True,
             injected=injected,
             contract=built.contract,
+            component_token_breakdown=built.component_token_breakdown,
             fallback_reason=None,
             started=started,
         )
@@ -426,6 +528,7 @@ class WriterExecutionContractController:
         current_subsection: Mapping[str, Any],
         error: Exception,
         started: float,
+        built: WriterExecutionContractBuildResult | None,
     ) -> WriterExecutionContractApplication:
         try:
             subsection = int(current_subsection.get("subsection", 0))
@@ -454,7 +557,10 @@ class WriterExecutionContractController:
             subsection=subsection,
             compiled=False,
             injected=False,
-            contract=None,
+            contract=built.contract if built else None,
+            component_token_breakdown=(
+                built.component_token_breakdown if built else None
+            ),
             fallback_reason=reason,
             started=started,
         )
@@ -470,6 +576,7 @@ class WriterExecutionContractController:
         compiled: bool,
         injected: bool,
         contract: WriterExecutionContract | None,
+        component_token_breakdown: dict[str, Any] | None,
         fallback_reason: str | None,
         started: float,
     ) -> dict[str, Any]:
@@ -496,6 +603,19 @@ class WriterExecutionContractController:
                 contract.soft_max_characters if contract else None
             ),
             "estimated_tokens": contract.estimated_tokens if contract else 0,
+            "attempted_estimated_tokens": (
+                contract.estimated_tokens if contract else None
+            ),
+            "component_token_breakdown": component_token_breakdown,
+            "characters_per_required_event": (
+                round(
+                    contract.target_characters
+                    / len(contract.ordered_required_events),
+                    3,
+                )
+                if contract and contract.ordered_required_events
+                else None
+            ),
             "source_ids": (
                 [item.source_id for item in contract.source_manifest]
                 if contract

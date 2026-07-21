@@ -10,6 +10,7 @@ from app.writing.scene_spec_provider import (
     SceneSpecBuildResult,
 )
 from app.writing.writer_execution_contract import (
+    EXECUTION_CONTRACT_TOKEN_CAP,
     EXECUTION_CONTRACT_HEADER,
     WriterExecutionContractController,
     WriterExecutionContractProvider,
@@ -247,6 +248,11 @@ def test_budget_provider_error_and_missing_outline_fall_back_without_leak(caplog
     )
     assert budget.prompt == original
     assert budget.record["fallback_reason"] == "contract_over_budget"
+    assert budget.record["estimated_tokens"] > 0
+    assert budget.record["attempted_estimated_tokens"] > 0
+    assert budget.record["component_token_breakdown"]["total"] > 0
+    assert budget.record["required_event_count"] == 2
+    assert budget.record["characters_per_required_event"] == 500.0
 
     private_error = "private prose must not be logged"
     failed = apply(
@@ -309,3 +315,127 @@ def test_writer_event_sources_match_existing_mandatory_order_and_deduplication()
     )
     assert [item["text"] for item in sources] == ["A", "B", "C"]
     assert all(item["source_id"] and item["text_hash"] for item in sources)
+
+
+def _accounted_tokens(breakdown):
+    return (
+        breakdown["objective"]
+        + sum(
+            item["tokens"]
+            for item in breakdown["required_events"]
+            if item["rendered"]
+        )
+        + sum(
+            item["tokens"]
+            for item in breakdown["confirmed_continuity"]
+            if item["rendered"]
+        )
+        + sum(
+            item["tokens"]
+            for item in breakdown["prohibited_inventions"]
+            if item["rendered"]
+        )
+        + breakdown["length_instruction"]
+        + breakdown["stop_boundary"]
+        + breakdown["wrapper_and_labels"]
+    )
+
+
+def test_render_deduplicates_only_normalized_exact_repetitions():
+    first, second = required_events()
+    duplicate = {
+        "source_id": "outline:event:duplicate",
+        "text": "  event   1  ",
+        "text_hash": hashlib.sha256(b"  event   1  ").hexdigest(),
+    }
+    result = apply(
+        WriterExecutionContractController(mode="shadow"),
+        events=[first, duplicate, second],
+    )
+
+    assert result.contract.ordered_required_events == (
+        "event 1",
+        "event   1",
+        "event 2",
+    )
+    rendered = WriterExecutionContractProvider.render(result.contract)
+    assert rendered.count("event 1") == 1
+    assert "event 2" in rendered
+    assert len(result.contract.source_manifest) >= 3
+
+
+def test_continuity_and_prohibited_exact_duplicates_stay_typed_but_not_rendered():
+    result = apply(WriterExecutionContractController(mode="shadow"))
+    contract = result.contract.model_copy(
+        update={
+            "confirmed_continuity": (
+                result.contract.objective,
+                "continuity remains",
+                "continuity remains",
+            ),
+            "prohibited_inventions": (
+                result.contract.ordered_required_events[0],
+                "do not invent a sibling",
+                "do not invent a sibling",
+            ),
+        }
+    )
+    rendered, breakdown = WriterExecutionContractProvider.render_with_breakdown(
+        contract
+    )
+
+    assert contract.confirmed_continuity[0] == contract.objective
+    assert contract.prohibited_inventions[0] == contract.ordered_required_events[0]
+    assert rendered.count("continuity remains") == 1
+    assert rendered.count("do not invent a sibling") == 1
+    assert [item["rendered"] for item in breakdown["confirmed_continuity"]] == [
+        False,
+        True,
+        False,
+    ]
+    assert [item["rendered"] for item in breakdown["prohibited_inventions"]] == [
+        False,
+        True,
+        False,
+    ]
+
+
+def test_non_exact_values_are_not_removed_from_rendering():
+    result = apply(WriterExecutionContractController(mode="shadow"))
+    contract = result.contract.model_copy(
+        update={
+            "confirmed_continuity": ("event 1 happened earlier",),
+            "prohibited_inventions": ("event 1 must not happen later",),
+        }
+    )
+    rendered = WriterExecutionContractProvider.render(contract)
+    assert "event 1 happened earlier" in rendered
+    assert "event 1 must not happen later" in rendered
+
+
+def test_budget_breakdown_reconciles_to_rendered_total():
+    result = apply(WriterExecutionContractController(mode="shadow"))
+    breakdown = result.record["component_token_breakdown"]
+    assert _accounted_tokens(breakdown) == breakdown["total"]
+    assert breakdown["total"] == result.record["attempted_estimated_tokens"]
+
+
+def test_v11_length_and_stop_wording_are_explicit_and_last():
+    result = apply(WriterExecutionContractController(mode="shadow"))
+    rendered = WriterExecutionContractProvider.render(result.contract)
+    expected = (
+        "以下范围指本小节全文总长度，不是单段长度。"
+        "目标约1000字，建议保持在850～1300字；"
+        "优先压缩描写完成既定事件，不增加合同外人物、场景或后续事件。"
+    )
+    assert expected in rendered
+    assert rendered.endswith("完成上述事件后立即结束本小节。")
+    assert EXECUTION_CONTRACT_TOKEN_CAP == 450
+
+
+def test_render_change_does_not_change_semantic_contract_hash():
+    result = apply(WriterExecutionContractController(mode="shadow"))
+    original_hash = result.contract.contract_hash
+    rendered = WriterExecutionContractProvider.render(result.contract)
+    assert "本小节全文总长度" in rendered
+    assert WriterExecutionContractProvider.contract_hash(result.contract) == original_hash
