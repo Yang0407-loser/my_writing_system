@@ -38,6 +38,7 @@ def test_budget_advice_route_is_read_only_and_traceable(monkeypatch):
 
 def test_frontend_advice_is_applied_only_by_explicit_action():
     source = open("app/static/js/main.js", encoding="utf-8").read()
+    template = open("app/static/index.html", encoding="utf-8").read()
     request_block = source.split("async function requestOutlineBudgetAdvice", 1)[1].split(
         "function applyBudgetRecommendation", 1
     )[0]
@@ -47,4 +48,8 @@ def test_frontend_advice_is_applied_only_by_explicit_action():
     assert "target_words =" not in request_block
     assert "API.saveOutlineNodes" not in request_block
     assert "node.target_words =" in apply_block
+    assert "budgetApplyValue(advice)" in apply_block
     assert "API.saveOutlineNodes" not in apply_block
+    assert "budget-advice-popup" in template
+    assert "budget-advice-row" not in template
+    assert 'title="查看篇幅建议"' in template

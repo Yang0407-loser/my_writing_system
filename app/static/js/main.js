@@ -49,6 +49,8 @@ export function createWriterApp() {
       // ── Outline ──
       const outline = ref(OT.initOutlineDefaults());
       const outlineBudgetLoading = ref(false);
+      const showBudgetAdvice = ref(null);
+      const budgetPopupPosition = ref({top:0,left:0});
       const showSplitPopup = ref(null); const splitRequirement = ref(''); const splitNumChildren = ref(3);
       const aiSplitting = ref(false); const showDescEdit = ref(null); const editingKeyPoints = ref(''); const editingDesc = ref(''); const undoCount = ref(0);
       const injectMenu = ref({node:null}); const injectForm = ref({new_items_str:'',new_characters_str:'',new_factions_str:'',new_locations_str:'',foreshadowing_plant_str:'',foreshadowing_resolve_str:''});
@@ -344,8 +346,46 @@ export function createWriterApp() {
       function applyBudgetRecommendation(node) {
         const advice = node?._budgetAdvice;
         if (!advice) return;
-        node.target_words = advice.chapter_allocated_target || advice.recommended_preferred;
+        node.target_words = budgetApplyValue(advice);
+        showBudgetAdvice.value = null;
         toast('已应用到当前大纲，请确认后保存', 'info');
+      }
+      function toggleBudgetAdvice(node, event) {
+        if (showBudgetAdvice.value === node.id) {
+          showBudgetAdvice.value = null;
+          return;
+        }
+        const rect = event.currentTarget.getBoundingClientRect();
+        const popupWidth = 250;
+        const popupHeightEstimate = 210;
+        budgetPopupPosition.value = {
+          left:Math.max(8, Math.min(rect.right - popupWidth, window.innerWidth - popupWidth - 8)),
+          top:Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - popupHeightEstimate - 8)),
+        };
+        showBudgetAdvice.value = node.id;
+      }
+      function budgetApplyValue(advice) {
+        const allocated = Number(advice?.chapter_allocated_target || 0);
+        if (allocated >= advice.recommended_min && allocated <= advice.recommended_max) return allocated;
+        return advice.recommended_preferred;
+      }
+      function budgetReasonLabel(code) {
+        return ({
+          event_units_over_5:'事件单元超过 5 个',
+          explicit_time_progression:'包含明确时间推进',
+          explicit_scene_changes:'包含场景切换',
+          multi_actor_coordination:'需要协调多个人物',
+          complete_interaction_chain:'包含完整互动链',
+          persistent_state_or_decision:'包含关键决定或状态变化',
+          description_only_structure:'主要依据长梗概，建议补充要点',
+          broad_key_points:'要点较宽泛，建议细化结构',
+          no_event_units:'尚未识别到明确事件',
+          current_target_above_recommended_max:'当前目标高于建议上限',
+          chapter_overconstrained:'章节总预算不足',
+        })[code] || code;
+      }
+      function budgetActionLabel(action) {
+        return ({keep:'保持',increase:'增加篇幅',split:'拆分小节',reduce_scope:'缩小范围',review_structure:'复核结构'})[action] || action;
       }
       async function undoDeleteFn() {
         if (!taskId.value) return;
@@ -1073,7 +1113,7 @@ export function createWriterApp() {
       return { refineMode,taskId,statusText,statusColor,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
-        outline,outlineBudgetLoading,requestOutlineBudgetAdvice,applyBudgetRecommendation,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
+        outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,requestOutlineBudgetAdvice,applyBudgetRecommendation,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,

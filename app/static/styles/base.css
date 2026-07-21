@@ -428,19 +428,36 @@ textarea { resize: vertical; min-height: 60px; }
 
 .tree-row:hover .tree-del { color: var(--accent); }
 
-.tree-row.has-budget-advice { flex-wrap: wrap; }
+.budget-advice-trigger { font-size: 12px !important; }
 
-.budget-advice-row {
-  flex: 0 0 100%;
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 4px 2px 34px;
-  color: var(--muted);
-  font-size: 9px;
+.budget-advice-popup {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 40;
+  width: min(250px, calc(100vw - 24px));
+  padding: 10px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.42);
+  color: var(--text);
   cursor: default;
 }
+
+.budget-popup-header, .budget-popup-summary, .budget-popup-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.budget-popup-header { margin-bottom: 8px; color: var(--gold); }
+.budget-popup-header button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px; }
+.budget-popup-summary { font-size: 11px; margin-bottom: 7px; }
+.budget-popup-meta { justify-content: flex-start; color: var(--muted); font-size: 9px; margin-bottom: 7px; }
+.budget-popup-reasons { margin: 0 0 8px; padding-left: 18px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.budget-popup-warning { padding: 5px 6px; margin-bottom: 8px; border-left: 2px solid var(--orange); background: rgba(212,131,74,0.08); color: var(--orange); font-size: 9px; }
+.budget-popup-apply { width: 100%; }
 
 .budget-density {
   padding: 1px 4px;
@@ -451,19 +468,6 @@ textarea { resize: vertical; min-height: 60px; }
 
 .density-dense, .density-overloaded { color: var(--orange); border-color: var(--orange); }
 .density-balanced { color: var(--green); border-color: var(--green); }
-.budget-range { white-space: nowrap; color: var(--text); }
-.budget-reasons { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.budget-apply {
-  border: 0;
-  background: transparent;
-  color: var(--gold);
-  padding: 1px 3px;
-  font-size: 9px;
-  cursor: pointer;
-}
-
-.budget-apply:hover { text-decoration: underline; }
 
 /* ═══ DRAFT / WRITING AREA ═══ */
 .draft-area {

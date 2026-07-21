@@ -61,7 +61,7 @@
       <div class="panel-header"><h3 v-if="!sideCollapsed.left">大纲编辑器</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.left=!sideCollapsed.left" :title="sideCollapsed.left?'展开左侧栏':'收起左侧栏'">{{sideCollapsed.left?'▶':'◀'}}</button></div><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" @click="collapseAll">⊟</button><button class="btn btn-outline btn-sm" @click="expandAll">⊞</button><button class="btn btn-outline btn-sm" @click="queueAll" title="全部加入队列" style="color:var(--gold)">🟡</button><button class="btn btn-outline btn-sm" @click="dequeueAll" title="全部移出队列">⚪</button><button class="btn btn-outline btn-sm" @click="addRootSection">+卷</button><button class="btn btn-outline btn-sm" @click="showImportModal=true">📥</button><button class="btn btn-outline btn-sm" @click="saveOutlineFn" title="保存大纲">💾</button><button class="btn btn-outline btn-sm" @click="requestOutlineBudgetAdvice" :disabled="outlineBudgetLoading" title="分析事件密度并给出篇幅建议">{{outlineBudgetLoading?'…':'篇幅'}}</button><button class="btn btn-outline btn-sm" @click="showOutlineVersions=true;loadOutlineVersions()" title="历史大纲">📋</button><button class="btn btn-outline btn-sm" @click="undoDeleteFn" title="撤销删除" :disabled="undoCount<=0">↩<span v-if="undoCount>0" style="font-size:9px;vertical-align:super">{{undoCount}}</span></button></div>
       <div class="panel-body">
         <template v-for="item in flatTreeItems" :key="item.node.id">
-          <div class="tree-row" :class="[(item.node.children&&item.node.children.length)?'branch':'leaf',selectedNodeId===item.node.id?'selected':'',item.node.locked?'locked':'',item.node._budgetAdvice?'has-budget-advice':'']" :style="{paddingLeft:Math.max(0,(item.level-1)*16+4)+'px'}" @contextmenu.prevent="openInjectMenu($event, item.node)" @click="scrollToOutlineNode(item.node)">
+          <div class="tree-row" :class="[(item.node.children&&item.node.children.length)?'branch':'leaf',selectedNodeId===item.node.id?'selected':'',item.node.locked?'locked':'']" :style="{paddingLeft:Math.max(0,(item.level-1)*16+4)+'px'}" @contextmenu.prevent="openInjectMenu($event, item.node)" @click="scrollToOutlineNode(item.node)">
             <span class="tree-btn" @click="moveTreeNode(item.node,-1)" title="上移">▲</span><span class="tree-btn" @click="moveTreeNode(item.node,1)" title="下移">▼</span>
             <span v-if="item.node.children&&item.node.children.length" class="tree-arrow" @click="item.node.collapsed=!item.node.collapsed">{{item.node.collapsed?'▶':'▼'}}</span>
             <span v-else class="tree-arrow" style="visibility:hidden">▶</span>
@@ -75,11 +75,21 @@
             <span class="tree-del" @click="removeTreeNode(item.node)" title="删除">✕</span>
             <input v-if="!item.node.children?.length" class="tree-words" type="number" v-model.number="item.node.target_words" @focus="selectedNodeId=item.node.id">
             <span v-else class="tree-words" style="border-color:transparent;background:transparent;color:var(--muted)">{{subtreeWords(item.node)}}</span>
-            <div v-if="!item.node.children?.length&&item.node._budgetAdvice" class="budget-advice-row" @click.stop>
-              <span :class="['budget-density','density-'+item.node._budgetAdvice.density_level]">{{item.node._budgetAdvice.density_level}}</span>
-              <span class="budget-range">建议 {{item.node._budgetAdvice.recommended_min}}–{{item.node._budgetAdvice.recommended_max}} 字</span>
-              <span class="budget-reasons" :title="item.node._budgetAdvice.reason_codes.slice(0,3).join(' / ')">{{item.node._budgetAdvice.reason_codes.slice(0,3).join(' · ')||'结构稳定'}}</span>
-              <button class="budget-apply" @click="applyBudgetRecommendation(item.node)" :title="'应用 '+(item.node._budgetAdvice.chapter_allocated_target||item.node._budgetAdvice.recommended_preferred)+' 字；仍需手动保存'">应用推荐值</button>
+            <button v-if="!item.node.children?.length&&item.node._budgetAdvice" class="tree-btn budget-advice-trigger" @click.stop="toggleBudgetAdvice(item.node,$event)" title="查看篇幅建议">📏</button>
+            <div v-if="showBudgetAdvice===item.node.id&&item.node._budgetAdvice" class="budget-advice-popup" :style="{top:budgetPopupPosition.top+'px',left:budgetPopupPosition.left+'px'}" @click.stop>
+              <div class="budget-popup-header"><strong>篇幅建议</strong><button @click="showBudgetAdvice=null" title="关闭">×</button></div>
+              <div class="budget-popup-summary">
+                <span>当前 {{item.node.target_words}} 字</span>
+                <span>建议 {{item.node._budgetAdvice.recommended_min}}–{{item.node._budgetAdvice.recommended_max}} 字</span>
+              </div>
+              <div class="budget-popup-meta">
+                <span :class="['budget-density','density-'+item.node._budgetAdvice.density_level]">{{item.node._budgetAdvice.density_level}}</span>
+                <span>{{budgetActionLabel(item.node._budgetAdvice.recommended_action)}}</span>
+                <span>{{item.node._budgetAdvice.confidence}} confidence</span>
+              </div>
+              <ul class="budget-popup-reasons"><li v-for="reason in item.node._budgetAdvice.reason_codes.slice(0,3)" :key="reason">{{budgetReasonLabel(reason)}}</li><li v-if="!item.node._budgetAdvice.reason_codes.length">结构稳定，无额外风险</li></ul>
+              <div v-if="item.node._budgetAdvice.prompt_conflicts.length" class="budget-popup-warning">段落字数要求可能与小节总字数冲突</div>
+              <button class="btn btn-primary btn-sm budget-popup-apply" @click="applyBudgetRecommendation(item.node)">应用 {{budgetApplyValue(item.node._budgetAdvice)}} 字</button>
             </div>
             <!-- Key Points / Description editor -->
             <div v-if="showDescEdit===item.node.id&&!item.node.children?.length" class="split-popup" style="position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--gold-dim);border-radius:8px;padding:8px;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
