@@ -5,6 +5,7 @@ import json
 import uuid
 import os
 import logging
+import re
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,49 @@ def _get_conn() -> sqlite3.Connection:
     return conn
 
 
-def _row_to_dict(row) -> dict:
+_POSITIVE_INTEGER_PATTERN = re.compile(r"^[0-9]+$")
+
+
+def normalize_resolve_chapter(value) -> int | None:
+    """Normalize persisted/API resolve chapters without guessing invalid values."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if _POSITIVE_INTEGER_PATTERN.fullmatch(stripped):
+            parsed = int(stripped)
+            return parsed if parsed > 0 else None
+    return None
+
+
+def _has_invalid_resolve_chapter(value) -> bool:
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return False
+    return normalize_resolve_chapter(value) is None
+
+
+def _normalize_resolve_chapter_for_write(data: dict, operation: str) -> dict:
+    normalized = dict(data)
+    if "resolve_chapter" not in normalized:
+        return normalized
+    raw = normalized.get("resolve_chapter")
+    normalized["resolve_chapter"] = normalize_resolve_chapter(raw)
+    if _has_invalid_resolve_chapter(raw):
+        logger.warning(
+            "Invalid resolve_chapter normalized to null during %s (input_type=%s)",
+            operation,
+            type(raw).__name__,
+        )
+    return normalized
+
+
+def _row_to_dict(row, *, track_invalid_resolve_chapter: bool = False) -> dict:
     d = dict(row)
     for field in ("related_characters", "related_items", "tags"):
         raw = d.get(field, "[]")
@@ -55,6 +98,10 @@ def _row_to_dict(row) -> dict:
                 d[field] = json.loads(raw)
             except (json.JSONDecodeError, TypeError):
                 d[field] = []
+    raw_resolve_chapter = d.get("resolve_chapter")
+    d["resolve_chapter"] = normalize_resolve_chapter(raw_resolve_chapter)
+    if track_invalid_resolve_chapter:
+        d["_invalid_resolve_chapter"] = _has_invalid_resolve_chapter(raw_resolve_chapter)
     return d
 
 
@@ -95,7 +142,7 @@ def create_foreshadowing(data: dict) -> dict:
     conn = _get_conn()
     try:
         fs_id = data.get("id") or str(uuid.uuid4())
-        d = _serialize_lists(data)
+        d = _serialize_lists(_normalize_resolve_chapter_for_write(data, "create"))
         conn.execute("""
             INSERT OR REPLACE INTO foreshadowings
             (id, task_id, name, description, plant_chapter, resolve_chapter, status,
@@ -126,7 +173,9 @@ def update_foreshadowing(fs_id: str, updates: dict) -> dict | None:
         existing = get_foreshadowing(fs_id)
         if not existing:
             return None
-        merged = _serialize_lists({**existing, **updates, "id": fs_id})
+        merged = _serialize_lists(_normalize_resolve_chapter_for_write(
+            {**existing, **updates, "id": fs_id}, "update"
+        ))
         conn.execute("""
             UPDATE foreshadowings SET
                 name=?, description=?, plant_chapter=?, resolve_chapter=?, status=?,
@@ -353,7 +402,13 @@ def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
             "SELECT * FROM foreshadowings WHERE task_id = ?",
             (task_id,)
         ).fetchall()
-        all_fs = [_row_to_dict(r) for r in all_rows]
+        all_fs = [
+            _row_to_dict(r, track_invalid_resolve_chapter=True)
+            for r in all_rows
+        ]
+        invalid_resolve_chapter_count = sum(
+            1 for f in all_fs if f.pop("_invalid_resolve_chapter", False)
+        )
 
         total = len(all_fs)
         resolved = sum(1 for f in all_fs if f["status"] == "resolved")
@@ -397,6 +452,7 @@ def get_foreshadowing_summary(task_id: str, current_chapter: int) -> dict:
             "broken_list": broken_list,
             "upcoming": upcoming,
             "health": health,
+            "invalid_resolve_chapter_count": invalid_resolve_chapter_count,
         }
     finally:
         conn.close()
