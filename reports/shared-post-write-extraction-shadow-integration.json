@@ -1,7 +1,7 @@
 {
   "schema_version": "shared_post_write_extraction_shadow_integration.v1",
   "date": "2026-07-21",
-  "status": "engineering_shadow_ready",
+  "status": "real_shadow_not_promoted",
   "scope": {
     "writer_or_llm_calls_during_implementation": 0,
     "production_extractors_replaced": 0,
@@ -85,6 +85,71 @@
     "reason": "coverage and latency must be measured before replacing any legacy extractor",
     "production_savings_claimed": false
   },
+  "real_shadow_validation": {
+    "task_id_hash": "dfaffbe835170f9afebea97fb87d62d25ab9155df2f29b1b62cd7c700b79fbb5",
+    "task_status": "completed",
+    "subsections": 4,
+    "extractor_calls": 4,
+    "extractor_tokens": 15141,
+    "extractor_elapsed_ms": 56628.915,
+    "extractor_share_of_writer_tokens": 0.6457,
+    "extractor_share_of_task_tokens": 0.2998,
+    "extractor_share_of_task_elapsed": 0.1575,
+    "accepted_changes": 55,
+    "rejected_change_warnings": 6,
+    "unknown_count": 0,
+    "conflicted_count": 0,
+    "evidence_trace_rate": 1.0,
+    "category_counts": {
+      "handover": 0,
+      "character_state": 28,
+      "relationship": 3,
+      "temporal_state": 3,
+      "location_state": 7,
+      "character_presence": 5,
+      "event": 5,
+      "experience": 3,
+      "foreshadowing": 1
+    },
+    "legacy_chain_comparison": {
+      "calls_potentially_replaced": 7,
+      "tokens_potentially_replaced": 21703,
+      "handover_calls": 4,
+      "handover_tokens": 10592,
+      "handover_elapsed_seconds": 21.3,
+      "character_state_calls": 1,
+      "character_state_tokens": 6749,
+      "character_state_effective_updates": 0,
+      "relationship_calls": 1,
+      "relationship_tokens": 302,
+      "relationship_records_written": 0,
+      "experience_calls": 1,
+      "experience_tokens": 4060,
+      "experience_records_written": 9,
+      "theoretical_token_reduction_if_fully_replaced": 6562,
+      "theoretical_token_reduction_ratio": 0.3024,
+      "replacement_claimed": false
+    },
+    "coverage_findings": {
+      "confirmed_legacy_field_coverage_gate_passed": false,
+      "handover_contract_covered": false,
+      "handover_reason": "No handover changes or explicit open-thread records were produced.",
+      "character_state_commit_ready": false,
+      "character_state_reason": "Changes use free-form names and predicates rather than stable character IDs and arc state fields.",
+      "relationship_commit_ready": false,
+      "experience_commit_ready": false,
+      "event_graph_commit_ready": false,
+      "reason": "The Bundle is evidence-traceable but does not yet match the stable IDs, field semantics, granularity and consumer timing required by every legacy writer."
+    },
+    "decision": {
+      "promotion": "rejected",
+      "production_mode": "legacy_extractors_unchanged",
+      "configuration_default": "off",
+      "additional_same_shape_demo": false,
+      "next_step": "offline_contract_and_consumer_adapter_redesign",
+      "stop_reason": "The real task passed isolation and traceability but failed semantic coverage and end-to-end latency gates."
+    }
+  },
   "promotion_gate": {
     "one_real_shadow_task_only": true,
     "confirmed_legacy_field_coverage": 1.0,
@@ -93,11 +158,13 @@
     "required_call_count_reduction_after_replacement": true,
     "writer_output_and_checkpoint_unchanged": true,
     "next_step_if_passed": "separately authorize one consumer-by-consumer canary replacement",
-    "next_step_if_failed": "keep legacy chain and stop without prompt or keyword expansion"
+    "next_step_if_failed": "keep legacy chain and stop without prompt or keyword expansion",
+    "real_shadow_result": "failed_semantic_coverage_and_latency"
   },
   "verification": {
     "targeted_tests_passed": 43,
     "targeted_tests_failed": 0,
+    "real_shadow_closure_tests_passed": 4,
     "compileall_passed": true
   }
 }

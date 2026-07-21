@@ -12,7 +12,7 @@ REPORT = ROOT / "reports" / "shared-post-write-extraction-shadow-integration.jso
 
 def test_report_keeps_shadow_and_production_boundaries_explicit():
     report = json.loads(REPORT.read_text(encoding="utf-8"))
-    assert report["status"] == "engineering_shadow_ready"
+    assert report["status"] == "real_shadow_not_promoted"
     assert report["scope"]["production_extractors_replaced"] == 0
     assert report["scope"]["authoritative_store_writes_added"] == 0
     assert report["integration"]["default"] == "off"
@@ -20,6 +20,15 @@ def test_report_keeps_shadow_and_production_boundaries_explicit():
     assert report["integration"]["production_effect"] is False
     assert report["expected_shadow_cost"]["production_savings_claimed"] is False
     assert report["promotion_gate"]["one_real_shadow_task_only"] is True
+    validation = report["real_shadow_validation"]
+    assert validation["extractor_calls"] == validation["subsections"] == 4
+    assert validation["extractor_tokens"] == 15141
+    assert sum(validation["category_counts"].values()) == validation["accepted_changes"]
+    assert validation["evidence_trace_rate"] == 1.0
+    assert validation["coverage_findings"]["confirmed_legacy_field_coverage_gate_passed"] is False
+    assert validation["decision"]["promotion"] == "rejected"
+    assert validation["decision"]["configuration_default"] == "off"
+    assert validation["decision"]["additional_same_shape_demo"] is False
 
 
 def test_writer_runs_shadow_only_after_commit_and_preserves_legacy_extractors():

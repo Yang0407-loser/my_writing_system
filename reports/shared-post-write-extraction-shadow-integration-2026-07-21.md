@@ -4,7 +4,22 @@ Date: 2026-07-21
 
 ## Outcome
 
-The production-grade typed contract and a default-off shadow hook are implemented. No legacy extractor was removed, no authoritative state store gained a new write path, and no Writer/LLM call was made during implementation. The change is ready for one separately authorized real shadow task; it is not ready to replace production extraction.
+The production-grade typed contract and default-off shadow hook were followed by the one authorized real shadow task. Isolation and evidence traceability worked, but the extractor failed the semantic-coverage and end-to-end latency gates. Its status is `real_shadow_not_promoted`; legacy extractors remain authoritative and the feature stays off by default.
+
+## Real shadow result
+
+The completed four-subsection task produced four shadow calls, 15,141 actual tokens and 56.629 seconds of extractor latency. That is 64.57% of the Writer token total, 29.98% of all task tokens and 15.75% of total task elapsed time. The extractor accepted 55 changes, rejected six proposed changes whose evidence was not found, and retained 100% character-span traceability for accepted changes.
+
+The output was not consumer-ready:
+
+- `handover` changes: 0. The Bundle did not explicitly represent legacy open threads.
+- `character_state` changes: 28, but they used free-form names and predicates instead of stable character IDs and the arc state fields consumed by `CharacterManager`.
+- Relationship, experience and event changes had exact evidence, but did not yet match the stable IDs, field semantics, aggregation rules or write timing required by their authoritative stores.
+- The 55 changes included transient actions and location/presence observations. Evidence correctness alone therefore did not establish that each item was worth persisting as future writing state.
+
+For the same task, the potentially replaceable legacy chain used seven calls and 21,703 known tokens: four handover calls used 10,592, one character-state call used 6,749, one relation call used 302, and one experience call used 4,060. Full replacement would theoretically save 6,562 tokens, or 30.24% of that extraction chain. This is not a realized saving: full field coverage was not proven, and the new extractor took 35.3 seconds longer than handover extraction alone before considering consumer timing and the existing background experience call.
+
+The legacy character-state call produced no effective state update in this task, the relation call wrote no relation record, and experience extraction wrote nine event records. These are useful cost signals, not sufficient evidence to delete those paths globally from one sample.
 
 ## Consumer audit
 
@@ -43,10 +58,10 @@ set WRITER_POST_WRITE_EXTRACTION_MODE=off
 - Extractor tokens use the separate `post_write_extraction` cost label.
 - Extractor and sink failures are converted to `shadow_error`; they cannot roll back committed text, trigger Writer retry or fail the task.
 
-## What has not been proven
+## Decision
 
-Shadow temporarily adds one LLM call per committed subsection. No production token or latency savings are claimed yet. A single real shadow task must measure whether one Bundle covers every legacy field still consumed by production, preserves confirmed facts, keeps unknowns unknown and provides 100% source/evidence traceability.
+The one-task gate did not pass. No consumer may be migrated, no second same-shape Demo should be run, and Prompt or keyword expansion is explicitly out of scope. `WRITER_POST_WRITE_EXTRACTION_MODE` remains `off`; Writer output, checkpoint behavior and all authoritative stores remain unchanged.
 
-Only after that gate passes may a separate canary replace legacy consumers one category at a time. Failure ends this direction without expanding the Prompt, keyword lists or paper test matrix.
+If this architecture is revisited, the next work must be an offline contract and consumer-adapter redesign: define stable IDs, durable-vs-transient state rules, explicit open-thread semantics and per-consumer projections before making another model call. A new live experiment is not justified until that offline contract demonstrates that the Bundle can actually drive every retained consumer.
 
-Engineering verification records 43 targeted tests passed and affected-module compileall passed. Implementation-time Writer/LLM calls were zero.
+Engineering verification records 43 integration tests plus four real-shadow closure checks passed, and affected-module compileall passed. Implementation-time Writer/LLM calls were zero.

@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成最小 canary 接入并取得 1 个真实任务样本，生产默认继续 `legacy_full`；Mandatory Event 已经真实验证为默认 warn、自动重写 0；Writer增量Section Review已默认关闭并通过1次真实运行验证；Writer Condense warn 已通过1次真实四小节验证并晋级为默认，legacy保留为显式回退；Shared Typed Post-Write Extraction 已完成默认关闭的工程 shadow 接入，旧提取链与权威存储不变，等待且只允许1个真实shadow任务；角色弧 Contract V2 状态为 `experimental_not_promoted`，生产默认仍为 v1；StateFrame 状态为 `paused_by_upstream_state_contract`；BoundaryValidator继续默认关闭；Phase 5、Phase 6暂停；Phase 8 Batch 1已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成最小 canary 接入并取得 1 个真实任务样本，生产默认继续 `legacy_full`；Mandatory Event 已经真实验证为默认 warn、自动重写 0；Writer增量Section Review已默认关闭并通过1次真实运行验证；Writer Condense warn 已通过1次真实四小节验证并晋级为默认，legacy保留为显式回退；Shared Typed Post-Write Extraction 的唯一真实shadow任务已完成，但因语义覆盖与端到端延迟门槛未通过而标记为 `real_shadow_not_promoted`，默认保持off且不再追加同形Demo；角色弧 Contract V2 状态为 `experimental_not_promoted`，生产默认仍为 v1；StateFrame 状态为 `paused_by_upstream_state_contract`；BoundaryValidator继续默认关闭；Phase 5、Phase 6暂停；Phase 8 Batch 1已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -421,7 +421,7 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 
 ## Shared Typed Post-Write Extraction：下一优化入口
 
-> 当前状态：`engineering_shadow_ready`。typed contract、默认关闭的post-commit shadow runner、任务级私有结果sink和脱敏观测已经完成；实现阶段未调用LLM，旧handover/人物/关系/经历提取链及全部权威存储保持不变。下一步仅允许另行授权1个真实shadow任务，不允许直接替换生产消费者或启动StateFrame生成实验。
+> 当前状态：`real_shadow_not_promoted`。唯一授权的真实shadow任务已经完成：隔离和逐字证据追溯通过，但字段语义、稳定ID、粒度和消费者时序覆盖不足，且新增56.6秒提取延迟。旧handover/人物/关系/经历提取链及全部权威存储保持不变，配置默认off；不再追加同形Demo，不允许直接替换生产消费者或启动StateFrame生成实验。
 
 ### 目标与依据
 
@@ -462,6 +462,15 @@ Outline / key points
 4. 只有共享Bundle覆盖所有仍有生产消费者的旧字段、无confirmed事实丢失、unknown不被升级且真实调用数下降时，才允许另行授权canary替换旧提取调用。
 5. 替换时按消费者逐类迁移，不在同一批同时删除legacy上下文、启用StateFrame、修改SceneSpec、Prompt、RAG、Validator、Repair或最终Review。
 6. Bundle稳定进入现有权威存储后，才重新审计StateFrame真实覆盖，并决定是否能安全减少最近3小节原文或其他`legacy_full`上下文。
+
+### 真实 shadow 结论（2026-07-21）
+
+- 4个小节产生4次共享提取调用，实际15,141 tokens、56.629秒；占Writer tokens的64.57%、任务总tokens的29.98%、总耗时的15.75%。
+- 共接受55条变化、拒绝6条无法逐字回溯的候选；接受项证据追溯率100%，unknown/conflicted均为0。
+- 类别分布为：character_state 28、location_state 7、character_presence 5、event 5、relationship 3、temporal_state 3、experience 3、foreshadowing 1、handover 0。
+- 同任务潜在可替换legacy链为7次调用、21,703 known tokens；若能完整替换，理论上可省6,562 tokens（30.24%），但当前未证明完整覆盖，因此不得计为生产收益。
+- 关键缺口：没有显式handover/open-thread产物；人物状态缺稳定character_id和arc字段；关系、经历、事件尚未满足权威存储的ID、聚合和时序契约；55条中包含大量瞬时动作，不能仅凭证据存在就持久化。
+- 决策：本轮不晋级、不替换消费者、不跑第二个同形Demo、不扩Prompt或关键词。若未来重启，只允许先做离线契约与consumer adapter重构，证明durable/transient分类、稳定ID和open-thread语义后再申请真实调用。
 
 ### 验收与停止条件
 
@@ -773,3 +782,4 @@ Outline / key points
 | 2026-07-21 | Writer Condense可控真实验证与晋级 | 固定`cd340fcc…`审计3次二次压缩并实现legacy/warn两态；随后用真实任务`4ce7e82f…`运行warn，warn只记录超长并保留完整初稿，不构造condense请求 | 基线3次condense耗费8,998 known token/46.1秒，仅删除859字；真实任务4/4小节均would-have-condensed但实际condense=0，HTTP=19，Mandatory重试=0，最终Review、正文和checkpoint正常，用户确认正文“可用” | 实测门槛通过，warn晋级默认，legacy保留为CMD显式回退；跨任务token/延迟不作精确因果比较；handover在长度调整前提取的顺序风险仍仅登记，不追加阈值网格、handover缓存或shared extraction实验 |
 | 2026-07-21 | 下一优先级决策：Shared Typed Post-Write Extraction | 基于真实调用成本、Writer职责拆分和StateFrame上游契约缺口，确定下一方向为“1次正文主调用 + 1次共享结构化状态提取”；统一handover、人物/关系、时间地点、事件、经历与伏笔变化 | 当前只写入目标架构、typed契约、实施顺序、验收和两批停止上限；未修改代码、未调用LLM、未替换任何生产提取链；Writer单次输入仍约12,406.4 estimated token | 先补可靠结构化上游，再决定是否重启StateFrame或删除legacy上下文；不得同时改Prompt/RAG/SceneSpec/Validator/Review，无法证明真实调用与延迟收益即停止 |
 | 2026-07-21 | Shared Typed Post-Write Extraction工程shadow接入 | 审计handover、人物状态、关系、经历和伏笔消费者；新增`PostWriteStateBundle`、逐字证据校验、默认off的post-commit shadow runner、独立cost label及任务Blackboard私有sink；旧链继续生产生效 | off模式零构建/零调用/零记录；shadow每个已提交小节额外1次提取，只记录Bundle，不写WorldState/EventGraph/character arcs/relations/events/foreshadowings/checkpoint；错误fail-open；定向测试43 passed、compileall通过、实现期LLM调用0 | 状态为`engineering_shadow_ready`，尚不宣称节省token或延迟；下一步且只允许1个真实shadow任务验证旧字段覆盖、unknown保留、100%追溯和潜在调用减少，失败即停止，不扩Prompt/关键词/测试矩阵 |
+| 2026-07-21 | Shared Typed Post-Write Extraction真实shadow收口 | 对唯一授权真实任务只读核对4个私有Bundle、legacy handover、角色状态、关系和经历存储；不重新生成、不修改生产、不提交正文或私有状态值 | 4次共享提取=15,141 tokens/56.629秒，接受55条、拒绝6条、追溯率100%；handover=0；潜在legacy链7次/21,703 tokens，理论差额6,562 tokens但未实现；角色状态旧调用本任务更新0、关系写入0、经历写入9，仅作成本信号 | 状态改为`real_shadow_not_promoted`；失败项为完整语义覆盖和端到端延迟，默认off、legacy不变；不跑第二个同形Demo。未来若重启，只先做离线稳定ID、durable/transient、open-thread及consumer adapter契约，不直接调用模型 |
