@@ -1,0 +1,125 @@
+{
+  "schema_version": "writer_incremental_section_review_dedup.v1",
+  "date": "2026-07-21",
+  "baseline_task_id": "3454d80e-02b9-48b6-b160-da614768da9b",
+  "scope": {
+    "new_generation_runs": 0,
+    "writer_llm_calls": 0,
+    "new_experiment_batch": false,
+    "production_code_changed": true
+  },
+  "consumer_audit": {
+    "incremental_writer_review": {
+      "producer": "app.agents.writer.Writer._maybe_start_incremental_section_review",
+      "output": "blackboard.section_reviews transient progress entries",
+      "consumers": [
+        "GET /api/tasks/status/{task_id}",
+        "app/static/js/main.js in-progress sectionReviewStatus display"
+      ],
+      "controls_writer_retry": false,
+      "controls_text_revision": false,
+      "controls_subsection_progress": false,
+      "controls_commit_or_checkpoint": false,
+      "controls_final_review": false,
+      "controls_task_success": false
+    },
+    "final_section_review": {
+      "producer": "app.coordinator._phase_review -> Reviewer.review_section",
+      "reads_incremental_results": false,
+      "preserved": true
+    },
+    "global_review": {
+      "producer": "app.coordinator._phase_review -> Reviewer.review_global",
+      "preserved": true
+    },
+    "experience_extraction": {
+      "producer": "app.agents.writer.Writer.run -> experience_timeline.extract_from_section",
+      "separate_background_thread": true,
+      "preserved": true
+    }
+  },
+  "configuration": {
+    "name": "WRITER_INCREMENTAL_SECTION_REVIEW",
+    "default": false,
+    "enabled_values": ["true", "1", "yes"],
+    "disabled_values": ["false", "0", "no", ""],
+    "invalid_effective_value": false,
+    "legacy_compatibility_command": "set WRITER_INCREMENTAL_SECTION_REVIEW=true",
+    "optimized_command": "set WRITER_INCREMENTAL_SECTION_REVIEW=false"
+  },
+  "behavior": {
+    "disabled_constructs_reviewer": false,
+    "disabled_starts_review_thread": false,
+    "disabled_writes_fake_score": false,
+    "enabled_preserves_legacy_trigger": true,
+    "writer_messages_changed": false,
+    "writer_output_changed_by_guard": false,
+    "generation_parameters_changed": false,
+    "state_committer_order_changed": false,
+    "checkpoint_contract_changed": false,
+    "final_review_semantics_changed": false,
+    "experience_extraction_changed": false
+  },
+  "observability": {
+    "record_name": "incremental_section_review_observation",
+    "fields": [
+      "task_id_hash",
+      "section",
+      "subsection",
+      "incremental_review_enabled",
+      "incremental_review_started",
+      "skip_reason",
+      "production_effect"
+    ],
+    "allowed_skip_reasons": [
+      "disabled_by_config",
+      "trigger_not_reached",
+      "reviewer_start_error"
+    ],
+    "contains_private_text": false
+  },
+  "baseline_cost": {
+    "http_post_count": 25,
+    "incremental_review_calls": 2,
+    "incremental_review_known_tokens": 7495,
+    "incremental_review_latency_seconds": 15.1,
+    "same_shape_expected_http_post_count": 23,
+    "logged_total_includes_incremental_review": false,
+    "official_total_not_a_valid_acceptance_metric": true
+  },
+  "preserved_calls": [
+    "subsection_draft",
+    "handover_brief",
+    "handover_extraction",
+    "length_adjustment",
+    "character_state_update",
+    "relationship_extraction",
+    "experience_extraction",
+    "consistency_check",
+    "continuity_check",
+    "final_section_review",
+    "global_review"
+  ],
+  "real_demo": {
+    "status": "not_run",
+    "allowed_next_action": "one normal real writing task",
+    "four_subsection_expected_http_posts": 23,
+    "must_verify": [
+      "one main draft call per subsection",
+      "mandatory event retries equal zero",
+      "incremental section review calls equal zero",
+      "experience extraction remains present",
+      "final section review remains present",
+      "global review remains present",
+      "draft saved and task completed",
+      "checkpoint remains valid"
+    ]
+  },
+  "verification": {
+    "targeted_tests_passed": 49,
+    "targeted_tests_failed": 0,
+    "compileall_passed": true,
+    "writer_or_llm_calls": 0
+  },
+  "next_optimization_started": false
+}

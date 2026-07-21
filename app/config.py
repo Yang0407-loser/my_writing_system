@@ -52,6 +52,12 @@ class Settings:
     # --- Writer agent tuning ---
     WRITER_REVIEW_TRIGGER_SUBS: int = int(os.getenv("WRITER_REVIEW_TRIGGER_SUBS", "3"))
     WRITER_REVIEW_TRIGGER_CHARS: int = int(os.getenv("WRITER_REVIEW_TRIGGER_CHARS", "8000"))
+    WRITER_INCREMENTAL_SECTION_REVIEW_RAW: str = os.getenv(
+        "WRITER_INCREMENTAL_SECTION_REVIEW", "false"
+    ).strip().lower()
+    WRITER_INCREMENTAL_SECTION_REVIEW: bool = (
+        WRITER_INCREMENTAL_SECTION_REVIEW_RAW in {"true", "1", "yes"}
+    )
     WRITER_EXPAND_THRESHOLD: float = float(os.getenv("WRITER_EXPAND_THRESHOLD", "0.7"))
     WRITER_ACCEPT_THRESHOLD: float = float(os.getenv("WRITER_ACCEPT_THRESHOLD", "0.6"))
     WRITER_MAX_EXPAND_ATTEMPTS: int = int(os.getenv("WRITER_MAX_EXPAND_ATTEMPTS", "2"))
@@ -112,6 +118,13 @@ class Settings:
             warnings.append("RAG_PHASE3_CANDIDATE_K 不应小于 RAG_TOP_K")
         if not 0 <= self.RAG_PHASE3_MIN_SCORE <= 1:
             warnings.append("RAG_PHASE3_MIN_SCORE 必须在 0..1")
+        if self.WRITER_INCREMENTAL_SECTION_REVIEW_RAW not in {
+            "true", "1", "yes", "false", "0", "no", ""
+        }:
+            warnings.append(
+                "WRITER_INCREMENTAL_SECTION_REVIEW="
+                f"{self.WRITER_INCREMENTAL_SECTION_REVIEW_RAW} 无效，按 false 处理"
+            )
         if self.WRITER_SCENE_SPEC_MODE not in {"off", "shadow", "canary"}:
             warnings.append(
                 f"WRITER_SCENE_SPEC_MODE={self.WRITER_SCENE_SPEC_MODE} 无效，按 off 处理；"

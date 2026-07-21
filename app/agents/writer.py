@@ -1,4 +1,5 @@
 import re
+import json
 import logging
 import time
 import threading
@@ -884,63 +885,19 @@ class Writer(BaseAgent):
                 except Exception:
                     logger.warning(f"[{task_id[:8]}] AI 痕迹检测失败，跳过", exc_info=True)
 
-                # --- 分节审阅检查（由 WRITER_REVIEW_TRIGGER_SUBS/CHARS 配置） ---
-                _review_subs_done = sum(
-                    1 for b in full_draft.split("【") if "】" in b
+                # --- 可选增量审阅；最终同步审阅仍由 coordinator 独立执行 ---
+                self._maybe_start_incremental_section_review(
+                    task_id=task_id,
+                    section_num=section_num,
+                    sub_num=sub_num,
+                    topic=topic,
+                    style=style,
+                    full_draft=full_draft,
+                    section_text=section_text,
+                    sub_title=sub_title,
+                    sub_text=sub_text,
+                    blackboard=blackboard,
                 )
-                _review_chars = len(section_text) + len(sub_text)
-                _trigger_subs = settings.WRITER_REVIEW_TRIGGER_SUBS
-                _trigger_chars = settings.WRITER_REVIEW_TRIGGER_CHARS
-                if _review_subs_done >= _trigger_subs and _review_subs_done % _trigger_subs == 0 or (
-                    _review_subs_done >= 1 and _review_chars > _trigger_chars):
-                    try:
-                        from ..agents.reviewer import Reviewer
-                        _reviewer = Reviewer()
-                        _style_for_review = style if isinstance(style, dict) else {}
-                        _review_snapshot = (
-                            section_text + f"【{sub_title}】\n{sub_text}\n\n"
-                        )[-8000:]
-
-                        def _run_section_review():
-                            try:
-                                result = _reviewer.review_section(
-                                    section_num, topic, _style_for_review, _review_snapshot)
-                                if blackboard and result:
-                                    _reviews = blackboard.get(task_id, "section_reviews") or []
-                                    if isinstance(_reviews, str):
-                                        _reviews = []
-                                    for r in _reviews:
-                                        if r.get("section") == section_num and r.get("subsection") == sub_num:
-                                            r["status"] = "done"
-                                            r["score"] = result.get("score")
-                                            break
-                                    blackboard.set(task_id, "section_reviews", _reviews)
-                            except Exception:
-                                logger.warning(f"[{task_id[:8]}] 第{section_num}节第{sub_num}小节审阅失败",
-                                               exc_info=True)
-                                if blackboard:
-                                    _reviews = blackboard.get(task_id, "section_reviews") or []
-                                    if isinstance(_reviews, str):
-                                        _reviews = []
-                                    for r in _reviews:
-                                        if r.get("section") == section_num and r.get("subsection") == sub_num:
-                                            r["status"] = "failed"
-                                            break
-                                    blackboard.set(task_id, "section_reviews", _reviews)
-
-                        t = threading.Thread(target=_run_section_review, daemon=True)
-                        t.start()
-                        if blackboard:
-                            _reviews = blackboard.get(task_id, "section_reviews") or []
-                            if isinstance(_reviews, str):
-                                _reviews = []
-                            _reviews.append({
-                                "section": section_num, "subsection": sub_num,
-                                "chars": _review_chars, "status": "pending",
-                            })
-                            blackboard.set(task_id, "section_reviews", _reviews)
-                    except Exception:
-                        logger.warning(f"[{task_id[:8]}] 启动审阅线程失败", exc_info=True)
 
                 # --- 有序提交小节副作用（R1：顺序与 fallback 保持原样） ---
                 def _token_usage_provider():
@@ -1271,6 +1228,138 @@ class Writer(BaseAgent):
                         f"{ch['name']}的视角和行为应限定为配角身份，不可喧宾夺主。"
                     )
         return "\n".join(lines) if lines else ""
+
+    @staticmethod
+    def _incremental_review_observation(
+        *, task_id: str, section_num: int, sub_num: int,
+        enabled: bool, started: bool, skip_reason: str | None,
+    ) -> dict:
+        record = {
+            "task_id_hash": hashlib.sha256(task_id.encode("utf-8")).hexdigest(),
+            "section": section_num,
+            "subsection": sub_num,
+            "incremental_review_enabled": enabled,
+            "incremental_review_started": started,
+            "skip_reason": skip_reason,
+            "production_effect": False,
+        }
+        logger.info(
+            "incremental_section_review_observation=%s",
+            json.dumps(record, ensure_ascii=False, separators=(",", ":")),
+        )
+        return record
+
+    def _maybe_start_incremental_section_review(
+        self, *, task_id: str, section_num: int, sub_num: int,
+        topic: str, style: dict, full_draft: str, section_text: str,
+        sub_title: str, sub_text: str, blackboard,
+    ) -> dict:
+        enabled = settings.WRITER_INCREMENTAL_SECTION_REVIEW
+        if not enabled:
+            return self._incremental_review_observation(
+                task_id=task_id,
+                section_num=section_num,
+                sub_num=sub_num,
+                enabled=False,
+                started=False,
+                skip_reason="disabled_by_config",
+            )
+
+        review_subs_done = sum(1 for block in full_draft.split("【") if "】" in block)
+        review_chars = len(section_text) + len(sub_text)
+        trigger_subs = settings.WRITER_REVIEW_TRIGGER_SUBS
+        trigger_chars = settings.WRITER_REVIEW_TRIGGER_CHARS
+        triggered = (
+            review_subs_done >= trigger_subs
+            and review_subs_done % trigger_subs == 0
+        ) or (
+            review_subs_done >= 1 and review_chars > trigger_chars
+        )
+        if not triggered:
+            return self._incremental_review_observation(
+                task_id=task_id,
+                section_num=section_num,
+                sub_num=sub_num,
+                enabled=True,
+                started=False,
+                skip_reason="trigger_not_reached",
+            )
+
+        try:
+            from ..agents.reviewer import Reviewer
+            reviewer = Reviewer()
+            style_for_review = style if isinstance(style, dict) else {}
+            review_snapshot = (
+                section_text + f"【{sub_title}】\n{sub_text}\n\n"
+            )[-8000:]
+
+            def _run_section_review():
+                try:
+                    result = reviewer.review_section(
+                        section_num, topic, style_for_review, review_snapshot
+                    )
+                    if blackboard and result:
+                        reviews = blackboard.get(task_id, "section_reviews") or []
+                        if isinstance(reviews, str):
+                            reviews = []
+                        for item in reviews:
+                            if (
+                                item.get("section") == section_num
+                                and item.get("subsection") == sub_num
+                            ):
+                                item["status"] = "done"
+                                item["score"] = result.get("score")
+                                break
+                        blackboard.set(task_id, "section_reviews", reviews)
+                except Exception:
+                    logger.warning(
+                        "[%s] 第%s节第%s小节审阅失败",
+                        task_id[:8], section_num, sub_num, exc_info=True,
+                    )
+                    if blackboard:
+                        reviews = blackboard.get(task_id, "section_reviews") or []
+                        if isinstance(reviews, str):
+                            reviews = []
+                        for item in reviews:
+                            if (
+                                item.get("section") == section_num
+                                and item.get("subsection") == sub_num
+                            ):
+                                item["status"] = "failed"
+                                break
+                        blackboard.set(task_id, "section_reviews", reviews)
+
+            thread = threading.Thread(target=_run_section_review, daemon=True)
+            thread.start()
+            if blackboard:
+                reviews = blackboard.get(task_id, "section_reviews") or []
+                if isinstance(reviews, str):
+                    reviews = []
+                reviews.append({
+                    "section": section_num,
+                    "subsection": sub_num,
+                    "chars": review_chars,
+                    "status": "pending",
+                })
+                blackboard.set(task_id, "section_reviews", reviews)
+            return self._incremental_review_observation(
+                task_id=task_id,
+                section_num=section_num,
+                sub_num=sub_num,
+                enabled=True,
+                started=True,
+                skip_reason=None,
+            )
+        except Exception:
+            logger.warning("[%s] 启动审阅线程失败", task_id[:8], exc_info=True)
+            return self._incremental_review_observation(
+                task_id=task_id,
+                section_num=section_num,
+                sub_num=sub_num,
+                enabled=True,
+                started=False,
+                skip_reason="reviewer_start_error",
+            )
 
     @staticmethod
     def _build_handover_brief(prev_handover: dict, llm_client=None) -> str:
