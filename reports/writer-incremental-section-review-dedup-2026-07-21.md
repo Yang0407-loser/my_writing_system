@@ -34,9 +34,20 @@ The fixed baseline had two incremental section reviews:
 
 For another four-subsection task with the same call shape, HTTP POST count should fall from 25 to 23. The official 39,010-token log did not include these background calls, so a change in that total is not an acceptance criterion.
 
-## One real-run check
+## Real-run verification
 
-No model was called during implementation. Run one normal real writing task after restarting the worker. Verify one draft call per subsection, zero Mandatory Event retries, zero incremental review calls, retained experience extraction, one final section review, one global review, a valid checkpoint, saved draft and `completed` status.
+The follow-up task `cd340fcc-1688-40a7-8c28-91e5423ea966` completed four subsections and passed the functional acceptance check:
+
+- 4 main draft calls and 0 actual Mandatory Event retries;
+- 4 `disabled_by_config` incremental-review observations and 0 incremental reviews started;
+- no transient `blackboard.section_reviews` field;
+- 1 experience extraction call, with 9 new event rows persisted for the task;
+- 1 final section review and 1 global review;
+- saved draft, `completed` task status, and a checkpoint at phase `completed`.
+
+The log contains 22 HTTP POSTs, rather than the same-shape estimate of 23. This is not an additional one-call saving attributable to review deduplication. The baseline was a continuation starting at writing, while this run was a new first chapter: it omitted 4 handover-brief calls and added 3 character-arc/world-state calls. The count reconciles as `25 - 2 incremental reviews - 4 handover briefs + 3 upstream calls = 22`.
+
+The run logged 44,307 task-context tokens, including Writer 32,595 and Reviewer 6,369. These totals must not be compared directly with the baseline 39,010 because the inputs and lifecycle differ, and background calls are excluded from both task-context counters. The real run proves that the two unwanted call sites no longer execute; it does not provide an exact same-input token-saving measurement. The 7,495-token and 15.1-second figures remain baseline-derived expected savings for the two removed calls.
 
 Engineering verification: 49 targeted tests passed, affected-module compileall passed, and Writer/LLM calls were zero.
 
@@ -55,4 +66,4 @@ Legacy compatibility mode:
 set WRITER_INCREMENTAL_SECTION_REVIEW=true
 ```
 
-No handover cache or shared extraction optimization has started.
+The optimization is accepted on one real task. No handover cache or shared extraction optimization has started.

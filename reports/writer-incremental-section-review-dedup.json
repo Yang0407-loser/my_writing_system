@@ -101,19 +101,47 @@
     "global_review"
   ],
   "real_demo": {
-    "status": "not_run",
-    "allowed_next_action": "one normal real writing task",
+    "status": "passed",
+    "task_id": "cd340fcc-1688-40a7-8c28-91e5423ea966",
+    "source": "fixed Celery log plus persisted task, Redis, checkpoint, and event metadata",
+    "http_post_count": 22,
     "four_subsection_expected_http_posts": 23,
-    "must_verify": [
-      "one main draft call per subsection",
-      "mandatory event retries equal zero",
-      "incremental section review calls equal zero",
-      "experience extraction remains present",
-      "final section review remains present",
-      "global review remains present",
-      "draft saved and task completed",
-      "checkpoint remains valid"
-    ]
+    "http_count_comparison": {
+      "directly_comparable_to_baseline": false,
+      "baseline_continuation_calls": 25,
+      "removed_incremental_review_calls": 2,
+      "baseline_handover_brief_calls_absent_in_new_first_chapter": 4,
+      "new_character_arc_and_world_state_calls": 3,
+      "reconciled_http_posts": 22,
+      "formula": "25 - 2 - 4 + 3 = 22"
+    },
+    "subsections": 4,
+    "main_draft_calls": 4,
+    "mandatory_event_observations": 4,
+    "mandatory_event_actual_retries": 0,
+    "incremental_review_observations": 4,
+    "incremental_review_disabled_observations": 4,
+    "incremental_review_started_calls": 0,
+    "blackboard_incremental_section_reviews_present": false,
+    "experience_extraction_calls": 1,
+    "experience_events_persisted": 9,
+    "final_section_review_calls": 1,
+    "global_review_calls": 1,
+    "task_status": "completed",
+    "draft_saved": true,
+    "checkpoint_exists": true,
+    "checkpoint_phase": "completed",
+    "logged_total_tokens": 44307,
+    "writer_tokens": 32595,
+    "reviewer_tokens": 6369,
+    "incremental_review_tokens_in_logged_total": false,
+    "actual_incremental_review_tokens_saved": "unavailable because disabled calls have no token usage and this is not the same task input as the baseline",
+    "acceptance": {
+      "functional_chain_preserved": true,
+      "incremental_review_elimination_confirmed": true,
+      "cost_direction_confirmed": true,
+      "exact_same_input_token_saving_measured": false
+    }
   },
   "verification": {
     "targeted_tests_passed": 49,

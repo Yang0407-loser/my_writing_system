@@ -51,7 +51,20 @@ def test_report_keeps_review_and_experience_chains_separate():
         "logged_total_includes_incremental_review": False,
         "official_total_not_a_valid_acceptance_metric": True,
     }
-    assert report["real_demo"]["status"] == "not_run"
+    demo = report["real_demo"]
+    assert demo["status"] == "passed"
+    assert demo["http_post_count"] == 22
+    assert demo["http_count_comparison"]["reconciled_http_posts"] == 22
+    assert demo["http_count_comparison"]["removed_incremental_review_calls"] == 2
+    assert demo["main_draft_calls"] == demo["subsections"] == 4
+    assert demo["mandatory_event_actual_retries"] == 0
+    assert demo["incremental_review_started_calls"] == 0
+    assert demo["experience_extraction_calls"] == 1
+    assert demo["final_section_review_calls"] == 1
+    assert demo["global_review_calls"] == 1
+    assert demo["task_status"] == demo["checkpoint_phase"] == "completed"
+    assert demo["acceptance"]["incremental_review_elimination_confirmed"] is True
+    assert demo["acceptance"]["exact_same_input_token_saving_measured"] is False
     assert report["scope"]["writer_llm_calls"] == 0
     assert report["next_optimization_started"] is False
 
