@@ -37,6 +37,14 @@ from .shadow_validation import ShadowBoundaryValidationRunner
 from .post_write_extraction import SharedPostWriteExtractor
 from .shadow_post_write_extraction import ShadowPostWriteExtractionRunner
 from .state_frame import StateFrameCompiler
+from .writer_execution_contract import (
+    ExecutionSourceRef,
+    WriterExecutionContract,
+    WriterExecutionContractApplication,
+    WriterExecutionContractBuildResult,
+    WriterExecutionContractController,
+    WriterExecutionContractProvider,
+)
 
 __all__ = [
     "CommitArtifact",
@@ -71,4 +79,10 @@ __all__ = [
     "ShadowBoundaryValidationRunner",
     "ShadowPostWriteExtractionRunner",
     "SharedPostWriteExtractor",
+    "ExecutionSourceRef",
+    "WriterExecutionContract",
+    "WriterExecutionContractApplication",
+    "WriterExecutionContractBuildResult",
+    "WriterExecutionContractController",
+    "WriterExecutionContractProvider",
 ]

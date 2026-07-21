@@ -87,6 +87,14 @@ class Settings:
     WRITER_SCENE_SPEC_CANARY_TASK_IDS: str = os.getenv(
         "WRITER_SCENE_SPEC_CANARY_TASK_IDS", ""
     )
+    WRITER_EXECUTION_CONTRACT_MODE_RAW: str = os.getenv(
+        "WRITER_EXECUTION_CONTRACT_MODE", "off"
+    ).strip().lower()
+    WRITER_EXECUTION_CONTRACT_MODE: str = (
+        WRITER_EXECUTION_CONTRACT_MODE_RAW
+        if WRITER_EXECUTION_CONTRACT_MODE_RAW in {"off", "shadow", "canary"}
+        else "off"
+    )
     WRITER_MANDATORY_EVENT_MODE: str = os.getenv(
         "WRITER_MANDATORY_EVENT_MODE", "warn"
     ).strip().lower()
@@ -156,6 +164,14 @@ class Settings:
             warnings.append(
                 f"WRITER_SCENE_SPEC_MODE={self.WRITER_SCENE_SPEC_MODE} 无效，按 off 处理；"
                 "应为 off/shadow/canary"
+            )
+        if self.WRITER_EXECUTION_CONTRACT_MODE_RAW not in {
+            "off", "shadow", "canary"
+        }:
+            warnings.append(
+                "WRITER_EXECUTION_CONTRACT_MODE="
+                f"{self.WRITER_EXECUTION_CONTRACT_MODE_RAW} invalid; "
+                "using off (expected off/shadow/canary)"
             )
         if self.WRITER_MANDATORY_EVENT_MODE not in {"off", "warn", "retry"}:
             warnings.append(

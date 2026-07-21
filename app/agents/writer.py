@@ -37,6 +37,7 @@ from ..writing import (
     SharedPostWriteExtractor,
     SubsectionInput,
     SubsectionPipeline,
+    WriterExecutionContractController,
 )
 from .. import foreshadowing_store
 from .. import rule_store
@@ -150,6 +151,9 @@ class Writer(BaseAgent):
         scene_spec_canary = SceneSpecCanaryController(
             mode=settings.WRITER_SCENE_SPEC_MODE,
             canary_task_ids=settings.WRITER_SCENE_SPEC_CANARY_TASK_IDS,
+        )
+        execution_contract_controller = WriterExecutionContractController(
+            mode=settings.WRITER_EXECUTION_CONTRACT_MODE,
         )
         if resume_context:
             cm.deserialize(resume_context)
@@ -626,6 +630,13 @@ class Writer(BaseAgent):
                     section_num=section_num,
                     sub_num=sub_num,
                 )
+                execution_required_events = self._collect_mandatory_event_sources(
+                    key_points=key_points,
+                    section_key_points=sec.get("key_points", []),
+                    sub_desc=sub_desc,
+                    section_num=section_num,
+                    sub_num=sub_num,
+                )
                 progress_context = self._build_progress_context(
                     outline=outline,
                     current_section=section_num,
@@ -734,7 +745,8 @@ class Writer(BaseAgent):
                 prompt_artifact = PromptBuilder().build(
                     prepared, token_by_source=context_token_estimates
                 )
-                if scene_spec_canary.enabled:
+                execution_contract_application = None
+                if execution_contract_controller.enabled or scene_spec_canary.enabled:
                     next_subsection = next(
                         (
                             item for item in subsections
@@ -742,6 +754,19 @@ class Writer(BaseAgent):
                         ),
                         None,
                     )
+                if execution_contract_controller.mode == "canary":
+                    execution_contract_application = execution_contract_controller.apply(
+                        prompt_artifact,
+                        task_id=task_id,
+                        section=section_num,
+                        current_subsection=sub,
+                        next_subsection=next_subsection,
+                        is_last_subsection=sub is subsections[-1],
+                        required_events=execution_required_events,
+                        target_characters=target_words,
+                    )
+                    prompt_artifact = execution_contract_application.prompt
+                elif scene_spec_canary.enabled:
                     scene_spec_application = scene_spec_canary.apply(
                         prompt_artifact,
                         task_id=task_id,
@@ -751,6 +776,18 @@ class Writer(BaseAgent):
                         is_last_subsection=sub is subsections[-1],
                     )
                     prompt_artifact = scene_spec_application.prompt
+                if execution_contract_controller.mode == "shadow":
+                    execution_contract_application = execution_contract_controller.apply(
+                        prompt_artifact,
+                        task_id=task_id,
+                        section=section_num,
+                        current_subsection=sub,
+                        next_subsection=next_subsection,
+                        is_last_subsection=sub is subsections[-1],
+                        required_events=execution_required_events,
+                        target_characters=target_words,
+                    )
+                    prompt_artifact = execution_contract_application.prompt
                 subsection_pipeline.record_prompt(prompt_artifact)
                 messages = prompt_artifact.messages
                 input_tokens_estimate = prompt_artifact.estimated_tokens
@@ -874,6 +911,13 @@ class Writer(BaseAgent):
                 )
                 subsection_pipeline.record_generation(generation_artifact)
                 subsection_pipeline.record_validation(validation_result)
+                execution_contract_controller.observe_output(
+                    execution_contract_application,
+                    output=sub_text,
+                    mandatory_observation=getattr(
+                        self, "_last_mandatory_observation", None
+                    ),
+                )
 
                 # --- 累积 ---
                 section_text += f"【{sub_title}】\n{sub_text}\n\n"
@@ -1226,6 +1270,38 @@ class Writer(BaseAgent):
             "character_arcs": arc_refs,
             "open_events": event_refs,
         }
+
+    @staticmethod
+    def _collect_mandatory_event_sources(
+        key_points, section_key_points, sub_desc, section_num, sub_num
+    ) -> list[dict[str, str]]:
+        values: list[tuple[str, str]] = []
+        for index, value in enumerate(key_points or [], 1):
+            values.append(
+                (f"outline:S{section_num}.{sub_num}:key_point:{index}", str(value))
+            )
+        for index, value in enumerate(section_key_points or [], 1):
+            values.append(
+                (f"outline:S{section_num}:key_point:{index}", str(value))
+            )
+        if sub_desc:
+            values.append(
+                (f"outline:S{section_num}.{sub_num}:description", str(sub_desc))
+            )
+
+        result: list[dict[str, str]] = []
+        seen_text: set[str] = set()
+        for source_id, raw in values:
+            text = raw.strip()
+            if not text or text in seen_text:
+                continue
+            seen_text.add(text)
+            result.append({
+                "source_id": source_id,
+                "text": text,
+                "text_hash": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            })
+        return result
 
     @staticmethod
     def _build_mandatory_events(key_points, section_key_points, sub_desc,
@@ -1608,6 +1684,7 @@ class Writer(BaseAgent):
         )
         self._last_generation_artifact = artifact
         self._last_retry_count = max(0, len(artifact.generation_attempts) - 1)
+        self._last_mandatory_observation = controller.last_mandatory_observation
         return artifact.draft
 
     def _adjust_generated_length(self, draft, *, target_words, call_max_tokens,
