@@ -1,7 +1,7 @@
 {
   "report_id": "character-state-propagation-fix-2026-07-21",
   "date": "2026-07-21",
-  "status": "logging_scope_regression_fixed_real_demo_rerun_required",
+  "status": "real_demo_passed_closed",
   "scope": {
     "production_correctness_fix": true,
     "writer_or_llm_calls": 0,
@@ -65,21 +65,38 @@
     "targeted_tests_passed": 53,
     "compileall": "passed",
     "real_demo_run": true,
-    "real_demo_valid": false,
-    "real_demo_task_count": 2,
-    "real_demo_failure": "Coordinator logging raised UnboundLocalError because a later function-local json import shadowed the module alias",
-    "writer_state_updates_observed": 2,
-    "coordinator_and_reviewer_chain_completed": false,
+    "real_demo_valid": true,
+    "real_demo_attempt_count": 3,
+    "first_attempt_invalid_task_count": 2,
+    "first_attempt_failure": "Coordinator logging raised UnboundLocalError because a later function-local json import shadowed the module alias",
+    "valid_real_demo_task_count": 1,
+    "writer_state_updates_observed": 3,
+    "coordinator_and_reviewer_chain_completed": true,
     "new_writer_or_llm_calls": 0
   },
   "regression_fix": {
     "change": "removed the function-local json alias import from _phase_writing",
     "production_logic_changed": false,
-    "rerun_required": true
+    "rerun_required": false
+  },
+  "final_real_demo": {
+    "task_id_hash": "391d5a865f663a50d068cd71ea2cae924eee82278e18c6acb03984e7ba48d7b6",
+    "task_status": "completed",
+    "single_task_run": true,
+    "shared_post_write_extraction_enabled": false,
+    "mandatory_event_actual_retry_count": 0,
+    "input_state_hash": "e5a408b1f3c5b3e2920e28b69553053775a16a1fe22c3611445f02e1f16b6a5e",
+    "updated_state_hash": "4a3b7253bac0524ab1c8c155d4412d6f07d245b4eb352f98293a78b83bffe8ac",
+    "checkpoint_state_hash": "4a3b7253bac0524ab1c8c155d4412d6f07d245b4eb352f98293a78b83bffe8ac",
+    "coordinator_state_hash": "4a3b7253bac0524ab1c8c155d4412d6f07d245b4eb352f98293a78b83bffe8ac",
+    "reviewer_state_hash": "4a3b7253bac0524ab1c8c155d4412d6f07d245b4eb352f98293a78b83bffe8ac",
+    "resume_state_preserved": true,
+    "propagation_gate_passed": true,
+    "separate_non_blocking_issue": "foreshadowing health summary still failed on mixed resolve_chapter types"
   },
   "next_step": {
-    "maximum_authorized_demo_count": 1,
-    "demo_purpose": "verify state hash propagation and resume behavior in one normal task",
+    "maximum_authorized_demo_count": 0,
+    "demo_purpose": "complete; no further Character State propagation demo is authorized",
     "automatic_demo": false
   }
 }

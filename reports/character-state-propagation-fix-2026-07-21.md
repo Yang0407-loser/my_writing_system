@@ -1,7 +1,7 @@
 # Character State Update 状态传播断链修复
 
 日期：2026-07-21
-状态：`logging_scope_regression_fixed_real_demo_rerun_required`
+状态：`real_demo_passed_closed`
 
 ## 原断点
 
@@ -46,4 +46,22 @@ Worker 中实际执行了两个任务。两者都完成了 Writer 人物状态�
 
 因此，这两次运行均为无效 Demo：Coordinator、最终 checkpoint 和 Reviewer 链路没有完成，不能作为传播成功证据。该问题属于本次观测接入引入的 Python 作用域错误，不是人物状态内容或检测器问题。
 
-已删除函数内重复导入并增加禁止 `_phase_writing` 局部遮蔽 `_json` 的回归测试。修复后仍需重启 Worker，最多重新运行一个正常真实任务，只验证 hash 贯通、checkpoint 和 final Reviewer 输入；不得借此启动其他优化。
+随后删除了函数内重复导入，并增加禁止 `_phase_writing` 局部遮蔽 `_json` 的回归测试；该回归修复经过重启后单任务复验。
+
+## 最终真实验收
+
+重启后只运行了一个任务，任务最终为 `completed`，Shared Post-Write Extraction 未运行，Mandatory Event 实际重试为 0。
+
+人物状态从上一轮 checkpoint 的 `e5a408...` 继续推进为 `4a3b725...`，说明恢复时没有退回 starting state。最终四个传播位置完全一致：
+
+```text
+updated_state_hash
+= checkpoint_state_hash
+= coordinator_state_hash
+= reviewer_state_hash
+= 4a3b7253bac0524ab1c8c155d4412d6f07d245b4eb352f98293a78b83bffe8ac
+```
+
+Character State Update 状态传播修复通过真实验收并正式关闭，不再追加同类 Demo。
+
+Review 阶段仍出现 `resolve_chapter` 混合类型导致的伏笔健康度摘要失败。任务正文、checkpoint 和最终状态仍成功完成；该问题与人物状态传播无关，应作为独立缺陷处理。
