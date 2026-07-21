@@ -1,0 +1,103 @@
+{
+  "schema_version": "shared_post_write_extraction_shadow_integration.v1",
+  "date": "2026-07-21",
+  "status": "engineering_shadow_ready",
+  "scope": {
+    "writer_or_llm_calls_during_implementation": 0,
+    "production_extractors_replaced": 0,
+    "authoritative_store_writes_added": 0,
+    "writer_prompt_changed": false,
+    "writer_messages_changed": false,
+    "checkpoint_contract_changed": false,
+    "stateframe_enabled": false
+  },
+  "legacy_consumer_audit": [
+    {
+      "producer": "Writer._extract_handover",
+      "granularity": "per_subsection",
+      "execution": "synchronous_before_length_adjustment_and_subsection_commit",
+      "llm_calls": "one_per_generated_subsection",
+      "output_fields": ["foreshadowing", "character_state", "open_threads", "new_facts", "found_contradictions", "resolved_events", "arc_progress"],
+      "consumers": ["StateCommitter.commit_handover_effects", "EventGraph arc status", "WorldState new facts", "section handover chain", "backref suggestions", "next section handover context"],
+      "replacement_risk": "high"
+    },
+    {
+      "producer": "CharacterManager.update_states",
+      "granularity": "per_section_when_character_arcs_exist",
+      "execution": "synchronous_after_subsections",
+      "llm_calls": "one_or_more_batches_per_section",
+      "consumers": ["character_arcs current_state", "Blackboard character_arcs", "later Writer character context"],
+      "replacement_risk": "high"
+    },
+    {
+      "producer": "character_relation_store.extract_relations_from_text",
+      "granularity": "per_section_when_two_or_more_characters_exist",
+      "execution": "synchronous_after_subsections",
+      "llm_calls": "up_to_one_per_section",
+      "consumers": ["character_relations.db", "future relation context and API"],
+      "replacement_risk": "high"
+    },
+    {
+      "producer": "experience_timeline.extract_from_section",
+      "granularity": "per_section_above_500_characters",
+      "execution": "background_fire_and_forget",
+      "llm_calls": "up_to_one_per_section",
+      "consumers": ["event_store events.db", "future experience context and API"],
+      "replacement_risk": "high"
+    },
+    {
+      "producer": "handover foreshadowing field",
+      "granularity": "per_subsection_then_section_aggregation",
+      "execution": "part_of_handover_extraction",
+      "llm_calls": "no_separate_call",
+      "consumers": ["handover chain only"],
+      "replacement_risk": "medium",
+      "note": "current Writer path does not directly persist this field to foreshadowings.db"
+    }
+  ],
+  "new_contract": {
+    "name": "PostWriteStateBundle",
+    "schema_version": "post-write-state-v1",
+    "categories": ["handover", "character_state", "relationship", "temporal_state", "location_state", "character_presence", "event", "experience", "foreshadowing"],
+    "statuses": ["confirmed", "unknown", "conflicted"],
+    "exact_evidence_required": true,
+    "source_hash_required": true,
+    "stable_change_ids": true,
+    "unknown_cannot_be_promoted": true
+  },
+  "integration": {
+    "configuration": "WRITER_POST_WRITE_EXTRACTION_MODE",
+    "default": "off",
+    "allowed_modes": ["off", "shadow"],
+    "invalid_mode_fallback": "off",
+    "hook": "after StateCommitter.commit_subsection and pipeline record_commit",
+    "known_context_freeze": "character IDs/names, arc states and up to ten open EventGraph refs are hashed and frozen before legacy handover effects mutate state",
+    "shadow_authoritative_writes": false,
+    "private_result_location": "task-scoped Blackboard field post_write_extraction_shadow",
+    "public_log_contains": ["task_id_hash", "section", "subsection", "output_sha256", "bundle_hash", "hashed source IDs", "counts", "elapsed_ms", "error_type"],
+    "public_log_excludes": ["full_text", "prompt", "messages", "state_values", "api_key"],
+    "cost_label": "post_write_extraction",
+    "production_effect": false,
+    "failure_behavior": "record shadow_error without rollback, retry, checkpoint mutation or Writer failure"
+  },
+  "expected_shadow_cost": {
+    "additional_calls": "one_per_committed_subsection",
+    "reason": "coverage and latency must be measured before replacing any legacy extractor",
+    "production_savings_claimed": false
+  },
+  "promotion_gate": {
+    "one_real_shadow_task_only": true,
+    "confirmed_legacy_field_coverage": 1.0,
+    "source_and_evidence_trace_rate": 1.0,
+    "unknown_promotion_count": 0,
+    "required_call_count_reduction_after_replacement": true,
+    "writer_output_and_checkpoint_unchanged": true,
+    "next_step_if_passed": "separately authorize one consumer-by-consumer canary replacement",
+    "next_step_if_failed": "keep legacy chain and stop without prompt or keyword expansion"
+  },
+  "verification": {
+    "targeted_tests_passed": 43,
+    "targeted_tests_failed": 0,
+    "compileall_passed": true
+  }
+}

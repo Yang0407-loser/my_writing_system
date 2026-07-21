@@ -75,6 +75,14 @@ class Settings:
     WRITER_BOUNDARY_VALIDATOR_SHADOW: bool = os.getenv(
         "WRITER_BOUNDARY_VALIDATOR_SHADOW", "false"
     ).lower() in ("true", "1", "yes")
+    WRITER_POST_WRITE_EXTRACTION_MODE_RAW: str = os.getenv(
+        "WRITER_POST_WRITE_EXTRACTION_MODE", "off"
+    ).strip().lower()
+    WRITER_POST_WRITE_EXTRACTION_MODE: str = (
+        WRITER_POST_WRITE_EXTRACTION_MODE_RAW
+        if WRITER_POST_WRITE_EXTRACTION_MODE_RAW in {"off", "shadow"}
+        else "off"
+    )
     WRITER_SCENE_SPEC_MODE: str = os.getenv("WRITER_SCENE_SPEC_MODE", "off").strip().lower()
     WRITER_SCENE_SPEC_CANARY_TASK_IDS: str = os.getenv(
         "WRITER_SCENE_SPEC_CANARY_TASK_IDS", ""
@@ -137,6 +145,12 @@ class Settings:
             warnings.append(
                 f"WRITER_CONDENSE_MODE={self.WRITER_CONDENSE_MODE_RAW} invalid; "
                 "using legacy (expected legacy/warn)"
+            )
+        if self.WRITER_POST_WRITE_EXTRACTION_MODE_RAW not in {"off", "shadow"}:
+            warnings.append(
+                "WRITER_POST_WRITE_EXTRACTION_MODE="
+                f"{self.WRITER_POST_WRITE_EXTRACTION_MODE_RAW} invalid; "
+                "using off (expected off/shadow)"
             )
         if self.WRITER_SCENE_SPEC_MODE not in {"off", "shadow", "canary"}:
             warnings.append(

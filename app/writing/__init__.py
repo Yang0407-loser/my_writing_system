@@ -2,6 +2,9 @@
 
 from .contracts import (
     CommitArtifact,
+    PostWriteEvidence,
+    PostWriteStateBundle,
+    PostWriteStateChange,
     SceneSpec,
     SourceEvidence,
     StateFrame,
@@ -24,6 +27,8 @@ from .scene_spec_provider import (
 from .state_committer import StateCommitter
 from .subsection_pipeline import SubsectionPipeline
 from .shadow_validation import ShadowBoundaryValidationRunner
+from .post_write_extraction import SharedPostWriteExtractor
+from .shadow_post_write_extraction import ShadowPostWriteExtractionRunner
 from .state_frame import StateFrameCompiler
 
 __all__ = [
@@ -32,6 +37,9 @@ __all__ = [
     "GenerationController",
     "MandatoryEventDetection",
     "MandatoryEventPolicy",
+    "PostWriteEvidence",
+    "PostWriteStateBundle",
+    "PostWriteStateChange",
     "PromptArtifact",
     "PromptBuilder",
     "OutlineSceneSpecProvider",
@@ -49,4 +57,6 @@ __all__ = [
     "SubsectionPipeline",
     "SubsectionPipelineArtifact",
     "ShadowBoundaryValidationRunner",
+    "ShadowPostWriteExtractionRunner",
+    "SharedPostWriteExtractor",
 ]

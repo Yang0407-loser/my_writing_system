@@ -29,6 +29,8 @@ from ..writing import (
     SceneSpecCanaryController,
     StateCommitter,
     ShadowBoundaryValidationRunner,
+    ShadowPostWriteExtractionRunner,
+    SharedPostWriteExtractor,
     SubsectionInput,
     SubsectionPipeline,
 )
@@ -137,6 +139,10 @@ class Writer(BaseAgent):
         cm = ContextManager(self.llm)
         state_committer = StateCommitter()
         shadow_boundary_validator = self._build_shadow_boundary_validation_runner()
+        shadow_post_write_extractor = self._build_shadow_post_write_extraction_runner(
+            blackboard=blackboard,
+            task_id=task_id,
+        )
         scene_spec_canary = SceneSpecCanaryController(
             mode=settings.WRITER_SCENE_SPEC_MODE,
             canary_task_ids=settings.WRITER_SCENE_SPEC_CANARY_TASK_IDS,
@@ -765,6 +771,13 @@ class Writer(BaseAgent):
 
                 # --- 提取交接信息（独立 LLM 调用，不影响正文纯净度） ---
                 sub_text = raw_output  # Writer 只输出纯正文，无需正则切分
+                post_write_extraction_context = self._build_post_write_extraction_context(
+                    characters=characters,
+                    character_arcs=character_arcs,
+                    event_graph=event_graph,
+                    section=section_num,
+                    subsection=sub_num,
+                )
                 if blackboard and retrieved_items:
                     try:
                         rag_log = blackboard.get(task_id, "rag_recall_log")
@@ -931,6 +944,15 @@ class Writer(BaseAgent):
                     output_hash=commit_artifact.output_hash,
                     source_manifest=prompt_artifact.source_manifest,
                 )
+                shadow_post_write_extractor.observe_committed(
+                    task_id=task_id,
+                    section=section_num,
+                    subsection=sub_num,
+                    text=sub_text,
+                    output_hash=commit_artifact.output_hash,
+                    source_manifest=prompt_artifact.source_manifest,
+                    known_context=post_write_extraction_context,
+                )
 
             # B2: 子节循环内检测到停止信号，跳出外层 while
             if should_stop:
@@ -1092,6 +1114,59 @@ class Writer(BaseAgent):
         return ShadowBoundaryValidationRunner(
             enabled=settings.WRITER_BOUNDARY_VALIDATOR_SHADOW,
         )
+
+    def _build_shadow_post_write_extraction_runner(self, *, blackboard, task_id: str):
+        enabled = settings.WRITER_POST_WRITE_EXTRACTION_MODE == "shadow"
+        if not enabled:
+            return ShadowPostWriteExtractionRunner(enabled=False)
+        from ..writing.shadow_post_write_extraction import BlackboardPostWriteExtractionSink
+        sink = (
+            BlackboardPostWriteExtractionSink(blackboard, task_id)
+            if blackboard is not None
+            else None
+        )
+        return ShadowPostWriteExtractionRunner(
+            enabled=True,
+            extractor=SharedPostWriteExtractor(self.llm),
+            sink=sink,
+        )
+
+    @staticmethod
+    def _build_post_write_extraction_context(
+        *, characters, character_arcs, event_graph, section: int, subsection: int,
+    ) -> dict:
+        character_refs = [
+            {"character_id": str(item.get("id", "")), "name": str(item.get("name", ""))}
+            for item in (characters or [])
+            if item.get("id") or item.get("name")
+        ]
+        arc_refs = [
+            {
+                "character_id": str(item.get("character_id", "")),
+                "current_state": str(item.get("current_state", "")),
+                "ending_state": str(item.get("ending_state", "")),
+            }
+            for item in (character_arcs or [])
+            if item.get("character_id")
+        ]
+        event_refs = []
+        if event_graph is not None:
+            try:
+                event_refs = [
+                    {
+                        "event_id": str(item.event_id),
+                        "description": str(item.description),
+                        "status": str(getattr(item, "status", "")),
+                    }
+                    for item in event_graph.get_arc_events(section, subsection)[:10]
+                ]
+            except Exception:
+                event_refs = []
+        return {
+            "characters": character_refs,
+            "character_arcs": arc_refs,
+            "open_events": event_refs,
+        }
 
     @staticmethod
     def _build_mandatory_events(key_points, section_key_points, sub_desc,

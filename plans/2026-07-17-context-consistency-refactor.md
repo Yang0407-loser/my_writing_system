@@ -1,6 +1,6 @@
 # 长篇写作一致性系统重构执行计划
 
-> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成最小 canary 接入并取得 1 个真实任务样本，生产默认继续 `legacy_full`；Mandatory Event 已经真实验证为默认 warn、自动重写 0；Writer增量Section Review已默认关闭并通过1次真实运行验证；Writer Condense warn 已通过1次真实四小节验证并晋级为默认，legacy保留为显式回退；角色弧 Contract V2 状态为 `experimental_not_promoted`，生产默认仍为 v1；StateFrame 状态为 `paused_by_upstream_state_contract`；BoundaryValidator继续默认关闭；Phase 5、Phase 6暂停；Phase 8 Batch 1已完成纯离线风格可观测性基线
+> 状态：Phase 3 已以“实验未晋级、生产保持 legacy”正式收口；Phase 4 状态为 `paused_by_generation_evaluation_infrastructure`；Phase 4R 最终真实写作试验通过，SceneSpec 已完成最小 canary 接入并取得 1 个真实任务样本，生产默认继续 `legacy_full`；Mandatory Event 已经真实验证为默认 warn、自动重写 0；Writer增量Section Review已默认关闭并通过1次真实运行验证；Writer Condense warn 已通过1次真实四小节验证并晋级为默认，legacy保留为显式回退；Shared Typed Post-Write Extraction 已完成默认关闭的工程 shadow 接入，旧提取链与权威存储不变，等待且只允许1个真实shadow任务；角色弧 Contract V2 状态为 `experimental_not_promoted`，生产默认仍为 v1；StateFrame 状态为 `paused_by_upstream_state_contract`；BoundaryValidator继续默认关闭；Phase 5、Phase 6暂停；Phase 8 Batch 1已完成纯离线风格可观测性基线
 > 日期：2026-07-18  
 > 执行者：Codex  
 > 核心目标：降低长篇上下文不一致、角色漂移和风格漂移；减少 Writer 无效上下文；建立可重复验证的质量闭环。
@@ -419,6 +419,59 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 - 追溯、unknown保留、planned/hard排除、重复分类和确定性全部通过；但generic state多数门槛失败。每帧与SceneSpec confirmed/open重复9条、与legacy WorldState/handover重复14/3个source；接管confirmed/open后理论仍净增加约754 token。
 - 诊断固定为`upstream_state_contract_required`。不得扩关键词或进入生成A/B；下一步只能另行授权最小上游状态契约设计，不实现迁移或写入。
 
+## Shared Typed Post-Write Extraction：下一优化入口
+
+> 当前状态：`engineering_shadow_ready`。typed contract、默认关闭的post-commit shadow runner、任务级私有结果sink和脱敏观测已经完成；实现阶段未调用LLM，旧handover/人物/关系/经历提取链及全部权威存储保持不变。下一步仅允许另行授权1个真实shadow任务，不允许直接替换生产消费者或启动StateFrame生成实验。
+
+### 目标与依据
+
+- 将小节写作闭环收口为“1次正文主调用 + 1次共享结构化状态提取”，Writer 只负责 prose 生成，不再让多个模块分别重读同一正文并独立解释状态。
+- 统一现有 handover、人物状态、关系变化、地点/时间状态、未完成事件、经历和伏笔变化的提取结果，为下一小节提供一致、短小、可追溯的状态输入。
+- 当前可确认的生产收益主要来自减少重复调用：增量 Section Review 已去除基线7,495 known token，Condense 已去除基线8,998 known token；但 Writer 单次正文输入仍约12,406.4 estimated token，生产仍为`legacy_full`。本路线先补齐可靠结构化上游，再重新评估 StateFrame 或上下文删除，避免重演有损压缩导致事实丢失。
+- StateFrame Batch 2 已证明现有上游状态中 generic 占68.18%，handover是长字符串，关系/伏笔/地点缺少可用结构；因此不应先裁最近原文，也不应继续扩关键词猜状态。
+
+### 目标架构
+
+```text
+Outline / key points
+        -> deterministic SceneSpec
+        -> Writer subsection draft (exactly one primary call)
+        -> StateCommitter
+        -> Shared Typed Extractor (one call)
+             -> handover
+             -> character state changes
+             -> relationship changes
+             -> time/location/presence
+             -> open/closed events
+             -> experience and foreshadowing changes
+        -> existing authoritative stores/adapters
+```
+
+### 最小契约
+
+- 定义单一`PostWriteStateBundle`，至少包含`task_id`、`section/subsection`、`output_hash`、`schema_version`、`source_refs`和分类后的状态变化。
+- 每条状态必须有稳定ID、predicate、subject、typed value、`confirmed/unknown/conflicted`状态、effective range、evidence span、source ID/hash和confidence。
+- 不允许把未确认内容升级为事实；解析失败或证据不足时保留`unknown`，不得猜测具体人物、时间、地点或事件结果。
+- Bundle 只是统一提取产物，不建立第二套永久数据库；现有权威存储仍由各自适配器负责写入和兼容旧checkpoint。
+
+### 实施顺序
+
+1. 只读审计现有 handover extraction、CharacterManager状态更新、关系/经历/伏笔提取的调用位置、输入hash、输出消费者、同步/后台顺序、token和延迟；不得仅凭调用数量判定可合并。
+2. 冻结`PostWriteStateBundle`契约和旧消费者适配边界；先实现纯解析、校验、追溯和NoOp/Shadow sink，不修改Writer Prompt或生产写入。
+3. 新共享提取器在shadow中每小节最多调用1次；旧提取链继续生产生效。对同一真实任务并排记录字段覆盖、冲突、unknown、来源追溯、调用数和延迟，不读取人工答案参与运行时提取。
+4. 只有共享Bundle覆盖所有仍有生产消费者的旧字段、无confirmed事实丢失、unknown不被升级且真实调用数下降时，才允许另行授权canary替换旧提取调用。
+5. 替换时按消费者逐类迁移，不在同一批同时删除legacy上下文、启用StateFrame、修改SceneSpec、Prompt、RAG、Validator、Repair或最终Review。
+6. Bundle稳定进入现有权威存储后，才重新审计StateFrame真实覆盖，并决定是否能安全减少最近3小节原文或其他`legacy_full`上下文。
+
+### 验收与停止条件
+
+- 每小节正文主调用保持恰好1次，共享状态提取最多1次；不得增加替代重试。
+- 所有Bundle及写入结果的source/hash/evidence span追溯率为100%，旧checkpoint和幂等键兼容。
+- 现有生产消费者需要的confirmed状态覆盖率为100%；缺失、冲突和unavailable必须单独报告，不能当作成功。
+- 相对同生命周期旧链，状态提取HTTP调用数与端到端延迟必须明确下降；无法证明合并收益时停止，不进入canary。
+- 一个正常真实任务出现任何confirmed状态丢失、错误关系/事件写入或下一小节连续性退化时，立即保留旧链，不通过扩Prompt、加关键词或重复调用追逐通过。
+- 最多允许1个工程/离线契约批次和1个真实shadow验证；未通过即复盘核心假设，不继续扩展纸面测试矩阵。
+
 ## Character Arc Contract V2：规划噪声收缩
 
 > 当前状态：`experimental_not_promoted`。生产默认 `CHARACTER_ARC_CONTRACT_VERSION=v1`；续写任务验证了legacy兼容去伪边，但没有从`character_arcs`阶段运行新的V2 Planner，不能评价V2分类质量。
@@ -718,3 +771,5 @@ Chroma metadata 对复杂类型有限制时，将列表序列化为稳定字符�
 | 2026-07-21 | 真实写作运行收尾：伏笔类型、调用成本、Character Arc V2 | 对`3454d80e…`固定日志建立25次HTTP调用账本；为resolve_chapter增加统一读写归一化但不迁移数据库；关闭本轮V2续写实验，不调用LLM、不重新生成 | 39,010 token精确对上Writer32,442+Continuity263+Reviewer6,305，但另有后台线程11,012 known token未入总数、4次流式正文token unavailable；最大可恢复成本为review13,800、handover extraction9,608、长度精简7,732；V2续写12条legacy milestone均soft、hard=0、边=0 | 伏笔健康失败来自字符串章节号且不影响任务completed/正文保存；V2=`experimental_not_promoted`，默认继续v1，不追加Demo；下一成本候选仅为审阅去重、handover brief按输入hash缓存、共享typed extraction，均未执行 |
 | 2026-07-21 | Writer后台Section Review去重 | 审计BlackBoard/API/UI与最终Review消费者；新增默认false的`WRITER_INCREMENTAL_SECTION_REVIEW`，只关闭Writer循环内后台Reviewer线程并记录脱敏观测；true保留旧行为，不调用LLM | 增量结果仅供写作中进度展示，不参与生成、重试、提交、checkpoint、最终评分或任务成败；基线2次重复review合计7,495 known token/15.1秒；真实任务`cd340fcc…`有4次正文、0次Mandatory重试、0次增量review，experience/final section/global review、正文和checkpoint均保留 | 真实任务共22次HTTP调用；因其为新首章，相对25次续写基线同时少4次handover brief、多3次上游调用，故只能将其中2次减少归因于本优化；调用消除和成本方向已验证，精确同输入token节省未测量；优化验收完成，不自动开始handover缓存或共享extraction |
 | 2026-07-21 | Writer Condense可控真实验证与晋级 | 固定`cd340fcc…`审计3次二次压缩并实现legacy/warn两态；随后用真实任务`4ce7e82f…`运行warn，warn只记录超长并保留完整初稿，不构造condense请求 | 基线3次condense耗费8,998 known token/46.1秒，仅删除859字；真实任务4/4小节均would-have-condensed但实际condense=0，HTTP=19，Mandatory重试=0，最终Review、正文和checkpoint正常，用户确认正文“可用” | 实测门槛通过，warn晋级默认，legacy保留为CMD显式回退；跨任务token/延迟不作精确因果比较；handover在长度调整前提取的顺序风险仍仅登记，不追加阈值网格、handover缓存或shared extraction实验 |
+| 2026-07-21 | 下一优先级决策：Shared Typed Post-Write Extraction | 基于真实调用成本、Writer职责拆分和StateFrame上游契约缺口，确定下一方向为“1次正文主调用 + 1次共享结构化状态提取”；统一handover、人物/关系、时间地点、事件、经历与伏笔变化 | 当前只写入目标架构、typed契约、实施顺序、验收和两批停止上限；未修改代码、未调用LLM、未替换任何生产提取链；Writer单次输入仍约12,406.4 estimated token | 先补可靠结构化上游，再决定是否重启StateFrame或删除legacy上下文；不得同时改Prompt/RAG/SceneSpec/Validator/Review，无法证明真实调用与延迟收益即停止 |
+| 2026-07-21 | Shared Typed Post-Write Extraction工程shadow接入 | 审计handover、人物状态、关系、经历和伏笔消费者；新增`PostWriteStateBundle`、逐字证据校验、默认off的post-commit shadow runner、独立cost label及任务Blackboard私有sink；旧链继续生产生效 | off模式零构建/零调用/零记录；shadow每个已提交小节额外1次提取，只记录Bundle，不写WorldState/EventGraph/character arcs/relations/events/foreshadowings/checkpoint；错误fail-open；定向测试43 passed、compileall通过、实现期LLM调用0 | 状态为`engineering_shadow_ready`，尚不宣称节省token或延迟；下一步且只允许1个真实shadow任务验证旧字段覆盖、unknown保留、100%追溯和潜在调用减少，失败即停止，不扩Prompt/关键词/测试矩阵 |

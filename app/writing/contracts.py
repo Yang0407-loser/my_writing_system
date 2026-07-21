@@ -64,6 +64,18 @@ class SubsectionPipelineArtifact(FrozenArtifact):
 
 
 EpistemicStatus = Literal["confirmed", "planned", "unknown", "conflicted"]
+PostWriteStatus = Literal["confirmed", "unknown", "conflicted"]
+PostWriteCategory = Literal[
+    "handover",
+    "character_state",
+    "relationship",
+    "temporal_state",
+    "location_state",
+    "character_presence",
+    "event",
+    "experience",
+    "foreshadowing",
+]
 
 
 class SourceEvidence(FrozenArtifact):
@@ -134,3 +146,35 @@ class SceneSpec(FrozenArtifact):
     spec_hash: str
     estimated_tokens: int
     schema_version: str = "phase4r-r2-v1"
+
+
+class PostWriteEvidence(FrozenArtifact):
+    evidence_id: str
+    source_id: str
+    text_hash: str
+    span_start: int = Field(ge=0)
+    span_end: int = Field(ge=0)
+    excerpt: str = Field(max_length=140)
+
+
+class PostWriteStateChange(FrozenArtifact):
+    change_id: str
+    category: PostWriteCategory
+    subject: str
+    predicate: str
+    value: str
+    status: PostWriteStatus
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: list[PostWriteEvidence] = Field(min_length=1)
+
+
+class PostWriteStateBundle(FrozenArtifact):
+    task_id: str
+    section: int = Field(ge=1)
+    subsection: int = Field(ge=1)
+    output_hash: str
+    source_manifest: list[dict[str, str]] = Field(default_factory=list)
+    changes: list[PostWriteStateChange] = Field(default_factory=list)
+    extraction_warnings: list[str] = Field(default_factory=list)
+    bundle_hash: str
+    schema_version: str = "post-write-state-v1"
