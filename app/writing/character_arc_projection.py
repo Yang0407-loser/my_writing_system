@@ -375,6 +375,79 @@ class CharacterArcProjector:
             "invalidation_reason": None,
         })
 
+    def replace_confirmed_candidate(
+        self,
+        *,
+        projection: ChapterCharacterArcProjection,
+        candidate: ArcProjectionCandidate,
+    ) -> ChapterCharacterArcProjection:
+        """Return a fully re-hashed chapter projection containing one decision."""
+        found = False
+        rebuilt_characters: list[CharacterArcProjection] = []
+        for character_projection in projection.character_projections:
+            candidates = []
+            for current in character_projection.candidates:
+                if current.projection_id == candidate.projection_id:
+                    candidates.append(candidate)
+                    found = True
+                else:
+                    candidates.append(current)
+            candidate_tuple = tuple(candidates)
+            payload = {
+                "character_id": character_projection.character_id,
+                "character_source_hash": character_projection.character_source_hash,
+                "candidates": [_candidate_payload(item) for item in candidate_tuple],
+            }
+            rebuilt_characters.append(character_projection.model_copy(update={
+                "candidates": candidate_tuple,
+                "projection_hash": _canonical_hash(payload),
+                "confirmed_candidate_ids": tuple(
+                    item.projection_id for item in candidate_tuple
+                    if item.status == "confirmed"
+                ),
+                "stale_candidate_ids": tuple(
+                    item.projection_id for item in candidate_tuple
+                    if item.status == "stale"
+                ),
+            }))
+        if not found:
+            raise ValueError("projection_candidate_not_found")
+        all_candidates = [
+            item
+            for character_projection in rebuilt_characters
+            for item in character_projection.candidates
+        ]
+        payload = {
+            "section": projection.section,
+            "outline_contract_hash": projection.outline_contract_hash,
+            "character_projection_hashes": [
+                item.projection_hash for item in rebuilt_characters
+            ],
+            "exclusions": [
+                exclusion.model_dump(mode="json")
+                for exclusion in projection.exclusions
+            ],
+            "schema_version": CHARACTER_ARC_PROJECTION_VERSION,
+        }
+        return projection.model_copy(update={
+            "character_projections": tuple(rebuilt_characters),
+            "projection_hash": _canonical_hash(payload),
+            "candidate_count": len(all_candidates),
+            "authoritative_candidate_count": sum(
+                item.status == "confirmed" and item.user_confirmed
+                for item in all_candidates
+            ),
+            "hard_candidate_count": sum(
+                item.classification == HARD_ARC_TRANSITION
+                and item.requiredness == "hard"
+                and item.status == "confirmed"
+                for item in all_candidates
+            ),
+            "stale_candidate_count": sum(
+                item.status == "stale" for item in all_candidates
+            ),
+        })
+
     @staticmethod
     def _reconcile(
         proposed: list[ArcProjectionCandidate],

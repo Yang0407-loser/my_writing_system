@@ -58,7 +58,7 @@
   <div class="main">
     <!-- LEFT PANEL -->
     <aside class="panel panel-left" :class="{collapsed:sideCollapsed.left}" :style="{width:sideCollapsed.left?'36px':leftPanelWidth+'px'}">
-      <div class="panel-header"><h3 v-if="!sideCollapsed.left">大纲编辑器</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.left=!sideCollapsed.left" :title="sideCollapsed.left?'展开左侧栏':'收起左侧栏'">{{sideCollapsed.left?'▶':'◀'}}</button></div><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" @click="collapseAll">⊟</button><button class="btn btn-outline btn-sm" @click="expandAll">⊞</button><button class="btn btn-outline btn-sm" @click="queueAll" title="全部加入队列" style="color:var(--gold)">🟡</button><button class="btn btn-outline btn-sm" @click="dequeueAll" title="全部移出队列">⚪</button><button class="btn btn-outline btn-sm" @click="addRootSection">+卷</button><button class="btn btn-outline btn-sm" @click="showImportModal=true">📥</button><button class="btn btn-outline btn-sm" @click="saveOutlineFn" title="保存大纲">💾</button><button class="btn btn-outline btn-sm" @click="requestOutlineBudgetAdvice" :disabled="outlineBudgetLoading" title="分析事件密度并给出篇幅建议">{{outlineBudgetLoading?'…':'篇幅'}}</button><button class="btn btn-outline btn-sm" @click="showOutlineVersions=true;loadOutlineVersions()" title="历史大纲">📋</button><button class="btn btn-outline btn-sm" @click="undoDeleteFn" title="撤销删除" :disabled="undoCount<=0">↩<span v-if="undoCount>0" style="font-size:9px;vertical-align:super">{{undoCount}}</span></button></div>
+      <div class="panel-header"><h3 v-if="!sideCollapsed.left">大纲编辑器</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.left=!sideCollapsed.left" :title="sideCollapsed.left?'展开左侧栏':'收起左侧栏'">{{sideCollapsed.left?'▶':'◀'}}</button></div><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-outline btn-sm" @click="collapseAll">⊟</button><button class="btn btn-outline btn-sm" @click="expandAll">⊞</button><button class="btn btn-outline btn-sm" @click="queueAll" title="全部加入队列" style="color:var(--gold)">🟡</button><button class="btn btn-outline btn-sm" @click="dequeueAll" title="全部移出队列">⚪</button><button class="btn btn-outline btn-sm" @click="addRootSection">+卷</button><button class="btn btn-outline btn-sm" @click="showImportModal=true">📥</button><button class="btn btn-outline btn-sm" @click="saveOutlineFn" title="保存大纲">💾</button><button class="btn btn-outline btn-sm" @click="requestOutlineBudgetAdvice" :disabled="outlineBudgetLoading" title="分析事件密度并给出篇幅建议">{{outlineBudgetLoading?'…':'篇幅'}}</button><button class="btn btn-outline btn-sm" @click="openArcProjectionReview" :disabled="arcProjectionLoading" title="确认决策与状态变化是否属于角色弧">{{arcProjectionLoading?'…':'弧线'}}</button><button class="btn btn-outline btn-sm" @click="showOutlineVersions=true;loadOutlineVersions()" title="历史大纲">📋</button><button class="btn btn-outline btn-sm" @click="undoDeleteFn" title="撤销删除" :disabled="undoCount<=0">↩<span v-if="undoCount>0" style="font-size:9px;vertical-align:super">{{undoCount}}</span></button></div>
       <div class="panel-body">
         <template v-for="item in flatTreeItems" :key="item.node.id">
           <div class="tree-row" :class="[(item.node.children&&item.node.children.length)?'branch':'leaf',selectedNodeId===item.node.id?'selected':'',item.node.locked?'locked':'']" :style="{paddingLeft:Math.max(0,(item.level-1)*16+4)+'px'}" @contextmenu.prevent="openInjectMenu($event, item.node)" @click="scrollToOutlineNode(item.node)">
@@ -486,6 +486,67 @@
       <div style="display:flex;gap:10px;justify-content:center">
         <button class="btn btn-primary" @click="showCompleteModal=false;showReview=true;loadReviewResults()">查看审阅</button>
         <button class="btn btn-outline" @click="showCompleteModal=false">关闭</button>
+      </div>
+    </div>
+  </div>
+  <!-- Character Arc Projection Review -->
+  <div class="modal-overlay" v-if="showArcProjection" @click.self="showArcProjection=false">
+    <div class="modal-box wide arc-review-modal">
+      <div class="arc-review-header">
+        <div>
+          <h3>角色弧确认（小规模实验）</h3>
+          <p>这里只确认明确决定和状态变化。结果保存为独立审阅记录，不会直接进入 Writer、角色弧规划或 EventGraph。</p>
+        </div>
+        <button class="btn btn-outline btn-sm" @click="showArcProjection=false">关闭</button>
+      </div>
+      <div class="arc-review-summary">
+        <span>待审阅候选 {{arcReviewCandidates.length}}</span>
+        <span>未匹配到明确角色的事件 {{arcExcludedCount}}</span>
+      </div>
+      <div v-if="arcProjectionError" class="arc-review-error">{{arcProjectionError}}</div>
+      <div v-if="!arcReviewCandidates.length" class="arc-review-empty">
+        暂无可确认候选。请先在“篇幅 → 事件结构”中确认事件，并在事件文本中使用已选角色的明确姓名；本工具不会根据“他/她”猜测角色。
+      </div>
+      <div v-for="candidate in arcReviewCandidates" :key="candidate.projection_id" class="arc-review-card">
+        <div class="arc-review-card-head">
+          <div>
+            <strong>{{candidate.character_name}}</strong>
+            <span>第 {{candidate.section}} 章 · 第 {{candidate.subsection}} 小节</span>
+          </div>
+          <div class="arc-review-badges">
+            <span>{{arcTypeLabel(candidate.event_type)}}</span>
+            <span :class="'arc-status-'+candidate.status">{{arcStatusLabel(candidate.status)}}</span>
+          </div>
+        </div>
+        <div class="arc-review-event">{{candidate.event_summary}}</div>
+        <div v-if="!candidate.outline_event_authoritative" class="arc-review-warning">
+          此事件尚未由作者确认。请先关闭本窗口，在“篇幅 → 事件结构”中确认后再回来。
+        </div>
+        <div v-else class="arc-review-form">
+          <label>它在角色弧中的性质
+            <select v-model="candidate._arcDraft.classification">
+              <option value="soft_arc_progress">柔性推进：有帮助，但允许改写或延后</option>
+              <option value="hard_arc_transition">硬转变：角色状态必须发生变化</option>
+              <option value="ordinary_plot_event">不是角色弧：仅为普通剧情事件</option>
+            </select>
+          </label>
+          <div v-if="candidate._arcDraft.classification==='hard_arc_transition'" class="arc-hard-fields">
+            <label>转变前状态<input v-model.trim="candidate._arcDraft.before_state" placeholder="角色此前处于什么状态"></label>
+            <label>触发因素<input v-model.trim="candidate._arcDraft.trigger" placeholder="什么事件触发转变"></label>
+            <label>转变后状态<input v-model.trim="candidate._arcDraft.after_state" placeholder="角色此后变成什么状态"></label>
+            <label>正文可观察证据<textarea v-model.trim="candidate._arcDraft.observable_evidence" rows="2" placeholder="读者能从哪些行为或选择看出转变"></textarea></label>
+            <label>为何必须发生<textarea v-model.trim="candidate._arcDraft.rationale" rows="2" placeholder="不发生会破坏哪条已确认结构"></textarea></label>
+            <div v-if="!arcHardFieldsComplete(candidate)" class="arc-review-warning">硬转变的五项依据必须全部填写。</div>
+          </div>
+          <div class="arc-review-actions">
+            <span>来源 {{candidate.event_id}} · {{candidate.confidence}} confidence</span>
+            <button class="btn btn-primary btn-sm"
+              :disabled="arcProjectionSavingId===candidate.projection_id||!arcHardFieldsComplete(candidate)"
+              @click="confirmArcCandidate(candidate)">
+              {{arcProjectionSavingId===candidate.projection_id?'保存中…':(candidate.status==='confirmed'?'更新确认':'确认判断')}}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

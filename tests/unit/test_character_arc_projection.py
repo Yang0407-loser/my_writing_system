@@ -77,20 +77,10 @@ def _confirmed_contract(sub=None):
 
 
 def _replace_candidate(projection, replacement):
-    character_projections = []
-    for character_projection in projection.character_projections:
-        candidates = tuple(
-            replacement
-            if candidate.projection_id == replacement.projection_id
-            else candidate
-            for candidate in character_projection.candidates
-        )
-        character_projections.append(character_projection.model_copy(update={
-            "candidates": candidates,
-        }))
-    return projection.model_copy(update={
-        "character_projections": tuple(character_projections),
-    })
+    return CharacterArcProjector().replace_confirmed_candidate(
+        projection=projection,
+        candidate=replacement,
+    )
 
 
 def test_projection_is_deterministic_and_has_stable_per_character_ids():

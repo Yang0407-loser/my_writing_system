@@ -51,6 +51,11 @@ export function createWriterApp() {
       const outlineBudgetLoading = ref(false);
       const showBudgetAdvice = ref(null);
       const budgetPopupPosition = ref({top:0,left:0});
+      const showArcProjection = ref(false);
+      const arcProjectionLoading = ref(false);
+      const arcProjectionSavingId = ref('');
+      const arcProjectionChapters = ref([]);
+      const arcProjectionError = ref('');
       const showSplitPopup = ref(null); const splitRequirement = ref(''); const splitNumChildren = ref(3);
       const aiSplitting = ref(false); const showDescEdit = ref(null); const editingKeyPoints = ref(''); const editingDesc = ref(''); const undoCount = ref(0);
       const injectMenu = ref({node:null}); const injectForm = ref({new_items_str:'',new_characters_str:'',new_factions_str:'',new_locations_str:'',foreshadowing_plant_str:'',foreshadowing_resolve_str:''});
@@ -117,6 +122,22 @@ export function createWriterApp() {
       const totalSubsections = computed(() => { let c = 0; function w(ns) { for (let n of ns) { if (!n.children?.length) c++; else w(n.children); } } w(outline.value); return c; });
       const filteredChars = computed(() => { const q = charSearch.value.toLowerCase(); return libraryChars.value.filter(c => !q || c.name.toLowerCase().includes(q) || (c.personality||[]).some(p=>p.toLowerCase().includes(q))); });
       const selectedChars = computed(() => selectedCharIds.value.map(id => libraryChars.value.find(c => c.id===id)).filter(Boolean));
+      const arcReviewCandidates = computed(() => {
+        const result = [];
+        for (const chapter of arcProjectionChapters.value || []) {
+          for (const projection of chapter.character_projections || []) {
+            for (const candidate of projection.candidates || []) {
+              if (!['decision','state_transition'].includes(candidate.event_type)) continue;
+              if (candidate.status === 'superseded') continue;
+              result.push(candidate);
+            }
+          }
+        }
+        return result;
+      });
+      const arcExcludedCount = computed(() => (arcProjectionChapters.value || []).reduce(
+        (total, chapter) => total + (chapter.exclusions || []).length, 0
+      ));
       const flatTreeItems = computed(() => flatTree(outline.value));
       const showOutlineDetail = ref(false);
       function openOutlinePreview() { showOutlineDetail.value = true; }
@@ -421,6 +442,109 @@ export function createWriterApp() {
       }
       function budgetActionLabel(action) {
         return ({keep:'保持',increase:'增加篇幅',split:'拆分小节',reduce_scope:'缩小范围',review_structure:'复核结构'})[action] || action;
+      }
+      function buildArcProjectionPayload() {
+        const nodes = [];
+        function flatten(ns, parentId) {
+          for (let i = 0; i < ns.length; i++) {
+            const n = ns[i];
+            nodes.push({
+              id:n.id, parent_id:parentId, title:n.title||'',
+              description:n.description||'', key_points:n.key_points||[],
+              target_words:n.target_words||0,
+              event_contract:n.event_contract||null,
+              sort_order:i,
+            });
+            if (n.children?.length) flatten(n.children, n.id);
+          }
+        }
+        flatten(outline.value, '');
+        return {
+          nodes,
+          characters:selectedChars.value.map(character => ({
+            id:character.id,
+            name:character.name,
+            personality:character.personality || [],
+            motivation:character.motivation || '',
+            background:character.background || '',
+          })),
+        };
+      }
+      function prepareArcProjectionDrafts(chapters) {
+        for (const chapter of chapters || []) {
+          for (const projection of chapter.character_projections || []) {
+            for (const candidate of projection.candidates || []) {
+              candidate._arcDraft = {
+                classification:candidate.classification === 'hard_arc_transition'
+                  ? 'hard_arc_transition'
+                  : (candidate.classification === 'ordinary_plot_event'
+                    ? 'ordinary_plot_event'
+                    : 'soft_arc_progress'),
+                before_state:candidate.before_state || '',
+                trigger:candidate.trigger || '',
+                after_state:candidate.after_state || '',
+                observable_evidence:candidate.observable_evidence || '',
+                rationale:candidate.rationale || '',
+              };
+            }
+          }
+        }
+        return chapters;
+      }
+      async function openArcProjectionReview() {
+        if (!selectedChars.value.length) {
+          toast('请先在角色管理中选中参与写作的角色', 'info');
+          return;
+        }
+        if (!taskId.value) await createDraftTask();
+        arcProjectionLoading.value = true;
+        arcProjectionError.value = '';
+        try {
+          const result = await API.previewArcProjection(
+            taskId.value, buildArcProjectionPayload()
+          );
+          arcProjectionChapters.value = prepareArcProjectionDrafts(
+            result.chapters || []
+          );
+          showArcProjection.value = true;
+        } catch (error) {
+          arcProjectionError.value = '角色弧候选生成失败，请检查大纲事件结构后重试。';
+          showArcProjection.value = true;
+        } finally {
+          arcProjectionLoading.value = false;
+        }
+      }
+      function arcHardFieldsComplete(candidate) {
+        if (candidate?._arcDraft?.classification !== 'hard_arc_transition') return true;
+        return ['before_state','trigger','after_state','observable_evidence','rationale']
+          .every(field => String(candidate._arcDraft[field] || '').trim());
+      }
+      async function confirmArcCandidate(candidate) {
+        if (!candidate?.outline_event_authoritative || !arcHardFieldsComplete(candidate)) return;
+        arcProjectionSavingId.value = candidate.projection_id;
+        arcProjectionError.value = '';
+        try {
+          const result = await API.confirmArcProjection(taskId.value, {
+            ...buildArcProjectionPayload(),
+            projection_id:candidate.projection_id,
+            event_text_hash:candidate.event_text_hash,
+            ...candidate._arcDraft,
+          });
+          arcProjectionChapters.value = prepareArcProjectionDrafts(
+            result.chapters || []
+          );
+          toast('角色弧判断已保存为独立审阅记录，不会直接影响写作', 'success');
+        } catch (error) {
+          arcProjectionError.value = '确认失败：大纲或角色来源可能已变化，请刷新候选后重试。';
+        } finally {
+          arcProjectionSavingId.value = '';
+        }
+      }
+      function arcTypeLabel(type) {
+        return ({decision:'明确决定',state_transition:'状态变化'})[type] || type;
+      }
+      function arcStatusLabel(status) {
+        return ({proposed:'待确认',confirmed:'已确认',stale:'来源已变化'})[status] || status;
       }
       async function undoDeleteFn() {
         if (!taskId.value) return;
@@ -1149,6 +1273,7 @@ export function createWriterApp() {
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
         outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
+        showArcProjection,arcProjectionLoading,arcProjectionSavingId,arcProjectionError,arcReviewCandidates,arcExcludedCount,openArcProjectionReview,confirmArcCandidate,arcHardFieldsComplete,arcTypeLabel,arcStatusLabel,
         tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,

@@ -68,11 +68,9 @@ def _confirmed_projection():
             "rationale": "允许改写的推进",
         },
     )
-    character_projection = projection.character_projections[0].model_copy(
-        update={"candidates": (confirmed,)}
-    )
-    return projection.model_copy(
-        update={"character_projections": (character_projection,)}
+    return projector.replace_confirmed_candidate(
+        projection=projection,
+        candidate=confirmed,
     ), chapter
 
 

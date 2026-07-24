@@ -39,6 +39,22 @@ class OutlineBudgetAdviceBody(BaseModel):
     style_brief: str = ""
 
 
+class ArcProjectionPreviewBody(BaseModel):
+    nodes: list[dict] = Field(default_factory=list)
+    characters: list[dict] = Field(default_factory=list)
+
+
+class ArcProjectionConfirmBody(ArcProjectionPreviewBody):
+    projection_id: str
+    event_text_hash: str
+    classification: str
+    before_state: str = ""
+    trigger: str = ""
+    after_state: str = ""
+    observable_evidence: str = ""
+    rationale: str = ""
+
+
 # ═══ 工具函数 ═══════════════════════════════════════════════════════
 
 def _get_redis():
@@ -291,6 +307,144 @@ def get_outline_budget_advice(task_id: str, body: OutlineBudgetAdviceBody):
         style_brief=body.style_brief,
     )
     return result.model_dump(mode="json")
+
+
+def _compile_arc_projection_preview(
+    *,
+    nodes: list[dict],
+    characters: list[dict],
+    prior_artifact: dict | None = None,
+):
+    from ..writing.character_arc_projection import CharacterArcProjector
+    from ..writing.outline_event_contract import OutlineEventContractCompiler
+
+    tree = _build_tree_from_nodes([dict(node) for node in nodes])
+    outline = _tree_to_budget_outline(tree)
+    names = [
+        str(character.get("name") or "")
+        for character in characters
+        if str(character.get("id") or "") and str(character.get("name") or "")
+    ]
+    prior_by_section = {
+        int(item.get("section") or 0): item
+        for item in (prior_artifact or {}).get("chapters", [])
+        if isinstance(item, dict)
+    }
+    compiler = OutlineEventContractCompiler()
+    projector = CharacterArcProjector()
+    chapters = []
+    for section in outline:
+        section_number = int(section.get("section") or 0)
+        subsections = list(section.get("subsections") or [])
+        chapter_contract = compiler.compile_chapter(
+            section=section_number,
+            subsections=subsections,
+            character_names=names,
+            chapter_target_words=sum(
+                int(subsection.get("target_words") or 0)
+                for subsection in subsections
+            ),
+        )
+        chapters.append(projector.project(
+            chapter_contract=chapter_contract,
+            characters=characters,
+            prior_projection=prior_by_section.get(section_number),
+        ))
+    return chapters
+
+
+def _parse_arc_projection_review(value: object) -> dict | None:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+@router.post("/{task_id}/outline/arc-projection/preview")
+def preview_outline_arc_projection(
+    task_id: str, body: ArcProjectionPreviewBody
+):
+    """Read-only thin-UI preview; it never mutates outline or production arcs."""
+    from ..dependencies import bb
+
+    prior = _parse_arc_projection_review(
+        bb.get(task_id, "character_arc_projection_review")
+    )
+    chapters = _compile_arc_projection_preview(
+        nodes=body.nodes,
+        characters=body.characters,
+        prior_artifact=prior,
+    )
+    return {
+        "schema_version": "character-arc-projection-review-v1",
+        "chapters": [chapter.model_dump(mode="json") for chapter in chapters],
+        "production_effect": False,
+    }
+
+
+@router.post("/{task_id}/outline/arc-projection/confirm")
+def confirm_outline_arc_projection(
+    task_id: str, body: ArcProjectionConfirmBody
+):
+    """Validate and store one review decision without touching character_arcs."""
+    from ..dependencies import bb
+    from ..writing.character_arc_projection import (
+        CharacterArcProjector,
+        iter_projection_candidates,
+    )
+
+    prior = _parse_arc_projection_review(
+        bb.get(task_id, "character_arc_projection_review")
+    )
+    chapters = _compile_arc_projection_preview(
+        nodes=body.nodes,
+        characters=body.characters,
+        prior_artifact=prior,
+    )
+    projector = CharacterArcProjector()
+    target_chapter = None
+    target_candidate = None
+    for chapter in chapters:
+        for candidate in iter_projection_candidates(chapter):
+            if candidate.projection_id == body.projection_id:
+                target_chapter = chapter
+                target_candidate = candidate
+                break
+        if target_candidate is not None:
+            break
+    if target_candidate is None or target_chapter is None:
+        raise HTTPException(status_code=409, detail="角色弧候选已失效，请刷新")
+    try:
+        confirmed = projector.confirm_candidate(
+            candidate=target_candidate,
+            submitted=body.model_dump(mode="json"),
+        )
+        updated = projector.replace_confirmed_candidate(
+            projection=target_chapter,
+            candidate=confirmed,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    chapters = [
+        updated if chapter.section == updated.section else chapter
+        for chapter in chapters
+    ]
+    artifact = {
+        "schema_version": "character-arc-projection-review-v1",
+        "chapters": [chapter.model_dump(mode="json") for chapter in chapters],
+        "production_effect": False,
+        "updated_at": datetime.datetime.now().isoformat(),
+    }
+    bb.set(task_id, "character_arc_projection_review", artifact)
+    return {
+        **artifact,
+        "confirmed_projection_id": confirmed.projection_id,
+    }
 
 
 @router.get("/{task_id}/outline")
