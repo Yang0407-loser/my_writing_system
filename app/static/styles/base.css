@@ -525,6 +525,44 @@ textarea { resize: vertical; min-height: 60px; }
   color: var(--text);
 }
 
+.budget-advice-modal {
+  width: min(900px, calc(100vw - 32px));
+}
+
+.budget-advice-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.budget-advice-card.budget-advice-popup {
+  position: static;
+  z-index: auto;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.budget-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.modal-loading {
+  margin-top: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
 .density-dense, .density-overloaded { color: var(--orange); border-color: var(--orange); }
 .density-balanced { color: var(--green); border-color: var(--green); }
 

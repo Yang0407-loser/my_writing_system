@@ -59,6 +59,9 @@ def test_frontend_advice_is_applied_only_by_explicit_action():
     assert "await saveOutlineFn()" in confirm_block
     assert "budget-advice-popup" in template
     assert "budget-advice-row" not in template
-    assert 'title="查看篇幅建议"' in template
+    assert 'title="查看全部篇幅建议"' in template
+    assert "showOutlineBudgetModal.value = true" in request_block
+    assert "篇幅与事件结构建议" in template
+    assert "outlineBudgetAdviceItems" in source
     assert "确认事件结构并保存大纲" in template
     assert "确认事件结构不会应用推荐字数" in template

@@ -51,6 +51,8 @@ export function createWriterApp() {
       const outlineBudgetLoading = ref(false);
       const showBudgetAdvice = ref(null);
       const budgetPopupPosition = ref({top:0,left:0});
+      const showOutlineBudgetModal = ref(false);
+      const outlineBudgetError = ref('');
       const showArcProjection = ref(false);
       const arcProjectionLoading = ref(false);
       const arcProjectionSavingId = ref('');
@@ -122,6 +124,19 @@ export function createWriterApp() {
       const totalSubsections = computed(() => { let c = 0; function w(ns) { for (let n of ns) { if (!n.children?.length) c++; else w(n.children); } } w(outline.value); return c; });
       const filteredChars = computed(() => { const q = charSearch.value.toLowerCase(); return libraryChars.value.filter(c => !q || c.name.toLowerCase().includes(q) || (c.personality||[]).some(p=>p.toLowerCase().includes(q))); });
       const selectedChars = computed(() => selectedCharIds.value.map(id => libraryChars.value.find(c => c.id===id)).filter(Boolean));
+      const outlineBudgetAdviceItems = computed(() => {
+        const result = [];
+        let section = 0;
+        for (const root of outline.value || []) {
+          section += 1;
+          let subsection = 0;
+          for (const node of root.children || []) {
+            subsection += 1;
+            if (node._budgetAdvice) result.push({section, subsection, node, advice:node._budgetAdvice});
+          }
+        }
+        return result;
+      });
       const arcReviewCandidates = computed(() => {
         const result = [];
         for (const chapter of arcProjectionChapters.value || []) {
@@ -336,7 +351,9 @@ export function createWriterApp() {
         } catch(e) { toast('保存失败', 'error'); }
       }
       async function requestOutlineBudgetAdvice() {
+        showOutlineBudgetModal.value = true;
         outlineBudgetLoading.value = true;
+        outlineBudgetError.value = '';
         try {
           const nodes = [];
           function flatten(ns, parentId) {
@@ -376,6 +393,7 @@ export function createWriterApp() {
           }
           toast('篇幅建议已更新；未修改大纲', 'success');
         } catch(e) {
+          outlineBudgetError.value = '篇幅建议生成失败，请确认大纲中至少有一个小节后重试。';
           toast('篇幅建议生成失败', 'error');
         } finally {
           outlineBudgetLoading.value = false;
@@ -497,6 +515,7 @@ export function createWriterApp() {
           return;
         }
         if (!taskId.value) await createDraftTask();
+        showArcProjection.value = true;
         arcProjectionLoading.value = true;
         arcProjectionError.value = '';
         try {
@@ -506,10 +525,8 @@ export function createWriterApp() {
           arcProjectionChapters.value = prepareArcProjectionDrafts(
             result.chapters || []
           );
-          showArcProjection.value = true;
         } catch (error) {
           arcProjectionError.value = '角色弧候选生成失败，请检查大纲事件结构后重试。';
-          showArcProjection.value = true;
         } finally {
           arcProjectionLoading.value = false;
         }
@@ -1272,7 +1289,7 @@ export function createWriterApp() {
       return { refineMode,taskId,statusText,statusColor,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
-        outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
+        outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,showOutlineBudgetModal,outlineBudgetError,outlineBudgetAdviceItems,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         showArcProjection,arcProjectionLoading,arcProjectionSavingId,arcProjectionError,arcReviewCandidates,arcExcludedCount,openArcProjectionReview,confirmArcCandidate,arcHardFieldsComplete,arcTypeLabel,arcStatusLabel,
         tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,

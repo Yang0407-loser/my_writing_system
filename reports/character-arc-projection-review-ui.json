@@ -4,6 +4,12 @@
   "status": "thin_review_ui_ready_not_promoted",
   "production_effect": false,
   "writer_or_llm_calls": 0,
+  "ui_visibility": {
+    "budget_opens_modal_immediately": true,
+    "arc_opens_modal_immediately": true,
+    "loading_state_visible": true,
+    "static_asset_cache_busted": true
+  },
   "visible_event_types": [
     "decision",
     "state_transition"

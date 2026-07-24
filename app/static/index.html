@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>多智能体写作系统 v0.9</title>
 <script type="importmap">{"imports":{"vue":"https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js"}}</script>
-<link rel="stylesheet" href="/static/styles/base.css">
+<link rel="stylesheet" href="/static/styles/base.css?v=20260724b">
 </head>
 <body>
 <div id="app">
@@ -75,55 +75,7 @@
             <span class="tree-del" @click="removeTreeNode(item.node)" title="删除">✕</span>
             <input v-if="!item.node.children?.length" class="tree-words" type="number" v-model.number="item.node.target_words" @focus="selectedNodeId=item.node.id">
             <span v-else class="tree-words" style="border-color:transparent;background:transparent;color:var(--muted)">{{subtreeWords(item.node)}}</span>
-            <button v-if="!item.node.children?.length&&item.node._budgetAdvice" class="tree-btn budget-advice-trigger" @click.stop="toggleBudgetAdvice(item.node,$event)" title="查看篇幅建议">📏</button>
-            <div v-if="showBudgetAdvice===item.node.id&&item.node._budgetAdvice" class="budget-advice-popup" :style="{top:budgetPopupPosition.top+'px',left:budgetPopupPosition.left+'px'}" @click.stop>
-              <div class="budget-popup-header"><strong>篇幅建议</strong><button @click="showBudgetAdvice=null" title="关闭">×</button></div>
-              <div class="budget-popup-summary">
-                <span>当前 {{item.node.target_words}} 字</span>
-                <span>建议 {{item.node._budgetAdvice.recommended_min}}–{{item.node._budgetAdvice.recommended_max}} 字</span>
-              </div>
-              <div class="budget-popup-meta">
-                <span :class="['budget-density','density-'+item.node._budgetAdvice.density_level]">{{item.node._budgetAdvice.density_level}}</span>
-                <span>{{budgetActionLabel(item.node._budgetAdvice.recommended_action)}}</span>
-                <span>{{item.node._budgetAdvice.confidence}} confidence</span>
-              </div>
-              <ul class="budget-popup-reasons"><li v-for="reason in item.node._budgetAdvice.reason_codes.slice(0,3)" :key="reason">{{budgetReasonLabel(reason)}}</li><li v-if="!item.node._budgetAdvice.reason_codes.length">结构稳定，无额外风险</li></ul>
-              <div v-if="item.node._budgetAdvice.prompt_conflicts.length" class="budget-popup-warning">段落字数要求可能与小节总字数冲突</div>
-              <details v-if="item.node._budgetAdvice.event_contract" class="event-contract-panel">
-                <summary>
-                  事件结构（{{item.node._budgetAdvice.event_contract.events.filter(e=>e.status!=='superseded').length}}）
-                  <span :class="['event-contract-status','status-'+item.node._budgetAdvice.event_contract.status]">{{item.node._budgetAdvice.event_contract.status}}</span>
-                </summary>
-                <div v-if="item.node._budgetAdvice.event_contract.status==='stale'" class="budget-popup-warning">大纲来源已变化，请重新检查后再确认。</div>
-                <div v-for="event in item.node._budgetAdvice.event_contract.events.filter(e=>e.status!=='superseded')" :key="event.event_id" class="event-contract-row">
-                  <div class="event-contract-summary">{{event.summary}}</div>
-                  <div class="event-contract-source">{{event.source_slot}} · {{event.confidence}} · {{event.event_id.split(':').slice(-2).join(':')}}</div>
-                  <div class="event-contract-controls">
-                    <label>时态
-                      <select v-model="event.temporal_scope">
-                        <option value="current">当前发生</option><option value="past">过去/回忆</option>
-                        <option value="future">未来/计划</option><option value="mixed">混合</option><option value="unknown">不确定</option>
-                      </select>
-                    </label>
-                    <label>强度
-                      <select v-model="event.requiredness">
-                        <option value="hard">必须</option><option value="soft">建议</option><option value="unspecified">未指定</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div v-if="event.actors?.length" class="event-contract-actors">人物：{{event.actors.join('、')}}</div>
-                </div>
-                <label class="event-contract-stop">本小节停止点
-                  <select v-model="item.node._budgetAdvice.event_contract.stop_after_event_id">
-                    <option :value="null">未指定</option>
-                    <option v-for="event in item.node._budgetAdvice.event_contract.events.filter(e=>e.status!=='superseded')" :key="'stop-'+event.event_id" :value="event.event_id">{{event.summary}}</option>
-                  </select>
-                </label>
-                <button class="btn btn-outline btn-sm event-contract-confirm" @click="confirmEventContract(item.node)">确认事件结构并保存大纲</button>
-                <div class="event-contract-note">确认事件结构不会应用推荐字数；两项操作彼此独立。</div>
-              </details>
-              <button class="btn btn-primary btn-sm budget-popup-apply" @click="applyBudgetRecommendation(item.node)">应用 {{budgetApplyValue(item.node._budgetAdvice)}} 字</button>
-            </div>
+            <button v-if="!item.node.children?.length&&item.node._budgetAdvice" class="tree-btn budget-advice-trigger" @click.stop="showOutlineBudgetModal=true" title="查看全部篇幅建议">📏</button>
             <!-- Key Points / Description editor -->
             <div v-if="showDescEdit===item.node.id&&!item.node.children?.length" class="split-popup" style="position:absolute;top:100%;left:0;z-index:20;background:var(--panel);border:1px solid var(--gold-dim);border-radius:8px;padding:8px;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
               <div style="font-size:10px;color:var(--gold);margin-bottom:4px">编辑要点（逗号分隔，每点10字内）</div>
@@ -489,6 +441,74 @@
       </div>
     </div>
   </div>
+  <!-- Outline Budget Advice -->
+  <div class="modal-overlay" v-if="showOutlineBudgetModal" @click.self="showOutlineBudgetModal=false">
+    <div class="modal-box wide budget-advice-modal">
+      <div class="arc-review-header">
+        <div>
+          <h3>篇幅与事件结构建议</h3>
+          <p>建议只供作者参考。应用字数与确认事件结构是两项独立操作，均不会自动开始写作。</p>
+        </div>
+        <button class="btn btn-outline btn-sm" @click="showOutlineBudgetModal=false">关闭</button>
+      </div>
+      <div v-if="outlineBudgetLoading" class="modal-loading">正在分析小节事件密度与篇幅……</div>
+      <div v-else-if="outlineBudgetError" class="arc-review-error">{{outlineBudgetError}}</div>
+      <div v-else-if="!outlineBudgetAdviceItems.length" class="arc-review-empty">暂无篇幅建议，请确认大纲中已有叶子小节。</div>
+      <div v-else class="budget-advice-list">
+        <div v-for="item in outlineBudgetAdviceItems" :key="item.node.id" class="budget-advice-card budget-advice-popup">
+          <div class="budget-popup-header">
+            <strong>第 {{item.section}} 章 · 第 {{item.subsection}} 小节　{{item.node.title}}</strong>
+            <span :class="['budget-density','density-'+item.advice.density_level]">{{item.advice.density_level}}</span>
+          </div>
+          <div class="budget-popup-summary">
+            <span>当前 {{item.node.target_words}} 字</span>
+            <span>建议 {{item.advice.recommended_min}}–{{item.advice.recommended_max}} 字</span>
+            <span>{{budgetActionLabel(item.advice.recommended_action)}}</span>
+          </div>
+          <ul class="budget-popup-reasons">
+            <li v-for="reason in item.advice.reason_codes.slice(0,3)" :key="reason">{{budgetReasonLabel(reason)}}</li>
+            <li v-if="!item.advice.reason_codes.length">结构稳定，无额外风险</li>
+          </ul>
+          <div v-if="item.advice.prompt_conflicts.length" class="budget-popup-warning">段落字数要求可能与小节总字数冲突</div>
+          <details v-if="item.advice.event_contract" class="event-contract-panel">
+            <summary>
+              事件结构（{{item.advice.event_contract.events.filter(e=>e.status!=='superseded').length}}）
+              <span :class="['event-contract-status','status-'+item.advice.event_contract.status]">{{item.advice.event_contract.status}}</span>
+            </summary>
+            <div v-for="event in item.advice.event_contract.events.filter(e=>e.status!=='superseded')" :key="event.event_id" class="event-contract-row">
+              <div class="event-contract-summary">{{event.summary}}</div>
+              <div class="event-contract-source">{{event.source_slot}} · {{event.confidence}}</div>
+              <div class="event-contract-controls">
+                <label>时态
+                  <select v-model="event.temporal_scope">
+                    <option value="current">当前发生</option><option value="past">过去/回忆</option>
+                    <option value="future">未来/计划</option><option value="mixed">混合</option><option value="unknown">不确定</option>
+                  </select>
+                </label>
+                <label>强度
+                  <select v-model="event.requiredness">
+                    <option value="hard">必须</option><option value="soft">建议</option><option value="unspecified">未指定</option>
+                  </select>
+                </label>
+              </div>
+              <div v-if="event.actors?.length" class="event-contract-actors">人物：{{event.actors.join('、')}}</div>
+            </div>
+            <label class="event-contract-stop">本小节停止点
+              <select v-model="item.advice.event_contract.stop_after_event_id">
+                <option :value="null">未指定</option>
+                <option v-for="event in item.advice.event_contract.events.filter(e=>e.status!=='superseded')" :key="'stop-'+event.event_id" :value="event.event_id">{{event.summary}}</option>
+              </select>
+            </label>
+            <button class="btn btn-outline btn-sm event-contract-confirm" @click="confirmEventContract(item.node)">确认事件结构并保存大纲</button>
+          </details>
+          <div class="budget-modal-actions">
+            <span>确认事件结构不会应用推荐字数。</span>
+            <button class="btn btn-primary btn-sm" @click="applyBudgetRecommendation(item.node)">应用 {{budgetApplyValue(item.advice)}} 字</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- Character Arc Projection Review -->
   <div class="modal-overlay" v-if="showArcProjection" @click.self="showArcProjection=false">
     <div class="modal-box wide arc-review-modal">
@@ -503,8 +523,9 @@
         <span>待审阅候选 {{arcReviewCandidates.length}}</span>
         <span>未匹配到明确角色的事件 {{arcExcludedCount}}</span>
       </div>
+      <div v-if="arcProjectionLoading" class="modal-loading">正在根据已确认事件生成角色弧候选……</div>
       <div v-if="arcProjectionError" class="arc-review-error">{{arcProjectionError}}</div>
-      <div v-if="!arcReviewCandidates.length" class="arc-review-empty">
+      <div v-if="!arcProjectionLoading&&!arcReviewCandidates.length" class="arc-review-empty">
         暂无可确认候选。请先在“篇幅 → 事件结构”中确认事件，并在事件文本中使用已选角色的明确姓名；本工具不会根据“他/她”猜测角色。
       </div>
       <div v-for="candidate in arcReviewCandidates" :key="candidate.projection_id" class="arc-review-card">
@@ -1134,7 +1155,7 @@
 </div>
 
 <script type="module">
-import { createWriterApp } from '/static/js/main.js';
+import { createWriterApp } from '/static/js/main.js?v=20260724b';
 createWriterApp().mount('#app');
 </script>
 </body>

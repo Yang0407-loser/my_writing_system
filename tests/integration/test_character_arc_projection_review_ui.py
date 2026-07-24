@@ -246,6 +246,13 @@ def test_thin_ui_has_explicit_review_and_no_production_wiring():
     assert "openArcProjectionReview" in source
     assert "['decision','state_transition']" in source
     assert "角色弧确认（小规模实验）" in template
+    open_block = source.split(
+        "async function openArcProjectionReview", 1
+    )[1].split("function arcHardFieldsComplete", 1)[0]
+    assert open_block.index("showArcProjection.value = true") < open_block.index(
+        "API.previewArcProjection"
+    )
+    assert "正在根据已确认事件生成角色弧候选" in template
     assert "不会直接进入 Writer、角色弧规划或 EventGraph" in template
     assert "篇幅 → 事件结构" in template
     assert "WRITER_" not in source.split(
