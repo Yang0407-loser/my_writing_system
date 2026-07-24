@@ -1,0 +1,839 @@
+{
+  "schema_version": "subsection-outcome-bundle-coverage-report-v1",
+  "date": "2026-07-25",
+  "mode": "real_task_read_only_asset_audit",
+  "status": "adapter_ready_existing_assets_insufficient_for_shadow_hook",
+  "task_id_hash": "73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981",
+  "task_status": "completed",
+  "subsection_count": 4,
+  "asset_inventory": [
+    {
+      "component_type": "handover_delta",
+      "producer": "Writer._extract_handover then StateCommitter",
+      "production_timing": "subsection extraction before commit; persisted handover is section-end aggregate",
+      "storage": "task_history.handover_json / checkpoint.handover_chain",
+      "consumer": "next-section Writer context and final Review",
+      "recoverable_after_restart": true,
+      "verified_granularity": "section_aggregate",
+      "contains_private_text_in_source": true,
+      "bundle_copies_private_text": false
+    },
+    {
+      "component_type": "character_state_delta",
+      "producer": "CharacterManager.update_states",
+      "production_timing": "section end after all subsection After frames",
+      "storage": "task_history.characters_json / checkpoint.character_arcs",
+      "consumer": "Coordinator, checkpoint resume, final Review",
+      "recoverable_after_restart": true,
+      "verified_granularity": "task_final_snapshot",
+      "contains_private_text_in_source": true,
+      "bundle_copies_private_text": false
+    },
+    {
+      "component_type": "relationship_delta",
+      "producer": "character_relation_store.extract_relations_from_text",
+      "production_timing": "section-end extraction",
+      "storage": "character_relations.db",
+      "consumer": "Writer relation context and final Review",
+      "recoverable_after_restart": true,
+      "verified_granularity": "current_store_snapshot",
+      "contains_private_text_in_source": true,
+      "bundle_copies_private_text": false
+    },
+    {
+      "component_type": "foreshadow_delta",
+      "producer": "Coordinator handover-to-foreshadow reconciliation",
+      "production_timing": "after Writer result, before final Review",
+      "storage": "foreshadowings.db",
+      "consumer": "Writer context and final foreshadow health Review",
+      "recoverable_after_restart": true,
+      "verified_granularity": "current_store_snapshot",
+      "contains_private_text_in_source": true,
+      "bundle_copies_private_text": false
+    },
+    {
+      "component_type": "experience_delta",
+      "producer": "experience_timeline.extract_from_section",
+      "production_timing": "section-end background thread",
+      "storage": "events.db",
+      "consumer": "future Writer experience context",
+      "recoverable_after_restart": true,
+      "verified_granularity": "section_aggregate",
+      "contains_private_text_in_source": true,
+      "bundle_copies_private_text": false
+    }
+  ],
+  "source_record_counts": {
+    "state_frame_records": 4,
+    "handover_section_aggregates": 1,
+    "character_task_final_records": 5,
+    "relationship_current_records": 0,
+    "foreshadow_current_records": 12,
+    "experience_section_records": 5
+  },
+  "bundles": [
+    {
+      "bundle_id": "subsection-outcome:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.1:92dd2c3c9dd4f1f14937c81760efcf3f227a4dedce7a05fc8d4ed649a1b00a34",
+      "bundle_hash": "93b831d782439dd8d0c753236939b4bf600262b2f1a383afcc2798ebf9bc9b78",
+      "section": 1,
+      "subsection": 1,
+      "output_sha256": "92dd2c3c9dd4f1f14937c81760efcf3f227a4dedce7a05fc8d4ed649a1b00a34",
+      "prompt_messages_hash": "02efec47b73dacc8c1cd5fc955d15ee58688d0fe15247c137c4c5a09d63ddbc4",
+      "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:1",
+      "available_component_count": 0,
+      "partial_component_count": 0,
+      "unavailable_component_count": 5,
+      "exact_subsection_component_count": 0,
+      "source_traceability_rate": 1.0,
+      "temporal_integrity_status": "verified",
+      "components": [
+        {
+          "component_type": "handover_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "42137458d6409e89daf2bd5f732c93e758b45ae23d14af17382f1842517d3b6c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_handover_artifact",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "character_state_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "317a4ef35cfbcab378c571f8513eb1cb959aac648327f4c118fbbccb49cad81c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_character_state_delta",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "relationship_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "a1e9b7478d8aea2bdc29d1fca33d560a41ca8828a07ecd9f840d09e08b07f9d1",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_relationship_records",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "foreshadow_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "14ec5f7b2a09fcd29921317f67fc45aadd81fbd4c71379e9a3a030dfec59df4c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_foreshadow_lifecycle",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "experience_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "c91c3f8323f48d0b607625f8e3d592b710d7bba6d727bfdb047af3986948aeb4",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_experience_event",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        }
+      ],
+      "source_manifest_count": 1,
+      "production_effect": false
+    },
+    {
+      "bundle_id": "subsection-outcome:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.2:069ed375cde47a3ac6234d1e6c1b811e40e4af81e8c1158577ec7ac5b8a11990",
+      "bundle_hash": "86edd8a1e8d1d721b51ef87ecebfbdc159a7b45c4413c18791a6502c9d4d3d32",
+      "section": 1,
+      "subsection": 2,
+      "output_sha256": "069ed375cde47a3ac6234d1e6c1b811e40e4af81e8c1158577ec7ac5b8a11990",
+      "prompt_messages_hash": "e3006879f0832591d55fe3cea417a230eb332d15b83bc293189efc8f87681d63",
+      "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:2",
+      "available_component_count": 0,
+      "partial_component_count": 0,
+      "unavailable_component_count": 5,
+      "exact_subsection_component_count": 0,
+      "source_traceability_rate": 1.0,
+      "temporal_integrity_status": "verified",
+      "components": [
+        {
+          "component_type": "handover_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "42137458d6409e89daf2bd5f732c93e758b45ae23d14af17382f1842517d3b6c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_handover_artifact",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "character_state_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "317a4ef35cfbcab378c571f8513eb1cb959aac648327f4c118fbbccb49cad81c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_character_state_delta",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "relationship_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "a1e9b7478d8aea2bdc29d1fca33d560a41ca8828a07ecd9f840d09e08b07f9d1",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_relationship_records",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "foreshadow_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "14ec5f7b2a09fcd29921317f67fc45aadd81fbd4c71379e9a3a030dfec59df4c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_foreshadow_lifecycle",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "experience_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "c91c3f8323f48d0b607625f8e3d592b710d7bba6d727bfdb047af3986948aeb4",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_experience_event",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        }
+      ],
+      "source_manifest_count": 1,
+      "production_effect": false
+    },
+    {
+      "bundle_id": "subsection-outcome:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.3:d988d7bafa255c8ca404896820e8ef85d49cb940ff386c36c40d3f592f7ca692",
+      "bundle_hash": "cc825ee520dc7e3fe7b2f32fbc4ebb821c4cabcc4222d40476316c5816319d04",
+      "section": 1,
+      "subsection": 3,
+      "output_sha256": "d988d7bafa255c8ca404896820e8ef85d49cb940ff386c36c40d3f592f7ca692",
+      "prompt_messages_hash": "35e750b97b686d56b12271e2c1092346cabfb1609c3294631d97eb4102432554",
+      "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:3",
+      "available_component_count": 0,
+      "partial_component_count": 0,
+      "unavailable_component_count": 5,
+      "exact_subsection_component_count": 0,
+      "source_traceability_rate": 1.0,
+      "temporal_integrity_status": "verified",
+      "components": [
+        {
+          "component_type": "handover_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "42137458d6409e89daf2bd5f732c93e758b45ae23d14af17382f1842517d3b6c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_handover_artifact",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "character_state_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "317a4ef35cfbcab378c571f8513eb1cb959aac648327f4c118fbbccb49cad81c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_character_state_delta",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "relationship_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "a1e9b7478d8aea2bdc29d1fca33d560a41ca8828a07ecd9f840d09e08b07f9d1",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_relationship_records",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "foreshadow_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "14ec5f7b2a09fcd29921317f67fc45aadd81fbd4c71379e9a3a030dfec59df4c",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_foreshadow_lifecycle",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "experience_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "c91c3f8323f48d0b607625f8e3d592b710d7bba6d727bfdb047af3986948aeb4",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_subsection_experience_event",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        }
+      ],
+      "source_manifest_count": 1,
+      "production_effect": false
+    },
+    {
+      "bundle_id": "subsection-outcome:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.4:adbb509cb9619dfca29e40b6cf69fa08fc1c8a21df4fcacd32b90cdc696abe4c",
+      "bundle_hash": "81d47af5f365b0625457fb60645a98ca2f01883a467754af832255c67fadec70",
+      "section": 1,
+      "subsection": 4,
+      "output_sha256": "adbb509cb9619dfca29e40b6cf69fa08fc1c8a21df4fcacd32b90cdc696abe4c",
+      "prompt_messages_hash": "b3fa37ca6ee0f90b25d8ee8c94250d92cf7703ef7be13bb7cd1ede860fe3dc86",
+      "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:4",
+      "available_component_count": 0,
+      "partial_component_count": 4,
+      "unavailable_component_count": 1,
+      "exact_subsection_component_count": 0,
+      "source_traceability_rate": 1.0,
+      "temporal_integrity_status": "partial",
+      "components": [
+        {
+          "component_type": "handover_delta",
+          "availability": "partial",
+          "granularity": "section_aggregate",
+          "summary_hash": "86ed68f02789a7089d45742549d8582b9121f55de29ce6e9dd66a616d33a12cc",
+          "item_count": 1,
+          "source_count": 1,
+          "sources": [
+            {
+              "source_type": "handover",
+              "source_id": "handover-section:73089dfe1a6760d3:1:45276ee4b44113d1",
+              "source_hash": "45276ee4b44113d103f80c0cd999571c6e359cdcf054b6ef379a2d80ca2995e1",
+              "producer": "StateCommitter.commit_section_handover",
+              "storage_location": "task_history.handover_json",
+              "section": 1,
+              "subsection": null,
+              "granularity": "section_aggregate",
+              "authority": "committed_checkpoint",
+              "provenance": "section_end_aggregate_not_subsection_delta"
+            }
+          ],
+          "unavailable_reason": null,
+          "conflict_reason": null,
+          "producer_status": "section_aggregate_only",
+          "production_effect": false
+        },
+        {
+          "component_type": "character_state_delta",
+          "availability": "partial",
+          "granularity": "task_final_snapshot",
+          "summary_hash": "d8280f67854dbcaa870967cd17837f23510b0ccbdb102efb6aa0ce6e4624884c",
+          "item_count": 5,
+          "source_count": 5,
+          "sources": [
+            {
+              "source_type": "character_state",
+              "source_id": "12087418-9bb3-4169-a9c0-fe7c4f34bd3d",
+              "source_hash": "66717a64bc3d7b4d1a1c10e4a676562d924e7297bac3d79b62ff85f6982d11c7",
+              "producer": "Writer/Coordinator character state propagation",
+              "storage_location": "task_history.characters_json",
+              "section": null,
+              "subsection": null,
+              "granularity": "task_final_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "task_final_snapshot_not_subsection_delta"
+            },
+            {
+              "source_type": "character_state",
+              "source_id": "3d685632-bdb4-42ce-a569-b5e9beb98910",
+              "source_hash": "f8d1e262395787469e33c32de6d35a341cdc280eb739c39507a1f3e8bb2375d0",
+              "producer": "Writer/Coordinator character state propagation",
+              "storage_location": "task_history.characters_json",
+              "section": null,
+              "subsection": null,
+              "granularity": "task_final_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "task_final_snapshot_not_subsection_delta"
+            },
+            {
+              "source_type": "character_state",
+              "source_id": "69bcba28-db31-4147-be67-4b12c66c6e75",
+              "source_hash": "9963bff9a401b70b0165d39a1b73db7ef8df20d4989299b784b838012ad26551",
+              "producer": "Writer/Coordinator character state propagation",
+              "storage_location": "task_history.characters_json",
+              "section": null,
+              "subsection": null,
+              "granularity": "task_final_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "task_final_snapshot_not_subsection_delta"
+            },
+            {
+              "source_type": "character_state",
+              "source_id": "8956f425-2c02-4afa-a157-ad0b6cf89779",
+              "source_hash": "2ff3c07709218de72a246b5f354f1c6467c6271e074c1c8d384d102a8f8dde1b",
+              "producer": "Writer/Coordinator character state propagation",
+              "storage_location": "task_history.characters_json",
+              "section": null,
+              "subsection": null,
+              "granularity": "task_final_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "task_final_snapshot_not_subsection_delta"
+            },
+            {
+              "source_type": "character_state",
+              "source_id": "c59618bf-0e47-4e6f-9902-0d7520f7ae35",
+              "source_hash": "a502e559503acf6fe73e7a2c25a564d4a7dfbe745112c347621ba04f3a98f304",
+              "producer": "Writer/Coordinator character state propagation",
+              "storage_location": "task_history.characters_json",
+              "section": null,
+              "subsection": null,
+              "granularity": "task_final_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "task_final_snapshot_not_subsection_delta"
+            }
+          ],
+          "unavailable_reason": null,
+          "conflict_reason": null,
+          "producer_status": "final_snapshot_only",
+          "production_effect": false
+        },
+        {
+          "component_type": "relationship_delta",
+          "availability": "unavailable",
+          "granularity": null,
+          "summary_hash": "a1e9b7478d8aea2bdc29d1fca33d560a41ca8828a07ecd9f840d09e08b07f9d1",
+          "item_count": 0,
+          "source_count": 0,
+          "sources": [],
+          "unavailable_reason": "no_persisted_relationship_records",
+          "conflict_reason": null,
+          "producer_status": "unavailable",
+          "production_effect": false
+        },
+        {
+          "component_type": "foreshadow_delta",
+          "availability": "partial",
+          "granularity": "current_store_snapshot",
+          "summary_hash": "3ffc5ea52a804ca40900cb5976bae6ec128190cf2018dbc7de406cc096a87398",
+          "item_count": 12,
+          "source_count": 12,
+          "sources": [
+            {
+              "source_type": "foreshadowing",
+              "source_id": "23dade48-b770-4256-99f6-5364859b06d1",
+              "source_hash": "2f94018846d1c5d649a7f73562c0e48b9aa631778578e41617d695aa601013f7",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "2e1874a1-56a8-4f27-b3d1-e82b694900e8",
+              "source_hash": "98f34898e5f28c44999a9ac36cdc2171adab5202716fd9e017503fb03cec298b",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "756d5ce8-6941-4ccc-9e69-02e571237a68",
+              "source_hash": "a10932d7c56881584e89dce9d689feb71b68536f7fc4f03d53c2ab1643926b46",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "75b8be37-d864-4e52-9174-ff23b902e90c",
+              "source_hash": "7d6e3eb72ad57bf720b3629945fce29f194f1ee32ad529eabd360258c4cd4c25",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "847da4c1-4fff-4819-bd89-96ddb59c9bc1",
+              "source_hash": "28518e1258f097b7c613b35cf7a6540d8d89808ad162ada9e18a51405facb65f",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "95dee2e8-ec88-4762-94b7-3f1d479aa1c9",
+              "source_hash": "dc4f6320b7f08f21016948537ae7204f6a867de531b3ba6314a970ae60cef7b9",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "a4154719-b668-46f4-8496-d4ab74e410a1",
+              "source_hash": "9140897af2fb4775fd6365af5506d253d310e7f6058ea1418aad3ad28483119d",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "b9476083-d4e9-45fa-b6b3-ae4dc262ce60",
+              "source_hash": "10f2a02463f635593172345846bbe945f1388b23913fc18fc9cb247f4a6d72f8",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "bf77c2ef-8181-4d7b-b12f-2cbfda8e065f",
+              "source_hash": "350fe81740a073156d629439d1bfab532fa1061f000d5bebc7098f4a30dce1fa",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "ed3b05fb-dd4c-4f10-aa9e-39820e12e014",
+              "source_hash": "9335c909adf90c35b23881607e6333d13208282f0c9955f66d933082ba459967",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "fa54da97-446a-4da1-a5bd-eb3b077a4d53",
+              "source_hash": "7f3ca5e75dd770576a262f297d6409685450927c855e29aec512d39c2c30276b",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            },
+            {
+              "source_type": "foreshadowing",
+              "source_id": "fecb537f-3d59-4394-8ec4-498378933d73",
+              "source_hash": "bd192fa7831b1533a5349e5638f2917910f71963d3d1af384d563add79449daa",
+              "producer": "foreshadowing_store",
+              "storage_location": "foreshadowings.db",
+              "section": null,
+              "subsection": null,
+              "granularity": "current_store_snapshot",
+              "authority": "authoritative_store",
+              "provenance": "current_snapshot_not_lifecycle_delta"
+            }
+          ],
+          "unavailable_reason": null,
+          "conflict_reason": null,
+          "producer_status": "current_snapshot_only",
+          "production_effect": false
+        },
+        {
+          "component_type": "experience_delta",
+          "availability": "partial",
+          "granularity": "section_aggregate",
+          "summary_hash": "105ecda3d753b27101096fe8579f182ee590fb15682c9788be1358f3a1c663b1",
+          "item_count": 5,
+          "source_count": 5,
+          "sources": [
+            {
+              "source_type": "experience",
+              "source_id": "42b12421-a4ce-4b23-805e-bd8b1f0a619c",
+              "source_hash": "64275102b7143e74c5f3ddfc47c9fa9e63ccfdc0ace01e82d3473ae90657cd42",
+              "producer": "experience_timeline.extract_from_section",
+              "storage_location": "events.db",
+              "section": 1,
+              "subsection": null,
+              "granularity": "section_aggregate",
+              "authority": "authoritative_store",
+              "provenance": "section_event_without_subsection_boundary"
+            },
+            {
+              "source_type": "experience",
+              "source_id": "79d8f252-e97a-4dac-9886-74c8aed94818",
+              "source_hash": "ae45d48fee0b7f99e7a059684bb47dfef6c7f9e63a006e12b1e9321fa034632c",
+              "producer": "experience_timeline.extract_from_section",
+              "storage_location": "events.db",
+              "section": 1,
+              "subsection": null,
+              "granularity": "section_aggregate",
+              "authority": "authoritative_store",
+              "provenance": "section_event_without_subsection_boundary"
+            },
+            {
+              "source_type": "experience",
+              "source_id": "a32fec28-7f2c-4791-a2a6-b6e242c2e8cb",
+              "source_hash": "9ef16618dcb2c2b4b6799b724aec8a52cfaf4cc9154e6af6a590ecb0974d3507",
+              "producer": "experience_timeline.extract_from_section",
+              "storage_location": "events.db",
+              "section": 1,
+              "subsection": null,
+              "granularity": "section_aggregate",
+              "authority": "authoritative_store",
+              "provenance": "section_event_without_subsection_boundary"
+            },
+            {
+              "source_type": "experience",
+              "source_id": "acfce1b7-564a-44e1-8e7d-892ce54d4ff7",
+              "source_hash": "1989be5bb5c6e76d289dd1ff1aea7b863da3c08b2c1cb2e89f8eea5b5e89b0f3",
+              "producer": "experience_timeline.extract_from_section",
+              "storage_location": "events.db",
+              "section": 1,
+              "subsection": null,
+              "granularity": "section_aggregate",
+              "authority": "authoritative_store",
+              "provenance": "section_event_without_subsection_boundary"
+            },
+            {
+              "source_type": "experience",
+              "source_id": "ef331c0c-7ce2-4b45-895d-dda8cc776661",
+              "source_hash": "c8aa3f9df2c8fbb6779b3ab53fc73593934d53405d64ff8f7c97f09cbe27f2f0",
+              "producer": "experience_timeline.extract_from_section",
+              "storage_location": "events.db",
+              "section": 1,
+              "subsection": null,
+              "granularity": "section_aggregate",
+              "authority": "authoritative_store",
+              "provenance": "section_event_without_subsection_boundary"
+            }
+          ],
+          "unavailable_reason": null,
+          "conflict_reason": null,
+          "producer_status": "section_aggregate_only",
+          "production_effect": false
+        }
+      ],
+      "source_manifest_count": 24,
+      "production_effect": false
+    }
+  ],
+  "coverage_by_component": {
+    "handover_delta": {
+      "available": 0,
+      "partial": 1,
+      "unavailable": 3,
+      "conflicted": 0,
+      "complete_coverage_rate": 0.0,
+      "subsection_exact_coverage_rate": 0.0
+    },
+    "character_state_delta": {
+      "available": 0,
+      "partial": 1,
+      "unavailable": 3,
+      "conflicted": 0,
+      "complete_coverage_rate": 0.0,
+      "subsection_exact_coverage_rate": 0.0
+    },
+    "relationship_delta": {
+      "available": 0,
+      "partial": 0,
+      "unavailable": 4,
+      "conflicted": 0,
+      "complete_coverage_rate": 0.0,
+      "subsection_exact_coverage_rate": 0.0
+    },
+    "foreshadow_delta": {
+      "available": 0,
+      "partial": 1,
+      "unavailable": 3,
+      "conflicted": 0,
+      "complete_coverage_rate": 0.0,
+      "subsection_exact_coverage_rate": 0.0
+    },
+    "experience_delta": {
+      "available": 0,
+      "partial": 1,
+      "unavailable": 3,
+      "conflicted": 0,
+      "complete_coverage_rate": 0.0,
+      "subsection_exact_coverage_rate": 0.0
+    }
+  },
+  "totals": {
+    "bundles": 4,
+    "duplicate_bundle_ids": 0,
+    "component_instances": 20,
+    "available": 0,
+    "partial": 4,
+    "unavailable": 16,
+    "conflicted": 0,
+    "error": 0,
+    "subsection_exact_components": 0,
+    "subsection_exact_coverage_rate": 0.0,
+    "component_source_refs": 23,
+    "source_hash_traceability_rate": 1.0,
+    "worker_restart_recoverable_source_rate": 1.0,
+    "current_store_snapshot_ref_rate": 0.5217391304347826,
+    "section_or_task_final_ref_rate": 0.4782608695652174,
+    "unknown_granularity_refs": 0,
+    "private_content_leak_count": 0,
+    "adapter_elapsed_ms": 99.222
+  },
+  "state_frame_eligibility": {
+    "reliable_after_sources": [],
+    "section_level_auxiliary_only": [
+      "handover_delta",
+      "experience_delta"
+    ],
+    "snapshot_only_not_delta": [
+      "character_state_delta",
+      "foreshadow_delta"
+    ],
+    "unavailable": [
+      "relationship_delta"
+    ],
+    "handover_continuity": "unassessable",
+    "character_state_transition": "partial",
+    "foreshadow_health": "unassessable",
+    "unavailable_is_writer_failure": false,
+    "quality_truth_claimed": false
+  },
+  "detected_misclassification_risks": [
+    {
+      "component": "handover_delta",
+      "risk": "section aggregate could be copied to every subsection",
+      "adapter_action": "expose only on final subsection as partial"
+    },
+    {
+      "component": "character_state_delta",
+      "risk": "task-final character snapshot could backfill earlier subsections",
+      "adapter_action": "expose only on final subsection as partial"
+    },
+    {
+      "component": "foreshadow_delta",
+      "risk": "current store snapshot could be mistaken for lifecycle delta",
+      "adapter_action": "mark current_store_snapshot and partial"
+    },
+    {
+      "component": "experience_delta",
+      "risk": "subsection=0 section event could be mistaken for exact change",
+      "adapter_action": "mark section_aggregate and partial"
+    }
+  ],
+  "mechanical_gates": {
+    "four_of_four_bundles": true,
+    "bundle_ids_unique": true,
+    "deterministic_hashes": true,
+    "claimed_sources_traceable": true,
+    "future_state_backfill_count_zero": true,
+    "current_snapshot_not_promoted_to_delta": true,
+    "granularity_distinction_preserved": true,
+    "production_files_unchanged": true,
+    "database_files_unchanged": true,
+    "writer_llm_calls": 0,
+    "production_effect_false": true
+  },
+  "all_mechanical_gates_passed": true,
+  "production_integrity": {
+    "production_file_hashes": {
+      "app/agents/writer.py": "315c4e5e531fdcf3cb8929fcf3467897c9287094e845c2d8e12abd2726b3864b",
+      "app/coordinator.py": "24cedb66560616fdf9f49b712701a1accb27daa8f2c25e8b83ca8285c2012f59",
+      "app/writing/state_committer.py": "2a2fe590556af6e0b6c89e685d49db05d1633417b738b23e6679a5bfe9fb6625",
+      "app/writing/state_frame_persistence.py": "b40bb04598a5a9a8ea83137169b32443a8d927c4822e4b3daff817abfbcaa23e",
+      "app/writing/post_write_extraction.py": "bd26b90539e3e61925bbcc6f689078c22ad54a8d4d3d8da28ba12fdcd834c289"
+    },
+    "production_files_unchanged": true,
+    "database_hashes_unchanged": true,
+    "blackboard_writes": 0,
+    "checkpoint_writes": 0,
+    "task_store_writes": 0,
+    "database_writes": 0,
+    "writer_llm_calls": 0,
+    "contains_story_text": false,
+    "contains_prompt_or_messages": false,
+    "contains_human_evaluation_answers": false
+  },
+  "decision": {
+    "shadow_hook_recommended": false,
+    "reason": "The adapter is mechanically sound, but none of the five components has subsection-exact coverage in this real task. A hook would only persist unavailable or coarse snapshots.",
+    "next_step_automatic": false
+  },
+  "verification": {
+    "targeted_tests_passed": 19,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "historical_phase_3_4_matrix_run": false
+  }
+}
