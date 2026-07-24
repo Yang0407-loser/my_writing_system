@@ -24,6 +24,12 @@ from .outline_event_contract import (
     OutlineEventUnit,
     SubsectionEventContract,
 )
+from .character_arc_projection import (
+    ArcProjectionCandidate,
+    ChapterCharacterArcProjection,
+    CharacterArcProjection,
+    CharacterArcProjector,
+)
 from .prompt_builder import PromptBuilder
 from .scene_spec_provider import (
     OutlineSceneSpecProvider,
@@ -64,6 +70,10 @@ __all__ = [
     "OutlineEventContractCompiler",
     "OutlineEventUnit",
     "SubsectionEventContract",
+    "ArcProjectionCandidate",
+    "ChapterCharacterArcProjection",
+    "CharacterArcProjection",
+    "CharacterArcProjector",
     "PostWriteEvidence",
     "PostWriteStateBundle",
     "PostWriteStateChange",

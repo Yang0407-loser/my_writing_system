@@ -562,13 +562,18 @@ class OutlineEventContractCompiler:
         unmatched = list(proposed.events)
         stale: list[OutlineEventUnit] = []
         reserved_ids = {event.event_id for event in prior.events}
+        exact_matches: dict[str, OutlineEventUnit] = {}
         for old in prior.events:
             replacement = next(
                 (event for event in unmatched if event.text_hash == old.text_hash),
                 None,
             )
             if replacement is not None:
+                exact_matches[old.event_id] = replacement
                 unmatched.remove(replacement)
+        for old in prior.events:
+            replacement = exact_matches.get(old.event_id)
+            if replacement is not None:
                 stale.append(replacement.model_copy(update={
                     "event_id": old.event_id,
                     "requiredness": old.requiredness,

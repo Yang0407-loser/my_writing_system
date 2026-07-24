@@ -43,3 +43,7 @@ No Writer or LLM was called. The duplicate/redelivered `6d8187a1...` task was ex
 ## Next Demo
 
 If directed tests pass, run one task with `CHARACTER_ARC_CONTRACT_VERSION=v2`. Observe edge and classification counts, Writer calls/tokens, arc warnings, subsection goal completion, and whether the draft is easier to continue. Do not use frozen Precision/Recall as the primary conclusion.
+
+## 2026-07-24 projection update
+
+`CharacterArcProjection V1` now supplies an offline typed bridge from `OutlineEventContract` to per-character arc candidates. It does not change this report's production conclusion: V1 remains the default, no projection enters Writer/EventGraph, and a hard transition still requires explicit before/trigger/after/evidence/rationale fields. The fixed real outline produced no authoritative projection because its event contracts remain proposed and key state clauses do not have reliable exact actor bindings.
