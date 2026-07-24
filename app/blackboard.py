@@ -149,6 +149,17 @@ class Blackboard:
                     state_dict["state_frame_history_v1"] = json.loads(history)
                 except (json.JSONDecodeError, TypeError):
                     pass
+        if "subsection_handover_history_v1" not in state_dict:
+            handover_history = self.get(
+                task_id, "subsection_handover_history_v1"
+            )
+            if handover_history:
+                try:
+                    state_dict["subsection_handover_history_v1"] = json.loads(
+                        handover_history
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    pass
         mapping = {}
         for field, value in state_dict.items():
             mapping[field] = json.dumps(value, ensure_ascii=False, default=str)

@@ -1,0 +1,82 @@
+{
+  "report_id": "subsection-handover-artifact-v1",
+  "date": "2026-07-25",
+  "status": "engineering_complete_real_demo_pending",
+  "baseline_commit": "a0132ce",
+  "fixed_audit_task_id_hash_only": true,
+  "root_cause": "Per-subsection handover results existed only in the in-memory section_handover_parts list and were collapsed into a section-level handover_chain entry before durable task history was saved.",
+  "hook_order": [
+    "legacy_handover_extraction",
+    "legacy_handover_effects",
+    "legacy_local_handover",
+    "commit_subsection",
+    "existing_post_commit_observers",
+    "state_frame_capture_after",
+    "subsection_handover_history_capture_committed",
+    "legacy_section_handover_aggregation"
+  ],
+  "execution_statuses": [
+    "completed_with_changes",
+    "completed_no_change",
+    "skipped",
+    "error"
+  ],
+  "persistence": {
+    "blackboard": "subsection_handover_history_v1",
+    "checkpoint": "subsection_handover_history_v1",
+    "task_store": "analysis_json.subsection_handover_history_v1",
+    "new_database_schema": false
+  },
+  "synthetic_acceptance": {
+    "subsections": 4,
+    "records": 4,
+    "records_before_commit": 0,
+    "pending": 0,
+    "duplicate_record_ids": 0,
+    "source_hash_trace_rate": 1.0,
+    "three_layer_recovery": true,
+    "task_store_read_only_recovery": true
+  },
+  "compatibility": {
+    "legacy_handover_chain_changed": false,
+    "handover_prompt_changed": false,
+    "handover_generation_parameters_changed": false,
+    "handover_llm_calls_added": 0,
+    "writer_messages_changed": false,
+    "writer_retry_changed": false,
+    "commit_idempotency_key_changed": false,
+    "state_frame_order_changed": false,
+    "new_production_consumers": 0
+  },
+  "historical_tasks": {
+    "migrated": false,
+    "section_aggregate_backfilled": false,
+    "status_without_native_history": "historical_subsection_handover_unavailable"
+  },
+  "privacy": {
+    "handover_values_in_public_report": false,
+    "full_draft_in_public_report": false,
+    "prompt_or_messages_in_public_report": false,
+    "secrets_in_public_report": false
+  },
+  "verification": {
+    "targeted_tests_passed": 55,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "real_writer_or_llm_calls": 0
+  },
+  "real_demo": {
+    "executed": false,
+    "authorized_next_step": "one_real_four_subsection_demo_only",
+    "instructions": "docs/subsection-handover-real-demo-acceptance.md"
+  },
+  "out_of_scope": [
+    "StateFrame injection",
+    "SubsectionOutcomeBundle shadow hook",
+    "PostWriteOrchestrator",
+    "BoundaryValidator",
+    "Repair",
+    "Phase 5",
+    "Phase 6"
+  ]
+}

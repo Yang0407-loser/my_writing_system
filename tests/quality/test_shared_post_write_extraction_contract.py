@@ -37,7 +37,7 @@ def test_writer_runs_shadow_only_after_commit_and_preserves_legacy_extractors():
         "shadow_post_write_extractor.observe_committed("
     )
     for legacy in (
-        "handover_note = self._extract_handover(",
+        "self._extract_handover_with_observation(",
         "cm_char.update_states(",
         "extract_relations_from_text",
         "extract_from_section",

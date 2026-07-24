@@ -62,7 +62,7 @@ def test_writer_hook_is_after_commit_and_does_not_replace_legacy_extractors():
     relation = source.index("extract_relations_from_text")
     experience = source.index("extract_from_section")
     assert commit < shadow < relation < experience
-    assert "handover_note = self._extract_handover(" in source
+    assert "self._extract_handover_with_observation(" in source
     assert "cm_char.update_states(" in source
 
 
@@ -80,7 +80,7 @@ def test_default_off_builder_does_not_construct_shared_extractor(monkeypatch):
 def test_writer_freezes_known_context_before_legacy_handover_effects():
     source = inspect.getsource(Writer.run)
     context = source.index("post_write_extraction_context = self._build_post_write_extraction_context(")
-    handover = source.index("handover_note = self._extract_handover(")
+    handover = source.index("self._extract_handover_with_observation(")
     effects = source.index("state_committer.commit_handover_effects(")
     shadow = source.index("shadow_post_write_extractor.observe_committed(")
     assert context < handover < effects < shadow

@@ -42,6 +42,13 @@ from ..writing import (
 from .. import foreshadowing_store
 from .. import rule_store
 from ..writing.state_frame_persistence import StateFrameHistoryRecorder
+from ..writing.subsection_handover_history import (
+    HandoverExtractionObservation,
+    observation_from_note,
+)
+from ..writing.subsection_handover_persistence import (
+    SubsectionHandoverHistoryRecorder,
+)
 
 logger = logging.getLogger("writing_system.writer")
 
@@ -151,6 +158,11 @@ class Writer(BaseAgent):
         )
         state_frame_history = (
             StateFrameHistoryRecorder(blackboard, task_id)
+            if blackboard is not None
+            else None
+        )
+        subsection_handover_history = (
+            SubsectionHandoverHistoryRecorder(blackboard, task_id)
             if blackboard is not None
             else None
         )
@@ -880,10 +892,14 @@ class Writer(BaseAgent):
                             f"(第{section_num}.{sub_num}节)，fallback=offline-eval",
                             exc_info=True,
                         )
-                handover_note = self._extract_handover(
-                    sub_text, section_num, sub_num,
-                    character_context=character_context,
-                    event_graph=event_graph,
+                handover_note, handover_observation = (
+                    self._extract_handover_with_observation(
+                        sub_text,
+                        section_num,
+                        sub_num,
+                        character_context=character_context,
+                        event_graph=event_graph,
+                    )
                 )
                 backref = handover_note.get("found_contradictions", "") if handover_note else ""
                 state_committer.commit_handover_effects(
@@ -1054,6 +1070,16 @@ class Writer(BaseAgent):
                         checkpoint_version=commit_artifact.checkpoint_version,
                         commit_idempotency_key=commit_artifact.idempotency_key,
                         before_record_id=state_frame_before_id,
+                    )
+                if subsection_handover_history is not None:
+                    subsection_handover_history.capture_committed(
+                        section=section_num,
+                        subsection=sub_num,
+                        output_sha256=commit_artifact.output_hash,
+                        prompt_messages_hash=prompt_artifact.messages_hash,
+                        commit_idempotency_key=commit_artifact.idempotency_key,
+                        handover_note=handover_note,
+                        observation=handover_observation,
                     )
 
             # B2: 子节循环内检测到停止信号，跳出外层 while
@@ -1753,7 +1779,24 @@ class Writer(BaseAgent):
 
         v3: 替代 _parse_output() 的正则切分。Writer 输出纯正文，此方法做结构化提取。
         """
-        import json as _json
+        note, _ = self._extract_handover_with_observation(
+            section_text,
+            section_num,
+            sub_num,
+            character_context=character_context,
+            event_graph=event_graph,
+        )
+        return note
+
+    def _extract_handover_with_observation(
+        self,
+        section_text: str,
+        section_num: int,
+        sub_num: int = 0,
+        character_context: str = "",
+        event_graph: EventGraph | None = None,
+    ) -> tuple[dict | None, HandoverExtractionObservation]:
+        """Run the legacy extraction once and expose fail-safe execution status."""
         open_threads_str = "（无）"
         if event_graph:
             arc_events = event_graph.get_arc_events(section_num, sub_num)
@@ -1775,10 +1818,19 @@ class Writer(BaseAgent):
             )
             result = parse_json(resp)
             if isinstance(result, dict):
-                return result
-        except Exception:
+                return result, observation_from_note(result)
+            return None, HandoverExtractionObservation(
+                executed=True,
+                execution_status="error",
+                error_type="InvalidHandoverPayload",
+            )
+        except Exception as error:
             logger.warning(f"交接信息提取失败 (第{section_num}.{sub_num}小节)")
-        return None
+            return None, HandoverExtractionObservation(
+                executed=True,
+                execution_status="error",
+                error_type=type(error).__name__,
+            )
 
     def _parse_backrefs(self, text: str, from_section: int) -> list[dict]:
         """从回溯修正文本中提取结构化建议。"""

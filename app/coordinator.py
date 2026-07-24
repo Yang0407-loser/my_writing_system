@@ -1390,6 +1390,14 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             analysis_base,
             history_for_checkpoint(bb, task_id),
         )
+        from .writing.subsection_handover_persistence import (
+            history_for_checkpoint as handover_history_for_checkpoint,
+            merge_history_into_analysis as merge_handover_history_into_analysis,
+        )
+        analysis = merge_handover_history_into_analysis(
+            analysis,
+            handover_history_for_checkpoint(bb, task_id),
+        )
 
         ts.save(task_id, {
             "topic": state.get("config_topic", ""),
