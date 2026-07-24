@@ -34,12 +34,13 @@ def scene_spec(*, profile="relative_unknown"):
     )
 
 
-def observe(runner, text="周野父亲留下了一本旧书。"):
+def observe(runner, text="周野父亲留下了一本旧书。", *, explicit_scene_spec=None):
     output_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
     return runner.observe_committed(
         task_id="task-1", section=2, subsection=1, text=text,
         output_hash=output_hash,
         source_manifest=[{"source_id": "writer-field:goal", "text_hash": "e" * 64, "private": text}],
+        scene_spec=explicit_scene_spec,
     )
 
 
@@ -67,6 +68,8 @@ def test_enabled_runner_writes_sanitized_trace_without_changing_output_hash():
     assert record["output_sha256"] == hashlib.sha256(text.encode("utf-8")).hexdigest()
     assert record["validation_status"] == "warn"
     assert record["production_effect"] is False
+    assert record["scene_spec_hash"] == "d" * 64
+    assert record["scene_spec_delivery"] == "compatible_provider"
     assert record["contract_hash"]
     assert record["source_manifest"] == [{"source_id": "writer-field:goal", "text_hash": "e" * 64}]
     rendered = repr(record)
@@ -82,9 +85,27 @@ def test_missing_or_unsupported_scene_spec_skips_safely():
     missing = InMemoryShadowValidationSink()
     observe(ShadowBoundaryValidationRunner(enabled=True, sink=missing, scene_spec_provider=lambda *_: None))
     assert missing.records[0]["skip_reason"] == "scene_spec_unavailable"
+    assert missing.records[0]["scene_spec_delivery"] == "unavailable"
+    assert "scene_spec_provider_unavailable" not in repr(missing.records[0])
     unsupported = InMemoryShadowValidationSink()
     observe(ShadowBoundaryValidationRunner(enabled=True, sink=unsupported, scene_spec_provider=lambda *_: scene_spec(profile="none")))
     assert unsupported.records[0]["skip_reason"] == "no_executable_deterministic_rules"
+
+
+def test_explicit_scene_spec_wins_without_calling_compatible_provider():
+    calls = []
+    sink = InMemoryShadowValidationSink()
+    runner = ShadowBoundaryValidationRunner(
+        enabled=True,
+        sink=sink,
+        scene_spec_provider=lambda *args: calls.append(args) or scene_spec(profile="none"),
+    )
+    record = observe(runner, explicit_scene_spec=scene_spec())
+    assert calls == []
+    assert record["scene_spec_delivery"] == "explicit_artifact"
+    assert record["scene_spec_hash"] == "d" * 64
+    assert record["contract_hash"]
+    assert record["validation_status"] == "warn"
 
 
 def test_validator_failure_is_shadow_error_and_duplicate_is_not_recorded():

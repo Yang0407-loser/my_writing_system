@@ -746,6 +746,7 @@ class Writer(BaseAgent):
                     prepared, token_by_source=context_token_estimates
                 )
                 execution_contract_application = None
+                scene_spec_application = None
                 if execution_contract_controller.enabled or scene_spec_canary.enabled:
                     next_subsection = next(
                         (
@@ -1003,6 +1004,11 @@ class Writer(BaseAgent):
                     text=sub_text,
                     output_hash=commit_artifact.output_hash,
                     source_manifest=prompt_artifact.source_manifest,
+                    scene_spec=(
+                        scene_spec_application.spec
+                        if scene_spec_application is not None
+                        else None
+                    ),
                 )
                 shadow_post_write_extractor.observe_committed(
                     task_id=task_id,

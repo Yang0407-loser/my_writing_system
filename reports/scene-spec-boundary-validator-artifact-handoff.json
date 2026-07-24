@@ -1,0 +1,59 @@
+{
+  "schema_version": "scene-spec-boundary-validator-artifact-handoff-v1",
+  "date": "2026-07-24",
+  "status": "engineering_handoff_complete_real_shadow_pending",
+  "root_cause": "typed_scene_spec_was_discarded_after_prompt_application_and_the_post_commit_runner_had_no_production_provider",
+  "handoff": {
+    "artifact": "same_typed_scene_spec",
+    "second_compilation": false,
+    "delivery_priority": [
+      "explicit_artifact",
+      "compatible_provider",
+      "unavailable"
+    ],
+    "post_commit": true,
+    "cross_subsection_storage": false
+  },
+  "defaults": {
+    "WRITER_SCENE_SPEC_MODE": "off",
+    "WRITER_BOUNDARY_VALIDATOR_SHADOW": false,
+    "WRITER_EXECUTION_CONTRACT_MODE": "off"
+  },
+  "production_invariants": {
+    "writer_messages_unchanged_when_shadow": true,
+    "writer_output_unchanged": true,
+    "writer_call_count_unchanged": true,
+    "generation_parameters_unchanged": true,
+    "state_committer_order_unchanged": true,
+    "checkpoint_contract_unchanged": true,
+    "validator_can_retry": false,
+    "validator_can_repair": false,
+    "production_effect": false,
+    "llm_calls_during_implementation": 0
+  },
+  "frozen_hashes": {
+    "scene_specs": [
+      "8f59121b834a7587b3e42eb75cc91a976d580d159ef5cce3c828c075cb46a2d8",
+      "3d144ed009b624331321c5c40daa519c4bfe4ca92c0b5626e03a07a64a0ba7d2",
+      "5150786e3fcd504e42e4bc56282cb4cc8ce15a43d29afebc2098515363249f9b",
+      "6e4b3567c391777b8f2736ce5fd5518fbfd95cc6e7f39879c06fc3927e460459"
+    ],
+    "r5_prediction_sha256": "fb6e21589d362b9e43f8da00ed8f99709c2d90804a2c72be63e691553baa42c0",
+    "preserved": true
+  },
+  "verification": {
+    "targeted_tests_passed": 51,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "real_writer_calls": 0,
+    "real_validator_samples": 0
+  },
+  "next_step": "one_natural_real_shadow_task_only",
+  "not_authorized": [
+    "repair",
+    "blocking",
+    "automatic_rewrite",
+    "phase_5",
+    "phase_6"
+  ]
+}

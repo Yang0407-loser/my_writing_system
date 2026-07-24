@@ -1,7 +1,7 @@
 # Phase 4R：Writer 职责拆分总报告
 
 > 日期：2026-07-20
-> 当前状态：R6A 默认关闭的 post-commit shadow 接入已完成并停止
+> 当前状态：SceneSpec → BoundaryValidator typed 工件贯通完成，等待唯一一次自然真实 shadow
 > 生产行为：继续 `legacy_full`
 
 ## 目标
@@ -24,6 +24,7 @@ Phase 4R 不把 token 下降本身当成成功，而是逐步把事实恢复、�
 | R4 | 15 个概念缺陷中，Writer 明确指令不服从 4、写作边界含糊 2、SceneSpec 局部事实缺失 1、其他生成波动 8；删除上下文依赖 0 | 保留约 9k token shadow 候选，优先验证生成后边界检测 |
 | R5 | 冻结预测后独立评估：boundary 3/3、Q7 required-event 3/3 分类正确、Q4 unsupported-fact 2/2；均无 FP/FN，追溯率 100% | 机械门槛通过，只允许建议另行授权 Validator shadow 接入 |
 | R6A | 将 R5 v1 规则提取到生产模块，冻结预测 hash 完全不变；新增默认关闭、post-commit、失败隔离的 shadow runner | 接入结构完成但真实样本为 0，只允许另行授权 R6B |
+| 工件贯通 | 将生成前的同一 typed SceneSpec 作为小节局部工件传给提交后的 Validator；不二次编译，保留兼容 provider | 原 `scene_spec_provider_unavailable` 断点已修复；默认仍关闭，真实样本为 0，只允许一个自然任务 |
 
 ## 当前认识
 
@@ -39,6 +40,6 @@ Phase 4R 不把 token 下降本身当成成功，而是逐步把事实恢复、�
 - ContextBroker 和 SceneSpec 未接入生产输入；BoundaryValidator 仅以默认关闭、NoOp sink 的 post-commit shadow hook 存在。
 - 不恢复旧 `running_summary`，不恢复旧 50 维风格字段。
 - 不开始 Repair、Phase 5 或 Phase 6。
-- 下一步只能在用户另行授权后执行 R6B 真实 shadow 采样，并必须继续记录检测结果但不阻断或重写生产正文。
+- 下一步只允许一个自然真实写作任务：SceneSpec 使用 shadow、BoundaryValidator 开启 shadow；结果只作非阻断观察，不实现 Repair、阻断或自动重写。
 
 全量回归：unit 229 passed、integration 9 passed、quality 85 passed、compileall passed。

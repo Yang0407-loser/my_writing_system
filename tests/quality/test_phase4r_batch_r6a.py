@@ -23,6 +23,22 @@ def test_writer_hook_is_after_commit_and_cannot_mutate_messages():
     call = source[shadow:source.index("\n                )", shadow) + 18]
     assert "messages=" not in call
     assert "prompt=" not in call
+    assert "scene_spec=" in call
+
+
+def test_writer_scene_spec_artifact_is_scoped_per_subsection_and_not_rebuilt_post_commit():
+    source = Path("app/agents/writer.py").read_text(encoding="utf-8")
+    loop = source.index("for sub in subsections:")
+    initialized = source.index("scene_spec_application = None", loop)
+    applied = source.index("scene_spec_application = scene_spec_canary.apply(", initialized)
+    generated = source.index("self._generate_with_retry", applied)
+    committed = source.index("state_committer.commit_subsection(", generated)
+    observed = source.index("shadow_boundary_validator.observe_committed(", committed)
+    passed = source.index("scene_spec_application.spec", observed)
+    assert loop < initialized < applied < generated < committed < observed < passed
+    hook = source[observed:source.index("\n                )", observed) + 18]
+    assert "provider.build(" not in hook
+    assert "scene_spec_application.spec" in hook
 
 
 def test_app_never_imports_tests_and_shadow_records_have_no_private_payload_fields():

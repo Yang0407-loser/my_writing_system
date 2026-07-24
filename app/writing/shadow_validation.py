@@ -62,6 +62,7 @@ class ShadowBoundaryValidationRunner:
         text: str,
         output_hash: str,
         source_manifest: list[dict[str, Any]] | None = None,
+        scene_spec: SceneSpec | None = None,
     ) -> dict[str, Any] | None:
         if not self.enabled:
             return None
@@ -76,6 +77,7 @@ class ShadowBoundaryValidationRunner:
             "subsection": subsection,
             "output_sha256": output_hash,
             "validator_version": VALIDATOR_VERSION,
+            "scene_spec_hash": "",
             "contract_hash": "",
             "required_event_results": [],
             "boundary_violations": [],
@@ -83,37 +85,52 @@ class ShadowBoundaryValidationRunner:
             "source_manifest": _sanitize_manifest(source_manifest or []),
             "skip_reason": None,
             "error_type": None,
+            "scene_spec_delivery": "unavailable",
             "production_effect": False,
         }
         try:
             if hashlib.sha256(text.encode("utf-8")).hexdigest() != output_hash:
                 raise ValueError("output_hash_mismatch")
-            if self.scene_spec_provider is None:
-                record = {**base, "validation_status": "skipped", "skip_reason": "scene_spec_provider_unavailable"}
-            else:
+            if scene_spec is not None:
+                spec = scene_spec
+                base["scene_spec_delivery"] = "explicit_artifact"
+            elif self.scene_spec_provider is not None:
                 spec = self.scene_spec_provider(task_id, section, subsection)
-                if spec is None:
-                    record = {**base, "validation_status": "skipped", "skip_reason": "scene_spec_unavailable"}
+                base["scene_spec_delivery"] = (
+                    "compatible_provider" if spec is not None else "unavailable"
+                )
+            else:
+                spec = None
+            if spec is None:
+                record = {
+                    **base,
+                    "validation_status": "skipped",
+                    "skip_reason": "scene_spec_unavailable",
+                }
+            else:
+                base["scene_spec_hash"] = spec.spec_hash
+                contract = ValidationContract.from_scene_spec(spec)
+                base["contract_hash"] = contract.contract_hash
+                if not contract.executable:
+                    record = {
+                        **base,
+                        "validation_status": "skipped",
+                        "skip_reason": "no_executable_deterministic_rules",
+                    }
                 else:
-                    contract = ValidationContract.from_scene_spec(spec)
-                    base["contract_hash"] = contract.contract_hash
-                    if not contract.executable:
-                        record = {**base, "validation_status": "skipped", "skip_reason": "no_executable_deterministic_rules"}
-                    else:
-                        result = self.validator.validate(
-                            contract,
-                            f"{task_id}:{section}:{subsection}",
-                            text,
-                            output_hash,
-                        )
-                        record = {
-                            **base,
-                            "contract_hash": contract.contract_hash,
-                            "validation_status": result["validation_status"],
-                            "required_event_results": result["required_event_results"],
-                            "boundary_violations": result["boundary_violations"],
-                            "unsupported_fact_warnings": result["unsupported_fact_warnings"],
-                        }
+                    result = self.validator.validate(
+                        contract,
+                        f"{task_id}:{section}:{subsection}",
+                        text,
+                        output_hash,
+                    )
+                    record = {
+                        **base,
+                        "validation_status": result["validation_status"],
+                        "required_event_results": result["required_event_results"],
+                        "boundary_violations": result["boundary_violations"],
+                        "unsupported_fact_warnings": result["unsupported_fact_warnings"],
+                    }
         except Exception as exc:
             record = {
                 **base,

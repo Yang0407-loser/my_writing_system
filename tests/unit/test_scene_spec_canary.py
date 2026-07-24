@@ -52,12 +52,14 @@ class SpyProvider(OutlineSceneSpecProvider):
     def __init__(self, error=None):
         self.calls = 0
         self.error = error
+        self.last_result = None
 
     def build(self, **kwargs):
         self.calls += 1
         if self.error:
             raise self.error
-        return super().build(**kwargs)
+        self.last_result = super().build(**kwargs)
+        return self.last_result
 
 
 class UntraceableProvider(OutlineSceneSpecProvider):
@@ -94,6 +96,8 @@ def test_off_does_not_call_provider_or_write_record():
     assert provider.calls == 0
     assert result.prompt is original
     assert result.record is None
+    assert result.spec is None
+    assert result.source_manifest == ()
 
 
 def test_invalid_mode_is_effectively_off():
@@ -124,6 +128,13 @@ def test_shadow_compiles_without_changing_legacy_messages():
     assert result.prompt.messages_hash == original.messages_hash
     assert result.record["injected"] is False
     assert result.record["production_effect"] is False
+    assert result.spec is not None
+    assert result.spec is provider.last_result.spec
+    assert result.spec.spec_hash == result.record["scene_spec_hash"]
+    assert result.source_manifest == tuple(
+        {"source_id": item.source_id, "text_hash": item.text_hash}
+        for item in result.spec.evidence
+    )
 
 
 def test_canary_injects_once_only_for_allowlisted_task():
@@ -143,6 +154,8 @@ def test_canary_injects_once_only_for_allowlisted_task():
     assert result.prompt.prompt_version == original.prompt_version
     assert result.record["injected"] is True
     assert result.record["estimated_tokens"] <= 400
+    assert result.spec is not None
+    assert result.spec.spec_hash == result.record["scene_spec_hash"]
 
 
 def test_non_allowlisted_canary_does_not_call_provider():
@@ -170,6 +183,8 @@ def test_missing_outline_provider_error_and_budget_all_fall_back(caplog):
     )
     assert missing_result.prompt is original
     assert missing_result.record["fallback_reason"] == "current_outline_missing"
+    assert missing_result.spec is None
+    assert missing_result.source_manifest == ()
 
     secret = "private prose must not reach logs"
     failing_provider = SpyProvider(ValueError(secret))
@@ -179,6 +194,7 @@ def test_missing_outline_provider_error_and_budget_all_fall_back(caplog):
     failed_result = apply(failing)
     assert failed_result.prompt.messages_hash == prompt_artifact().messages_hash
     assert failed_result.record["fallback_reason"] == "ValueError"
+    assert failed_result.spec is None
     assert secret not in caplog.text
 
     over_budget = SceneSpecCanaryController(
@@ -187,6 +203,7 @@ def test_missing_outline_provider_error_and_budget_all_fall_back(caplog):
     budget_result = apply(over_budget)
     assert budget_result.prompt.messages_hash == prompt_artifact().messages_hash
     assert budget_result.record["fallback_reason"] == "scene_spec_over_token_cap"
+    assert budget_result.spec is None
 
 
 def test_last_subsection_without_next_outline_is_valid():
@@ -212,6 +229,8 @@ def test_untraceable_source_manifest_falls_back_to_legacy():
     )
     assert result.prompt is original
     assert result.record["fallback_reason"] == "source_manifest_untraceable"
+    assert result.spec is None
+    assert result.source_manifest == ()
 
 
 @pytest.mark.skipif(not RUNTIME_SOURCE.exists(), reason="private frozen field-trial source unavailable")

@@ -52,6 +52,8 @@ class SceneSpecBuildResult:
 class SceneSpecApplication:
     prompt: PromptArtifact
     record: dict[str, Any] | None
+    spec: SceneSpec | None = None
+    source_manifest: tuple[dict[str, str], ...] = ()
 
 
 class OutlineSceneSpecProvider:
@@ -222,7 +224,12 @@ class SceneSpecCanaryController:
             started=started,
         )
         self._log(record)
-        return SceneSpecApplication(prompt=applied_prompt, record=record)
+        return SceneSpecApplication(
+            prompt=applied_prompt,
+            record=record,
+            spec=built.spec,
+            source_manifest=built.source_manifest,
+        )
 
     def _validate(self, built: SceneSpecBuildResult) -> None:
         if not built.rendered.strip() or not built.spec.planned_events:
@@ -282,7 +289,12 @@ class SceneSpecCanaryController:
             started=started,
         )
         self._log(record)
-        return SceneSpecApplication(prompt=prompt, record=record)
+        return SceneSpecApplication(
+            prompt=prompt,
+            record=record,
+            spec=None,
+            source_manifest=(),
+        )
 
     def _record(
         self,
