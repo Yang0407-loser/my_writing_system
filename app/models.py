@@ -215,6 +215,7 @@ class SubsectionItem(BaseModel):
     key_points: list[str] = []
     target_words: int = 2000
     description: str = ""  # 小节梗概：这一幕发生了什么
+    event_contract: dict | None = None
 
 
 class OutlineItem(BaseModel):
@@ -253,6 +254,11 @@ def flatten_tree_to_outline(root_nodes: list[dict]) -> list[dict]:
                     "description": leaf.get("description", ""),
                     "key_points": leaf.get("key_points") or [],
                     "target_words": leaf.get("target_words", 2000),
+                    **(
+                        {"event_contract": leaf["event_contract"]}
+                        if leaf.get("event_contract")
+                        else {}
+                    ),
                 }
                 for li, leaf in enumerate(leaves, 1)
             ],

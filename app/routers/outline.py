@@ -88,6 +88,8 @@ def _flatten_tree(tree: list[dict], parent_id: str = "") -> list[dict]:
             "injections": node.get("injections", {}),
             "sort_order": i,
         }
+        if node.get("event_contract"):
+            n["event_contract"] = node["event_contract"]
         result.append(n)
         children = node.get("children", [])
         if children:
@@ -102,14 +104,17 @@ def _tree_to_outline_v2(tree: list[dict]) -> list[dict]:
         children = node.get("children", [])
         subsections = []
         for j, child in enumerate(children):
-            subsections.append({
+            subsection = {
                 "subsection": j + 1,
                 "title": child.get("title", ""),
                 "description": child.get("description", ""),
                 "key_points": child.get("key_points", []),
                 "target_words": child.get("target_words", 2000),
                 "status": child.get("status", "draft"),
-            })
+            }
+            if child.get("event_contract"):
+                subsection["event_contract"] = child["event_contract"]
+            subsections.append(subsection)
         result.append({
             "section": i + 1,
             "title": node.get("title", ""),
@@ -125,14 +130,17 @@ def _tree_to_budget_outline(tree: list[dict]) -> list[dict]:
     for section_index, node in enumerate(tree, 1):
         subsections = []
         for subsection_index, child in enumerate(node.get("children", []), 1):
-            subsections.append({
+            subsection = {
                 "subsection": subsection_index,
                 "source_id": str(child.get("id") or f"outline:{section_index}:{subsection_index}"),
                 "title": child.get("title", ""),
                 "description": child.get("description", ""),
                 "key_points": child.get("key_points", []),
                 "target_words": child.get("target_words", 2000),
-            })
+            }
+            if child.get("event_contract"):
+                subsection["event_contract"] = child["event_contract"]
+            subsections.append(subsection)
         result.append({
             "section": section_index,
             "source_id": str(node.get("id") or f"outline:{section_index}"),
@@ -154,14 +162,17 @@ def _outline_v2_to_tree(outline: list[dict]) -> list[dict]:
             "children": [],
         }
         for sub in sec.get("subsections", []):
-            node["children"].append({
+            child = {
                 "id": str(uuid.uuid4()),
                 "title": sub.get("title", ""),
                 "description": sub.get("description", ""),
                 "key_points": sub.get("key_points", []),
                 "target_words": sub.get("target_words", 2000),
                 "status": sub.get("status", "queued"),
-            })
+            }
+            if sub.get("event_contract"):
+                child["event_contract"] = sub["event_contract"]
+            node["children"].append(child)
         result.append(node)
     return result
 
@@ -328,6 +339,8 @@ def save_outline(task_id: str, body: OutlineNodesBody):
 
     # 树重建 + 转 outline_v2
     tree = _build_tree_from_nodes(nodes)
+    from ..writing.outline_event_contract import canonicalise_confirmed_tree
+    tree = canonicalise_confirmed_tree(tree)
     flat = _tree_to_outline_v2(tree)
 
     # 写 Redis

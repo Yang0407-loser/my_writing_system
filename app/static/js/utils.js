@@ -40,12 +40,12 @@ export function treeToFlat(rootNodes, opts={}) {
   return rootNodes.map((root, si) => {
     const ls = leaves(root);
     if (!ls.length) return null;
-    return { section: si+1, title: root.title||'', key_points: root.key_points||[], subsections: ls.map((leaf, li) => ({ subsection: li+1, title: leaf.title||'', description: leaf.description||'', key_points: leaf.key_points||[], target_words: leaf.target_words||2000, status: leaf.status||'draft' })) };
+    return { section: si+1, title: root.title||'', key_points: root.key_points||[], subsections: ls.map((leaf, li) => ({ subsection: li+1, title: leaf.title||'', description: leaf.description||'', key_points: leaf.key_points||[], target_words: leaf.target_words||2000, status: leaf.status||'draft', ...(leaf.event_contract?{event_contract:leaf.event_contract}:{}) })) };
   }).filter(Boolean);
 }
 
 export function flatToTree(flat) {
-  return flat.map((sec, si) => ({ id: genId(), title: sec.title||'第'+(si+1)+'节', key_points: sec.key_points||[], collapsed: false, children: (sec.subsections||[]).map(sub => ({ id: genId(), title: sub.title||'', description: sub.description||'', key_points: sub.key_points||[], target_words: sub.target_words||2000, status: sub.status||'draft' })) }));
+  return flat.map((sec, si) => ({ id: genId(), title: sec.title||'第'+(si+1)+'节', key_points: sec.key_points||[], collapsed: false, children: (sec.subsections||[]).map(sub => ({ id: genId(), title: sub.title||'', description: sub.description||'', key_points: sub.key_points||[], target_words: sub.target_words||2000, status: sub.status||'draft', ...(sub.event_contract?{event_contract:sub.event_contract}:{}) })) }));
 }
 
 export function escHtml(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }

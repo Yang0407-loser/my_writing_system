@@ -289,13 +289,28 @@ export function createWriterApp() {
                 description: n.description || '', key_points: n.key_points || [],
                 target_words: n.target_words || 2000, locked: n.locked || false,
                 status: n.status || 'draft', injections: n.injections || {},
+                event_contract: n.event_contract || null,
                 sort_order: i,
               });
               if (n.children && n.children.length) flatten(n.children, n.id);
             }
           }
           flatten(outline.value, '');
-          await API.saveOutlineNodes(taskId.value, flatNodes);
+          const saved = await API.saveOutlineNodes(taskId.value, flatNodes);
+          const localById = new Map();
+          function indexLocal(ns) {
+            for (const n of ns) {
+              localById.set(n.id, n);
+              if (n.children?.length) indexLocal(n.children);
+            }
+          }
+          indexLocal(outline.value);
+          for (const savedNode of saved?.nodes || []) {
+            const local = localById.get(savedNode.id);
+            if (!local) continue;
+            if (savedNode.event_contract) local.event_contract = savedNode.event_contract;
+            else delete local.event_contract;
+          }
           toast('大纲已保存', 'success');
         } catch(e) { toast('保存失败', 'error'); }
       }
@@ -309,7 +324,9 @@ export function createWriterApp() {
               nodes.push({
                 id:n.id, parent_id:parentId, title:n.title||'',
                 description:n.description||'', key_points:n.key_points||[],
-                target_words:n.target_words||0, sort_order:i,
+                target_words:n.target_words||0,
+                event_contract:n.event_contract||null,
+                sort_order:i,
               });
               if (n.children?.length) flatten(n.children, n.id);
             }
@@ -350,14 +367,32 @@ export function createWriterApp() {
         showBudgetAdvice.value = null;
         toast('已应用到当前大纲，请确认后保存', 'info');
       }
+      async function confirmEventContract(node) {
+        const proposed = node?._budgetAdvice?.event_contract;
+        if (!proposed) return;
+        const confirmed = JSON.parse(JSON.stringify(proposed));
+        confirmed.status = 'confirmed';
+        confirmed.confirmation_requested = true;
+        confirmed.events = (confirmed.events || []).map(event => ({
+          ...event,
+          status: event.status === 'superseded' ? 'superseded' : 'confirmed',
+          user_confirmed: event.status === 'superseded' ? false : true,
+        }));
+        node.event_contract = confirmed;
+        await saveOutlineFn();
+        if (node.event_contract?.status === 'confirmed') {
+          node._budgetAdvice.event_contract = JSON.parse(JSON.stringify(node.event_contract));
+          toast('事件结构已确认并随大纲保存；篇幅未修改', 'success');
+        }
+      }
       function toggleBudgetAdvice(node, event) {
         if (showBudgetAdvice.value === node.id) {
           showBudgetAdvice.value = null;
           return;
         }
         const rect = event.currentTarget.getBoundingClientRect();
-        const popupWidth = 250;
-        const popupHeightEstimate = 210;
+        const popupWidth = 430;
+        const popupHeightEstimate = 620;
         budgetPopupPosition.value = {
           left:Math.max(8, Math.min(rect.right - popupWidth, window.innerWidth - popupWidth - 8)),
           top:Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - popupHeightEstimate - 8)),
@@ -660,7 +695,7 @@ export function createWriterApp() {
       function expandAll() { OT.expandAll(outline.value); }
       function queueAll() { function w(ns){for(const n of ns){if(!n.children?.length)n.status='queued';else w(n.children)}} w(outline.value); toast('全部章节已加入队列','success'); }
       function dequeueAll() { function w(ns){for(const n of ns){if(!n.children?.length)n.status='draft';else w(n.children)}} w(outline.value); toast('全部章节已移出队列','info'); }
-      function toggleLeafStatus(node) { if(node.status==='done')node.status='queued';else if(node.status==='queued')node.status='draft';else node.status='queued';if(taskId.value&&taskId.value){const flatNodes=[];function f(ns,p){for(let i=0;i<ns.length;i++){const n=ns[i];flatNodes.push({id:n.id,parent_id:p,title:n.title||'',description:n.description||'',key_points:n.key_points||[],target_words:n.target_words||2000,locked:n.locked||false,status:n.status||'draft',injections:n.injections||{},sort_order:i});if(n.children)f(n.children,n.id)}}f(outline.value,'');API.saveOutlineNodes(taskId.value,flatNodes).catch(()=>{})}}
+      function toggleLeafStatus(node) { if(node.status==='done')node.status='queued';else if(node.status==='queued')node.status='draft';else node.status='queued';if(taskId.value&&taskId.value){const flatNodes=[];function f(ns,p){for(let i=0;i<ns.length;i++){const n=ns[i];flatNodes.push({id:n.id,parent_id:p,title:n.title||'',description:n.description||'',key_points:n.key_points||[],target_words:n.target_words||2000,locked:n.locked||false,status:n.status||'draft',injections:n.injections||{},event_contract:n.event_contract||null,sort_order:i});if(n.children)f(n.children,n.id)}}f(outline.value,'');API.saveOutlineNodes(taskId.value,flatNodes).catch(()=>{})}}
       function leafStatusIcon(s) { return s==='done'?'✅':(s==='draft'?'⚪':'🟡'); }
       function leafStatusColor(s) { return s==='done'?'var(--green)':(s==='draft'?'var(--muted)':'var(--gold)'); }
       function leafStatusTitle(s) { return s==='done'?'已完成(点击重新入队)':(s==='draft'?'点击加入写作队列':'点击移出写作队列'); }
@@ -1113,7 +1148,7 @@ export function createWriterApp() {
       return { refineMode,taskId,statusText,statusColor,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
-        outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,requestOutlineBudgetAdvice,applyBudgetRecommendation,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
+        outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,

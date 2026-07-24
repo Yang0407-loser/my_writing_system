@@ -89,6 +89,39 @@
               </div>
               <ul class="budget-popup-reasons"><li v-for="reason in item.node._budgetAdvice.reason_codes.slice(0,3)" :key="reason">{{budgetReasonLabel(reason)}}</li><li v-if="!item.node._budgetAdvice.reason_codes.length">结构稳定，无额外风险</li></ul>
               <div v-if="item.node._budgetAdvice.prompt_conflicts.length" class="budget-popup-warning">段落字数要求可能与小节总字数冲突</div>
+              <details v-if="item.node._budgetAdvice.event_contract" class="event-contract-panel">
+                <summary>
+                  事件结构（{{item.node._budgetAdvice.event_contract.events.filter(e=>e.status!=='superseded').length}}）
+                  <span :class="['event-contract-status','status-'+item.node._budgetAdvice.event_contract.status]">{{item.node._budgetAdvice.event_contract.status}}</span>
+                </summary>
+                <div v-if="item.node._budgetAdvice.event_contract.status==='stale'" class="budget-popup-warning">大纲来源已变化，请重新检查后再确认。</div>
+                <div v-for="event in item.node._budgetAdvice.event_contract.events.filter(e=>e.status!=='superseded')" :key="event.event_id" class="event-contract-row">
+                  <div class="event-contract-summary">{{event.summary}}</div>
+                  <div class="event-contract-source">{{event.source_slot}} · {{event.confidence}} · {{event.event_id.split(':').slice(-2).join(':')}}</div>
+                  <div class="event-contract-controls">
+                    <label>时态
+                      <select v-model="event.temporal_scope">
+                        <option value="current">当前发生</option><option value="past">过去/回忆</option>
+                        <option value="future">未来/计划</option><option value="mixed">混合</option><option value="unknown">不确定</option>
+                      </select>
+                    </label>
+                    <label>强度
+                      <select v-model="event.requiredness">
+                        <option value="hard">必须</option><option value="soft">建议</option><option value="unspecified">未指定</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div v-if="event.actors?.length" class="event-contract-actors">人物：{{event.actors.join('、')}}</div>
+                </div>
+                <label class="event-contract-stop">本小节停止点
+                  <select v-model="item.node._budgetAdvice.event_contract.stop_after_event_id">
+                    <option :value="null">未指定</option>
+                    <option v-for="event in item.node._budgetAdvice.event_contract.events.filter(e=>e.status!=='superseded')" :key="'stop-'+event.event_id" :value="event.event_id">{{event.summary}}</option>
+                  </select>
+                </label>
+                <button class="btn btn-outline btn-sm event-contract-confirm" @click="confirmEventContract(item.node)">确认事件结构并保存大纲</button>
+                <div class="event-contract-note">确认事件结构不会应用推荐字数；两项操作彼此独立。</div>
+              </details>
               <button class="btn btn-primary btn-sm budget-popup-apply" @click="applyBudgetRecommendation(item.node)">应用 {{budgetApplyValue(item.node._budgetAdvice)}} 字</button>
             </div>
             <!-- Key Points / Description editor -->

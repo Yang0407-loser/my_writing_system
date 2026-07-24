@@ -17,6 +17,13 @@ from .contracts import (
 )
 from .generation_controller import GenerationController
 from .mandatory_event_policy import MandatoryEventDetection, MandatoryEventPolicy
+from .outline_event_contract import (
+    ChapterEventContract,
+    LegacyOutlineEventAdapter,
+    OutlineEventContractCompiler,
+    OutlineEventUnit,
+    SubsectionEventContract,
+)
 from .prompt_builder import PromptBuilder
 from .scene_spec_provider import (
     OutlineSceneSpecProvider,
@@ -52,6 +59,11 @@ __all__ = [
     "GenerationController",
     "MandatoryEventDetection",
     "MandatoryEventPolicy",
+    "ChapterEventContract",
+    "LegacyOutlineEventAdapter",
+    "OutlineEventContractCompiler",
+    "OutlineEventUnit",
+    "SubsectionEventContract",
     "PostWriteEvidence",
     "PostWriteStateBundle",
     "PostWriteStateChange",

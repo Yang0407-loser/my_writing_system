@@ -33,6 +33,8 @@ def test_budget_advice_route_is_read_only_and_traceable(monkeypatch):
     advice = result["chapters"][0]["subsections"][0]
     assert advice["source_manifest"]
     assert advice["event_units"][0]["source_id"].startswith("sub-1")
+    assert advice["event_contract"]["status"] == "proposed"
+    assert advice["event_contract"]["stop_after_event_id"] is None
     assert result["chapters"][0]["allocated_total"] == 500
 
 
@@ -43,13 +45,20 @@ def test_frontend_advice_is_applied_only_by_explicit_action():
         "function applyBudgetRecommendation", 1
     )[0]
     apply_block = source.split("function applyBudgetRecommendation", 1)[1].split(
-        "async function undoDeleteFn", 1
+        "async function confirmEventContract", 1
+    )[0]
+    confirm_block = source.split("async function confirmEventContract", 1)[1].split(
+        "function toggleBudgetAdvice", 1
     )[0]
     assert "target_words =" not in request_block
     assert "API.saveOutlineNodes" not in request_block
     assert "node.target_words =" in apply_block
     assert "budgetApplyValue(advice)" in apply_block
     assert "API.saveOutlineNodes" not in apply_block
+    assert "node.event_contract = confirmed" in confirm_block
+    assert "await saveOutlineFn()" in confirm_block
     assert "budget-advice-popup" in template
     assert "budget-advice-row" not in template
     assert 'title="查看篇幅建议"' in template
+    assert "确认事件结构并保存大纲" in template
+    assert "确认事件结构不会应用推荐字数" in template
