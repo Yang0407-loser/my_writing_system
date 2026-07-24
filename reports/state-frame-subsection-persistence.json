@@ -1,0 +1,61 @@
+{
+  "schema_version": "state-frame-subsection-persistence-report-v1",
+  "date": "2026-07-25",
+  "status": "engineering_complete_real_demo_pending",
+  "scope": {
+    "writer_llm_calls": 0,
+    "writer_messages_changed": false,
+    "writer_output_changed": false,
+    "generation_parameters_changed": false,
+    "retry_semantics_changed": false,
+    "state_frame_injected_into_writer": false,
+    "database_schema_changed": false
+  },
+  "capture_order": [
+    "capture_state_frame_before",
+    "existing_prompt_assembly_and_hash_binding",
+    "existing_writer_generation",
+    "existing_handover_validation_length_flow",
+    "state_committer_commit_subsection",
+    "existing_post_commit_observers",
+    "capture_state_frame_after",
+    "build_state_delta",
+    "existing_section_end_state_updates"
+  ],
+  "storage": {
+    "runtime": "blackboard.state_frame_history_v1",
+    "checkpoint": "optional state_frame_history_v1 field",
+    "task_history": "analysis_json.state_frame_history_v1",
+    "new_database_or_column": false
+  },
+  "fixture": {
+    "subsections": 4,
+    "before_frames": 4,
+    "after_frames": 4,
+    "deltas": 4,
+    "duplicate_record_ids": 0,
+    "task_store_recovery_rate": 1.0,
+    "redis_loss_recovery_rate": 1.0,
+    "persisted_fact_source_hash_traceability_rate": 1.0,
+    "full_story_text_persisted": false,
+    "prompt_or_messages_persisted": false
+  },
+  "compatibility": {
+    "old_task_behavior": "historical_state_frame_unavailable_or_explicit_partial_reconstruction",
+    "old_checkpoint_migration": false,
+    "legacy_checkpoint_projection_unchanged": true,
+    "section_end_state_backfilled_to_early_subsections": false
+  },
+  "quality_limits": {
+    "handover_continuity": "assessable_only_when_traceable_before_and_after_sources_exist",
+    "character_state_transition": "assessable_only_when_a_subsection_exact_state_source_exists",
+    "foreshadow_health": "assessable_only_for_comparable_same_id_lifecycle_snapshots",
+    "quality_rules_changed": false
+  },
+  "tests": {
+    "targeted_passed": 80,
+    "targeted_failed": 0,
+    "compileall": "passed"
+  },
+  "next_step": "one_real_four_subsection_demo_only_after_user_authorization"
+}

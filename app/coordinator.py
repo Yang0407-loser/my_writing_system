@@ -1372,6 +1372,25 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             section_texts = state.get("section_texts", {})
             assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
 
+        from .writing.state_frame_persistence import (
+            history_for_checkpoint,
+            merge_history_into_analysis,
+        )
+        existing_task = ts.get(task_id) or {}
+        existing_analysis = existing_task.get("analysis_json")
+        analysis_base = (
+            dict(existing_analysis)
+            if isinstance(existing_analysis, dict)
+            else {}
+        )
+        current_analysis = state.get("analysis", {}) or {}
+        if isinstance(current_analysis, dict):
+            analysis_base.update(current_analysis)
+        analysis = merge_history_into_analysis(
+            analysis_base,
+            history_for_checkpoint(bb, task_id),
+        )
+
         ts.save(task_id, {
             "topic": state.get("config_topic", ""),
             "word_count": count_chinese_chars(assembled),
@@ -1390,7 +1409,7 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             "draft": assembled,
             "output_file": state.get("_output_file", ""),
             "events": events_data,
-            "analysis": state.get("analysis", {}) or {},
+            "analysis": analysis,
         })
     except Exception:
         logger.warning("任务历史写入失败", exc_info=True)

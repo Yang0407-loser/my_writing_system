@@ -41,6 +41,7 @@ from ..writing import (
 )
 from .. import foreshadowing_store
 from .. import rule_store
+from ..writing.state_frame_persistence import StateFrameHistoryRecorder
 
 logger = logging.getLogger("writing_system.writer")
 
@@ -147,6 +148,11 @@ class Writer(BaseAgent):
         shadow_post_write_extractor = self._build_shadow_post_write_extraction_runner(
             blackboard=blackboard,
             task_id=task_id,
+        )
+        state_frame_history = (
+            StateFrameHistoryRecorder(blackboard, task_id)
+            if blackboard is not None
+            else None
         )
         scene_spec_canary = SceneSpecCanaryController(
             mode=settings.WRITER_SCENE_SPEC_MODE,
@@ -742,6 +748,21 @@ class Writer(BaseAgent):
                     source_manifest=source_manifest,
                 )
                 subsection_pipeline = SubsectionPipeline(prepared)
+                state_frame_before_id = None
+                if state_frame_history is not None:
+                    before_source_hash = hashlib.sha256(
+                        json.dumps(
+                            source_manifest,
+                            ensure_ascii=False,
+                            sort_keys=True,
+                        ).encode("utf-8")
+                    ).hexdigest()
+                    state_frame_before_id = state_frame_history.capture_before(
+                        section=section_num,
+                        subsection=sub_num,
+                        before_source_hash=before_source_hash,
+                        checkpoint_version=state_committer.CHECKPOINT_VERSION,
+                    )
                 prompt_artifact = PromptBuilder().build(
                     prepared, token_by_source=context_token_estimates
                 )
@@ -792,6 +813,11 @@ class Writer(BaseAgent):
                 subsection_pipeline.record_prompt(prompt_artifact)
                 messages = prompt_artifact.messages
                 input_tokens_estimate = prompt_artifact.estimated_tokens
+                if state_frame_history is not None:
+                    state_frame_history.bind_prompt_hash(
+                        state_frame_before_id,
+                        prompt_artifact.messages_hash,
+                    )
 
                 # --- LLM 调用（支持重试） ---
                 t_llm_start = time.time()
@@ -1019,6 +1045,16 @@ class Writer(BaseAgent):
                     source_manifest=prompt_artifact.source_manifest,
                     known_context=post_write_extraction_context,
                 )
+                if state_frame_history is not None:
+                    state_frame_history.capture_after(
+                        section=section_num,
+                        subsection=sub_num,
+                        prompt_messages_hash=prompt_artifact.messages_hash,
+                        output_sha256=commit_artifact.output_hash,
+                        checkpoint_version=commit_artifact.checkpoint_version,
+                        commit_idempotency_key=commit_artifact.idempotency_key,
+                        before_record_id=state_frame_before_id,
+                    )
 
             # B2: 子节循环内检测到停止信号，跳出外层 while
             if should_stop:

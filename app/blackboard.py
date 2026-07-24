@@ -139,6 +139,16 @@ class Blackboard:
     def save_checkpoint(self, task_id: str, state_dict: dict) -> None:
         """保存任务状态快照到 Redis Hash。"""
         key = self.checkpoint_key(task_id)
+        state_dict = dict(state_dict)
+        # Optional mirror of the task-level logical artifact. Its absence keeps
+        # legacy checkpoints unchanged under the legacy field projection.
+        if "state_frame_history_v1" not in state_dict:
+            history = self.get(task_id, "state_frame_history_v1")
+            if history:
+                try:
+                    state_dict["state_frame_history_v1"] = json.loads(history)
+                except (json.JSONDecodeError, TypeError):
+                    pass
         mapping = {}
         for field, value in state_dict.items():
             mapping[field] = json.dumps(value, ensure_ascii=False, default=str)
