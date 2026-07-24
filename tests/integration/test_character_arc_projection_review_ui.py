@@ -243,6 +243,7 @@ def test_thin_ui_has_explicit_review_and_no_production_wiring():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     assert "previewArcProjection" in api
     assert "confirmArcProjection" in api
+    assert "./api.js?v=20260725a" in source
     assert "openArcProjectionReview" in source
     assert "['decision','state_transition']" in source
     assert "角色弧确认（小规模实验）" in template

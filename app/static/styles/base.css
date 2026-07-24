@@ -494,6 +494,33 @@ textarea { resize: vertical; min-height: 60px; }
   font-size: 9px;
 }
 
+.event-contract-actor-editor {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.event-contract-actor-editor label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.event-contract-actor-editor input {
+  width: auto;
+  margin: 0;
+}
+
+.event-contract-actor-editor em {
+  color: var(--orange);
+  font-style: normal;
+}
+
 .event-contract-controls {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>多智能体写作系统 v0.9</title>
 <script type="importmap">{"imports":{"vue":"https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js"}}</script>
-<link rel="stylesheet" href="/static/styles/base.css?v=20260724b">
+<link rel="stylesheet" href="/static/styles/base.css?v=20260725a">
 </head>
 <body>
 <div id="app">
@@ -491,7 +491,16 @@
                   </select>
                 </label>
               </div>
-              <div v-if="event.actors?.length" class="event-contract-actors">人物：{{event.actors.join('、')}}</div>
+              <div class="event-contract-actor-editor">
+                <span>人物归属</span>
+                <label v-for="character in selectedChars" :key="event.event_id+'-'+character.id">
+                  <input type="checkbox" :value="character.name" v-model="event.actors"> {{character.name}}
+                </label>
+                <em v-if="!selectedChars.length">请先选择参与写作的角色</em>
+              </div>
+              <div v-if="['decision','state_transition'].includes(event.unit_type)&&!event.actors?.length" class="budget-popup-warning">
+                这是潜在角色弧事件；请先明确人物归属，否则不会出现在“弧线”审阅中。
+              </div>
             </div>
             <label class="event-contract-stop">本小节停止点
               <select v-model="item.advice.event_contract.stop_after_event_id">
@@ -1155,7 +1164,7 @@
 </div>
 
 <script type="module">
-import { createWriterApp } from '/static/js/main.js?v=20260724b';
+import { createWriterApp } from '/static/js/main.js?v=20260725a';
 createWriterApp().mount('#app');
 </script>
 </body>

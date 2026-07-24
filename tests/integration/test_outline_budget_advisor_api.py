@@ -63,5 +63,8 @@ def test_frontend_advice_is_applied_only_by_explicit_action():
     assert "showOutlineBudgetModal.value = true" in request_block
     assert "篇幅与事件结构建议" in template
     assert "outlineBudgetAdviceItems" in source
+    assert "人物归属" in template
+    assert 'v-model="event.actors"' in template
+    assert "否则不会出现在“弧线”审阅中" in template
     assert "确认事件结构并保存大纲" in template
     assert "确认事件结构不会应用推荐字数" in template

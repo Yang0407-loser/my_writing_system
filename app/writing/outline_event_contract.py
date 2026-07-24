@@ -465,6 +465,11 @@ class OutlineEventContractCompiler:
             if choice and str(choice.get("text_hash", "")) == event.text_hash:
                 requiredness = str(choice.get("requiredness", "unspecified"))
                 temporal_scope = str(choice.get("temporal_scope", event.temporal_scope))
+                submitted_actors = tuple(_unique(
+                    str(actor).strip()
+                    for actor in choice.get("actors", [])
+                    if str(actor).strip()
+                ))
                 chosen_id = str(choice.get("event_id") or event.event_id)
                 if chosen_id in used_event_ids:
                     chosen_id = (
@@ -479,6 +484,7 @@ class OutlineEventContractCompiler:
                     "event_id": chosen_id,
                     "requiredness": requiredness,
                     "temporal_scope": temporal_scope,
+                    "actors": submitted_actors or event.actors,
                     "status": "confirmed",
                     "user_confirmed": True,
                     "confidence": "high",

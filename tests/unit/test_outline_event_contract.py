@@ -99,6 +99,24 @@ def test_interaction_chain_and_mixed_time_are_preserved_without_actor_guessing()
     assert events[0].actors == ("林晚", "周野")
 
 
+def test_author_can_bind_pronoun_event_to_an_explicit_character_on_confirmation():
+    sub = _sub(key_points=["林晚收到驳回邮件", "她决定辞职"])
+    compiler = OutlineEventContractCompiler()
+    proposed = _chapter([sub]).subsection_contracts[0].model_dump(mode="json")
+    assert proposed["events"][1]["actors"] == []
+    proposed["status"] = "confirmed"
+    proposed["events"][1]["actors"] = ["林晚"]
+    confirmed = compiler.confirm_submission(
+        section=1,
+        subsection=1,
+        sub=sub,
+        submitted=proposed,
+    )
+    assert confirmed.events[1].actors == ("林晚",)
+    assert confirmed.events[1].status == "confirmed"
+    assert confirmed.events[1].user_confirmed is True
+
+
 def test_next_subsection_events_are_deferred_and_stop_is_not_inferred():
     current = _sub()
     next_sub = _sub(
