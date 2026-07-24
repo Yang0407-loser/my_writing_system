@@ -2,7 +2,7 @@
 
 日期：2026-07-24
 
-状态：工程贯通完成，真实 shadow 样本仍为 0
+状态：工程贯通成功；真实 shadow 已完成，Validator 不晋级
 
 生产默认：SceneSpec `off`，BoundaryValidator shadow `false`
 
@@ -58,25 +58,52 @@ R5 冻结预测原始字节 hash 保持：
 - 定向 unit/integration/quality：51 passed
 - 受影响模块 compileall：passed
 - 实现期间 Writer/LLM 调用：0
-- 真实生成正文：0
+- 工程实现阶段真实生成正文：0
 - 完整正文、SceneSpec rendered、Prompt/messages、数据库或密钥写入公开报告：0
 
-## 唯一后续入口
+## 唯一真实 shadow 结果
 
-只允许在专用 CMD worker 上运行一个自然真实写作任务：
+真实任务：`c3fd7953-acfd-4dca-9ee8-f9a907680e23`
 
-```cmd
-set WRITER_EXECUTION_CONTRACT_MODE=off
-set WRITER_SCENE_SPEC_MODE=shadow
-set WRITER_BOUNDARY_VALIDATOR_SHADOW=true
-set WRITER_INCREMENTAL_SECTION_REVIEW=false
-set WRITER_CONDENSE_MODE=warn
-uv run celery -A app.celery_app worker --loglevel=info -P solo -Q writing
-```
+- 任务状态：`completed`
+- 小节数：4
+- SceneSpec 构建：4/4，均为 shadow、未注入 Writer、无 fallback
+- Validator 记录：4/4
+- `scene_spec_delivery=explicit_artifact`：4/4
+- SceneSpec hash 与对应 Validator 记录一致：4/4
+- `scene_spec_provider_unavailable`：0
+- shadow error：0
+- Writer 正文主调用：4
+- Mandatory Event 实际重试：0
+- Validator 引入的 Writer/LLM 调用：0
+- `production_effect=false`：4/4
+- 正文、checkpoint、final review 与任务完成链正常
 
-该配置下 SceneSpec 只构建、不注入 Writer；Validator 读取同一 typed 工件，且不能改变正文或任务结果。任务结束后必须立即停止并按真实警告价值判断，不得用旧 Q4/Q6/Q7/Q8 样本重算指标，也不得追加 Repair、阻断或自动重写。
+检测结果为 2 pass、1 fail、1 skipped。唯一 `fail` 位于第 1.2 小节，规则
+`boundary:q08:current_photograph` 将“林晚按下快门”判为边界后事件。但该小节
+outline 明确要求第三个周六拍到周野揉面的背影；下一小节目标是退出店外并完成
+记录草稿。因此“按下快门”属于当前小节必须完成的事件，不是越界。这是一条
+已确认误报，根因是 R5/Q8 场景特化的固定规则被用于一般 `future_boundary`
+SceneSpec。
 
-恢复默认：
+另外两条 `pass` 的 `required_event_results` 均为空，不能证明 planned event
+检测有效；末小节因 `no_executable_deterministic_rules` 跳过。这个自然任务没有
+产生用户可确认有用的 Validator 问题。
+
+## Go/No-Go
+
+根据既定规则选择 No-Go：
+
+- 工件传递修复真实通过，可以保留为工程资产。
+- BoundaryValidator V1 生产路线关闭，继续默认关闭。
+- 不扩大关键词、阈值或场景矩阵追逐该样本。
+- 不实现非阻断 UI 警告、Repair、阻断或自动重写。
+- 若未来重启 Validator，必须先用通用 typed event/boundary 契约替代 Q4/Q7/Q8
+  场景特化规则，并作为新的独立方向重新授权。
+
+## 默认配置
+
+关闭专用 worker 后恢复：
 
 ```cmd
 set WRITER_SCENE_SPEC_MODE=off

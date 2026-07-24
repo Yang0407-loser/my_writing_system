@@ -1,7 +1,7 @@
 {
   "schema_version": "scene-spec-boundary-validator-artifact-handoff-v1",
   "date": "2026-07-24",
-  "status": "engineering_handoff_complete_real_shadow_pending",
+  "status": "real_shadow_complete_validator_not_promoted",
   "root_cause": "typed_scene_spec_was_discarded_after_prompt_application_and_the_post_commit_runner_had_no_production_provider",
   "handoff": {
     "artifact": "same_typed_scene_spec",
@@ -45,10 +45,39 @@
     "targeted_tests_passed": 51,
     "targeted_tests_failed": 0,
     "compileall": "passed",
-    "real_writer_calls": 0,
-    "real_validator_samples": 0
+    "real_writer_calls_during_implementation": 0,
+    "real_shadow_task": {
+      "task_id": "c3fd7953-acfd-4dca-9ee8-f9a907680e23",
+      "status": "completed",
+      "subsections": 4,
+      "scene_spec_builds": 4,
+      "validator_records": 4,
+      "explicit_artifact_records": 4,
+      "provider_unavailable": 0,
+      "shadow_errors": 0,
+      "writer_main_calls": 4,
+      "mandatory_event_retries": 0,
+      "validator_llm_calls": 0,
+      "production_effect_records": 0,
+      "validation_statuses": {
+        "pass": 2,
+        "fail": 1,
+        "skipped": 1
+      },
+      "confirmed_useful_warnings": 0,
+      "confirmed_false_positives": 1,
+      "false_positive_rule": "boundary:q08:current_photograph",
+      "false_positive_reason": "the photographed back was explicitly required by the current subsection rather than being a future-boundary event",
+      "skip_reason": "no_executable_deterministic_rules"
+    }
   },
-  "next_step": "one_natural_real_shadow_task_only",
+  "decision": {
+    "artifact_handoff": "passed",
+    "boundary_validator_v1": "not_promoted",
+    "production_default": "off",
+    "reason": "the only emitted warning was a confirmed false positive from a q08-specific rule applied to a general future-boundary SceneSpec"
+  },
+  "next_step": "close_boundary_validator_production_route",
   "not_authorized": [
     "repair",
     "blocking",
