@@ -2,6 +2,7 @@
 
 import json
 import os
+import sqlite3
 import uuid
 from pathlib import Path
 
@@ -106,6 +107,25 @@ def list_relations(task_id: str = "") -> list[dict]:
             "SELECT * FROM character_relations WHERE task_id = ? ORDER BY intensity DESC",
             (task_id,)).fetchall()
         return [_row_to_dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def list_relations_read_only(task_id: str = "") -> list[dict]:
+    """Read existing relations without schema initialization or any write."""
+    if not task_id or not Path(DB_PATH).exists():
+        return []
+    db_uri = f"file:{Path(DB_PATH).resolve().as_posix()}?mode=ro"
+    conn = sqlite3.connect(db_uri, uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT * FROM character_relations WHERE task_id = ? ORDER BY intensity DESC",
+            (task_id,),
+        ).fetchall()
+        return [_row_to_dict(row) for row in rows]
+    except sqlite3.OperationalError:
+        return []
     finally:
         conn.close()
 

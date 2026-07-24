@@ -129,6 +129,28 @@ def list_foreshadowings(task_id: str = "") -> list[dict]:
         conn.close()
 
 
+def list_foreshadowings_read_only(task_id: str = "") -> list[dict]:
+    """Read existing foreshadowings without schema initialization or writes."""
+    if not task_id or not Path(FORESHADOWING_DB_PATH).exists():
+        return []
+    db_uri = f"file:{Path(FORESHADOWING_DB_PATH).resolve().as_posix()}?mode=ro"
+    conn = sqlite3.connect(db_uri, uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT * FROM foreshadowings WHERE task_id = ? ORDER BY plant_chapter ASC",
+            (task_id,),
+        ).fetchall()
+        return [
+            _row_to_dict(row, track_invalid_resolve_chapter=True)
+            for row in rows
+        ]
+    except sqlite3.OperationalError:
+        return []
+    finally:
+        conn.close()
+
+
 def get_foreshadowing(fs_id: str) -> dict | None:
     conn = _get_conn()
     try:

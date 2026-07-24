@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from .routers import pages, tasks, generate, style, characters, history, analysis
-from .routers import rules, foreshadowings, cards, dialogue, experience, items, subplots, ai_detect, map, outline, factions, character_relations
+from .routers import rules, foreshadowings, cards, dialogue, experience, items, subplots, ai_detect, map, outline, factions, character_relations, state_frames
 
 
 @asynccontextmanager
@@ -60,3 +60,4 @@ app.include_router(map.router)
 app.include_router(outline.router, prefix="/tasks")
 app.include_router(factions.router)
 app.include_router(character_relations.router)
+app.include_router(state_frames.router)
