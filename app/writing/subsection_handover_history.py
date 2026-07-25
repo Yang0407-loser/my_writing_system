@@ -86,6 +86,13 @@ class HandoverExtractionObservation(BaseModel):
     error_type: str | None = None
     skip_reason: str | None = None
     producer_version: str = HANDOVER_PRODUCER_VERSION
+    contract_version: str | None = None
+    typed_contract_hash: str | None = None
+    accepted_claim_count: int | None = Field(default=None, ge=0)
+    rejected_claim_count: int | None = Field(default=None, ge=0)
+    rejection_counts: dict[str, int] | None = None
+    next_boundary_hash: str | None = None
+    source_manifest: tuple[dict[str, str], ...] | None = None
 
 
 class HandoverFieldArtifact(BaseModel):
@@ -123,6 +130,13 @@ class SubsectionHandoverRecord(BaseModel):
     created_at: str
     persistence_status: PersistenceStatus = "finalized"
     production_effect: bool = False
+    contract_version: str | None = None
+    typed_contract_hash: str | None = None
+    accepted_claim_count: int | None = Field(default=None, ge=0)
+    rejected_claim_count: int | None = Field(default=None, ge=0)
+    rejection_counts: dict[str, int] | None = None
+    next_boundary_hash: str | None = None
+    source_manifest: tuple[dict[str, str], ...] | None = None
 
 
 class SubsectionHandoverHistoryEnvelope(BaseModel):

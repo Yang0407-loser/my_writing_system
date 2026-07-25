@@ -228,6 +228,13 @@ class SubsectionHandoverHistoryRecorder:
                 producer_version=observation.producer_version,
                 error_type=observation.error_type,
                 skip_reason=observation.skip_reason,
+                contract_version=observation.contract_version,
+                typed_contract_hash=observation.typed_contract_hash,
+                accepted_claim_count=observation.accepted_claim_count,
+                rejected_claim_count=observation.rejected_claim_count,
+                rejection_counts=observation.rejection_counts,
+                next_boundary_hash=observation.next_boundary_hash,
+                source_manifest=observation.source_manifest,
                 created_at=utc_now(),
             )
             records = dict(envelope.records)

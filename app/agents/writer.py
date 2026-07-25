@@ -12,6 +12,7 @@ from .context_manager import ContextManager
 from ..utils.prompt_templates import (
     TARGETED_REVISE_PROMPT,
     HANDOVER_EXTRACTION_PROMPT,
+    HANDOVER_EXTRACTION_PROMPT_V2,
 )
 from ..utils.word_counter import count_chinese_chars
 from ..utils.style_brief import StyleSummarizer
@@ -48,6 +49,14 @@ from ..writing.subsection_handover_history import (
 )
 from ..writing.subsection_handover_persistence import (
     SubsectionHandoverHistoryRecorder,
+)
+from ..writing.handover_contract_v2 import (
+    HandoverContractValidatorV2,
+    adapt_v2_to_legacy_handover_note,
+    build_handover_sources,
+    compile_next_boundary,
+    render_v2_prompt_context,
+    sha256_json as sha256_handover_json,
 )
 
 logger = logging.getLogger("writing_system.writer")
@@ -899,6 +908,20 @@ class Writer(BaseAgent):
                         sub_num,
                         character_context=character_context,
                         event_graph=event_graph,
+                        current_subsection=sub,
+                        next_subsection=(
+                            next(
+                                (
+                                    item
+                                    for item in subsections
+                                    if int(item.get("subsection", 0))
+                                    == sub_num + 1
+                                ),
+                                None,
+                            )
+                            if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2"
+                            else None
+                        ),
                     )
                 )
                 backref = handover_note.get("found_contradictions", "") if handover_note else ""
@@ -1774,7 +1797,9 @@ class Writer(BaseAgent):
 
     def _extract_handover(self, section_text: str, section_num: int, sub_num: int = 0,
                           character_context: str = "",
-                          event_graph: EventGraph | None = None) -> dict | None:
+                          event_graph: EventGraph | None = None,
+                          current_subsection: dict | None = None,
+                          next_subsection: dict | None = None) -> dict | None:
         """独立 LLM 调用：从纯正文中提取交接信息（伏笔/人物状态/待承接/事实/事件回收）。
 
         v3: 替代 _parse_output() 的正则切分。Writer 输出纯正文，此方法做结构化提取。
@@ -1785,6 +1810,8 @@ class Writer(BaseAgent):
             sub_num,
             character_context=character_context,
             event_graph=event_graph,
+            current_subsection=current_subsection,
+            next_subsection=next_subsection,
         )
         return note
 
@@ -1795,8 +1822,19 @@ class Writer(BaseAgent):
         sub_num: int = 0,
         character_context: str = "",
         event_graph: EventGraph | None = None,
+        current_subsection: dict | None = None,
+        next_subsection: dict | None = None,
     ) -> tuple[dict | None, HandoverExtractionObservation]:
-        """Run the legacy extraction once and expose fail-safe execution status."""
+        """Run the configured extraction once and expose fail-safe status."""
+        if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2":
+            return self._extract_handover_v2_with_observation(
+                section_text=section_text,
+                section_num=section_num,
+                sub_num=sub_num,
+                event_graph=event_graph,
+                current_subsection=current_subsection,
+                next_subsection=next_subsection,
+            )
         open_threads_str = "（无）"
         if event_graph:
             arc_events = event_graph.get_arc_events(section_num, sub_num)
@@ -1830,6 +1868,105 @@ class Writer(BaseAgent):
                 executed=True,
                 execution_status="error",
                 error_type=type(error).__name__,
+            )
+
+    def _extract_handover_v2_with_observation(
+        self,
+        *,
+        section_text: str,
+        section_num: int,
+        sub_num: int,
+        event_graph: EventGraph | None,
+        current_subsection: dict | None,
+        next_subsection: dict | None,
+    ) -> tuple[dict | None, HandoverExtractionObservation]:
+        """Run one V2 extraction and adapt only validated claims for V1 consumers."""
+        arc_events = (
+            event_graph.get_arc_events(section_num, sub_num)
+            if event_graph is not None
+            else []
+        )
+        current_outline = dict(current_subsection or {})
+        current_outline["_section"] = section_num
+        following_outline = (
+            dict(next_subsection) if isinstance(next_subsection, dict) else None
+        )
+        if following_outline is not None:
+            following_outline["_section"] = section_num
+        sources = build_handover_sources(
+            section=section_num,
+            subsection=sub_num,
+            generated_text=section_text,
+            current_outline=current_outline,
+            next_outline=following_outline,
+            arc_milestones=arc_events,
+        )
+        boundary = compile_next_boundary(
+            section=section_num,
+            subsection=sub_num,
+            current_outline=current_outline,
+            next_outline=following_outline,
+        )
+        prompt = HANDOVER_EXTRACTION_PROMPT_V2.format(
+            **render_v2_prompt_context(sources, boundary)
+        )
+        try:
+            response = self.llm.chat_completion(
+                [
+                    {
+                        "role": "system",
+                        "content": "你是文学事实提取助手。只输出带精确来源证据的 JSON。",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=600,
+                json_mode=True,
+            )
+            payload = parse_json(response)
+            if not isinstance(payload, dict):
+                raise ValueError("InvalidHandoverPayload")
+            validation = HandoverContractValidatorV2().validate(
+                payload,
+                sources=sources,
+                next_boundary=boundary,
+            )
+            note = adapt_v2_to_legacy_handover_note(validation)
+            observation = observation_from_note(note).model_copy(
+                update={
+                    "producer_version": "writer-handover-contract-v2",
+                    "contract_version": "v2",
+                    "typed_contract_hash": validation.contract.contract_hash,
+                    "accepted_claim_count": validation.accepted_claim_count,
+                    "rejected_claim_count": validation.rejected_claim_count,
+                    "rejection_counts": validation.rejection_counts,
+                    "next_boundary_hash": sha256_handover_json(
+                        boundary.model_dump(mode="json")
+                    ),
+                    "source_manifest": tuple(
+                        source.public_manifest() for source in sources.values()
+                    ),
+                }
+            )
+            return note, observation
+        except Exception as error:
+            logger.warning(
+                "V2 handover extraction failed (S%s.%s); preserving fail-open behavior",
+                section_num,
+                sub_num,
+            )
+            return None, HandoverExtractionObservation(
+                executed=True,
+                execution_status="error",
+                error_type=type(error).__name__,
+                producer_version="writer-handover-contract-v2",
+                contract_version="v2",
+                next_boundary_hash=sha256_handover_json(
+                    boundary.model_dump(mode="json")
+                ),
+                source_manifest=tuple(
+                    source.public_manifest() for source in sources.values()
+                ),
             )
 
     def _parse_backrefs(self, text: str, from_section: int) -> list[dict]:

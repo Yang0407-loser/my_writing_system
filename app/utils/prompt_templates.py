@@ -275,6 +275,79 @@ HANDOVER_EXTRACTION_PROMPT = """你是一位文学分析助手。请从以下正
   "arc_progress": {{"character_id": "done|deviated|pending"}}
 }}"""
 
+HANDOVER_EXTRACTION_PROMPT_V2 = """你是一位文学事实提取助手。只提取有精确来源证据的内容，不进行文学解释或心理推断。
+
+## 当前小节正文（最多前 3000 字）
+来源：{generated_source}
+{section_text}
+
+## 当前小节大纲
+来源：{current_outline_source}
+{current_outline}
+
+## 下一小节大纲
+来源：{next_outline_source}
+{next_outline}
+
+## 可用角色弧里程碑来源
+{arc_sources}
+
+## 代码已确定性编译的下一场景边界（只供理解，不要改写）
+{compiled_boundary}
+
+请只输出 JSON：
+{{
+  "claims": [
+    {{
+      "claim_id": "稳定ID",
+      "category": "time_state|location_state|character_state|relationship_state|known_fact|object_or_resource_state|foreshadow_state",
+      "subject": "证据中明确出现的主体",
+      "predicate": "证据中明确出现的动作或状态",
+      "object": "证据中明确出现的对象，可为空",
+      "temporal_status": "current|past|planned|conditional|unknown",
+      "certainty": "confirmed|explicit_unknown",
+      "evidence": [{{
+        "source_type": "generated_subsection|current_outline|next_outline|arc_milestone",
+        "source_id": "上方提供的来源ID",
+        "source_hash": "上方提供的来源hash",
+        "start": 0,
+        "end": 1,
+        "excerpt": "必须与来源[start:end]逐字一致，最长140字"
+      }}],
+      "claim_hash": "",
+      "provenance": "handover_extractor_v2"
+    }}
+  ],
+  "open_events": [
+    {{
+      "event_id": "稳定ID",
+      "actors": ["人物"],
+      "action": "尚未完成的动作",
+      "object": "对象",
+      "completion_status": "open|partially_completed|completed|unknown",
+      "evidence": [],
+      "source_hash": "正文来源hash"
+    }}
+  ],
+  "arc_progress": [
+    {{
+      "character_id": "人物ID",
+      "event_id": "里程碑event ID",
+      "completion_status": "completed|partially_completed|unknown",
+      "milestone_source_id": "里程碑来源ID",
+      "milestone_source_hash": "里程碑来源hash",
+      "evidence": []
+    }}
+  ]
+}}
+
+规则：
+- 只写小节结束时仍成立的状态、本小节明确发生的新事实、尚未完成事件和明确 unknown。
+- 停顿、观察、递水或动作变化只能记录可观察动作，不能推导“内心触动、理解加深、产生好奇”等心理结论。
+- 计划、回忆、条件、否定或推测不得写成已完成事实。
+- 已完成事件不得作为 open_event；没有可追溯里程碑来源不得输出 arc_progress。
+- 不要输出 next boundary；它由代码根据大纲确定性生成。"""
+
 # ----------------------------------------------------------------
 # 交接 JSON → 自然语言简报（对标风格简报的二次 LLM 翻译模式）
 # [v0.9.1] 解决"结构化 JSON 对 LLM 生成无效"在交接笔记链的同款问题

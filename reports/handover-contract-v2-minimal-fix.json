@@ -1,0 +1,135 @@
+{
+  "report_id": "handover-contract-v2-minimal-fix",
+  "date": "2026-07-25",
+  "status": "engineering_gate_pending_remaining_verification",
+  "scope": {
+    "writer_or_external_llm_calls": 0,
+    "draft_regenerated": false,
+    "real_demo_run": false,
+    "production_writer_prompt_changed": false
+  },
+  "existing_chain_audit": {
+    "prompt_definition": "app/utils/prompt_templates.py:HANDOVER_EXTRACTION_PROMPT",
+    "producer": "Writer._extract_handover_with_observation",
+    "input_text_limit_characters": 3000,
+    "legacy_fields": [
+      "foreshadowing",
+      "character_state",
+      "open_threads",
+      "new_facts",
+      "found_contradictions",
+      "arc_progress"
+    ],
+    "new_facts_consumer": "StateCommitter.commit_handover_effects -> WorldStateManager.add_fact",
+    "arc_progress_consumer": "StateCommitter.commit_handover_effects -> EventGraph.update_arc_status",
+    "found_contradictions_consumer": "backref_suggestions and handover aggregation",
+    "section_aggregation": "section_handover_parts -> handover_chain at section end",
+    "same_section_next_subsection_injection": false,
+    "legacy_calls_per_subsection": 1
+  },
+  "configuration": {
+    "name": "WRITER_HANDOVER_CONTRACT_VERSION",
+    "allowed": ["v1", "v2"],
+    "default": "v1",
+    "invalid_fallback": "v1",
+    "env_modified": false,
+    "task_whitelist_added": false
+  },
+  "typed_contract": {
+    "version": "handover-contract-v2",
+    "models": [
+      "HandoverEvidence",
+      "HandoverClaim",
+      "HandoverEndState",
+      "HandoverOpenEvent",
+      "HandoverNextBoundary",
+      "HandoverArcProgress",
+      "HandoverContractV2",
+      "HandoverValidationResult"
+    ],
+    "evidence_excerpt_limit": 140,
+    "allowed_certainty": ["confirmed", "explicit_unknown"],
+    "inferred_certainty_supported": false
+  },
+  "validation": {
+    "source_hash_span_required": true,
+    "invalid_claim_local_drop": true,
+    "whole_handover_fails_on_one_bad_claim": false,
+    "unsupported_psychology_guard": "evidence-backed components plus high-risk interpretation rejection",
+    "stale_completed_event_guard": true,
+    "arc_requires_event_and_milestone_source": true,
+    "writer_retry_triggered": false
+  },
+  "next_boundary": {
+    "producer": "deterministic_outline_compilation",
+    "allowed_sources": ["current_outline", "next_outline"],
+    "next_generated_draft_used": false,
+    "conflicts_record_only": true,
+    "auto_repair": false,
+    "section_end_explicit": true
+  },
+  "legacy_adapter": {
+    "returns_plain_legacy_note": true,
+    "rejected_claims_exposed": false,
+    "new_facts_confirmed_only": true,
+    "open_threads_open_or_partial_only": true,
+    "arc_progress_with_source_only": true,
+    "legacy_consumers_modified": false
+  },
+  "compatibility": {
+    "v1_prompt_changed": false,
+    "v1_return_shape_changed": false,
+    "v1_call_count_changed": false,
+    "v1_side_effects_changed": false,
+    "old_records_loadable": true,
+    "database_schema_changed": false,
+    "checkpoint_order_changed": false
+  },
+  "fixed_negative_regression": {
+    "mode": "sealed_v1_failure_category_regression",
+    "v1_output_reinterpreted_as_v2": false,
+    "unsupported_psychology_known": 3,
+    "unsupported_psychology_blocked_by_v2_policy": 3,
+    "stale_new_fact_known": 1,
+    "stale_new_fact_blocked_by_v2_policy": 1,
+    "unsourced_arc_pending_known": 15,
+    "unsourced_arc_pending_blocked_by_v2_policy": 15,
+    "outline_boundaries_required": 4,
+    "outline_boundaries_built": 4,
+    "known_boundary_conflicts_recorded": 2,
+    "claim_precision_claimed": false
+  },
+  "model_calls": {
+    "v1_per_subsection": 1,
+    "v2_per_subsection_max": 1,
+    "new_calls": 0,
+    "writer_calls_during_implementation": 0
+  },
+  "persistence": {
+    "optional_v2_fields_only": true,
+    "blackboard_checkpoint_taskstore_mirror_preserved": true,
+    "historical_records_rewritten": false,
+    "production_effect": false
+  },
+  "verification": {
+    "targeted_tests_passed": 32,
+    "targeted_tests_failed": 0,
+    "compileall": "not_run_execution_quota_blocked",
+    "additional_writer_compatibility_tests": "not_run_execution_quota_blocked",
+    "historical_phase_3_4_matrix_run": false
+  },
+  "privacy": {
+    "full_draft_in_report": false,
+    "full_handover_in_report": false,
+    "prompt_or_messages_in_report": false,
+    "database_or_chroma_in_report": false,
+    "runtime_committed": false,
+    "max_public_excerpt_characters": 0
+  },
+  "decision": {
+    "production_promoted": false,
+    "real_generation_quality_claimed": false,
+    "next_step": "stop_for_minimal_fix",
+    "one_real_v2_demo_authorized": false
+  }
+}

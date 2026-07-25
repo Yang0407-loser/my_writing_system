@@ -104,6 +104,14 @@ class Settings:
     CHARACTER_ARC_CONTRACT_VERSION: str = os.getenv(
         "CHARACTER_ARC_CONTRACT_VERSION", "v1"
     ).strip().lower()
+    WRITER_HANDOVER_CONTRACT_VERSION_RAW: str = os.getenv(
+        "WRITER_HANDOVER_CONTRACT_VERSION", "v1"
+    ).strip().lower()
+    WRITER_HANDOVER_CONTRACT_VERSION: str = (
+        WRITER_HANDOVER_CONTRACT_VERSION_RAW
+        if WRITER_HANDOVER_CONTRACT_VERSION_RAW in {"v1", "v2"}
+        else "v1"
+    )
 
     # --- Coordinator tuning ---
     WORLD_STATE_EXTRACT_CHARS: int = int(os.getenv("WORLD_STATE_EXTRACT_CHARS", "3000"))
@@ -182,6 +190,12 @@ class Settings:
             warnings.append(
                 f"CHARACTER_ARC_CONTRACT_VERSION={self.CHARACTER_ARC_CONTRACT_VERSION} "
                 "无效，按 v1 处理；应为 v1/v2"
+            )
+        if self.WRITER_HANDOVER_CONTRACT_VERSION_RAW not in {"v1", "v2"}:
+            warnings.append(
+                "WRITER_HANDOVER_CONTRACT_VERSION="
+                f"{self.WRITER_HANDOVER_CONTRACT_VERSION_RAW} invalid; "
+                "using v1 (expected v1/v2)"
             )
         return warnings
 
