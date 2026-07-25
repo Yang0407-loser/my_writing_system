@@ -30,16 +30,14 @@ def test_fixed_negative_regression_blocks_known_failure_categories():
 
 def test_report_keeps_v1_default_and_limits_next_step():
     report = _report()
-    assert report["status"] == "engineering_gate_pending_remaining_verification"
+    assert report["status"] == "engineering_gate_passed_real_demo_authorized"
     assert report["configuration"]["default"] == "v1"
     assert report["compatibility"]["v1_prompt_changed"] is False
     assert report["compatibility"]["v1_side_effects_changed"] is False
     assert report["model_calls"]["new_calls"] == 0
     assert report["decision"]["production_promoted"] is False
-    assert report["decision"]["next_step"] in {
-        "run_one_real_v2_demo",
-        "stop_for_minimal_fix",
-    }
+    assert report["decision"]["next_step"] == "run_one_real_v2_demo"
+    assert report["decision"]["one_real_v2_demo_authorized"] is True
 
 
 def test_app_does_not_import_tests_or_private_runtime():

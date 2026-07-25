@@ -1,7 +1,7 @@
 {
   "report_id": "handover-contract-v2-minimal-fix",
   "date": "2026-07-25",
-  "status": "engineering_gate_pending_remaining_verification",
+  "status": "engineering_gate_passed_real_demo_authorized",
   "scope": {
     "writer_or_external_llm_calls": 0,
     "draft_regenerated": false,
@@ -112,10 +112,10 @@
     "production_effect": false
   },
   "verification": {
-    "targeted_tests_passed": 32,
+    "targeted_tests_passed": 69,
     "targeted_tests_failed": 0,
-    "compileall": "not_run_execution_quota_blocked",
-    "additional_writer_compatibility_tests": "not_run_execution_quota_blocked",
+    "compileall": "passed",
+    "additional_writer_compatibility_tests": "37_passed",
     "historical_phase_3_4_matrix_run": false
   },
   "privacy": {
@@ -129,7 +129,7 @@
   "decision": {
     "production_promoted": false,
     "real_generation_quality_claimed": false,
-    "next_step": "stop_for_minimal_fix",
-    "one_real_v2_demo_authorized": false
+    "next_step": "run_one_real_v2_demo",
+    "one_real_v2_demo_authorized": true
   }
 }

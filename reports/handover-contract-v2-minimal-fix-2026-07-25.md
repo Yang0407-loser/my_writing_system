@@ -1,6 +1,6 @@
 # Subsection Handover Contract V2 最小修复
 
-状态：核心定向验证通过，剩余兼容测试与 compileall 因当前执行额度限制未运行；生产默认仍为 V1。
+状态：工程门槛通过；生产默认仍为 V1，仅允许另行执行一次真实四小节 V2 Demo。
 
 ## 现有链路
 
@@ -36,6 +36,6 @@ sealed V1 审计材料只用于验证已知失败类别被新契约拦截，不�
 
 ## 决策
 
-核心定向测试 32/32 通过，覆盖 V1 Prompt hash、V1/V2 单次调用、旧记录恢复、V2 证据校验、可选持久化字段和 sealed 负面回归。追加的 Writer 兼容测试与 compileall 因当前执行额度限制未获运行许可，未伪装为通过。
+核心定向测试 32/32 通过，覆盖 V1 Prompt hash、V1/V2 单次调用、旧记录恢复、V2 证据校验、可选持久化字段和 sealed 负面回归。补充 Writer pipeline、post-write extraction 与 Prompt 工程兼容测试 37/37 通过；受影响模块 `compileall` 通过。合计 69 项定向测试通过。
 
-因此当前仍停在 `engineering_gate_pending_remaining_verification`：暂不授权真实 Demo。补完剩余验证后，即使工程门槛通过，也只允许建议一次真实四小节 V2 Demo；在 Demo 完成前不得把 V2 设为默认。
+工程状态为 `engineering_gate_passed_real_demo_authorized`。下一步只允许按独立 CMD Worker 运行一次真实四小节 V2 Demo；在 Demo 完成前不得把 V2 设为默认，也不得自动启动其他下游优化。
