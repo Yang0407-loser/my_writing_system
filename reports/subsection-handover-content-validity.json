@@ -1,0 +1,258 @@
+{
+  "report_id": "subsection-handover-content-validity",
+  "date": "2026-07-25",
+  "mode": "one_real_task_three_stage_read_only_content_audit",
+  "status": "persistence_accepted_content_not_validated",
+  "task_id_hash": "b598440c9244433ac755e84a1a9f99ed352b7ff3062f09ffbe77acbe72e98870",
+  "task_status": "completed",
+  "scope": {
+    "handover_records": 4,
+    "transitions": 3,
+    "second_task_used": false,
+    "draft_regenerated": false,
+    "writer_or_external_model_calls": 0,
+    "production_code_modified": false
+  },
+  "stage_isolation": {
+    "stage_a_seal": "311cf098ce85547242847bfc5b44d05a802d20206821a2358e1db897e9a13c52",
+    "stage_b_seal": "6fa4743783b0c63585404bd1d6ecd36a72b2ecaca8f808512d434ff82d6859b9",
+    "stage_c_seal": "5337f05fbadedf43eeccd0176b057526db1d895e9f247b70a32249f107f3ffd5",
+    "stage_a_read_handover": false,
+    "stage_a_read_target_drafts": false,
+    "stage_b_read_target_drafts": false,
+    "stage_c_modified_prior_labels": false
+  },
+  "consumer_chain": {
+    "producer": "Writer._extract_handover_with_observation",
+    "local_storage": "section_handover_parts",
+    "durable_sidecar": "subsection_handover_history_v1",
+    "section_aggregate": "handover_chain",
+    "configured_injection_position": "handover_context in final user message",
+    "same_section_prev_handover_updated": false,
+    "sidecar_read_by_prompt_builder": false,
+    "sidecar_has_production_consumer": false,
+    "finding": "per-subsection handover is captured after each committed draft, but prev_handover is not updated inside the subsection loop; section_handover_parts is aggregated only after the section.",
+    "source_file": "app/agents/writer.py",
+    "source_hash": "60b2a3be48697f905591488275dd81d8a9238af2c78b2835c7ca9bd478eedaf0",
+    "transition_injection": [
+      {
+        "transition_id": "S1.1->S1.2",
+        "injected": false,
+        "injection_position": "handover_context_in_final_user_message",
+        "source_ids": [],
+        "messages_hash": "d2cd607ead263f0b2a55941905564fc3481633bfe50586ee8bdd2c36af41876d"
+      },
+      {
+        "transition_id": "S1.2->S1.3",
+        "injected": false,
+        "injection_position": "handover_context_in_final_user_message",
+        "source_ids": [],
+        "messages_hash": "546784c41912ca399a50c32d9c10450a85e6277b9131ea545ae9d050033d2dcd"
+      },
+      {
+        "transition_id": "S1.3->S1.4",
+        "injected": false,
+        "injection_position": "handover_context_in_final_user_message",
+        "source_ids": [],
+        "messages_hash": "4252b90bc45c85e10140534737c18532a8bc9dd49f40bad654dd5193c21635bb"
+      }
+    ]
+  },
+  "artifact_metrics": {
+    "records": 4,
+    "pending": 0,
+    "errors": 0,
+    "field_instances": 24,
+    "atomic_claims": 74,
+    "source_hash_traceability_rate": 1.0,
+    "evidence_span_traceability_rate": 1.0,
+    "assessable_source_evidence_traceability_rate": 1.0,
+    "boundary_leakage_count": 0
+  },
+  "faithfulness": {
+    "formula": "supported / (supported + partially_supported + unsupported)",
+    "assessable_claims": 44,
+    "strict_claim_precision": 0.7727272727272727,
+    "support_status_counts": {
+      "partially_supported": 7,
+      "ambiguous": 15,
+      "supported": 34,
+      "unverifiable": 15,
+      "unsupported": 3
+    },
+    "unsupported_invention_count": 3,
+    "stale_state_count": 1,
+    "field_misclassification_count": 1,
+    "attribution_counts": {
+      "partial_fact_extraction": 6,
+      "ambiguous_handover_wording": 15,
+      "faithful_supported": 34,
+      "historical_state_unavailable": 15,
+      "unsupported_invention": 3,
+      "stale_state": 1
+    },
+    "review_provenance": "codex_assisted_review",
+    "independent_human_gold_claimed": false
+  },
+  "carryover_coverage": {
+    "critical": {
+      "total": 9,
+      "covered": 4,
+      "partially_covered": 3,
+      "missing": 2,
+      "strict_recall": 0.4444444444444444,
+      "not_fully_covered_but_available_elsewhere": 5
+    },
+    "supporting": {
+      "total": 7,
+      "covered": 3,
+      "partially_covered": 1,
+      "missing": 3,
+      "strict_recall": 0.42857142857142855,
+      "not_fully_covered_but_available_elsewhere": 4
+    },
+    "optional": {
+      "total": 1,
+      "covered": 0,
+      "partially_covered": 1,
+      "missing": 0,
+      "strict_recall": 0.0,
+      "not_fully_covered_but_available_elsewhere": 1
+    }
+  },
+  "downstream_continuity": {
+    "correct_transitions": 1,
+    "continuity_error_count": 2,
+    "handover_conflict_count": 0,
+    "handover_correct_but_writer_not_execute_count": 0,
+    "wrong_handover_corrected_by_other_context_count": 0,
+    "downstream_correct_without_handover_count": 1,
+    "unattributable_to_handover_count": 2,
+    "public_evidence": [
+      {
+        "transition_id": "S1.1->S1.2",
+        "continuity_status": "correct",
+        "causal_attribution": "handover_not_consumed",
+        "evidence": [
+          {
+            "section": 1,
+            "subsection": 2,
+            "source_id": "subsection:S1.2:c87e480275a8bd6c5b93042063d8c2f22c472890e20e553064fae7ee967e4aa9",
+            "source_hash": "c87e480275a8bd6c5b93042063d8c2f22c472890e20e553064fae7ee967e4aa9",
+            "start": 0,
+            "end": 6,
+            "excerpt": "第一个周六。"
+          },
+          {
+            "section": 1,
+            "subsection": 2,
+            "source_id": "subsection:S1.2:c87e480275a8bd6c5b93042063d8c2f22c472890e20e553064fae7ee967e4aa9",
+            "source_hash": "c87e480275a8bd6c5b93042063d8c2f22c472890e20e553064fae7ee967e4aa9",
+            "start": 1318,
+            "end": 1324,
+            "excerpt": "第三个周六。"
+          }
+        ]
+      },
+      {
+        "transition_id": "S1.2->S1.3",
+        "continuity_status": "error",
+        "causal_attribution": "source_end_location_conflicts_with_target_outline;handover_not_consumed",
+        "evidence": [
+          {
+            "section": 1,
+            "subsection": 2,
+            "source_id": "subsection:S1.2:c87e480275a8bd6c5b93042063d8c2f22c472890e20e553064fae7ee967e4aa9",
+            "source_hash": "c87e480275a8bd6c5b93042063d8c2f22c472890e20e553064fae7ee967e4aa9",
+            "start": 1888,
+            "end": 1916,
+            "excerpt": "回到家，她把三张照片拖进「生活切片」。然后打开笔记本电脑"
+          },
+          {
+            "section": 1,
+            "subsection": 3,
+            "source_id": "subsection:S1.3:b2502ae390e154b7a845b2e53bcc439fdefc2a48410eb0dc3b339b4170bf82a4",
+            "source_hash": "b2502ae390e154b7a845b2e53bcc439fdefc2a48410eb0dc3b339b4170bf82a4",
+            "start": 24,
+            "end": 41,
+            "excerpt": "林晚站在门口，纸杯里的水已经凉了。"
+          }
+        ]
+      },
+      {
+        "transition_id": "S1.3->S1.4",
+        "continuity_status": "error",
+        "causal_attribution": "prior_scene_repeated_and_target_scene_boundary_not_executed;handover_not_consumed",
+        "evidence": [
+          {
+            "section": 1,
+            "subsection": 3,
+            "source_id": "subsection:S1.3:b2502ae390e154b7a845b2e53bcc439fdefc2a48410eb0dc3b339b4170bf82a4",
+            "source_hash": "b2502ae390e154b7a845b2e53bcc439fdefc2a48410eb0dc3b339b4170bf82a4",
+            "start": 1762,
+            "end": 1771,
+            "excerpt": "她沿着巷子往回走。"
+          },
+          {
+            "section": 1,
+            "subsection": 4,
+            "source_id": "subsection:S1.4:81462e0917cbeb2b9457f2354b166be88fa57458730c41d13ffa60451ef20b8f",
+            "source_hash": "81462e0917cbeb2b9457f2354b166be88fa57458730c41d13ffa60451ef20b8f",
+            "start": 32,
+            "end": 47,
+            "excerpt": "林晚坐在「野面包」门口的台阶上"
+          }
+        ]
+      }
+    ]
+  },
+  "utility": {
+    "misleading": 7,
+    "unassessable": 29,
+    "directly_useful": 19,
+    "redundant_but_correct": 14,
+    "unused_optional": 5
+  },
+  "quality_metric_boundary": {
+    "handover_continuity": "partially_assessable_native_artifact_not_quality_truth",
+    "production_causal_effect_assessable": false,
+    "unavailable_is_quality_failure": false,
+    "quality_truth_claimed": false
+  },
+  "acceptance_gates": {
+    "source_hash_traceability_100": true,
+    "evidence_span_traceability_100": true,
+    "unsupported_invention_zero": false,
+    "boundary_leakage_zero": true,
+    "stale_state_zero": false,
+    "critical_carryover_recall_100": false,
+    "strict_claim_precision_100": false,
+    "no_handover_caused_continuity_regression": true,
+    "conclusion_changing_ambiguities_resolved": true
+  },
+  "all_acceptance_gates_passed": false,
+  "targeted_human_review": {
+    "required": false,
+    "reason": "Confirmed unsupported inventions, stale state, incomplete critical carryover, and sub-100% precision already determine the decision; optimistic ambiguity resolution cannot pass."
+  },
+  "decision": {
+    "downstream_use_promoted": false,
+    "next_step": "one_minimal_handover_extractor_contract_fix_only",
+    "recommendation": "Constrain the extractor to evidence-backed end state, open event and next-boundary claims with source spans; exclude unsupported psychology and arc status without a traceable milestone source.",
+    "next_step_automatic": false
+  },
+  "privacy": {
+    "full_draft_in_report": false,
+    "full_handover_in_report": false,
+    "prompt_or_messages_in_report": false,
+    "database_or_redis_dump_in_report": false,
+    "secret_in_report": false,
+    "max_public_excerpt_characters": 28
+  },
+  "verification": {
+    "targeted_tests_passed": 11,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "historical_phase_3_4_matrix_run": false
+  }
+}
