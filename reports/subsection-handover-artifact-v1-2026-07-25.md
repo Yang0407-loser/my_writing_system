@@ -1,56 +1,70 @@
 # Subsection Handover Artifact V1
 
-状态：`engineering_complete_real_demo_pending`
+状态：`real_demo_accepted`
 
-## 根因
+## 根因与修复
 
-Writer 已经在每个小节完成后调用一次既有 handover extractor，但结果只进入进程内的 `section_handover_parts`。节尾汇总会把多个小节压成一条 `handover_chain`，因此 Blackboard、checkpoint 和 TaskStore 都无法恢复原生的小节边界。历史节级汇总不能可靠反推出各小节结果。
+Writer 原本会在每个小节完成后调用既有 handover extractor，但结果只进入进程内的 `section_handover_parts`。节尾汇总会把多个小节压成一条 `handover_chain`，Blackboard、checkpoint 和 TaskStore 因而无法恢复原生的小节边界。
 
-## 修复
-
-新增失败隔离的 `subsection_handover_history_v1` sidecar。正式记录严格位于：
+修复新增失败隔离的 `subsection_handover_history_v1` sidecar。正式记录顺序为：
 
 `commit_subsection` 成功 → 既有 post-commit observers → `StateFrame capture_after` → `SubsectionHandoverHistoryRecorder.capture_committed`
 
-工件随后继续执行既有节级 handover 汇总。未提交候选不会产生正式记录；sidecar 写入失败不会回滚正文、触发重试或改变任务状态。
+未提交候选不会产生正式记录；sidecar 写入失败不会回滚正文、触发 Writer 重试或改变任务状态。现有 handover Prompt、返回 note、节级汇总和生产消费者均保持不变。
 
-执行状态明确区分：
-
-- `completed_with_changes`
-- `completed_no_change`
-- `skipped`
-- `error`
-
-旧 `_extract_handover` 仍只返回原有 note 或 `None`。内部 observation 不改变 Prompt、调用参数、返回内容或异常 fallback。
-
-## 持久化与兼容性
+## 持久化与兼容
 
 - Blackboard：`subsection_handover_history_v1`
 - checkpoint：同名可选字段
 - TaskStore：`analysis_json.subsection_handover_history_v1`
-
-未新增数据库、表或列；未覆盖 `handover_chain`、`handover_notes`、`state_frame_history_v1` 或其他 analysis 字段。下一节 Writer、Review、伏笔协调、handover penetration 和前端继续消费原节级链，新工件本轮没有生产消费者。
-
-修复前任务不迁移、不重新提取，也不把节级汇总复制成小节记录；缺少原生 history 时明确返回 `historical_subsection_handover_unavailable`。
+- 未增加数据库、表或列
+- 历史任务不迁移，也不从节级汇总反推小节记录
+- 现有 `handover_chain` 继续作为生产消费者输入
+- 新工件当前没有 Writer 输入消费者，`production_effect=false`
 
 ## Synthetic 验收
 
-- 小节：4
 - commit 前正式记录：0
 - commit 后正式记录：4/4
 - pending：0
 - 重复 record ID：0
 - source/hash 追溯率：100%
-- Blackboard/checkpoint/TaskStore 镜像：通过
-- TaskStore 只读重启恢复：通过
+- Blackboard、checkpoint、TaskStore 镜像：通过
+- TaskStore 只读恢复：通过
 - legacy checkpoint projection：不变
-- 现有节级 `handover_chain`：不变
 - 新增 Writer/LLM 调用：0
 
-公开产物不包含 handover 文本、正文、Prompt/messages、数据库内容或密钥。
+## 真实四小节验收
+
+真实任务仅在公开报告中保存脱敏 task hash：
+
+`b598440c9244433ac755e84a1a9f99ed352b7ff3062f09ffbe77acbe72e98870`
+
+结果：
+
+- 任务状态：`completed`
+- 实际完成小节：4
+- Before/After 主流程没有被 Handover sidecar 改写
+- Handover records：4/4
+- `completed_with_changes`：4
+- pending：0
+- errors：0
+- 重复正式记录：0
+- Blackboard/checkpoint/TaskStore 三层内容完全一致
+- 每条 Handover `output_sha256` 与对应 StateFrame 输出 hash 一致
+- commit 幂等键仍为 `{task_id}:{section}:{subsection}`
+- TaskStore 只读回退：4/4，`reconstructed=false`
+- 原有节级 `handover_chain` 保留
+- 新增 Writer/LLM 调用：0
+
+任务完成后已重启 Celery Worker，且未重新提交写作任务。重启后再次只读查询，4 条 record ID、正文 hash、Prompt messages hash、handover note hash 和提交幂等键全部保持不变；没有产生重复记录。
+
+## 隐私
+
+公开产物不包含 Handover 字段值、完整正文、Prompt/messages、数据库内容、Chroma 内容、附件日志或密钥，只保存数量、状态和脱敏 hash。
 
 ## 决策
 
-工程门槛通过，只允许下一步运行一个真实四小节 Demo。真实 Demo 完成前不得宣称生产验收通过。本任务不授权 StateFrame 注入、SubsectionOutcomeBundle hook、PostWriteOrchestrator、Validator、Repair、Phase 5 或 Phase 6。
+Subsection Handover Artifact V1 的小节级持久化与重启恢复正式验收通过。
 
-真实验收说明见 `docs/subsection-handover-real-demo-acceptance.md`。
+该结论只证明工件可以按真实小节边界可靠保存和恢复，不证明 Handover 内容本身已经成为质量真值，也不授权 StateFrame/OutcomeBundle 注入、BoundaryValidator、Repair、Phase 5 或 Phase 6。

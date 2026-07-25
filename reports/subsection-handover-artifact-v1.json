@@ -1,7 +1,7 @@
 {
   "report_id": "subsection-handover-artifact-v1",
   "date": "2026-07-25",
-  "status": "engineering_complete_real_demo_pending",
+  "status": "real_demo_accepted",
   "baseline_commit": "a0132ce",
   "fixed_audit_task_id_hash_only": true,
   "root_cause": "Per-subsection handover results existed only in the in-memory section_handover_parts list and were collapsed into a section-level handover_chain entry before durable task history was saved.",
@@ -66,9 +66,28 @@
     "real_writer_or_llm_calls": 0
   },
   "real_demo": {
-    "executed": false,
-    "authorized_next_step": "one_real_four_subsection_demo_only",
-    "instructions": "docs/subsection-handover-real-demo-acceptance.md"
+    "executed": true,
+    "task_id_hash": "b598440c9244433ac755e84a1a9f99ed352b7ff3062f09ffbe77acbe72e98870",
+    "task_status": "completed",
+    "subsections": 4,
+    "records": 4,
+    "pending": 0,
+    "errors": 0,
+    "execution_statuses": {
+      "completed_with_changes": 4
+    },
+    "duplicate_record_ids": 0,
+    "source_hash_trace_rate": 1.0,
+    "blackboard_checkpoint_task_store_equal": true,
+    "task_store_read_only_recovery": true,
+    "worker_restarted_after_completion": true,
+    "restart_hashes_stable": true,
+    "commit_idempotency_keys_stable": true,
+    "state_frame_output_hashes_match": true,
+    "legacy_handover_chain_preserved": true,
+    "writer_or_llm_calls_added": 0,
+    "production_effect": false,
+    "decision": "persistence_accepted_no_writer_injection_authorized"
   },
   "out_of_scope": [
     "StateFrame injection",
