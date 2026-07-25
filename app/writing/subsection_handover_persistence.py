@@ -235,6 +235,14 @@ class SubsectionHandoverHistoryRecorder:
                 rejection_counts=observation.rejection_counts,
                 next_boundary_hash=observation.next_boundary_hash,
                 source_manifest=observation.source_manifest,
+                payload_version=observation.payload_version,
+                source_registry_hash=observation.source_registry_hash,
+                compact_payload_hash=observation.compact_payload_hash,
+                raw_output_tokens=observation.raw_output_tokens,
+                finish_reason=observation.finish_reason,
+                truncation_status=observation.truncation_status,
+                restored_claim_count=observation.restored_claim_count,
+                locally_rejected_claim_count=observation.locally_rejected_claim_count,
                 created_at=utc_now(),
             )
             records = dict(envelope.records)

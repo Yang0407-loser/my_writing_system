@@ -93,6 +93,14 @@ class HandoverExtractionObservation(BaseModel):
     rejection_counts: dict[str, int] | None = None
     next_boundary_hash: str | None = None
     source_manifest: tuple[dict[str, str], ...] | None = None
+    payload_version: str | None = None
+    source_registry_hash: str | None = None
+    compact_payload_hash: str | None = None
+    raw_output_tokens: int | None = Field(default=None, ge=0)
+    finish_reason: str | None = None
+    truncation_status: str | None = None
+    restored_claim_count: int | None = Field(default=None, ge=0)
+    locally_rejected_claim_count: int | None = Field(default=None, ge=0)
 
 
 class HandoverFieldArtifact(BaseModel):
@@ -137,6 +145,14 @@ class SubsectionHandoverRecord(BaseModel):
     rejection_counts: dict[str, int] | None = None
     next_boundary_hash: str | None = None
     source_manifest: tuple[dict[str, str], ...] | None = None
+    payload_version: str | None = None
+    source_registry_hash: str | None = None
+    compact_payload_hash: str | None = None
+    raw_output_tokens: int | None = Field(default=None, ge=0)
+    finish_reason: str | None = None
+    truncation_status: str | None = None
+    restored_claim_count: int | None = Field(default=None, ge=0)
+    locally_rejected_claim_count: int | None = Field(default=None, ge=0)
 
 
 class SubsectionHandoverHistoryEnvelope(BaseModel):

@@ -1,0 +1,133 @@
+{
+  "report_id": "handover-contract-v21-compact-output",
+  "date": "2026-07-25",
+  "status": "engineering_gate_passed_one_v21_demo_authorized",
+  "fixed_failure": {
+    "task_id": "cd830826-61b0-4840-b2a7-45cf807599e0",
+    "attribution": "model_output_truncated_before_json_parse",
+    "v2_finish_length_count": 4,
+    "v2_typed_contract_count": 0,
+    "validator_failure_claimed": false,
+    "content_quality_failure_claimed": false
+  },
+  "v2_output_cost": {
+    "estimator": "app.utils.llm_client.estimate_tokens",
+    "minimum": {"characters": 48, "estimated_tokens": 36},
+    "typical_representative": {"characters": 1743, "estimated_tokens": 1371},
+    "worst_representative": {"characters": 3844, "estimated_tokens": 3030},
+    "source_id_occurrences_worst": 9,
+    "source_hash_occurrences_worst": 14,
+    "evidence_excerpt_occurrences_worst": 9,
+    "long_named_enum_occurrences_worst": 27,
+    "next_boundary_output_tokens": 0,
+    "accepted_rejected_output_tokens": 0,
+    "compiled_boundary_repeated_in_input": true
+  },
+  "compact_schema": {
+    "version": "2.1",
+    "top_level_fields": ["v", "s", "o", "f", "a"],
+    "max_end_states": 4,
+    "max_open_events": 3,
+    "max_new_facts": 3,
+    "max_arc_progress": 2,
+    "max_semantic_text_characters": 16,
+    "claim_semantic_shape": "subject|predicate|object",
+    "open_event_semantic_shape": "actors|action|object",
+    "output_cap_tokens": 600
+  },
+  "removed_from_model_output": [
+    "source_id",
+    "source_hash",
+    "evidence_excerpt",
+    "full_milestone_object",
+    "next_boundary",
+    "validator_status",
+    "rejection_reason"
+  ],
+  "source_registry": {
+    "stable_order": [
+      "generated_subsection",
+      "current_outline",
+      "next_outline",
+      "arc_milestone_by_source_id"
+    ],
+    "zero_based_indexes": true,
+    "source_hash_exposed_to_model": false,
+    "source_id_and_hash_restored_locally": true,
+    "excerpt_restored_from_exact_span": true,
+    "invalid_item_local_drop": true,
+    "registry_text_persisted": false,
+    "fixed_v2_demo_input_tokens_actual": 9961,
+    "v21_real_input_tokens": null,
+    "input_cost_status": "not_measured_until_authorized_real_demo"
+  },
+  "capacity": {
+    "typical": {"characters": 148, "estimated_tokens": 127},
+    "worst_legal": {"characters": 452, "estimated_tokens": 444},
+    "wrapper_tokens": 29,
+    "output_cap_tokens": 600,
+    "worst_case_safety_margin_tokens": 156,
+    "typical_gate_passed": true,
+    "worst_gate_passed": true,
+    "safety_margin_gate_passed": true,
+    "first_24_character_design_tokens": 579,
+    "first_design_rejected": true
+  },
+  "compatibility": {
+    "default_version": "v1",
+    "v1_behavior_changed": false,
+    "v2_history_loadable": true,
+    "v2_validator_semantics_changed": false,
+    "legacy_adapter_semantics_changed": false,
+    "database_schema_changed": false,
+    "writer_prompt_changed": false,
+    "writer_retry_changed": false,
+    "handover_calls_per_subsection_max": 1,
+    "output_cap_increased": false
+  },
+  "fail_open": {
+    "finish_length_parsed": false,
+    "truncated_json_repaired": false,
+    "second_model_call": false,
+    "writer_retry": false,
+    "partial_handover_committed": false
+  },
+  "sealed_regression": {
+    "unsupported_psychology_known": 3,
+    "unsupported_psychology_blocked": 3,
+    "stale_fact_known": 1,
+    "stale_fact_blocked": 1,
+    "unsourced_arc_pending_known": 15,
+    "unsourced_arc_pending_blocked": 15,
+    "outline_boundaries_built": 4,
+    "known_boundary_conflicts_recorded": 2,
+    "generation_quality_claimed": false
+  },
+  "scope": {
+    "writer_or_external_llm_calls": 0,
+    "real_demo_run": false,
+    "draft_regenerated": false,
+    "stateframe_or_outcome_bundle_connected": false
+  },
+  "verification": {
+    "targeted_tests_passed": 60,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "historical_phase_3_4_matrix_run": false
+  },
+  "decision": {
+    "engineering_gate_passed": true,
+    "one_v21_real_demo_may_be_authorized": true,
+    "demo_automatically_started": false,
+    "production_promoted": false,
+    "default_remains_v1": true
+  },
+  "privacy": {
+    "full_draft_in_report": false,
+    "raw_model_output_in_report": false,
+    "prompt_or_messages_in_report": false,
+    "source_registry_text_in_report": false,
+    "database_or_chroma_in_report": false,
+    "attachment_log_committed": false
+  }
+}

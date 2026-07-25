@@ -13,6 +13,7 @@ from ..utils.prompt_templates import (
     TARGETED_REVISE_PROMPT,
     HANDOVER_EXTRACTION_PROMPT,
     HANDOVER_EXTRACTION_PROMPT_V2,
+    HANDOVER_EXTRACTION_PROMPT_V21,
 )
 from ..utils.word_counter import count_chinese_chars
 from ..utils.style_brief import StyleSummarizer
@@ -46,6 +47,7 @@ from ..writing.state_frame_persistence import StateFrameHistoryRecorder
 from ..writing.subsection_handover_history import (
     HandoverExtractionObservation,
     observation_from_note,
+    task_id_hash as handover_task_id_hash,
 )
 from ..writing.subsection_handover_persistence import (
     SubsectionHandoverHistoryRecorder,
@@ -58,6 +60,13 @@ from ..writing.handover_contract_v2 import (
     render_v2_prompt_context,
     sha256_json as sha256_handover_json,
 )
+from ..writing.handover_contract_v21 import (
+    HANDOVER_COMPACT_V21_MAX_OUTPUT_TOKENS,
+    build_compact_source_registry,
+    render_v21_prompt_context,
+    restore_and_validate_v21,
+)
+from ..utils.llm_client import estimate_tokens as estimate_llm_tokens
 
 logger = logging.getLogger("writing_system.writer")
 
@@ -919,9 +928,10 @@ class Writer(BaseAgent):
                                 ),
                                 None,
                             )
-                            if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2"
+                            if settings.WRITER_HANDOVER_CONTRACT_VERSION in {"v2", "v2.1"}
                             else None
                         ),
+                        task_id=task_id,
                     )
                 )
                 backref = handover_note.get("found_contradictions", "") if handover_note else ""
@@ -1824,8 +1834,19 @@ class Writer(BaseAgent):
         event_graph: EventGraph | None = None,
         current_subsection: dict | None = None,
         next_subsection: dict | None = None,
+        task_id: str = "",
     ) -> tuple[dict | None, HandoverExtractionObservation]:
         """Run the configured extraction once and expose fail-safe status."""
+        if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2.1":
+            return self._extract_handover_v21_with_observation(
+                section_text=section_text,
+                section_num=section_num,
+                sub_num=sub_num,
+                event_graph=event_graph,
+                current_subsection=current_subsection,
+                next_subsection=next_subsection,
+                task_id=task_id,
+            )
         if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2":
             return self._extract_handover_v2_with_observation(
                 section_text=section_text,
@@ -1870,6 +1891,197 @@ class Writer(BaseAgent):
                 error_type=type(error).__name__,
             )
 
+    def _extract_handover_v21_with_observation(
+        self,
+        *,
+        section_text: str,
+        section_num: int,
+        sub_num: int,
+        event_graph: EventGraph | None,
+        current_subsection: dict | None,
+        next_subsection: dict | None,
+        task_id: str = "",
+    ) -> tuple[dict | None, HandoverExtractionObservation]:
+        """Run one compact V2.1 extraction and restore authoritative V2 data."""
+        started = time.perf_counter()
+        arc_events = (
+            event_graph.get_arc_events(section_num, sub_num)
+            if event_graph is not None
+            else []
+        )
+        current_outline = dict(current_subsection or {})
+        current_outline["_section"] = section_num
+        following_outline = (
+            dict(next_subsection) if isinstance(next_subsection, dict) else None
+        )
+        if following_outline is not None:
+            following_outline["_section"] = section_num
+        sources = build_handover_sources(
+            section=section_num,
+            subsection=sub_num,
+            generated_text=section_text,
+            current_outline=current_outline,
+            next_outline=following_outline,
+            arc_milestones=arc_events,
+        )
+        registry = build_compact_source_registry(
+            sources, arc_milestones=arc_events
+        )
+        boundary = compile_next_boundary(
+            section=section_num,
+            subsection=sub_num,
+            current_outline=current_outline,
+            next_outline=following_outline,
+        )
+        prompt = HANDOVER_EXTRACTION_PROMPT_V21.format(
+            **render_v21_prompt_context(registry)
+        )
+        metadata: dict[str, object] = {}
+        compact_payload_hash = None
+        raw_output_tokens = None
+        finish_reason = "unavailable"
+        truncation_status = "not_truncated"
+        try:
+            response = self.llm.chat_completion(
+                [
+                    {
+                        "role": "system",
+                        "content": "你是文学事实提取助手。只输出紧凑 JSON。",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=HANDOVER_COMPACT_V21_MAX_OUTPUT_TOKENS,
+                json_mode=True,
+                completion_metadata_sink=metadata.update,
+            )
+            finish_reason = str(metadata.get("finish_reason") or "unavailable")
+            raw_output_tokens = metadata.get("output_tokens")
+            if not isinstance(raw_output_tokens, int):
+                raw_output_tokens = estimate_llm_tokens(response)
+            if finish_reason == "length":
+                truncation_status = "output_truncated"
+                raise ValueError("CompactHandoverOutputTruncated")
+            payload = parse_json(response)
+            if not isinstance(payload, dict):
+                raise ValueError("InvalidCompactHandoverPayload")
+            compact_payload_hash = sha256_handover_json(payload)
+            validation = restore_and_validate_v21(
+                payload,
+                registry=registry,
+                next_boundary=boundary,
+            )
+            note = adapt_v2_to_legacy_handover_note(validation)
+            local_rejections = sum(
+                item.item_id.startswith(("state:", "fact:", "open:", "arc:"))
+                for item in validation.rejections
+            )
+            total_items = sum(
+                len(payload.get(name) or []) for name in ("s", "o", "f", "a")
+            )
+            restored_count = max(0, total_items - local_rejections)
+            observation = observation_from_note(note).model_copy(
+                update={
+                    "producer_version": "writer-handover-contract-v2.1",
+                    "contract_version": "v2.1",
+                    "typed_contract_hash": validation.contract.contract_hash,
+                    "accepted_claim_count": validation.accepted_claim_count,
+                    "rejected_claim_count": validation.rejected_claim_count,
+                    "rejection_counts": validation.rejection_counts,
+                    "next_boundary_hash": sha256_handover_json(
+                        boundary.model_dump(mode="json")
+                    ),
+                    "source_manifest": tuple(
+                        source.public_manifest() for source in sources.values()
+                    ),
+                    "payload_version": "2.1",
+                    "source_registry_hash": registry.registry_hash,
+                    "compact_payload_hash": compact_payload_hash,
+                    "raw_output_tokens": raw_output_tokens,
+                    "finish_reason": finish_reason,
+                    "truncation_status": truncation_status,
+                    "restored_claim_count": restored_count,
+                    "locally_rejected_claim_count": local_rejections,
+                }
+            )
+            logger.info(
+                "handover_v21_observation=%s",
+                json.dumps(
+                    {
+                        "task_id_hash": handover_task_id_hash(task_id) if task_id else None,
+                        "section": section_num,
+                        "subsection": sub_num,
+                        "version": "2.1",
+                        "source_registry_count": len(registry.entries),
+                        "source_registry_hash": registry.registry_hash,
+                        "finish_reason": finish_reason,
+                        "raw_output_tokens": raw_output_tokens,
+                        "output_truncated": False,
+                        "compact_payload_hash": compact_payload_hash,
+                        "restored_claim_count": restored_count,
+                        "locally_rejected_claim_count": local_rejections,
+                        "typed_contract_hash": validation.contract.contract_hash,
+                        "fallback_reason": None,
+                        "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
+                        "production_effect": "validated_handover_only",
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+            )
+            return note, observation
+        except Exception as error:
+            logger.warning(
+                "V2.1 handover extraction failed (S%s.%s); preserving fail-open behavior",
+                section_num,
+                sub_num,
+            )
+            logger.info(
+                "handover_v21_observation=%s",
+                json.dumps(
+                    {
+                        "task_id_hash": handover_task_id_hash(task_id) if task_id else None,
+                        "section": section_num,
+                        "subsection": sub_num,
+                        "version": "2.1",
+                        "source_registry_count": len(registry.entries),
+                        "source_registry_hash": registry.registry_hash,
+                        "finish_reason": finish_reason,
+                        "raw_output_tokens": raw_output_tokens,
+                        "output_truncated": truncation_status == "output_truncated",
+                        "compact_payload_hash": compact_payload_hash,
+                        "restored_claim_count": 0,
+                        "locally_rejected_claim_count": 0,
+                        "typed_contract_hash": None,
+                        "fallback_reason": type(error).__name__,
+                        "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
+                        "production_effect": False,
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+            )
+            return None, HandoverExtractionObservation(
+                executed=True,
+                execution_status="error",
+                error_type=type(error).__name__,
+                producer_version="writer-handover-contract-v2.1",
+                contract_version="v2.1",
+                next_boundary_hash=sha256_handover_json(
+                    boundary.model_dump(mode="json")
+                ),
+                source_manifest=tuple(
+                    source.public_manifest() for source in sources.values()
+                ),
+                payload_version="2.1",
+                source_registry_hash=registry.registry_hash,
+                compact_payload_hash=compact_payload_hash,
+                raw_output_tokens=raw_output_tokens,
+                finish_reason=finish_reason,
+                truncation_status=truncation_status,
+                restored_claim_count=0,
+                locally_rejected_claim_count=0,
+            )
     def _extract_handover_v2_with_observation(
         self,
         *,

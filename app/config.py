@@ -109,7 +109,7 @@ class Settings:
     ).strip().lower()
     WRITER_HANDOVER_CONTRACT_VERSION: str = (
         WRITER_HANDOVER_CONTRACT_VERSION_RAW
-        if WRITER_HANDOVER_CONTRACT_VERSION_RAW in {"v1", "v2"}
+        if WRITER_HANDOVER_CONTRACT_VERSION_RAW in {"v1", "v2", "v2.1"}
         else "v1"
     )
 
@@ -191,11 +191,11 @@ class Settings:
                 f"CHARACTER_ARC_CONTRACT_VERSION={self.CHARACTER_ARC_CONTRACT_VERSION} "
                 "无效，按 v1 处理；应为 v1/v2"
             )
-        if self.WRITER_HANDOVER_CONTRACT_VERSION_RAW not in {"v1", "v2"}:
+        if self.WRITER_HANDOVER_CONTRACT_VERSION_RAW not in {"v1", "v2", "v2.1"}:
             warnings.append(
                 "WRITER_HANDOVER_CONTRACT_VERSION="
                 f"{self.WRITER_HANDOVER_CONTRACT_VERSION_RAW} invalid; "
-                "using v1 (expected v1/v2)"
+                "using v1 (expected v1/v2/v2.1)"
             )
         return warnings
 

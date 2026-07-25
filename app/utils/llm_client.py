@@ -3,6 +3,8 @@ import random
 import logging
 import threading
 from contextvars import ContextVar
+from collections.abc import Callable
+from typing import Any
 from openai import OpenAI, RateLimitError
 from ..config import settings
 
@@ -191,6 +193,7 @@ class LLMClient:
         json_mode: bool = False,
         top_p: float | None = None,
         prompt_name: str = "",
+        completion_metadata_sink: Callable[[dict[str, Any]], None] | None = None,
     ) -> str:
         """调用 LLM 完成对话，失败时自动重试。对 429 做 Retry-After 退避。
 
@@ -248,6 +251,19 @@ class LLMClient:
                 logger.info(f"LLM response: {t_api:.1f}s, finish={choice.finish_reason}, "
                            f"tokens_in={actual_in or '?'}, tokens_out={actual_out or '?'}, "
                            f"cumulative={_token_count_ctx.get()}")
+
+                if completion_metadata_sink is not None:
+                    try:
+                        completion_metadata_sink(
+                            {
+                                "finish_reason": str(choice.finish_reason or "unknown"),
+                                "input_tokens": actual_in,
+                                "output_tokens": actual_out,
+                                "latency_seconds": round(t_api, 3),
+                            }
+                        )
+                    except Exception:
+                        logger.warning("completion metadata sink failed", exc_info=True)
 
                 if not content:
                     raw = resp.model_dump_json() if hasattr(resp, "model_dump_json") else str(resp)
