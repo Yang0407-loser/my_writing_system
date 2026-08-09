@@ -45,7 +45,7 @@ def test_postgres_is_at_alembic_head_and_enforces_dual_heads_and_unique(
         session.flush()
 
         head = session.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-        assert head == "0001_canonical_schema_v0"
+        assert head == "0003_p3a_projection_backfill"
 
         with session.begin_nested():
             session.add(
