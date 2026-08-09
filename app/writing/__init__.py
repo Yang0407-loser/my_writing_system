@@ -46,6 +46,7 @@ from .character_state_propagation import (
     resolve_writer_character_arcs,
 )
 from .subsection_pipeline import SubsectionPipeline
+from .subsection_generator import SubsectionGenerator
 from .shadow_validation import ShadowBoundaryValidationRunner
 from .post_write_extraction import SharedPostWriteExtractor
 from .shadow_post_write_extraction import ShadowPostWriteExtractionRunner
@@ -126,6 +127,7 @@ __all__ = [
     "SubsectionInput",
     "SubsectionPipeline",
     "SubsectionPipelineArtifact",
+    "SubsectionGenerator",
     "ShadowBoundaryValidationRunner",
     "ShadowPostWriteExtractionRunner",
     "SharedPostWriteExtractor",

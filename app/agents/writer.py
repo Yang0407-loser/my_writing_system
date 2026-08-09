@@ -44,6 +44,7 @@ from ..writing import (
     ShadowPostWriteExtractionRunner,
     SharedPostWriteExtractor,
     SubsectionInput,
+    SubsectionGenerator,
     SubsectionPipeline,
     WriterExecutionContractController,
     compile_commercial_narrative_harness,
@@ -148,6 +149,35 @@ class Writer(BaseAgent):
 
     def __init__(self):
         super().__init__(model=settings.WRITER_LLM_MODEL)
+
+    def generate_subsection_candidate(self, **kwargs):
+        """Canonical facade for one side-effect-free subsection generation.
+
+        `run` remains the frozen legacy facade. Coordinator-owned canonical
+        runtime code calls this seam and owns commit/projection sequencing.
+        """
+
+        post_validator = kwargs.pop(
+            "post_validator", lambda draft: {"complete": True, "warnings": []}
+        )
+        generator = SubsectionGenerator(
+            generation_controller=GenerationController(
+                self.llm,
+                character_violation_checker=self._check_character_violations,
+                fallback_splitter=_split_for_fallback,
+            ),
+            handover_extractor=self._candidate_handover_extractor,
+            post_validator=post_validator,
+        )
+        return generator.generate_subsection_candidate(**kwargs)
+
+    def _candidate_handover_extractor(self, **kwargs):
+        return self._extract_handover_with_observation(
+            kwargs.pop("section_text"),
+            kwargs.pop("section_num"),
+            kwargs.pop("sub_num"),
+            **kwargs,
+        )
 
     def run(
         self,
