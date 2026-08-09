@@ -34,6 +34,9 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
+markers = [
+    "postgres: requires TEST_CANONICAL_DATABASE_URL and a real PostgreSQL test database",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app", "tests"]

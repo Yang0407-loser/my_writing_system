@@ -54,3 +54,17 @@ Every canonical repository operation accepts tenant and project scope. Document,
 subsection, revision, project-state, ledger, idempotency and outbox lookups include
 those predicates even when IDs are globally unique. Reads never infer the current
 revision or state from `created_at`; they follow the two explicit Head pointers.
+
+## Canonical table lifecycle matrix
+
+| Table | Creator/updater | Delete/archive policy | Rebuild/restore rule |
+| --- | --- | --- | --- |
+| `canonical_projects` | Project repository creates with genesis state in one caller transaction; Commit Service alone moves State Head | No hard delete in Foundation; later archive is explicit | Restore from canonical snapshot/production DB backup with explicit Head |
+| `canonical_documents` | Scoped repository creates metadata | No hard delete in Foundation | Restore metadata, then materialize from subsection Heads |
+| `canonical_subsections` | Scoped repository creates ordinal slots; Commit Service alone moves Revision Head | No hard delete after a revision exists | Restore slots and explicit current revision IDs |
+| `document_revisions` | Commit Service inserts immutable accepted snapshots | Append-only; no update/delete | Source of truth for full document materialization |
+| `canonical_state_versions` | Project creation inserts genesis; Commit Service appends commit versions | Append-only; no update/delete | Complete state JSON and parent chain restore Project State Head |
+| `canonical_commits` | Commit Service inserts transaction envelope | Immutable; no delete | Reconciled through idempotency result and referenced artifacts |
+| `event_ledger` | Commit Service appends ordered events | Append-only; no delete | Restore ordered by commit and ordinal; verify ledger hash |
+| `idempotency_records` | Commit Service reserves then completes in the same transaction as Canon | No routine delete; retention is post-Foundation policy | Completed result reconstructs retry response; reserved rows roll back with failed transaction |
+| `outbox_events` | Commit Service inserts fixed manifest; dispatcher updates delivery fields | Published rows retained through Foundation audit window | Rebuild pending projections from canonical rows/manifest; barrier reads row status |
