@@ -36,6 +36,17 @@ def canonical_json_bytes(payload: dict[str, Any]) -> bytes:
     ).encode("utf-8")
 
 
+def _sha256_canonical_json(payload: dict[str, Any]) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _extract_first_subsection(source_text: str) -> tuple[int, str, str]:
     matches = list(_SECTION_RE.finditer(source_text))
     if not matches:
@@ -71,6 +82,13 @@ def _scan_for_secrets(value: Any, path: str = "$") -> list[str]:
 def build_golden_slice(source_text: str, source_sha256: str) -> dict[str, Any]:
     """Build the pure fixture payload from an already verified source text."""
     ordinal, heading, body = _extract_first_subsection(source_text)
+    genesis_state_json = {
+        "foundation_state_v0": {
+            "ledger_events": [],
+            "source_candidate_hash": None,
+            "world_mutations": [],
+        }
+    }
     payload: dict[str, Any] = {
         "schema_version": "foundation-golden-slice-v1",
         "ids": {
@@ -108,14 +126,11 @@ def build_golden_slice(source_text: str, source_sha256: str) -> dict[str, Any]:
             "tone": ["quiet", "observational", "sensory"],
         },
         "initial_canonical_state": {
-            "schema_version": "canonical-state-v0",
             "version_id": "state-foundation-genesis-v1",
-            "revision": 0,
-            "foundation_state_v0": {
-                "ledger_events": [],
-                "source_candidate_hash": None,
-                "world_mutations": [],
-            },
+            "project_id": "project-foundation-golden",
+            "schema_version": "canonical-state-v0",
+            "state_json": genesis_state_json,
+            "state_hash": _sha256_canonical_json(genesis_state_json),
         },
         "handover": {
             "summary": "林晚在凌晨三点半发现野面包店并记下第一次观察。",

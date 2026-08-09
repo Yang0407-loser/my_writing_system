@@ -35,13 +35,16 @@
     "tenant_id": "tenant-foundation-golden"
   },
   "initial_canonical_state": {
-    "foundation_state_v0": {
-      "ledger_events": [],
-      "source_candidate_hash": null,
-      "world_mutations": []
-    },
-    "revision": 0,
+    "project_id": "project-foundation-golden",
     "schema_version": "canonical-state-v0",
+    "state_hash": "592ddb8f561dbb6c4f7f030ba764e98500a3028775aa96bb07e3c167c3573dc8",
+    "state_json": {
+      "foundation_state_v0": {
+        "ledger_events": [],
+        "source_candidate_hash": null,
+        "world_mutations": []
+      }
+    },
     "version_id": "state-foundation-genesis-v1"
   },
   "outline": {
