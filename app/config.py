@@ -9,6 +9,7 @@ class Settings:
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
     LLM_MODEL: str = os.getenv("LLM_MODEL", "deepseek-v4-pro")
+    WRITER_LLM_MODEL: str = os.getenv("WRITER_LLM_MODEL", "deepseek-v4-flash")
 
     # --- Embedding ---
     EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "sentence_transformers")
@@ -38,6 +39,71 @@ class Settings:
     CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "100"))
     ENABLE_RAG: bool = os.getenv("ENABLE_RAG", "true").lower() in ("true", "1", "yes")
     ENABLE_STYLE_BEHAVIOR: bool = os.getenv("ENABLE_STYLE_BEHAVIOR", "true").lower() in ("true", "1", "yes")
+    WRITER_STYLE_CONTROL_MODE_RAW: str = os.getenv(
+        "WRITER_STYLE_CONTROL_MODE", "shadow"
+    ).strip().lower()
+    WRITER_STYLE_CONTROL_MODE: str = (
+        WRITER_STYLE_CONTROL_MODE_RAW
+        if WRITER_STYLE_CONTROL_MODE_RAW in {"legacy", "shadow", "policy"}
+        else "shadow"
+    )
+    WRITER_STYLE_EVALUATION: bool = os.getenv(
+        "WRITER_STYLE_EVALUATION", "true"
+    ).lower() in ("true", "1", "yes")
+    WRITER_ANTI_AI_EXPRESSION_MODE_RAW: str = os.getenv(
+        "WRITER_ANTI_AI_EXPRESSION_MODE", "off"
+    ).strip().lower()
+    WRITER_ANTI_AI_EXPRESSION_MODE: str = (
+        WRITER_ANTI_AI_EXPRESSION_MODE_RAW
+        if WRITER_ANTI_AI_EXPRESSION_MODE_RAW in {"off", "shadow", "canary"}
+        else "off"
+    )
+    WRITER_COMMERCIAL_HARNESS_MODE_RAW: str = os.getenv(
+        "WRITER_COMMERCIAL_HARNESS_MODE", "shadow"
+    ).strip().lower()
+    WRITER_COMMERCIAL_HARNESS_MODE: str = (
+        WRITER_COMMERCIAL_HARNESS_MODE_RAW
+        if WRITER_COMMERCIAL_HARNESS_MODE_RAW in {"off", "shadow", "canary"}
+        else "shadow"
+    )
+    WRITER_NARRATIVE_INTEGRITY_MODE_RAW: str = os.getenv(
+        "WRITER_NARRATIVE_INTEGRITY_MODE", "shadow"
+    ).strip().lower()
+    WRITER_NARRATIVE_INTEGRITY_MODE: str = (
+        WRITER_NARRATIVE_INTEGRITY_MODE_RAW
+        if WRITER_NARRATIVE_INTEGRITY_MODE_RAW in {"off", "shadow", "canary"}
+        else "shadow"
+    )
+    WRITER_WORLD_PRESSURE_MODE_RAW: str = os.getenv(
+        "WRITER_WORLD_PRESSURE_MODE", "shadow"
+    ).strip().lower()
+    WRITER_WORLD_PRESSURE_MODE: str = (
+        WRITER_WORLD_PRESSURE_MODE_RAW
+        if WRITER_WORLD_PRESSURE_MODE_RAW in {"off", "shadow", "canary"}
+        else "shadow"
+    )
+    WRITER_WORLD_PRESSURE_PRESET_RAW: str = os.getenv(
+        "WRITER_WORLD_PRESSURE_PRESET", "none"
+    ).strip().lower()
+    WRITER_WORLD_PRESSURE_PRESET: str = (
+        WRITER_WORLD_PRESSURE_PRESET_RAW
+        if WRITER_WORLD_PRESSURE_PRESET_RAW in {"none", "modern_urban_realism"}
+        else "none"
+    )
+    WRITER_WORLD_RUNTIME_MODE_RAW: str = os.getenv(
+        "WRITER_WORLD_RUNTIME_MODE", "off"
+    ).strip().lower()
+    WRITER_WORLD_RUNTIME_MODE: str = (
+        WRITER_WORLD_RUNTIME_MODE_RAW
+        if WRITER_WORLD_RUNTIME_MODE_RAW in {"off", "shadow", "canary"}
+        else "off"
+    )
+    WRITER_WORLD_RUNTIME_CANARY_TASK_IDS: str = os.getenv(
+        "WRITER_WORLD_RUNTIME_CANARY_TASK_IDS", ""
+    )
+    WRITER_NARRATIVE_REALITY_CHECKS: bool = os.getenv(
+        "WRITER_NARRATIVE_REALITY_CHECKS", "true"
+    ).lower() in ("true", "1", "yes")
     RAG_TOP_K: int = int(os.getenv("RAG_TOP_K", "5"))
     # 0 keeps legacy top-k behavior. Larger values only expand the logged
     # coarse candidate set; Writer still receives exactly RAG_TOP_K items.
@@ -48,6 +114,24 @@ class Settings:
     RAG_PHASE3_MAX_QUERIES: int = int(os.getenv("RAG_PHASE3_MAX_QUERIES", "4"))
     RAG_PHASE3_CANDIDATE_K: int = int(os.getenv("RAG_PHASE3_CANDIDATE_K", "12"))
     RAG_PHASE3_MIN_SCORE: float = float(os.getenv("RAG_PHASE3_MIN_SCORE", "0.35"))
+    # --- Local cross-encoder reranking (default OFF) ---
+    # When false, search_with_meta is byte-identical to the legacy path: same
+    # coarse query size, same items, same trace keys. This is NOT Phase 3; it
+    # only reorders the single legacy query's candidate list, locally.
+    RAG_RERANKER_ENABLED: bool = os.getenv(
+        "RAG_RERANKER_ENABLED", "false"
+    ).strip().lower() in ("true", "1", "yes")
+    RAG_RERANKER_PROVIDER: str = os.getenv(
+        "RAG_RERANKER_PROVIDER", "cross_encoder"
+    ).strip().lower()
+    RAG_RERANKER_MODEL: str = os.getenv("RAG_RERANKER_MODEL", "BAAI/bge-reranker-v2-m3")
+    RAG_RERANKER_BASE_URL: str = os.getenv("RAG_RERANKER_BASE_URL", "")
+    # Coarse candidates fed to the cross-encoder. Must be >= RAG_TOP_K.
+    RAG_RERANKER_CANDIDATE_K: int = int(os.getenv("RAG_RERANKER_CANDIDATE_K", "20"))
+    RAG_RERANKER_TIMEOUT_MS: int = int(os.getenv("RAG_RERANKER_TIMEOUT_MS", "3000"))
+    # Normalized 0..1 relevance floor. 0.0 keeps every reranked candidate.
+    RAG_RERANKER_MIN_SCORE: float = float(os.getenv("RAG_RERANKER_MIN_SCORE", "0.0"))
+    _VALID_RERANKER_PROVIDERS = {"cross_encoder", "http"}
 
     # --- Writer agent tuning ---
     WRITER_REVIEW_TRIGGER_SUBS: int = int(os.getenv("WRITER_REVIEW_TRIGGER_SUBS", "3"))
@@ -109,7 +193,7 @@ class Settings:
     ).strip().lower()
     WRITER_HANDOVER_CONTRACT_VERSION: str = (
         WRITER_HANDOVER_CONTRACT_VERSION_RAW
-        if WRITER_HANDOVER_CONTRACT_VERSION_RAW in {"v1", "v2", "v2.1"}
+        if WRITER_HANDOVER_CONTRACT_VERSION_RAW in {"v1", "v2", "v2.1", "v2.2", "v2.3"}
         else "v1"
     )
 
@@ -150,12 +234,86 @@ class Settings:
             warnings.append("RAG_PHASE3_CANDIDATE_K 不应小于 RAG_TOP_K")
         if not 0 <= self.RAG_PHASE3_MIN_SCORE <= 1:
             warnings.append("RAG_PHASE3_MIN_SCORE 必须在 0..1")
+        if self.RAG_RERANKER_ENABLED:
+            if self.RAG_RERANKER_PROVIDER not in self._VALID_RERANKER_PROVIDERS:
+                warnings.append(
+                    f"RAG_RERANKER_PROVIDER={self.RAG_RERANKER_PROVIDER} 无效，"
+                    f"可选: {sorted(self._VALID_RERANKER_PROVIDERS)}；reranker 将降级为旧顺序"
+                )
+            if self.RAG_RERANKER_PROVIDER == "http" and not self.RAG_RERANKER_BASE_URL:
+                warnings.append(
+                    "RAG_RERANKER_PROVIDER=http 但 RAG_RERANKER_BASE_URL 未设置；"
+                    "reranker 将降级为旧顺序"
+                )
+            if self.RAG_RERANKER_CANDIDATE_K < self.RAG_TOP_K:
+                warnings.append(
+                    f"RAG_RERANKER_CANDIDATE_K={self.RAG_RERANKER_CANDIDATE_K} "
+                    f"小于 RAG_TOP_K={self.RAG_TOP_K}，重排没有可选空间"
+                )
+            if not 0 <= self.RAG_RERANKER_MIN_SCORE <= 1:
+                warnings.append("RAG_RERANKER_MIN_SCORE 必须在 0..1")
+            if self.RAG_RERANKER_TIMEOUT_MS < 100:
+                warnings.append("RAG_RERANKER_TIMEOUT_MS 过低 (<100)，首次加载模型会超时")
         if self.WRITER_INCREMENTAL_SECTION_REVIEW_RAW not in {
             "true", "1", "yes", "false", "0", "no", ""
         }:
             warnings.append(
                 "WRITER_INCREMENTAL_SECTION_REVIEW="
                 f"{self.WRITER_INCREMENTAL_SECTION_REVIEW_RAW} 无效，按 false 处理"
+            )
+        if self.WRITER_STYLE_CONTROL_MODE_RAW not in {"legacy", "shadow", "policy"}:
+            warnings.append(
+                "WRITER_STYLE_CONTROL_MODE="
+                f"{self.WRITER_STYLE_CONTROL_MODE_RAW} invalid; "
+                "using shadow (expected legacy/shadow/policy)"
+            )
+        if self.WRITER_ANTI_AI_EXPRESSION_MODE_RAW not in {
+            "off", "shadow", "canary"
+        }:
+            warnings.append(
+                "WRITER_ANTI_AI_EXPRESSION_MODE="
+                f"{self.WRITER_ANTI_AI_EXPRESSION_MODE_RAW} invalid; "
+                "using off (expected off/shadow/canary)"
+            )
+        if self.WRITER_COMMERCIAL_HARNESS_MODE_RAW not in {
+            "off", "shadow", "canary"
+        }:
+            warnings.append(
+                "WRITER_COMMERCIAL_HARNESS_MODE="
+                f"{self.WRITER_COMMERCIAL_HARNESS_MODE_RAW} invalid; "
+                "using shadow (expected off/shadow/canary)"
+            )
+        if self.WRITER_NARRATIVE_INTEGRITY_MODE_RAW not in {
+            "off", "shadow", "canary"
+        }:
+            warnings.append(
+                "WRITER_NARRATIVE_INTEGRITY_MODE="
+                f"{self.WRITER_NARRATIVE_INTEGRITY_MODE_RAW} invalid; "
+                "using shadow (expected off/shadow/canary)"
+            )
+        if self.WRITER_WORLD_PRESSURE_MODE_RAW not in {
+            "off", "shadow", "canary"
+        }:
+            warnings.append(
+                "WRITER_WORLD_PRESSURE_MODE="
+                f"{self.WRITER_WORLD_PRESSURE_MODE_RAW} invalid; "
+                "using shadow (expected off/shadow/canary)"
+            )
+        if self.WRITER_WORLD_PRESSURE_PRESET_RAW not in {
+            "none", "modern_urban_realism"
+        }:
+            warnings.append(
+                "WRITER_WORLD_PRESSURE_PRESET="
+                f"{self.WRITER_WORLD_PRESSURE_PRESET_RAW} invalid; "
+                "using none (expected none/modern_urban_realism)"
+            )
+        if self.WRITER_WORLD_RUNTIME_MODE_RAW not in {
+            "off", "shadow", "canary"
+        }:
+            warnings.append(
+                "WRITER_WORLD_RUNTIME_MODE="
+                f"{self.WRITER_WORLD_RUNTIME_MODE_RAW} invalid; "
+                "using off (expected off/shadow/canary)"
             )
         if self.WRITER_CONDENSE_MODE_RAW not in {"legacy", "warn"}:
             warnings.append(
@@ -191,11 +349,11 @@ class Settings:
                 f"CHARACTER_ARC_CONTRACT_VERSION={self.CHARACTER_ARC_CONTRACT_VERSION} "
                 "无效，按 v1 处理；应为 v1/v2"
             )
-        if self.WRITER_HANDOVER_CONTRACT_VERSION_RAW not in {"v1", "v2", "v2.1"}:
+        if self.WRITER_HANDOVER_CONTRACT_VERSION_RAW not in {"v1", "v2", "v2.1", "v2.2", "v2.3"}:
             warnings.append(
                 "WRITER_HANDOVER_CONTRACT_VERSION="
                 f"{self.WRITER_HANDOVER_CONTRACT_VERSION_RAW} invalid; "
-                "using v1 (expected v1/v2/v2.1)"
+                "using v1 (expected v1/v2/v2.1/v2.2/v2.3)"
             )
         return warnings
 

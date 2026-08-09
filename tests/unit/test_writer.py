@@ -5,7 +5,16 @@ from unittest.mock import MagicMock
 
 
 class TestHandoverExtraction:
-    """_extract_handover 方法测试。"""
+    """_extract_handover 方法测试（锁定 legacy v1 路径）。"""
+
+    @pytest.fixture(autouse=True)
+    def _pin_legacy_handover(self, monkeypatch):
+        # 这些用例的 mock 返回 legacy JSON，测的是 v1 提取路径。Demo 期间
+        # .env 会合法地把 WRITER_HANDOVER_CONTRACT_VERSION 设为 v2.x——不 pin
+        # 的话 dispatcher 会把 legacy mock 灌进 compact parser 并 fail-open
+        # 返回 None（2026-07-26 全量测试即因此假红）。
+        from app.config import settings
+        monkeypatch.setattr(settings, "WRITER_HANDOVER_CONTRACT_VERSION", "v1")
 
     def test_handover_with_valid_json(self, mock_llm):
         """正常返回：LLM 返回合法 JSON dict。"""

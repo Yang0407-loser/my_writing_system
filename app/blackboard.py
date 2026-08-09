@@ -13,7 +13,19 @@ class Blackboard:
     """
 
     def __init__(self):
-        self._redis = redis.Redis.from_url(settings.REDIS_BACKEND_URL)
+        # A writing task holds this connection for minutes at a time with long
+        # idle gaps while the LLM streams.  Without keepalive and health checks
+        # an idle socket can be reaped underneath us; the resulting
+        # ConnectionError matches writing_task's autoretry_for and replays the
+        # entire task, planning LLM calls included.  These options make the
+        # client re-establish silently instead.
+        self._redis = redis.Redis.from_url(
+            settings.REDIS_BACKEND_URL,
+            socket_keepalive=True,
+            socket_connect_timeout=5,
+            health_check_interval=30,
+            retry_on_timeout=True,
+        )
 
     # ── Hash 操作 ──────────────────────────────────────────────
 

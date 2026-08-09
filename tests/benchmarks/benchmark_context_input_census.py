@@ -245,6 +245,7 @@ def build_sample(
         "mandatory_events": mandatory_events,
         "character_constraints": character_constraints,
         "style_constraints": "",
+        "narrative_integrity_constraints": "",
         "beat_reminder": "",
         "progress_context": progress_context,
         "rules_context": global_rules,

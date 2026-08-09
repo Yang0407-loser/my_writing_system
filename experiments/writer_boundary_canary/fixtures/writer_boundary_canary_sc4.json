@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.1",
+  "experiment": {"enabled": false, "repeats": 2, "base_seed": 20260810},
+  "scene_id": "SC4",
+  "scene": "闭店后的旧书店阅览室，暴雨冲开高窗密封条，雨水沿墙流向低层陈列架。架上同时有顾客暂存、等待次日鉴定的手写田野日记，以及书店自有、带作者批注的稀有校样本。现场只有一个硬质防水转运箱，只能完整保护一件物品。两人必须优先保护顾客日记，为校样选择一个临时方案；长期干燥、修复和窗体处理留到天亮后决定。",
+  "characters": {
+    "许栀": "旧书店工作人员；谨慎，重视顾客托付物的责任边界。",
+    "沈闻": "共同处理现场的同伴；行动利落，不替他人作关系承诺。"
+  },
+  "world_facts": [
+    "闭店后的阅览室只有许栀与沈闻。",
+    "唯一硬质防水转运箱只能完整保护一件物品。",
+    "顾客田野日记等待次日鉴定；带批注校样本属于书店。"
+  ],
+  "mandatory_events": [
+    "M1 暴雨导致高窗密封失效，雨水进入阅览室。",
+    "M2 顾客手写田野日记与书店稀有校样本同时面临受潮风险。",
+    "M3 唯一防水转运箱只能完整保护一件物品。",
+    "M4 两人优先保护顾客手写田野日记。",
+    "M5 校样本只采用一个获准临时保存方案。",
+    "M6 结尾不解决长期干燥、修复和窗体处理问题。"
+  ],
+  "forbidden_events": [
+    "F1 不得让两件物品都毫无代价地得到完整保护。",
+    "F2 不得突然停止暴雨、恢复完全干燥或出现第二个防水箱。",
+    "F3 不得引入第三人、电话援助或其他外力解决问题。",
+    "F4 不得产生新的关系承诺、和解、情感确认或责任转移。",
+    "F5 不得引入白名单外的新保存方案。",
+    "F6 不得在结尾解决长期干燥、修复或窗体问题。",
+    "F7 不得用长篇心理独白解释两人关系。",
+    "F8 不得把物件保护操作写成说明书。"
+  ],
+  "boundary_space": {"store_item_temporary_handling": ["raised_mesh_rack", "single_absorbent_wrap"]},
+  "style_signature": {
+    "schema_version": "2.0", "style_id": "S3",
+    "narrative_distance": "第三人称近距离，但不使用长篇内心独白。",
+    "sentence_rhythm": "短句与中等长度句交替，关键选择处允许停顿。",
+    "paragraph_rhythm": "段落围绕风险、选择和物件状态变化推进。",
+    "dialogue_function": "对白由人物和现场需要自然决定，不承担预设功能清单。",
+    "emotional_mediation": "情绪通过具体行动、停顿或未完成状态呈现。",
+    "diction_register": "克制、具体，避免抽象主题总结。"
+  },
+  "boundary_maker": {"model": "deepseek-v4-pro", "temperature": 0.2, "max_tokens": 500, "json_mode": true},
+  "prose": {"model": "deepseek-v4-pro", "temperature": 0.7, "max_tokens": 3000, "target_chars": 1000}
+}

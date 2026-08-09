@@ -72,7 +72,10 @@ def test_config_accepts_v21_but_default_remains_v1(monkeypatch):
     from app.config import Settings
 
     configured = Settings()
-    assert configured.WRITER_HANDOVER_CONTRACT_VERSION == "v1"
+    # 环境无关断言：合法值原样通过，非法值回落 v1（.env 在 Demo 期间可为 v2.x）。
+    raw = configured.WRITER_HANDOVER_CONTRACT_VERSION_RAW
+    expected = raw if raw in {"v1", "v2", "v2.1", "v2.2", "v2.3"} else "v1"
+    assert configured.WRITER_HANDOVER_CONTRACT_VERSION == expected
     monkeypatch.setattr(configured, "WRITER_HANDOVER_CONTRACT_VERSION_RAW", "v2.1")
     monkeypatch.setattr(configured, "WRITER_HANDOVER_CONTRACT_VERSION", "v2.1")
     assert not any(
@@ -129,7 +132,13 @@ def test_invalid_index_span_and_text_only_reject_their_items():
 
     assert result.accepted_claim_count == 1
     assert result.rejected_claim_count == 3
-    assert result.rejection_counts == {"invalid_contract_shape": 3}
+    # 2026-07-26 起恢复层拒绝按具体检查细分（收口授权的形状遥测），
+    # 不再统一归入 invalid_contract_shape。
+    assert result.rejection_counts == {
+        "invalid_source_index": 1,
+        "invalid_span": 1,
+        "invalid_semantic_parts": 1,
+    }
 
 
 def test_explicit_unknown_is_not_promoted_to_confirmed_fact():
@@ -215,7 +224,7 @@ def test_v21_keeps_psychology_stale_and_unsourced_arc_guards():
         payload, registry=registry, next_boundary=boundary
     )
     assert first.rejection_counts == {
-        "invalid_contract_shape": 1,
+        "invalid_milestone_source": 1,
         "unsupported_psychology": 1,
     }
     accepted = first.contract.end_state.claims[0]
@@ -226,7 +235,7 @@ def test_v21_keeps_psychology_stale_and_unsourced_arc_guards():
         stale_completed_claim_hashes=[accepted.claim_hash],
     )
     assert second.rejection_counts == {
-        "invalid_contract_shape": 1,
+        "invalid_milestone_source": 1,
         "unsupported_psychology": 1,
         "stale_completed_event": 1,
     }

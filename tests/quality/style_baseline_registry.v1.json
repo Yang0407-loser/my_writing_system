@@ -1,0 +1,85 @@
+{
+  "schema_version": "style-baseline-registry-v1",
+  "created_at": "2026-07-31",
+  "interpretation": "Automatic ranges are regression and diagnostic references, never a human-quality target.",
+  "baselines": [
+    {
+      "baseline_id": "regression-saturday-bakery-v1",
+      "baseline_type": "regression",
+      "title": "周六面包店与凌晨三点半",
+      "registry_status": "active",
+      "artifact_path": "tests/quality/style_baseline.json",
+      "artifact_sha256": "b5e9223756a51e812b475e52bbaf462cbe970baa8e3f6476502b77451cc45780",
+      "license_or_authorization": {
+        "status": "internal_generated_regression_artifact",
+        "evidence": "Existing project golden-story fixture; not classified as human-authored reference."
+      },
+      "allowed_uses": [
+        "code_regression",
+        "prompt_or_model_drift_observation",
+        "deterministic_metric_smoke_test"
+      ],
+      "prohibited_claims": [
+        "human_baseline",
+        "human_gold",
+        "proof_of_naturalness"
+      ]
+    }
+  ],
+  "baseline_schemas": {
+    "human_reference": {
+      "required_fields": [
+        "baseline_id",
+        "baseline_type",
+        "source_title",
+        "source_author",
+        "license_or_authorization",
+        "scene_type",
+        "genre",
+        "text_sha256",
+        "character_count",
+        "artifact_path"
+      ],
+      "allowed_scene_types": [
+        "dialogue",
+        "action",
+        "solitude_or_interior",
+        "information_dense",
+        "relationship_conflict",
+        "transition_or_daily"
+      ],
+      "text_requirements": {
+        "min_characters": 800,
+        "max_characters": 1500,
+        "authorization_evidence_required": true
+      }
+    },
+    "machine_failure": {
+      "required_fields": [
+        "baseline_id",
+        "baseline_type",
+        "source_experiment",
+        "text_sha256",
+        "artifact_path",
+        "failure_categories",
+        "evidence_spans",
+        "human_note"
+      ],
+      "allowed_failure_categories": [
+        "process_log",
+        "over_explanation",
+        "over_closure",
+        "visible_structure",
+        "uniform_detail",
+        "functional_dialogue",
+        "continuity_restatement"
+      ],
+      "evidence_span_fields": [
+        "start",
+        "end",
+        "category",
+        "note"
+      ]
+    }
+  }
+}

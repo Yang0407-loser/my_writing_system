@@ -1,0 +1,88 @@
+{
+  "schema_version": "style-factorial-calibration-v1",
+  "experiment_id": "style-factorial-calibration-v1",
+  "provider": {
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "json_mode": false,
+    "transport_max_retries": 0
+  },
+  "calibration_rules": {
+    "requested_visible_character_band": [1100, 1400],
+    "gross_valid_character_band": [800, 2200],
+    "maximum_arm_length_ratio": 1.25,
+    "formal_max_tokens_if_no_truncation": 2000,
+    "formal_experiment_blocked_if_any_truncated": true,
+    "calibration_outputs_excluded_from_formal_analysis": true,
+    "formal_target_band_rule": [
+      {
+        "median_visible_characters_lte": 1450,
+        "formal_target_visible_character_band": [1100, 1500]
+      },
+      {
+        "median_visible_characters_lte": 1750,
+        "formal_target_visible_character_band": [1300, 1750]
+      },
+      {
+        "median_visible_characters_lte": 2200,
+        "formal_target_visible_character_band": [1500, 2000]
+      }
+    ]
+  },
+  "scene": {
+    "scene_id": "FX-CAL01",
+    "scene_type": "relationship_plus_procedural_pressure",
+    "title": "停演通知",
+    "style": {
+      "emotion_intensity": 48,
+      "dialogue_ratio": 0.25,
+      "sentence_preference": "balanced",
+      "sensory_density": "medium"
+    },
+    "focal_character": "闻栀",
+    "premise": "夜里，小剧场控制室因屋顶漏水断电。舞台监督闻栀和准备离开剧团、但尚未公开此事的灯光师贺沉，必须把六只租来的调光箱转移到干燥库房，并在群里发布次日停排通知。",
+    "characters": [
+      "闻栀：舞台监督，负责现场决定和通知；她知道贺沉最近在回避排期，但不知道他已经准备离开。",
+      "贺沉：灯光师，熟悉设备；他已经准备离开剧团，但今晚不会说出或确认这件事。"
+    ],
+    "observable_now": [
+      "控制室断电，屋顶仍在滴水。",
+      "六只租来的调光箱需要转移并逐只核对编号。",
+      "贺沉能处理设备，闻栀负责作出停排决定。"
+    ],
+    "known_background": [
+      "两人曾经合作默契，最近因排期和责任边界变得疏远。",
+      "闻栀察觉贺沉在回避后续安排，但没有得到解释。"
+    ],
+    "unknown_or_unconfirmed": [
+      "闻栀不知道贺沉已经准备离开剧团。",
+      "漏水原因和恢复供电时间都没有确认。"
+    ],
+    "required_action_outcomes": [
+      "六只调光箱全部转移到干燥库房，并完成编号核对。",
+      "闻栀发布次日停排通知。",
+      "设备只是暂时避开漏水，控制室没有恢复供电。"
+    ],
+    "forbidden_new_events": [
+      "不得修好屋顶、恢复供电或宣布后续演出已经解决。",
+      "不得让贺沉说出、承认或确认自己要离开剧团。",
+      "不得让两人和解、恢复亲密或对关系作出结论。",
+      "不得增加第三人赶来解决问题。"
+    ],
+    "final_objective_state": "调光箱已暂存、次日已停排；漏水和供电没有解决，贺沉的去意仍未说出口。",
+    "required_term_groups_diagnostic": [
+      ["调光箱"],
+      ["停排", "暂停排练"],
+      ["编号", "核对"]
+    ],
+    "forbidden_terms_diagnostic": [
+      "恢复供电",
+      "屋顶修好",
+      "决定离开剧团",
+      "两人和解",
+      "重归于好"
+    ]
+  }
+}

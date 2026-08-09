@@ -174,6 +174,7 @@ class StateCommitter:
         topic: str,
         stream_callback=None,
         token_usage_provider: Callable[[], object] | None = None,
+        rag_metadata: dict | None = None,
     ) -> CommitArtifact:
         if not validation_complete:
             raise ValueError("subsection cannot be committed before validation completes")
@@ -196,13 +197,18 @@ class StateCommitter:
         self.last_artifact = artifact
         try:
             for text in chunk_text(draft, settings.CHUNK_SIZE, settings.CHUNK_OVERLAP):
-                vector_store.add_text(text=text, metadata={
+                chunk_metadata: dict = {
                     "task_id": task_id,
                     "section": section,
                     "subsection": subsection,
                     "title": title,
                     "topic": topic,
-                })
+                }
+                if rag_metadata:
+                    # Additive WR3.5 metadata (characters/time/locations/...).
+                    # When absent the legacy metadata shape is unchanged.
+                    chunk_metadata.update(rag_metadata)
+                vector_store.add_text(text=text, metadata=chunk_metadata)
             committed_fields.append("vector_store.chunks")
             vector_store.enforce_task_limit(task_id)
             committed_fields.append("vector_store.task_limit")

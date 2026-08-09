@@ -29,6 +29,7 @@ def prepared_input(**overrides):
             "mandatory_events": "（本节无硬性事件约束）",
             "character_constraints": "",
             "style_constraints": "",
+            "narrative_integrity_constraints": "",
             "beat_reminder": "",
             "progress_context": "",
             "rules_context": "",
@@ -438,3 +439,9 @@ def test_writer_run_remains_a_compatible_facade(monkeypatch):
     assert result["character_arcs"][0]["current_state"] == "updated"
     assert blackboard.checkpoints[-1][1]["character_arcs"] == result["character_arcs"]
     assert original_arcs[0]["current_state"] == "old"
+    assert len(result["narrative_reality_warnings"]) == 1
+    assert result["narrative_reality_warnings"][0]["production_effect"] is False
+    assert (
+        blackboard.values["narrative_reality_warnings_v0"]
+        == result["narrative_reality_warnings"]
+    )

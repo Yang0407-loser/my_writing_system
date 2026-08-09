@@ -76,7 +76,11 @@ def _claim(source, *, claim_id="c1", predicate="回到", obj="家", **updates):
 
 def test_config_defaults_to_v1_and_invalid_value_falls_back(monkeypatch):
     configured = Settings()
-    assert configured.WRITER_HANDOVER_CONTRACT_VERSION == "v1"
+    # 类属性在 import 时冻结自真实环境（Demo 期间 .env 会合法地设为 v2.x）。
+    # 断言"解析规则"而非"环境恰好等于默认值"：合法值原样通过，非法值回落 v1。
+    raw = configured.WRITER_HANDOVER_CONTRACT_VERSION_RAW
+    expected = raw if raw in {"v1", "v2", "v2.1", "v2.2", "v2.3"} else "v1"
+    assert configured.WRITER_HANDOVER_CONTRACT_VERSION == expected
     monkeypatch.setattr(
         configured, "WRITER_HANDOVER_CONTRACT_VERSION_RAW", "future"
     )

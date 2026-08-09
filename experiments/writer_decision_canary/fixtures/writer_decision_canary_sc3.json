@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "experiment": {
+    "enabled": false,
+    "repeats": 2,
+    "base_seed": 20260731
+  },
+  "scene_id": "SC3",
+  "scene": "夜间，旧书店修复工坊突然停电。恒湿柜停止工作，柜内同时有顾客送修、胶层尚未固化的旧相册，以及书店自有的一套稀有目录。备用电源只能维持一个柜格二十分钟。两人必须优先保护顾客相册，并为目录选择一种临时保存方式；长期方案留到天亮后决定。",
+  "characters": {
+    "许栀": "旧书店修复工作负责人；谨慎，重视托付物的责任边界。",
+    "沈闻": "共同处理修复工作的同伴；行动利落，不替他人作关系承诺。"
+  },
+  "world_facts": [
+    "工坊位于旧书店内，夜间只有许栀与沈闻。",
+    "停电后恒湿设备停止；备用电力只能保护一个柜格二十分钟。",
+    "顾客相册胶层未固化；稀有目录属于书店。"
+  ],
+  "mandatory_events": [
+    "M1 工坊停电，恒湿设备停止。",
+    "M2 顾客旧相册与书店自有目录同时面临风险。",
+    "M3 备用电力只能优先保护一件物品。",
+    "M4 两人优先保护顾客相册。",
+    "M5 目录采用且只采用一个临时保存方案。",
+    "M6 结尾不解决长期保存问题。"
+  ],
+  "forbidden_events": [
+    "F1 不得让两件物品都毫无代价地完全获救。",
+    "F2 不得突然恢复稳定供电。",
+    "F3 不得引入第三人替两人解决问题。",
+    "F4 不得产生新的关系承诺、和解或责任转移。",
+    "F5 不得用长篇心理独白解释人物关系。",
+    "F6 不得把设备操作写成说明书。"
+  ],
+  "relationship_delta": "none",
+  "decision_space": {
+    "initial_risk_check": ["check_album_first", "check_power_capacity_first"],
+    "catalog_temporary_handling": ["manual_blotting", "sealed_dry_box"],
+    "expand_focus": {
+      "choose": 2,
+      "from": ["adhesive_instability", "battery_limit", "catalog_temporary_handling"]
+    },
+    "dialogue_jobs": {
+      "include_exactly": ["risk_confirmation", "priority_choice", "responsibility_boundary", "open_ending"]
+    },
+    "emotion_channels": {
+      "choose_min": 2,
+      "choose_max": 3,
+      "from": ["hesitation", "waiting_for_confirmation", "object_handling", "unfinished_action", "silence"]
+    },
+    "ending_state": ["temporary_only"],
+    "relationship_delta": ["none"],
+    "new_characters": ["none"],
+    "new_solution": ["none"]
+  },
+  "style_signature": {
+    "schema_version": "2.0",
+    "style_id": "S3",
+    "active_dimensions": ["narrative_distance", "sentence_rhythm", "paragraph_rhythm", "dialogue_function", "emotional_mediation", "diction_register"],
+    "narrative_distance": "第三人称近距离，但不使用长篇内心独白。",
+    "sentence_rhythm": "短句与中等长度句交替，关键选择处允许停顿。",
+    "paragraph_rhythm": "段落围绕风险变化、选择和责任边界推进。",
+    "dialogue_function": "对白承担风险确认、优先级选择、责任边界与开放结尾。",
+    "emotional_mediation": "情绪优先通过迟疑、物件处理、未完成动作和沉默呈现。",
+    "diction_register": "克制、具体，避免抽象主题总结。",
+    "distinctive_prohibitions": ["不连续播报设备步骤", "不由叙述者解释人物关系", "不新增高潮事件"]
+  },
+  "decision_maker": {
+    "model": "deepseek-v4-pro",
+    "temperature": 0.2,
+    "max_tokens": 700,
+    "json_mode": true
+  },
+  "prose": {
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "max_tokens": 3000,
+    "target_chars": 1000
+  }
+}
+

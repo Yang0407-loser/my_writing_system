@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.2-r3.6",
+  "experiment_id": "writer-boundary-v1-2-r3-6",
+  "r35_manifest_sha256": "35b683677a3f31a36ed685774819b135a8c674fc43bb3c5c464a0b091b1037e6",
+  "r35_activation_gate_sha256": "6e88c25f7da469705a71799d6c8c18905dc46111fe8327522532e47211c31e92",
+  "r35_review_aggregate_sha256": "33fb5ee07bd439ebfbb7ec1e4eaf8e43090d46c3ee8486e06377137646bfa231",
+  "r35_probe_envelope_file_sha256": "d0ac69cc95c7772c6933ff9d6909b28644b895e63b634b34a14057ca35a1fc97",
+  "llm_client_source_sha256": "2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39",
+  "probe_call_layer_build_authorized": true,
+  "exactly_one_capability_probe_authorized": true,
+  "provider_request_quota": 1,
+  "transport_max_retries": 0,
+  "general_model_calls_authorized": false,
+  "real_generation_authorized": false,
+  "fiction_generation_authorized": false
+}

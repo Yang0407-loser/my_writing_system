@@ -39,6 +39,10 @@ HANDOVER_FIELD_NAMES: tuple[str, ...] = (
     "arc_progress",
 )
 
+# 原始 compact payload 持久化大小护栏（字符数，canonical JSON 编码后）。
+# 输出上限 1000 token（约 4000 字符）下正常 payload 远小于此；超限视为异常，不持久化。
+MAX_COMPACT_PAYLOAD_PERSIST_CHARS = 20_000
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -74,6 +78,26 @@ def value_has_change(value: Any) -> bool:
     return value_item_count(value) > 0
 
 
+def payload_for_persistence(payload: Any) -> dict[str, Any] | None:
+    """Return the parsed compact payload iff it is a dict within the size guard.
+
+    补齐金标冻结记录在案的缺口：只有持久化解析后的原始 payload，
+    未来的真实运行才能全量冻结到 validator 层重放。解析失败（非 dict）
+    或超出大小护栏时返回 None——宁缺毋滥，不截断持久化。
+    """
+    if not isinstance(payload, dict):
+        return None
+    try:
+        encoded = json.dumps(
+            payload, ensure_ascii=False, separators=(",", ":"), default=str
+        )
+    except (TypeError, ValueError):
+        return None
+    if len(encoded) > MAX_COMPACT_PAYLOAD_PERSIST_CHARS:
+        return None
+    return payload
+
+
 class HandoverExtractionObservation(BaseModel):
     """Execution telemetry kept separate from the legacy note return value."""
 
@@ -91,11 +115,15 @@ class HandoverExtractionObservation(BaseModel):
     accepted_claim_count: int | None = Field(default=None, ge=0)
     rejected_claim_count: int | None = Field(default=None, ge=0)
     rejection_counts: dict[str, int] | None = None
+    # arity 遥测：形状类拒绝的骨架分布（不含内容），2026-07-26 起
+    rejection_shape_skeletons: dict[str, int] | None = None
     next_boundary_hash: str | None = None
     source_manifest: tuple[dict[str, str], ...] | None = None
     payload_version: str | None = None
     source_registry_hash: str | None = None
     compact_payload_hash: str | None = None
+    # 原始 compact payload（解析成功即捕获，含未过形状层的 item），2026-07-27 起
+    compact_payload: dict[str, Any] | None = None
     raw_output_tokens: int | None = Field(default=None, ge=0)
     finish_reason: str | None = None
     truncation_status: str | None = None
@@ -143,11 +171,14 @@ class SubsectionHandoverRecord(BaseModel):
     accepted_claim_count: int | None = Field(default=None, ge=0)
     rejected_claim_count: int | None = Field(default=None, ge=0)
     rejection_counts: dict[str, int] | None = None
+    rejection_shape_skeletons: dict[str, int] | None = None
     next_boundary_hash: str | None = None
     source_manifest: tuple[dict[str, str], ...] | None = None
     payload_version: str | None = None
     source_registry_hash: str | None = None
     compact_payload_hash: str | None = None
+    # 原始 compact payload（解析成功即捕获，含未过形状层的 item），2026-07-27 起
+    compact_payload: dict[str, Any] | None = None
     raw_output_tokens: int | None = Field(default=None, ge=0)
     finish_reason: str | None = None
     truncation_status: str | None = None

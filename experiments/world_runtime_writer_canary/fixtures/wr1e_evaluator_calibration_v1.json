@@ -1,0 +1,19 @@
+{
+  "schema_version": "world-runtime-evaluator-v2-benchmark-fixture-v1",
+  "partition": "calibration",
+  "gate": {"minimum_precision_recall": 0.9},
+  "cases": [
+    {"case_id":"CAL-S01","scene_id":"adversarial-storefront-hours","text":"林晚从侧门走进操作间。路人仍在敲门，她把纸币推回去，说六点开门再来。","expected":{"required_event_completed":true,"hard_reality_violations":{"storefront_public_open_before_0600":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-S02","scene_id":"adversarial-storefront-hours","text":"林晚进入操作间。周野收下现金，趁热装两个可颂，把纸袋放在门外，离六点还早。","expected":{"required_event_completed":true,"hard_reality_violations":{"storefront_public_open_before_0600":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-S03","scene_id":"adversarial-storefront-hours","text":"林晚走进操作间，但两人没有处理门外来客的要求，小节到此结束。","expected":{"required_event_completed":false,"hard_reality_violations":{"storefront_public_open_before_0600":false},"task_evasion":true,"unsourced_setting":false}},
+    {"case_id":"CAL-K01","scene_id":"adversarial-unpublished-knowledge","text":"季晴追问草稿。林晚把正文发到工作群，同事指出第三段有个错字。","expected":{"required_event_completed":true,"hard_reality_violations":{"public_reaction_before_publication":false,"coworker_knows_without_transmission_path":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-K02","scene_id":"adversarial-unpublished-knowledge","text":"季晴问起文章。公司群的同事说正文里的结尾太急，却没有任何发送或转发过程。","expected":{"required_event_completed":true,"hard_reality_violations":{"public_reaction_before_publication":false,"coworker_knows_without_transmission_path":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-K03","scene_id":"adversarial-unpublished-knowledge","text":"季晴问草稿，隔壁工位的周哲只看过朋友圈截图，说以后写完了发我看看。群里没有人回应正文。","expected":{"required_event_completed":false,"hard_reality_violations":{"public_reaction_before_publication":false,"coworker_knows_without_transmission_path":false},"task_evasion":true,"unsourced_setting":true}},
+    {"case_id":"CAL-O01","scene_id":"adversarial-object-and-repeat","text":"她在店里等待回复，只查看文章已发布和邮件已送达。镜头切回住处，绿豆汤仍在碗里。","expected":{"required_event_completed":true,"hard_reality_violations":{"object_changes_without_actor":false,"completed_event_repeated":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-O02","scene_id":"adversarial-object-and-repeat","text":"她等着消息，又点下发布。家中无人，茶几上只剩空碗。","expected":{"required_event_completed":false,"hard_reality_violations":{"object_changes_without_actor":true,"completed_event_repeated":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-O03","scene_id":"adversarial-object-and-repeat","text":"她查看发件箱，抄送了直属主管，却没有切回家中写那只碗。","expected":{"required_event_completed":false,"hard_reality_violations":{"object_changes_without_actor":false,"completed_event_repeated":false},"task_evasion":true,"unsourced_setting":true}},
+    {"case_id":"CAL-E01","scene_id":"adversarial-employment-transition","text":"人事尚未回复，她告诉同事自己仍然在职，今天照常到岗。","expected":{"required_event_completed":true,"hard_reality_violations":{"employment_ended_without_acknowledgement":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-E02","scene_id":"adversarial-employment-transition","text":"人事没有确认，她却说自己已经正式离职，今天不去公司。","expected":{"required_event_completed":true,"hard_reality_violations":{"employment_ended_without_acknowledgement":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"CAL-E03","scene_id":"adversarial-employment-transition","text":"同事小李问她，人事依然没有回复。她没有决定是否上班，到这里结束。","expected":{"required_event_completed":false,"hard_reality_violations":{"employment_ended_without_acknowledgement":false},"task_evasion":true,"unsourced_setting":true}}
+  ]
+}

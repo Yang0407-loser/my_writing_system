@@ -1,0 +1,1950 @@
+{
+  "schema_version": "wr4-metadata-holdout-gold-v1",
+  "author": "independent-holdout-author-human-batch4",
+  "created_at": "2026-08-07",
+  "k": 5,
+  "corpus": {
+    "task_id": "20f02dc7-dc64-4233-bd6c-06a6d8647dbe",
+    "snapshot_file": "wr4_metadata_holdout_corpus_snapshot_v1.json",
+    "snapshot_sha256": "6e52a0f738fb89f0b43fdc8207b63abd4e052f9694b4747c560b7b3b8b8a309a",
+    "corpus_hash": "05420ab03eb3ec11ac42f07b334ca434ba6a79b9250cbec505f2857b99317878",
+    "chunk_count": 378
+  },
+  "character_names": [
+    "林晚",
+    "周野",
+    "季晴",
+    "顾衍",
+    "吴阿姨"
+  ],
+  "entries": [
+    {
+      "query_index": "J1",
+      "tier": "continuity_fact",
+      "query": "凌晨四点前，林晚摸黑出门去面包店。这一节想交代她是怎么醒的、带了什么装备、下楼时有什么障碍——需要她周六凌晨出门的既定细节。",
+      "query_intent": [
+        "event",
+        "character"
+      ],
+      "section": 3,
+      "subsection": 2,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        2
+      ],
+      "gold_anchor_hashes": [
+        "543a01aa553d0b445371b80079e76ac9f08c05732eceb37451de96b095f95ab8"
+      ],
+      "gold_chunk_hashes": [
+        "20ddbcb0f3aed5a9cfd9a74e470b6c0160f874d48a6b2eedc42b7bb8dda6ce51",
+        "34cf99986d35cff4a3aaf44193af3bea77afd770f6586a663a43fa28bc553bf9",
+        "43a145f7e7dea0d16b22379c6d86263c5589093a2a1782873b1b074a098507d1",
+        "444056f47e12dd30a944ee6ac2e3a9f5387fb2622299cc80aad410ca6670aa04",
+        "462498b6d453036fe5b7ba7054eef5f866ea06b5ecd4c14bfd3343e05caee288",
+        "474e5d230a7ef1b832f5a1b21e3d1bd5051cb116a520f2e1140406d02fa21e98",
+        "4e13b24c86a4d9f9828486f2c15e8c915a2d8daf789b70957a8754c7c17191b5",
+        "5282f36229ff76627f3bca233755eed25f12dffa45767de8b7b46bd88ff740b7",
+        "543a01aa553d0b445371b80079e76ac9f08c05732eceb37451de96b095f95ab8",
+        "5ba10cdb5b61acd2e9c70ca21400892ed35f2dcf49419f153e5a37eec7a41ca8",
+        "6d6a0a4054a69a13f333d0971e44941dabec8c0f83d420872f66175f2a97b415",
+        "7cd60a2c4eb1a2db1254d3cae7df279332b9843a48978c12e1e93ee54bf45b67",
+        "7f45725022d8a3b7f55a72493f539df9f70cde0e68e7d4d7e2d449493630d4d8",
+        "81976b817510664d7683dc0f53c6c6f137fc166a7850e10541af23a100b3e36c",
+        "8966bf1327985155054c989b59e3995732023960a647cebf2250472fc210f538",
+        "909c2d58244fc194ee14fb25342bfce7cd1d79a6377fb6cb17e033ae8f039006",
+        "96aca982c55d9a3a8bb8cb127611c31caf11b024046c2b258b2748e5d39c0742",
+        "96e1976894ec6bd58a5bd48faf573de3fe07fe5cc35f26d7dff2176fd5cf1a13",
+        "a51b34fca07995be72965476be8fd27d444496988f1296463d65c1683ce17954",
+        "ac53ae20cb0f52c7d5671a8d25177d5523729280e9f4633f1f642d9439a9dab9",
+        "b13e3ad1995abaf74ed7606bb090b0279faec21c8f1eb9f5e83e71daa09045fb",
+        "c0817ff659f38d69bc0a4a8ee458be849bd3847d7be6dab92ff42d7e4c7e28f9",
+        "ce6adfa3ade0b93e34c1e2738e2735a4c630c194ea2b00fd114afa5ed3b44645",
+        "ce6cb1433eacb44105d1fc3319d7288cc439c52051c2b0f7240c93abcb40d089",
+        "dc9a46e16f078b76755304b3692b8c0cd482f3b69ed58227cbe14cd497da7919",
+        "e079ca4d6f95827672b8b43a5b7fb7544f9ebc82378bbd60627ce6d87f75f2cf",
+        "e577ddfbea67c06e4fdafe7ac2dd76eae90becf4111af9f5fde0bae47f3aa608",
+        "e9f0edb127c0456a571c0ace462acb5fe2a53aca9c431a557eadd5ea0e0ef54c",
+        "ea7beee87bfd47aa9282cfdc608714df07614c0e8902bc646fdff894850bb8a5",
+        "f73d95be85abaf0fcb0fc21eb42ed0a11008e8b05a59890894652f65d9fe1c8f",
+        "fbba13d0434144ce43a4e121122c1676a0c328fa2af0ee21b31a2e4c5fc61e90",
+        "fc5f0e97f47421b3d4d4a3475dc564b38a75e6cc039385495cec3a0c96c9a9c1"
+      ],
+      "must_recall_facts": [
+        "周六凌晨三点十五分，林晚在闹钟响前醒来",
+        "林晚出门挂上用了四年的富士相机（快门钮已磨掉漆），下楼时声控灯坏了，数到第七级右转避开旧纸箱"
+      ],
+      "fact_evidence": {
+        "周六凌晨三点十五分，林晚在闹钟响前醒来": [
+          {
+            "phrase": "周六凌晨三点十五分，林晚在闹钟响前醒来",
+            "chunk_hash": "543a01aa553d0b445371b80079e76ac9f08c05732eceb37451de96b095f95ab8",
+            "start": 0,
+            "end": 19,
+            "excerpt": "周六凌晨三点十五分，林晚在闹钟响前醒来。黑暗中，隔壁键盘声停了，冰箱压缩机也没启动。老"
+          }
+        ],
+        "林晚出门挂上用了四年的富士相机（快门钮已磨掉漆），下楼时声控灯坏了，数到第七级右转避开旧纸箱": [
+          {
+            "phrase": "挂上那台用了四年的富士相机",
+            "chunk_hash": "543a01aa553d0b445371b80079e76ac9f08c05732eceb37451de96b095f95ab8",
+            "start": 69,
+            "end": 82,
+            "excerpt": "沙发扶手上抬起头，眼睛泛着微光。\n\n她穿上外套，挂上那台用了四年的富士相机，快门钮已磨掉漆。下楼时声控灯坏了，她数着台阶，"
+          },
+          {
+            "phrase": "下楼时声控灯坏了，她数着台阶，到第七级右转避开邻居的旧纸箱",
+            "chunk_hash": "543a01aa553d0b445371b80079e76ac9f08c05732eceb37451de96b095f95ab8",
+            "start": 91,
+            "end": 120,
+            "excerpt": "套，挂上那台用了四年的富士相机，快门钮已磨掉漆。下楼时声控灯坏了，她数着台阶，到第七级右转避开邻居的旧纸箱。推开单元门，冷空气灌进领口。雨后槐叶贴在地上，"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J2",
+      "tier": "continuity_fact",
+      "query": "周六清晨开店前，林晚已经等在街对面。写她坐马路牙子的姿势和相机的状态——需要她开店前等候的固定画面。",
+      "query_intent": [
+        "character",
+        "scene"
+      ],
+      "section": 5,
+      "subsection": 1,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        4
+      ],
+      "gold_anchor_hashes": [
+        "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+        "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+        "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901"
+      ],
+      "gold_chunk_hashes": [
+        "046cf9d04b6ef7882df309251914a69d981fe7f5506b64b3d2e22ca4dbd16e42",
+        "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+        "269910b70e1fae91d2dc9b1c1158475a1885fd4bbaea228534bdc0e510ddb78d",
+        "2a9b46ab0adcc447bc5395d58eae1b91916b8a6e0b1327918803f11690c5543c",
+        "360b1bc2fcd45f15aff304b974c1c9ce583b4e2cce3a4e6415f32306cbe7d2c1",
+        "3c6740efa4777f3db5fdfe3a98d9c0b175a442c628906e371386b397503ac2e0",
+        "3c805c16955f768de1c43b832bbfc570adf5501f9f4850ae2c9cac31dfeedba0",
+        "40c2908780d80440fb89bf6fdd4386ec2d3e5994fff805779be3a857621c103a",
+        "50bf414f4129efc794856d29596b2d7b0a0454efa83550e526068df0cf7cf39f",
+        "58eac5d3acae96f15d539f5d495be421ad08942c34a14a39f4a508247d59e86c",
+        "74d556f8b1f4e75d7fdf89ea2ab43130d0449b13f52a6d7c9ac87e5dfbe9adb3",
+        "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+        "85b87b1afbbe0ca3d02a6c823e09c789b2fe9f3a3ee0e5afb7a364d9a624ed97",
+        "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+        "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+        "95fa12d1a39d1b0311afd6918630514a87689e1623ca8e6ba00b77e48de92bab",
+        "a5d6d268da0d965662992205c3f6aab8243a7ba03d4bb9ccbc2095ef243686a7",
+        "b4c2bcb6bae72690942eb5f140f5708ba6a6e1462600ba073b38bad76c66b038",
+        "bd79d92b1ccb0df5f86a2ff5c3e526e423cebf2d4a1280494f5653602c9eb170",
+        "bd7a462e2ed5b1ae06d3c680015de2d4abf2752edd5de31c8a1d834a4cac3e2a",
+        "c0acbce127f24f5d7b0d080d8c8e20f076bd10f64af94970f72427a1d4a77f03",
+        "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+        "e034521ed716e3f803f7fb1e2c89d8e52eb0f4f893adbcb9b0ee1b8fb23ffc59",
+        "ecc0259bf79ecee33744a83691a639b8a9ff4df2b048b5fbb520de71cfa5200b",
+        "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+        "ffcc3731642c7fa6608338c2e11115cb4d7cf38b6f4f06909ba4549ec6b38d09"
+      ],
+      "must_recall_facts": [
+        "周六清晨六点四十分天还没亮透，林晚坐在面包店对面的马路牙子上、后背靠着槐树",
+        "她把相机搁在膝盖上，镜头盖没摘"
+      ],
+      "fact_evidence": {
+        "周六清晨六点四十分天还没亮透，林晚坐在面包店对面的马路牙子上、后背靠着槐树": [
+          {
+            "phrase": "周六清晨六点四十分，天还没亮透",
+            "chunk_hash": "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+            "start": 0,
+            "end": 15,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上，后背靠着槐"
+          },
+          {
+            "phrase": "周六清晨六点四十分，天还没亮透",
+            "chunk_hash": "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+            "start": 0,
+            "end": 15,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上，后背靠着槐"
+          },
+          {
+            "phrase": "周六清晨六点四十分，天还没亮透",
+            "chunk_hash": "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+            "start": 0,
+            "end": 15,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上，后背靠着槐"
+          },
+          {
+            "phrase": "林晚坐在面包店对面的马路牙子上，后背靠着槐树",
+            "chunk_hash": "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+            "start": 18,
+            "end": 40,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上，后背靠着槐树。相机搁在膝盖上，镜头盖没摘。操作间的灯已经亮着"
+          },
+          {
+            "phrase": "林晚坐在面包店对面的马路牙子上，后背靠着槐树",
+            "chunk_hash": "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+            "start": 18,
+            "end": 40,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上，后背靠着槐树。相机搁在膝盖上，镜头盖没摘。操作间的灯已经亮着"
+          },
+          {
+            "phrase": "林晚坐在面包店对面的马路牙子上，后背靠着槐树",
+            "chunk_hash": "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+            "start": 18,
+            "end": 40,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上，后背靠着槐树。相机搁在膝盖上，镜头盖没摘。操作间的灯已经亮着"
+          }
+        ],
+        "她把相机搁在膝盖上，镜头盖没摘": [
+          {
+            "phrase": "相机搁在膝盖上，镜头盖没摘",
+            "chunk_hash": "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+            "start": 41,
+            "end": 54,
+            "excerpt": "\n林晚坐在面包店对面的马路牙子上，后背靠着槐树。相机搁在膝盖上，镜头盖没摘。操作间的灯已经亮着——周野的背影在窗框里移动，"
+          },
+          {
+            "phrase": "相机搁在膝盖上，镜头盖没摘",
+            "chunk_hash": "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+            "start": 41,
+            "end": 54,
+            "excerpt": "\n林晚坐在面包店对面的马路牙子上，后背靠着槐树。相机搁在膝盖上，镜头盖没摘。操作间的灯已经亮着——周野的背影在窗框里移动，"
+          },
+          {
+            "phrase": "相机搁在膝盖上，镜头盖没摘",
+            "chunk_hash": "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+            "start": 41,
+            "end": 54,
+            "excerpt": "\n林晚坐在面包店对面的马路牙子上，后背靠着槐树。相机搁在膝盖上，镜头盖没摘。操作间的灯已经亮着——周野的背影在窗框里移动，"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J3",
+      "tier": "continuity_fact",
+      "query": "林晚深夜删图文前，想回顾这条图文是怎么一步步火起来的：发出当晚点赞破万，第五天阅读破十万。需要这两组时间数字来写她的失控感。",
+      "query_intent": [
+        "event",
+        "foreshadowing"
+      ],
+      "section": 7,
+      "subsection": 1,
+      "requires_causal_retrieval": true,
+      "gold_sections": [
+        4,
+        6
+      ],
+      "gold_anchor_hashes": [
+        "200546fa0480c511df58edeb5472c35ddee42c503065d68e85d5415bfb6ae729",
+        "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+        "98f09302496c96ec810475d08e6cfda1952d255e7abeef6ded05f8897be22fb0",
+        "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd"
+      ],
+      "gold_chunk_hashes": [
+        "046cf9d04b6ef7882df309251914a69d981fe7f5506b64b3d2e22ca4dbd16e42",
+        "0f6385ce50d18b1f0bc4357b97657e306c6b24a0c7eafcd2d53a4d48a036ab73",
+        "0f929ab4d64580fb1af2546c31b578ce63dba1c2847bfc14e055b42604abffc8",
+        "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+        "14e4a45f1620cafb5ac1daf50c9aaba50fae2653beca9b2891ae78254804b3a7",
+        "200546fa0480c511df58edeb5472c35ddee42c503065d68e85d5415bfb6ae729",
+        "2117f6802f7dda497e3bb112345838a9851937fda58bd39636958d693e5779cb",
+        "269910b70e1fae91d2dc9b1c1158475a1885fd4bbaea228534bdc0e510ddb78d",
+        "27872c41e9b54554288c65781dee7ad35fbfda81981206a88adb9672147c0aa5",
+        "2a9b46ab0adcc447bc5395d58eae1b91916b8a6e0b1327918803f11690c5543c",
+        "2ad638377bc4b28eb44682aec0daf1f3085726842cda29fb36d4c31c5fef9977",
+        "2d08931aca393e834c5bbb541c09e208f399cf281870e49ac2172f8b2b50015e",
+        "360b1bc2fcd45f15aff304b974c1c9ce583b4e2cce3a4e6415f32306cbe7d2c1",
+        "3c6740efa4777f3db5fdfe3a98d9c0b175a442c628906e371386b397503ac2e0",
+        "3c805c16955f768de1c43b832bbfc570adf5501f9f4850ae2c9cac31dfeedba0",
+        "40c2908780d80440fb89bf6fdd4386ec2d3e5994fff805779be3a857621c103a",
+        "41e56e8a566b780b993ef5ee51666b3cd76cb8b59b43a65e2497c2be1161a285",
+        "487c354ce2cbfaa8820a8f3cbea4145a8f5d8bfac314362eba0296cad5d77fd6",
+        "4bfd3dd145054407da1f4abcecb49102e94d608a3070d82d70ae9f3520b1bace",
+        "50bf414f4129efc794856d29596b2d7b0a0454efa83550e526068df0cf7cf39f",
+        "58eac5d3acae96f15d539f5d495be421ad08942c34a14a39f4a508247d59e86c",
+        "7066c248712343ffb04eb3d05358c43b72d541b4153b82502749c3499e6d8241",
+        "74d556f8b1f4e75d7fdf89ea2ab43130d0449b13f52a6d7c9ac87e5dfbe9adb3",
+        "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+        "821796abdbb41dede866afcbc6efcf93121d3dd54ec266469a23648fecfa6351",
+        "85b87b1afbbe0ca3d02a6c823e09c789b2fe9f3a3ee0e5afb7a364d9a624ed97",
+        "8adc769ff32ba74e0d4227461f8938a9c037fc126e7e4ba203992bb8624e3eb5",
+        "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+        "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+        "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+        "8fbcb91024eb6a0bf5198823b88a08bc50f457e2d40b33f33d7bcc631548d1c9",
+        "95fa12d1a39d1b0311afd6918630514a87689e1623ca8e6ba00b77e48de92bab",
+        "98f09302496c96ec810475d08e6cfda1952d255e7abeef6ded05f8897be22fb0",
+        "9ae9cb4cf2dedbfb3c52c6b00334ac17d804069939e76209323d3f0699982940",
+        "a5d6d268da0d965662992205c3f6aab8243a7ba03d4bb9ccbc2095ef243686a7",
+        "ac0d7cd04388897631af8194b9b12a948f9a577672eef7be2a9c99c387eda60c",
+        "b2fdd8b91e4666cc716beeb0001314c04b374faea45eddcb50935f6d777b45a2",
+        "b4c2bcb6bae72690942eb5f140f5708ba6a6e1462600ba073b38bad76c66b038",
+        "bd173ac4619fad969e6db38efa512b16ad86b6979f51a2511057266cd3b6089f",
+        "bd79d92b1ccb0df5f86a2ff5c3e526e423cebf2d4a1280494f5653602c9eb170",
+        "bd7a462e2ed5b1ae06d3c680015de2d4abf2752edd5de31c8a1d834a4cac3e2a",
+        "c0acbce127f24f5d7b0d080d8c8e20f076bd10f64af94970f72427a1d4a77f03",
+        "c20221d5194c8f7b808db2b09790605f2c259890ccbfd12225f4a9921e154c05",
+        "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+        "e034521ed716e3f803f7fb1e2c89d8e52eb0f4f893adbcb9b0ee1b8fb23ffc59",
+        "e34ada67298941a891aed7f0c1693084b35d33e177ddab6764057c8cc602ba9c",
+        "ebb8546bfc19bc0c62fe5865116e0b878f1797591e088622ee98ef4f0623e400",
+        "ecc0259bf79ecee33744a83691a639b8a9ff4df2b048b5fbb520de71cfa5200b",
+        "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+        "ffcc3731642c7fa6608338c2e11115cb4d7cf38b6f4f06909ba4549ec6b38d09"
+      ],
+      "must_recall_facts": [
+        "图文发出后的周五深夜，点赞数在凌晨两点破了万",
+        "这条图文在第五天破了十万"
+      ],
+      "fact_evidence": {
+        "图文发出后的周五深夜，点赞数在凌晨两点破了万": [
+          {
+            "phrase": "林晚把图文发上网的那个周五深夜，点赞数在凌晨两点破了万",
+            "chunk_hash": "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+            "start": 0,
+            "end": 27,
+            "excerpt": "林晚把图文发上网的那个周五深夜，点赞数在凌晨两点破了万。\n\n她盘腿坐在沙发上，手机屏幕的光照着她的脸。"
+          }
+        ],
+        "这条图文在第五天破了十万": [
+          {
+            "phrase": "林晚的图文在第五天破了十万",
+            "chunk_hash": "200546fa0480c511df58edeb5472c35ddee42c503065d68e85d5415bfb6ae729",
+            "start": 0,
+            "end": 13,
+            "excerpt": "林晚的图文在第五天破了十万。\n\n评论区挤满“求地址”，转发链里一个美食博主"
+          },
+          {
+            "phrase": "林晚的图文在第五天破了十万",
+            "chunk_hash": "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+            "start": 0,
+            "end": 13,
+            "excerpt": "林晚的图文在第五天破了十万。\n\n评论区挤满“求地址”，转发链里一个美食博主"
+          },
+          {
+            "phrase": "林晚的图文在第五天破了十万",
+            "chunk_hash": "98f09302496c96ec810475d08e6cfda1952d255e7abeef6ded05f8897be22fb0",
+            "start": 0,
+            "end": 13,
+            "excerpt": "林晚的图文在第五天破了十万。\n\n评论区挤满“求地址”，一个美食博主转发时加"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J4",
+      "tier": "continuity_fact",
+      "query": "周六一早林晚进店系围裙，这一节要写她上手学刷模具时记住的规矩：柜子里有哪些塔模、涂层怎么保养。需要周野教她的原话。",
+      "query_intent": [
+        "event",
+        "character"
+      ],
+      "section": 9,
+      "subsection": 2,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        8
+      ],
+      "gold_anchor_hashes": [
+        "5d7abf31b21ca1f43141277fada714833aad2f3a4a24dcea46843f12f8a70bf6",
+        "71ed4b75cb64bf0e578c7960878726edb35d84b1cd76aa88addf51f31ae00404",
+        "7c8201339f1b615a446ded94ed5c8ac3f4c8ed7b9779bf7f9808ebd20eaf08ae",
+        "91ccb3aa925090ba34fc3dd263930ab4a208ac0c53a5c9514971da4878b99ee7",
+        "c2a31b8c875dab28683099bd63a974198342011d360762355da2acc51f3a3566",
+        "f87e9288469ca5c62454bb0308decfb9d44556c305a3b8f3c1404806bae11a9d"
+      ],
+      "gold_chunk_hashes": [
+        "0ad24258a64a0c30cca8187936600675566f234e0a218356662d08aac560fcb1",
+        "1d40b70c6ad6f1f02cc238034b3ab8fda14596720f5705c55875c62e198a83fe",
+        "3f3f2bf220f8d922525c004f139671ab61138bc1c1d53df7e3194ba14bacdfde",
+        "47d2d167e670046f7069d1d026bb4bf2f23b701738a9ab53d8638f5d452d7c09",
+        "4e55724ad2491726e0defd6b85956ece8d3fe5d626f6e9153d36f7a619a671ef",
+        "58cdb2b45f54cf059148b5ad979ce2bd179f6ee536c8b89ad7c3788a43ed0749",
+        "5987563aa971b24cc7729153a742fbe1190d6cf6b05d730083120c3e68865c31",
+        "5d7abf31b21ca1f43141277fada714833aad2f3a4a24dcea46843f12f8a70bf6",
+        "5da05a892f54ff4998dcc8fcc5e75cbb5fc3daf8f91e8b494e2ed50918cea25f",
+        "63010bc887e9dd2fd5726d2081605c6c0898b6a38ef7b731e3442f8d0a12cb3c",
+        "6a6c1c2bfa9b1a82be935b9d9a05af2c2bcc4003e1995a9b89f1f35ad6f662a8",
+        "71ed4b75cb64bf0e578c7960878726edb35d84b1cd76aa88addf51f31ae00404",
+        "7c8201339f1b615a446ded94ed5c8ac3f4c8ed7b9779bf7f9808ebd20eaf08ae",
+        "89ff782797ea27202c88281ab1429535507e917935ac3bc1d4c8a29bc575e16c",
+        "8faa1e0cd32b75c819ca5fac1b8512f29f1002c0a79bb2e89e1398212e26efcc",
+        "91ccb3aa925090ba34fc3dd263930ab4a208ac0c53a5c9514971da4878b99ee7",
+        "9d0dbebc2c1d01cb2706a7cfad875b1d69fd2029b1250718480a6c5f3adad26c",
+        "ae9ecfeacf1b22ded47a8f48e315b911fac496ab3151838385784d06515b770f",
+        "c2a31b8c875dab28683099bd63a974198342011d360762355da2acc51f3a3566",
+        "d154e5c99ff8df9eae5d14682816b9784c397dec1e7044ec84dae68d118ba205",
+        "e4ea3aba451b354866bc1662a1405e2d2c047f113cca79a5ed553a78af0326de",
+        "f87e9288469ca5c62454bb0308decfb9d44556c305a3b8f3c1404806bae11a9d",
+        "fb4f1aba4ac41dc09b32bbd37c4ba196d558e5b4ec8a7f886a251f187bfdf1b5"
+      ],
+      "must_recall_facts": [
+        "模具柜里有船形、菊花形、梅花形的塔模",
+        "周野叮嘱涂层不粘、别拿钢丝球刷，活底模的底片能拆"
+      ],
+      "fact_evidence": {
+        "模具柜里有船形、菊花形、梅花形的塔模": [
+          {
+            "phrase": "还有船形、菊花形、梅花形的塔模",
+            "chunk_hash": "5d7abf31b21ca1f43141277fada714833aad2f3a4a24dcea46843f12f8a70bf6",
+            "start": 0,
+            "end": 15,
+            "excerpt": "还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起"
+          },
+          {
+            "phrase": "还有船形、菊花形、梅花形的塔模",
+            "chunk_hash": "71ed4b75cb64bf0e578c7960878726edb35d84b1cd76aa88addf51f31ae00404",
+            "start": 409,
+            "end": 424,
+            "excerpt": "具一字排开。土司模内壁发黑，圆形活底模边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起"
+          },
+          {
+            "phrase": "还有船形、菊花形、梅花形的塔模",
+            "chunk_hash": "7c8201339f1b615a446ded94ed5c8ac3f4c8ed7b9779bf7f9808ebd20eaf08ae",
+            "start": 409,
+            "end": 424,
+            "excerpt": "具一字排开。土司模内壁发黑，圆形活底模边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”"
+          },
+          {
+            "phrase": "还有船形、菊花形、梅花形的塔模",
+            "chunk_hash": "91ccb3aa925090ba34fc3dd263930ab4a208ac0c53a5c9514971da4878b99ee7",
+            "start": 18,
+            "end": 33,
+            "excerpt": "土司模内壁发黑，圆形活底模边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起"
+          },
+          {
+            "phrase": "还有船形、菊花形、梅花形的塔模",
+            "chunk_hash": "c2a31b8c875dab28683099bd63a974198342011d360762355da2acc51f3a3566",
+            "start": 67,
+            "end": 82,
+            "excerpt": "具一字排开。土司模内壁发黑，圆形活底模边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n林晚拿起活"
+          },
+          {
+            "phrase": "还有船形、菊花形、梅花形的塔模",
+            "chunk_hash": "f87e9288469ca5c62454bb0308decfb9d44556c305a3b8f3c1404806bae11a9d",
+            "start": 390,
+            "end": 405,
+            "excerpt": "具一字排开。土司模内壁发黑，圆形活底模边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起"
+          }
+        ],
+        "周野叮嘱涂层不粘、别拿钢丝球刷，活底模的底片能拆": [
+          {
+            "phrase": "涂层，不粘。别拿钢丝球刷",
+            "chunk_hash": "5d7abf31b21ca1f43141277fada714833aad2f3a4a24dcea46843f12f8a70bf6",
+            "start": 19,
+            "end": 31,
+            "excerpt": "还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。"
+          },
+          {
+            "phrase": "涂层，不粘。别拿钢丝球刷",
+            "chunk_hash": "71ed4b75cb64bf0e578c7960878726edb35d84b1cd76aa88addf51f31ae00404",
+            "start": 428,
+            "end": 440,
+            "excerpt": "边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。"
+          },
+          {
+            "phrase": "涂层，不粘。别拿钢丝球刷",
+            "chunk_hash": "7c8201339f1b615a446ded94ed5c8ac3f4c8ed7b9779bf7f9808ebd20eaf08ae",
+            "start": 428,
+            "end": 440,
+            "excerpt": "边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”"
+          },
+          {
+            "phrase": "涂层，不粘。别拿钢丝球刷",
+            "chunk_hash": "91ccb3aa925090ba34fc3dd263930ab4a208ac0c53a5c9514971da4878b99ee7",
+            "start": 37,
+            "end": 49,
+            "excerpt": "边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。"
+          },
+          {
+            "phrase": "涂层，不粘。别拿钢丝球刷",
+            "chunk_hash": "c2a31b8c875dab28683099bd63a974198342011d360762355da2acc51f3a3566",
+            "start": 86,
+            "end": 98,
+            "excerpt": "边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n林晚拿起活底模，底片能拆，金属扣咔哒响。周"
+          },
+          {
+            "phrase": "涂层，不粘。别拿钢丝球刷",
+            "chunk_hash": "f87e9288469ca5c62454bb0308decfb9d44556c305a3b8f3c1404806bae11a9d",
+            "start": 409,
+            "end": 421,
+            "excerpt": "边缘有扣，还有船形、菊花形、梅花形的塔模。\n\n“涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。"
+          },
+          {
+            "phrase": "底片能拆，金属扣咔哒响",
+            "chunk_hash": "5d7abf31b21ca1f43141277fada714833aad2f3a4a24dcea46843f12f8a70bf6",
+            "start": 43,
+            "end": 54,
+            "excerpt": "涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。周野翻过来指腹抹过边缘：“装回去要对准，歪了漏"
+          },
+          {
+            "phrase": "底片能拆，金属扣咔哒响",
+            "chunk_hash": "71ed4b75cb64bf0e578c7960878726edb35d84b1cd76aa88addf51f31ae00404",
+            "start": 452,
+            "end": 463,
+            "excerpt": "涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。周野翻过来指腹抹过边缘：“装回去要对准，歪了漏"
+          },
+          {
+            "phrase": "底片能拆，金属扣咔哒响",
+            "chunk_hash": "91ccb3aa925090ba34fc3dd263930ab4a208ac0c53a5c9514971da4878b99ee7",
+            "start": 61,
+            "end": 72,
+            "excerpt": "涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。周野翻过来指腹抹过边缘：“装回去要对准，歪了漏"
+          },
+          {
+            "phrase": "底片能拆，金属扣咔哒响",
+            "chunk_hash": "c2a31b8c875dab28683099bd63a974198342011d360762355da2acc51f3a3566",
+            "start": 109,
+            "end": 120,
+            "excerpt": "“涂层，不粘。别拿钢丝球刷。”\n林晚拿起活底模，底片能拆，金属扣咔哒响。周野翻过来指腹抹过边缘：“装回去要对准，歪了漏"
+          },
+          {
+            "phrase": "底片能拆，金属扣咔哒响",
+            "chunk_hash": "f87e9288469ca5c62454bb0308decfb9d44556c305a3b8f3c1404806bae11a9d",
+            "start": 433,
+            "end": 444,
+            "excerpt": "涂层，不粘。别拿钢丝球刷。”\n\n林晚拿起活底模，底片能拆，金属扣咔哒响。周野翻过来指腹抹过边缘：“装回去要对准，歪了漏"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J5",
+      "tier": "continuity_fact",
+      "query": "第三个周六林晚提前到店，想写周野揉面时那首童谣的来历：他说面团怕冷也怕孤单，所以一边揉一边哼，调子只有五个音。需要他的原话和旋律结构。",
+      "query_intent": [
+        "event",
+        "character"
+      ],
+      "section": 10,
+      "subsection": 1,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        9
+      ],
+      "gold_anchor_hashes": [
+        "0ef2e650fc535ef4fbe913e746d30f4e2f941630c841a509ec4ac401cc470f18",
+        "1fc3f7bd534e61954cf2d882037058aef98482da68b9a2582246db38e4c569fd",
+        "2aa515ccf675bff1a1f8e1aa1df804333b133f094ce0ef26acc1d499805d60b2",
+        "302d0389e48b5e91abfb2924f313ee9f28578cb0c92c009f06dd232490f8a396",
+        "56ec1d62ae7c668ad47141eafe88c9f168a689444e3aa3ee4edffdfd7322fa07",
+        "5981ffe9472eaf2b7c8814293addab0d9619b7d304514653a284dbb502c78867",
+        "5b72a6af93ff59d23e6f15b378baf46b8167ccb8a2253615554c9b543949f293",
+        "60111a9fe94cfa1a208f7d9c3008b97933b97fa059302091bc8a29096e3dd8ac",
+        "63ce4f5cca70ebafd3d2375a633e7911b7286369cce30bdef1048e3d971e0827",
+        "66a43692451af08b9cb5dc16f1b391d13ef869361e21ef0c49beee19748b72bf",
+        "a9ef5a3cc33b91b6d988efe973bce352870f1abe0a06714964c48d876440fda3",
+        "b82ce980376379cfb91ef00b0dfb065c1dbfdb63df11874daf9cca069100a56e",
+        "d5ae8687427163a94cdf713cb47b55766c5c38672c80658cef6164b0b653ff3c",
+        "f3c6fa0fe03084041f3301f3215a032d01dc1444623a95fded3ee1d4e452b67e",
+        "ff0cca844bc9c4ab9e7d11419392db0ab63ec718be62f72ad81f5996a6cc66e0"
+      ],
+      "gold_chunk_hashes": [
+        "07c39fbc3ebdbf9652dd3574930b52abc59be95a3db47abaffd35978c63c9a21",
+        "0ef2e650fc535ef4fbe913e746d30f4e2f941630c841a509ec4ac401cc470f18",
+        "1fc3f7bd534e61954cf2d882037058aef98482da68b9a2582246db38e4c569fd",
+        "21965dc676498ee8c7458b7c0954238a26eb38268704186a4728b12c76163829",
+        "24450ddec715dcfb72387de9bdf6f1a1cc51a61448803869c481c50501149122",
+        "2aa515ccf675bff1a1f8e1aa1df804333b133f094ce0ef26acc1d499805d60b2",
+        "302d0389e48b5e91abfb2924f313ee9f28578cb0c92c009f06dd232490f8a396",
+        "5479684611c0e632c617c23e54803fab92f81a9f3c49e3755d8ef8779b561a7a",
+        "56ec1d62ae7c668ad47141eafe88c9f168a689444e3aa3ee4edffdfd7322fa07",
+        "5981ffe9472eaf2b7c8814293addab0d9619b7d304514653a284dbb502c78867",
+        "5b72a6af93ff59d23e6f15b378baf46b8167ccb8a2253615554c9b543949f293",
+        "60111a9fe94cfa1a208f7d9c3008b97933b97fa059302091bc8a29096e3dd8ac",
+        "63ce4f5cca70ebafd3d2375a633e7911b7286369cce30bdef1048e3d971e0827",
+        "66a43692451af08b9cb5dc16f1b391d13ef869361e21ef0c49beee19748b72bf",
+        "871bc7731e96a81772b75e868cb3db1160142ce43b0fb26cef9349fd4249ab0c",
+        "8b7274c4940b86dfb1d6d1f9aa28a85b1633d9bb8d13ca2c3bbbe16521f78006",
+        "90d2c902548b7593fd2f6b03ec9588d18ccb4ea2b7953c3f6abcc94fdb7bd170",
+        "a9ef5a3cc33b91b6d988efe973bce352870f1abe0a06714964c48d876440fda3",
+        "acffb569ff7cba0933faef50d501ebb29246ba39627fd804d5778b840bd3dab4",
+        "b82ce980376379cfb91ef00b0dfb065c1dbfdb63df11874daf9cca069100a56e",
+        "bbf68a1648bb3684087cf2a73efa947bed7e6111805f698e2cf0cf27cb1f49c0",
+        "d5ae8687427163a94cdf713cb47b55766c5c38672c80658cef6164b0b653ff3c",
+        "eda1ea7961a6dcfc2e2465dc9a8a24e877116df5796b94fe9de957ebd5d7d4a7",
+        "f3c6fa0fe03084041f3301f3215a032d01dc1444623a95fded3ee1d4e452b67e",
+        "ff0cca844bc9c4ab9e7d11419392db0ab63ec718be62f72ad81f5996a6cc66e0"
+      ],
+      "must_recall_facts": [
+        "周野说面团怕冷也怕孤单，所以一边揉一边哼",
+        "他哼的调子只有五个音，前三个往上、后两个往下"
+      ],
+      "fact_evidence": {
+        "周野说面团怕冷也怕孤单，所以一边揉一边哼": [
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "302d0389e48b5e91abfb2924f313ee9f28578cb0c92c009f06dd232490f8a396",
+            "start": 212,
+            "end": 221,
+            "excerpt": "揉面。”周野把刮板放进水槽。“面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。“没有词"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "302d0389e48b5e91abfb2924f313ee9f28578cb0c92c009f06dd232490f8a396",
+            "start": 582,
+            "end": 591,
+            "excerpt": "晨四点揉面，一边揉一边哼。没有词，哄面团的。她说面团怕冷，也怕孤单。"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "56ec1d62ae7c668ad47141eafe88c9f168a689444e3aa3ee4edffdfd7322fa07",
+            "start": 88,
+            "end": 97,
+            "excerpt": "晨四点揉面，一边揉一边哼。没有词，哄面团的。她说面团怕冷，也怕孤单。\n第四十二条，调子五个音。前三个往上，后两个往"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "5981ffe9472eaf2b7c8814293addab0d9619b7d304514653a284dbb502c78867",
+            "start": 196,
+            "end": 205,
+            "excerpt": "揉面。”周野把刮板放进水槽。“面团发酵会裂。她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。\n\n“没"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "5b72a6af93ff59d23e6f15b378baf46b8167ccb8a2253615554c9b543949f293",
+            "start": 148,
+            "end": 157,
+            "excerpt": "起来揉面，一边揉一边哼。没有词，是哄面团的。她说面团怕冷，也怕孤单。\n\n第四十二条，调子只有五个音。前三个往上走，"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "63ce4f5cca70ebafd3d2375a633e7911b7286369cce30bdef1048e3d971e0827",
+            "start": 156,
+            "end": 165,
+            "excerpt": "揉面。”周野把刮板放进水槽。“面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。“没有词"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "63ce4f5cca70ebafd3d2375a633e7911b7286369cce30bdef1048e3d971e0827",
+            "start": 438,
+            "end": 447,
+            "excerpt": "晨四点揉面，一边揉一边哼。没有词，哄面团的。她说面团怕冷，也怕孤单。\n\n第四十二条，调子五个音。前三个往上，后两个"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "0ef2e650fc535ef4fbe913e746d30f4e2f941630c841a509ec4ac401cc470f18",
+            "start": 444,
+            "end": 453,
+            "excerpt": "坊。在泉州。凌晨四点起来揉面。面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”他拧开水龙头。“没有词。就"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "1fc3f7bd534e61954cf2d882037058aef98482da68b9a2582246db38e4c569fd",
+            "start": 248,
+            "end": 257,
+            "excerpt": "开面包作坊，凌晨四点起来揉面。面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头冲掉面粉。"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "60111a9fe94cfa1a208f7d9c3008b97933b97fa059302091bc8a29096e3dd8ac",
+            "start": 148,
+            "end": 157,
+            "excerpt": "起来揉面，一边揉一边哼。没有词，是哄面团的。她说面团怕冷，也怕孤单。\n\n第四十二条，调子只有五个音。前三个往上走，"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "b82ce980376379cfb91ef00b0dfb065c1dbfdb63df11874daf9cca069100a56e",
+            "start": 467,
+            "end": 476,
+            "excerpt": "揉面。”周野把刮板放进水槽。“面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。“没有词"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "d5ae8687427163a94cdf713cb47b55766c5c38672c80658cef6164b0b653ff3c",
+            "start": 60,
+            "end": 69,
+            "excerpt": "坊。在泉州。凌晨四点起来揉面。面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”他拧开水龙头。“没有词。就"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "2aa515ccf675bff1a1f8e1aa1df804333b133f094ce0ef26acc1d499805d60b2",
+            "start": 60,
+            "end": 69,
+            "excerpt": "把包挂好，坐在书桌前。白天周野的话还在耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "66a43692451af08b9cb5dc16f1b391d13ef869361e21ef0c49beee19748b72bf",
+            "start": 63,
+            "end": 72,
+            "excerpt": "把包挂好，坐在书桌前。白天周野的话还在耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "a9ef5a3cc33b91b6d988efe973bce352870f1abe0a06714964c48d876440fda3",
+            "start": 357,
+            "end": 366,
+            "excerpt": "晨四点揉面，一边揉一边哼。没有词，哄面团的。她说面团怕冷，也怕孤单。\n\n第四十二条，调子五个音。前三个往上，后两个"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "f3c6fa0fe03084041f3301f3215a032d01dc1444623a95fded3ee1d4e452b67e",
+            "start": 102,
+            "end": 111,
+            "excerpt": "墨水洇开一个蓝点。\n\n白天周野的话还在耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，"
+          },
+          {
+            "phrase": "面团怕冷，也怕孤单",
+            "chunk_hash": "ff0cca844bc9c4ab9e7d11419392db0ab63ec718be62f72ad81f5996a6cc66e0",
+            "start": 259,
+            "end": 268,
+            "excerpt": "开面包作坊。凌晨四点起来揉面，一边揉一边哼。她说面团怕冷，也怕孤单。\n\n第四十二条，调子只有五个音。第三句没教完。"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "302d0389e48b5e91abfb2924f313ee9f28578cb0c92c009f06dd232490f8a396",
+            "start": 222,
+            "end": 230,
+            "excerpt": "进水槽。“面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。“没有词，就是哄面团的。”"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "5981ffe9472eaf2b7c8814293addab0d9619b7d304514653a284dbb502c78867",
+            "start": 206,
+            "end": 214,
+            "excerpt": "进水槽。“面团发酵会裂。她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。\n\n“没有词。就是哄面团的"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "63ce4f5cca70ebafd3d2375a633e7911b7286369cce30bdef1048e3d971e0827",
+            "start": 166,
+            "end": 174,
+            "excerpt": "进水槽。“面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。“没有词，就是哄面团的。”"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "0ef2e650fc535ef4fbe913e746d30f4e2f941630c841a509ec4ac401cc470f18",
+            "start": 454,
+            "end": 462,
+            "excerpt": "起来揉面。面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”他拧开水龙头。“没有词。就是哄面团的。”"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "1fc3f7bd534e61954cf2d882037058aef98482da68b9a2582246db38e4c569fd",
+            "start": 258,
+            "end": 266,
+            "excerpt": "起来揉面。面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头冲掉面粉。“没有词，就是哄面"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "b82ce980376379cfb91ef00b0dfb065c1dbfdb63df11874daf9cca069100a56e",
+            "start": 477,
+            "end": 485,
+            "excerpt": "进水槽。“面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”\n\n他拧开水龙头。“没有词，就是哄面团的。”"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "d5ae8687427163a94cdf713cb47b55766c5c38672c80658cef6164b0b653ff3c",
+            "start": 70,
+            "end": 78,
+            "excerpt": "起来揉面。面团发酵会裂，她说面团怕冷，也怕孤单。所以一边揉一边哼。”他拧开水龙头。“没有词。就是哄面团的。”\n林"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "2aa515ccf675bff1a1f8e1aa1df804333b133f094ce0ef26acc1d499805d60b2",
+            "start": 70,
+            "end": 78,
+            "excerpt": "。白天周野的话还在耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，后两个往下。第三句"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "66a43692451af08b9cb5dc16f1b391d13ef869361e21ef0c49beee19748b72bf",
+            "start": 73,
+            "end": 81,
+            "excerpt": "。白天周野的话还在耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，后两个往下。第三句"
+          },
+          {
+            "phrase": "所以一边揉一边哼",
+            "chunk_hash": "f3c6fa0fe03084041f3301f3215a032d01dc1444623a95fded3ee1d4e452b67e",
+            "start": 112,
+            "end": 120,
+            "excerpt": "\n白天周野的话还在耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，后两个往下。第三句"
+          }
+        ],
+        "他哼的调子只有五个音，前三个往上、后两个往下": [
+          {
+            "phrase": "调子只有五个音，前三个往上，后两个往下",
+            "chunk_hash": "2aa515ccf675bff1a1f8e1aa1df804333b133f094ce0ef26acc1d499805d60b2",
+            "start": 79,
+            "end": 98,
+            "excerpt": "耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，后两个往下。第三句没教完，她走了七年。\n\n林晚翻开笔记本，"
+          },
+          {
+            "phrase": "调子只有五个音，前三个往上，后两个往下",
+            "chunk_hash": "66a43692451af08b9cb5dc16f1b391d13ef869361e21ef0c49beee19748b72bf",
+            "start": 82,
+            "end": 101,
+            "excerpt": "耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，后两个往下。第三句没教完，她走了七年。\n\n她翻开笔记本，钢"
+          },
+          {
+            "phrase": "调子只有五个音，前三个往上，后两个往下",
+            "chunk_hash": "f3c6fa0fe03084041f3301f3215a032d01dc1444623a95fded3ee1d4e452b67e",
+            "start": 121,
+            "end": 140,
+            "excerpt": "耳朵里——面团怕冷，也怕孤单。所以一边揉一边哼。调子只有五个音，前三个往上，后两个往下。第三句没教完，她走了七年。\n\n她写下一行字：想"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J6",
+      "tier": "continuity_fact",
+      "query": "队伍里林晚打包间隙想起周野那本手写笔记：吴阿姨每周二下午买吐司边说喂鸽子、实际自己吃；“那个女生”第一个周六和第三个周六的记录。写这些常客档案。",
+      "query_intent": [
+        "character",
+        "scene"
+      ],
+      "section": 11,
+      "subsection": 1,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        10
+      ],
+      "gold_anchor_hashes": [
+        "33c7dadadb45e25b34bbb23dba88531d1eea8e87d3909504249bb286702dea26",
+        "609d3bed7d83c9e864e1d5fe21c542a4548ebc73704b4040fcdbdc919d2e4deb",
+        "64cecbbbf29a221b8b7ce2f34f981b674de7f19491207f91d7c8c9c1ae1e7589",
+        "6cae4da1a9bc924e94a91baf1a59e337be2e489abbb692d6de5e95e04214e5f2",
+        "e028b97c9fd432bba41e516bbd1f148d0cb4ddfa542c07a116a3792d728910d2",
+        "eaae376a10fe45cdedefcd24be6fb4a731ef5ef51fedeecc92899310b96ded7d"
+      ],
+      "gold_chunk_hashes": [
+        "009ae6dd993546af00172c497bf30ee76eb3f2d1d4520f470050ef7fd72a531b",
+        "1f7d0ed77a03bcee1d77c607091a2aad4622216b3cc3956252e2dd04314f8d2e",
+        "29c0f2b1c69bae370238ecc4e36fc12b27470606b3e32877fa8c8c0e2a1528bc",
+        "33c7dadadb45e25b34bbb23dba88531d1eea8e87d3909504249bb286702dea26",
+        "383a3b9fd336d2cced8979fd1a412fb01123ce5dc1c3b375ea5900c80fd03b75",
+        "59955f0309f4cf98996793622a098371bc9c30df0471dbc82ea79d98e66cd3aa",
+        "6017e8e057285dffc46cd2c342a9e8f9281ea25bc10ec84f03856ce0a22024d7",
+        "609d3bed7d83c9e864e1d5fe21c542a4548ebc73704b4040fcdbdc919d2e4deb",
+        "64cecbbbf29a221b8b7ce2f34f981b674de7f19491207f91d7c8c9c1ae1e7589",
+        "6cae4da1a9bc924e94a91baf1a59e337be2e489abbb692d6de5e95e04214e5f2",
+        "7940c04cb610cf57a2578a3fbe646e093d33f37e3b0bb9280ba96e4ee1d05cb9",
+        "7b07aefbd74f61524979c63d98d24bc15b310cc4f6b4d2fe8e3269653f05aa4a",
+        "91b96b70397b61ad14764dd7e0ea8e14f90a5e2f926aa147b6100181e07b385f",
+        "a262f794485a8fa237d4b4c2e3c66c51e2a92ce769a0e9377e3135928d91df60",
+        "a9b4d084d4718e88f92401bfa9e4f7704b435340aa5b1889d08029376d900d97",
+        "aadc4da4e583c315c35a76b006e7f6cf845685f981910181f7c08d0d119a2a39",
+        "b234162e7ddf9eb2f63884f01a7208342b4cbf77eb2d073ff148397ca82567b8",
+        "cd4fe656f9d3c7682f4054b9188d104b0f021864ecb1f15aad76ddec5051a1f1",
+        "e028b97c9fd432bba41e516bbd1f148d0cb4ddfa542c07a116a3792d728910d2",
+        "eaae376a10fe45cdedefcd24be6fb4a731ef5ef51fedeecc92899310b96ded7d",
+        "f727043a170f2679c952b4e53cc6e2b9aab3b823bd4042dbf228e695788e2867"
+      ],
+      "must_recall_facts": [
+        "周野笔记里记着吴阿姨每周二下午买吐司边、说喂鸽子，实际只喂过两次剩下都自己吃",
+        "笔记还记着“那个女生”第一个周六硬币排成列、第三个周六眼睛有点红一个现吃一个留着"
+      ],
+      "fact_evidence": {
+        "周野笔记里记着吴阿姨每周二下午买吐司边、说喂鸽子，实际只喂过两次剩下都自己吃": [
+          {
+            "phrase": "吴阿姨，每周二下午买吐司边，说喂鸽子",
+            "chunk_hash": "33c7dadadb45e25b34bbb23dba88531d1eea8e87d3909504249bb286702dea26",
+            "start": 419,
+            "end": 437,
+            "excerpt": "来。\n\n林晚接过。封面温热，沾着面粉。翻开。\n\n吴阿姨，每周二下午买吐司边，说喂鸽子。实际只喂过两次，剩下都自己吃。喜欢吐司边烤焦一"
+          },
+          {
+            "phrase": "吴阿姨，每周二下午买吐司边，说喂鸽子",
+            "chunk_hash": "eaae376a10fe45cdedefcd24be6fb4a731ef5ef51fedeecc92899310b96ded7d",
+            "start": 28,
+            "end": 46,
+            "excerpt": "来。\n\n林晚接过。封面温热，沾着面粉。翻开。\n\n吴阿姨，每周二下午买吐司边，说喂鸽子。实际只喂过两次，剩下都自己吃。喜欢吐司边烤焦一"
+          },
+          {
+            "phrase": "实际只喂过两次，剩下都自己吃",
+            "chunk_hash": "33c7dadadb45e25b34bbb23dba88531d1eea8e87d3909504249bb286702dea26",
+            "start": 438,
+            "end": 452,
+            "excerpt": "翻开。\n\n吴阿姨，每周二下午买吐司边，说喂鸽子。实际只喂过两次，剩下都自己吃。喜欢吐司边烤焦一点。\n\n顾衍，只买法棍。每次来"
+          },
+          {
+            "phrase": "实际只喂过两次，剩下都自己吃",
+            "chunk_hash": "eaae376a10fe45cdedefcd24be6fb4a731ef5ef51fedeecc92899310b96ded7d",
+            "start": 47,
+            "end": 61,
+            "excerpt": "翻开。\n\n吴阿姨，每周二下午买吐司边，说喂鸽子。实际只喂过两次，剩下都自己吃。喜欢吐司边烤焦一点。\n\n顾衍，只买法棍。每次来"
+          }
+        ],
+        "笔记还记着“那个女生”第一个周六硬币排成列、第三个周六眼睛有点红一个现吃一个留着": [
+          {
+            "phrase": "第一个周六，硬币排成列",
+            "chunk_hash": "6cae4da1a9bc924e94a91baf1a59e337be2e489abbb692d6de5e95e04214e5f2",
+            "start": 393,
+            "end": 404,
+            "excerpt": "林晚翻页。墨迹透过纸背。那个米色风衣的女生，九月第一个周六，硬币排成列。第二个周六，深蓝毛衣，食指有茧。第三个周六，眼"
+          },
+          {
+            "phrase": "第一个周六，硬币排成列",
+            "chunk_hash": "e028b97c9fd432bba41e516bbd1f148d0cb4ddfa542c07a116a3792d728910d2",
+            "start": 0,
+            "end": 11,
+            "excerpt": "第一个周六，硬币排成列。第二个周六，深蓝毛衣，食指有茧。第三个周六，眼"
+          },
+          {
+            "phrase": "第三个周六，眼睛有点红，一个现吃一个留着",
+            "chunk_hash": "609d3bed7d83c9e864e1d5fe21c542a4548ebc73704b4040fcdbdc919d2e4deb",
+            "start": 314,
+            "end": 334,
+            "excerpt": "，深蓝毛衣，两个原味可颂，食指有茧。第三行：九月第三个周六，眼睛有点红，一个现吃一个留着。第四行：十月第一个周六，没来。第五行：十月第二"
+          },
+          {
+            "phrase": "第三个周六，眼睛有点红，一个现吃一个留着",
+            "chunk_hash": "64cecbbbf29a221b8b7ce2f34f981b674de7f19491207f91d7c8c9c1ae1e7589",
+            "start": 240,
+            "end": 260,
+            "excerpt": "，深蓝毛衣，两个原味可颂，食指有茧。第三行：九月第三个周六，眼睛有点红，一个现吃一个留着。第四行：十月第一个周六，没来。第五行：十月第二"
+          },
+          {
+            "phrase": "第三个周六，眼睛有点红，一个现吃一个留着",
+            "chunk_hash": "6cae4da1a9bc924e94a91baf1a59e337be2e489abbb692d6de5e95e04214e5f2",
+            "start": 421,
+            "end": 441,
+            "excerpt": "六，硬币排成列。第二个周六，深蓝毛衣，食指有茧。第三个周六，眼睛有点红，一个现吃一个留着。十月，三个周六都没来。九月第三个周六那行，画了"
+          },
+          {
+            "phrase": "第三个周六，眼睛有点红，一个现吃一个留着",
+            "chunk_hash": "e028b97c9fd432bba41e516bbd1f148d0cb4ddfa542c07a116a3792d728910d2",
+            "start": 28,
+            "end": 48,
+            "excerpt": "六，硬币排成列。第二个周六，深蓝毛衣，食指有茧。第三个周六，眼睛有点红，一个现吃一个留着。十月，三个周六都没来。九月第三个周六那行，画了"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J7",
+      "tier": "continuity_fact",
+      "query": "收尾写林晚在店里喝水，对话框停在“七点”那两个字。需要文章爆红后季晴发链接“你火了”和她问周六几点到、周野回“七点”的对话细节。",
+      "query_intent": [
+        "event",
+        "character",
+        "foreshadowing"
+      ],
+      "section": 12,
+      "subsection": 3,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        12
+      ],
+      "gold_anchor_hashes": [
+        "a18bf89a0c1a386f9ebeb5f48bae5ad98673281a6e03e416b792642c68d060ae",
+        "ebe38bd7453cc0f647c0072383beae58f6ed6b4f71ae58498e81f9bc7422a282"
+      ],
+      "gold_chunk_hashes": [
+        "01d4c43f71752bc08916db5a37c964f3bf1ca812f20b3932883d4b0b775cc76d",
+        "09262915e4ae4bb5501c26720cf4a68105573dc58d988500f9bc681acb3df5dd",
+        "0ada8e411d1d37a2317b87fec7946c2cbc7830272eff4f1e4b8e0f5db11ab6eb",
+        "1dc784a458de929e86f0e3fc9839ac4aac2f415cdc120de0d35e475f77e29fe3",
+        "3c22786819c5e8be4d5c169c9271d32d4724df5e39898f0c940f0e027c9aea13",
+        "5a81bb6e9c37f83905df032e76f6a6159205d4709e3e9ee7d839eb27c4668874",
+        "6b3c282f7bd9e6c48d62c1b3701aacdc2339161fafc2ec19f3928396bb33fecd",
+        "71ea170a483e6b546d4f74e9dddac2832386b430f8fe176b63423d3a4af41903",
+        "78da99d2c50f71f77888921bf70bc2d2217db18044bdf7cf02b790bbb545b945",
+        "7abd90e9f49c6c9b191056c91ccce06f2c31c426647d6e4b3124446b4acc1b76",
+        "7cdda44fc9867695dc4f99fdddbf3a1e534448ec0027613cbd8c0c3289b5c27e",
+        "9d508f0cc02e8e57b235b888a4cf8c83832bee2396c4284359f43cd90a0af9ca",
+        "a18bf89a0c1a386f9ebeb5f48bae5ad98673281a6e03e416b792642c68d060ae",
+        "ab67f8213e36d504df13bc19f57ec3e1a693dc1786ee61792f16b6515cbf311b",
+        "ad8694ca0a6695a73efd52db5bfc4c5045b190757d368e042c5fb0b7eae99f72",
+        "ad8991180d8c8e5a56f94ca56a8d7f655342f6aaf622e2ba94dc989f888bf5c1",
+        "b4ccdd1de04374db42b6901cb452df772677d8ebbbf3e505b1fdad8b1a8b6e5f",
+        "ca79c61958b2202db7b8be6e51e3cebc133b957fe5d31e08cc87a60fcf37a5c3",
+        "d8ddcc63121cab19b862fd133de961603bf36ddf23d8f13c0a0f8a4f6f764bfb",
+        "ebe38bd7453cc0f647c0072383beae58f6ed6b4f71ae58498e81f9bc7422a282"
+      ],
+      "must_recall_facts": [
+        "文章爆红后季晴发来链接，配了三个字：你火了",
+        "林晚与周野对话框最后一条是她问周六几点到，他回“七点”"
+      ],
+      "fact_evidence": {
+        "文章爆红后季晴发来链接，配了三个字：你火了": [
+          {
+            "phrase": "季晴发来链接，配了三个字：你火了",
+            "chunk_hash": "a18bf89a0c1a386f9ebeb5f48bae5ad98673281a6e03e416b792642c68d060ae",
+            "start": 244,
+            "end": 260,
+            "excerpt": "\n\n她关掉页面。打开。又关掉。\n\n手机震了一下。季晴发来链接，配了三个字：你火了。林晚没回。她打开和周野的对话框，最后一条消息还"
+          },
+          {
+            "phrase": "季晴发来链接，配了三个字：你火了",
+            "chunk_hash": "ebe38bd7453cc0f647c0072383beae58f6ed6b4f71ae58498e81f9bc7422a282",
+            "start": 243,
+            "end": 259,
+            "excerpt": "\n\n她关掉页面。打开。又关掉。\n\n手机震了一下。季晴发来链接，配了三个字：你火了。林晚没回。她打开和周野的对话框，最后一条消息还"
+          }
+        ],
+        "林晚与周野对话框最后一条是她问周六几点到，他回“七点”": [
+          {
+            "phrase": "她问周六几点到，他回“七点”",
+            "chunk_hash": "a18bf89a0c1a386f9ebeb5f48bae5ad98673281a6e03e416b792642c68d060ae",
+            "start": 290,
+            "end": 304,
+            "excerpt": "她打开和周野的对话框，最后一条消息还是上周的——她问周六几点到，他回“七点”。没有新消息。她打了几个字，删掉。又打，又删。水"
+          },
+          {
+            "phrase": "她问周六几点到，他回“七点”",
+            "chunk_hash": "ebe38bd7453cc0f647c0072383beae58f6ed6b4f71ae58498e81f9bc7422a282",
+            "start": 289,
+            "end": 303,
+            "excerpt": "她打开和周野的对话框，最后一条消息还是上周的——她问周六几点到，他回“七点”。没有新消息。她打了几个字，删掉。又打，又删。水"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J8",
+      "tier": "continuity_fact",
+      "query": "吴阿姨来敲门之前，林晚缩在屋里回想匿名帖那晚：季晴发截图问她看到没，长帖标题用红色加粗写“那个靠偷窥别人生活”。写她被围堵前的引爆点。",
+      "query_intent": [
+        "event",
+        "character"
+      ],
+      "section": 15,
+      "subsection": 1,
+      "requires_causal_retrieval": true,
+      "gold_sections": [
+        14
+      ],
+      "gold_anchor_hashes": [
+        "14a2e325e6d5520c02e9a9570c490a34ce15e53fbd9b0a49106086595f6e0ed9",
+        "52b0d2552152524984875fe00dedff5ace60a69842b4839f61cdce6265e030f2"
+      ],
+      "gold_chunk_hashes": [
+        "14a2e325e6d5520c02e9a9570c490a34ce15e53fbd9b0a49106086595f6e0ed9",
+        "3dd36a079a0ff56e37b206f07ef57e614c65a51579618575a8811929e29206a4",
+        "4206a74b3f1c84f3de7cfdab00323edfefcce1009ec22e6e9c547c3e068f05dc",
+        "52b0d2552152524984875fe00dedff5ace60a69842b4839f61cdce6265e030f2",
+        "56b5809473fcf6166738718cbca8b2d0f5a5db0807e181d29f7bd1b5bee6a367",
+        "58c6072f99814da77df1162c97730a287127b2adb43632af2e9338ca494d0868",
+        "58e7b1474abcdb4959a3a55eb6f20144de514a26331f38acf226c83eca672a6d",
+        "6d66d4658df8d18579373d6ebc55167988ee2e16a735f6537c79596f8d2e38cd",
+        "749b993d7e97f5085bdbae6f8057cb9509702bff34fc5eb1353448d8b8e7484b",
+        "76055408138f3430218a3ce7a1d559f28c928669511691fce32ebc88ad735fc6",
+        "7be50ec65fcb1712a0fd2a0791c8117d8ed58345f541d55e6b5e0e73ec6f5b93",
+        "82a3eac97709c170fbcb3f2746a7f6b20ba66aef5e2727055295046e0d998470",
+        "8c25a3943d314a1189f9f3cbce7ec6a12dd9a0834e98c1dcb63c5190ace5962f",
+        "98984b2b8933c25eeaa210376ddad23469bf7bcb39460f1836699bd74b8116e9",
+        "9ac841110ebde60fdca74f747059d35f2afb57aa0ad5d6c7bba71fbaf4479b45",
+        "c4d7d9b9f796811fe480b717ed6379d749611b98ee06e23ab9cad5ebe79b4bb5",
+        "fa83162db53d5700b8fdcea90d56db0637fb43a3e19b15bc968cfa2a93eb2ee6"
+      ],
+      "must_recall_facts": [
+        "匿名平台的长帖标题用红色加粗写着《那个靠偷窥别人生活……》",
+        "季晴发来一张截图，配了三个字：你看到没"
+      ],
+      "fact_evidence": {
+        "匿名平台的长帖标题用红色加粗写着《那个靠偷窥别人生活……》": [
+          {
+            "phrase": "匿名平台的长帖，标题用红色加粗：《那个靠偷窥别人生活",
+            "chunk_hash": "14a2e325e6d5520c02e9a9570c490a34ce15e53fbd9b0a49106086595f6e0ed9",
+            "start": 106,
+            "end": 132,
+            "excerpt": "发来一张截图，配了三个字：你看到没。\n林晚点开。匿名平台的长帖，标题用红色加粗：《那个靠偷窥别人生活走红的女人》。帖子很长，分段清晰，像一份调查报告"
+          }
+        ],
+        "季晴发来一张截图，配了三个字：你看到没": [
+          {
+            "phrase": "季晴发来一张截图，配了三个字：你看到没",
+            "chunk_hash": "14a2e325e6d5520c02e9a9570c490a34ce15e53fbd9b0a49106086595f6e0ed9",
+            "start": 80,
+            "end": 99,
+            "excerpt": "价。\n\n她叉掉页面。打开。又叉掉。\n\n手机震了。季晴发来一张截图，配了三个字：你看到没。\n林晚点开。匿名平台的长帖，标题用红色加粗：《"
+          },
+          {
+            "phrase": "季晴发来一张截图，配了三个字：你看到没",
+            "chunk_hash": "52b0d2552152524984875fe00dedff5ace60a69842b4839f61cdce6265e030f2",
+            "start": 251,
+            "end": 270,
+            "excerpt": "价。\n\n她叉掉页面。打开。又叉掉。\n\n手机震了。季晴发来一张截图，配了三个字：你看到没。"
+          }
+        ]
+      }
+    },
+    {
+      "query_index": "J9",
+      "tier": "wr_key_evidence",
+      "query": "林晚站在面包店门口被周野看见，这一节要交代店的开业规则与她的日程：这家店只在周六营业，周六下午她在书店整理照片。",
+      "query_intent": [
+        "event",
+        "scene"
+      ],
+      "section": 4,
+      "subsection": 2,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        1,
+        3
+      ],
+      "gold_anchor_hashes": [
+        "01033216f08dde0d328b62720e891ca7e4b55034dfa984f5dc223cf59c5097b6",
+        "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b"
+      ],
+      "gold_chunk_hashes": [
+        "01033216f08dde0d328b62720e891ca7e4b55034dfa984f5dc223cf59c5097b6",
+        "05d32853bdfeef12cfe8b94e298863e35af56df3bb503676317170791180475f",
+        "07c151d44e5f470259c4a237851d0b81b09d0761d39f0b2d6ee07c03045e9c91",
+        "0b277316d1c4df4247612483275de8abced0f426d6bcae155f058341143f381c",
+        "0ed386a5652997bc589abc008a17725ab39978b64bd0feb804f7dbff6f38b853",
+        "12baab1da3afb84d9cb28b00292c7913e5be7b427ca66696abf38453644bc4c0",
+        "1c06394046a3af8a65fade629caa9c6e7e243c72ef9e0f41b6e80a1c30b9b267",
+        "1c5e14fb9b9bcc4adc8b84fa224a3ef9cef037164b6ec5230b7790bf25955a2a",
+        "1d25aec73fa4c038828162d8de486aedb4a2cd932bbd86a431600272b37db68b",
+        "2d8c1a034328e009bd45d8f5b92396f11cfe80a687e8b559769a63b021b7b2c2",
+        "2dd0a61a3f38cf0129c3bab5364a87a6a72a6db27d37631f3d8efe8c3e40e6ff",
+        "3b3f92609fa87415b47fc73c23676f09d220ccac7075a6334d8551250a35fdb6",
+        "3c9f20e9c8c3c962838fedf5ea2c183afef8d4557096979562d44e7b642fd1e4",
+        "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+        "40c2f9ea80d61002f08242a1df509b8d94550257c45c2d275a9b55eaf4e3d2cb",
+        "53c6a1d5036e2ed520698b4237b26d3901870eef27b9f837e450aa79ba2d6d52",
+        "5ba14dce39d7858e9f9a80e5585402ef78862dccadd7f744f2446458467f0401",
+        "5f2725d7ad722078afd7b7d9d2d057228e3ef7c46c902a20010a544b40a0214c",
+        "6e3db201a158c68139680e371311b7e55197270d2ecd782e878c53ff5d658222",
+        "6f169269efd120e43b39bc7032892cd993ecaefeefc1b4dd21a7de3c69c1d533",
+        "70db5443c4524bdb30dbeb471661767bfc4fcc7017143fbba134ee76ee38687e",
+        "7602df05818a720549612a3a912e8ab4d624ba15b336c30e82edbf43aa3b41b5",
+        "89afc9d24697169c4aa556ddcdcad7f36b4c52b260ddc5a87ad2b7a815848f63",
+        "8f00f0d708cf415291b45ff5b913793b6f1e2018932ffdc0071aa77d7422445b",
+        "94ffca53cd6d6ae970c609746af333d6002bb8874eb3ed549ddc3da6ac838738",
+        "9c14e3043794d26b2ef49f0abb89f413e6841e93724482ab560041ad3ebdebcf",
+        "9eb6ad842f5a6d3e03451293b6bc800612f2dcca8aeb40bef7a87e463293750e",
+        "9f5682b8359e8f33da7c34d8296f7a41d09a391c5e1dba3f86de0a75269b098b",
+        "a31c5489f176f921cd2dca2e74b3164a191edbc406a88fc5d12b235f6d22a4a3",
+        "a7705df39d0303b74ff6c4a9b993f0fd46116e73ea4a1f57b80857557fb7d6dd",
+        "a857f4560e69ef15a2e12ba43d5563794d0a092228d004e0c063f5bbb580bdf8",
+        "abfd2345b0ff4cd51e21f20a12dea3839102c496425bc8ed56f73ea51ae1f4ee",
+        "ac5c3217fed6000cdbf0af1ced338a66afa5afb62ab99796681ef8ceeb3211fa",
+        "b16d38f18dc3d2175da91178050fd5a2545c8e85655931c00d402ce1824bbd56",
+        "b4785f6c5f1a23b6cdd6055a65960a8942b990fcc63930ab70e8ca51fe195274",
+        "b53af365860a2868e95e393829881520c7a6e2795d69ca5d85ac2fa5f639c5ff",
+        "b69a554ab5a945534f224637a5d93b8902ab2d24c463e3dd7296d567a8ff6a3a",
+        "b6f75afb4f54a9cd75ff5609222a10dd0b9dff2502c3b159b61acd306512096b",
+        "b8839c728c7b8fc794275bdf909125ade3d04b9a96e91b13f3a36b5ff8888678",
+        "c4ebf7f1bdb25ab337db83bc8998ebf4cdad00430a6ef09d9a3930551c6a697c",
+        "cc9d9bf6895ba7e730e5daeb77011bb959d0b6bee1db402c27e372405046a5b2",
+        "ce71faf45c4866095e03efe1fea8558dfb44edca23af83370413b03b8f616964",
+        "cfc010e0b0dab52c0fa917c4a24a32ad709e367d56ee36d4cce73c889cdcfd76",
+        "d3ec748171ff4b1fc104f65c88af51cf599788d912eb8069757609810fdb3eec",
+        "d5214711e4fd3b05dfd845a0482c6a62823f81f54e3b36a1a2cf595aae4bffe5",
+        "d81f4ac91008ddbb9ca9ee184526bae4181f2c4af1b195efa78592f9277663d8",
+        "dbe80fd67b2e66cab2848d83b724986fdfd2829c0ca1315ffa25ddd53cee015c",
+        "ddebb2eb1fd9a4b9bdeaba599622170f34fc072ca6518c25fd9b5848ded1c07d",
+        "e090d894e8f3627b85563e87a1bd21ff32e63caa5c72304703f06ecd69dbc5aa",
+        "e2de09ed4006a2ece42c205a066c3f58042d8c441986c489e22dced37255ebd0",
+        "ecd2020ae0f1c1d591b5e8dc2b2f6805c2f419f3feba728f014c57f44d2298c8",
+        "ee6f957a534e5a372c71e857692de31f75b1a708f8e898ab5db38632f88c93ab",
+        "eebbd2c11e1fa01966bf7f500674d2b8aa6e680cd7a392b6f4f675232cad61c9",
+        "f426960f92496395b66c43d288e999746e253c0f96c009a665e47ac3ad11404c",
+        "f8b64077e552a50b56d2a0d9c78852d1868992a7b705e8f7ae981d5d98147c19",
+        "fad26355565ca3317469cff633fde7fb2c54b7e274f29d1b8f1ded509e0e9c00"
+      ],
+      "must_recall_facts": [
+        "面包店只在周六营业",
+        "周六下午四点，林晚在夜航船书店把存储卡插进读卡器，屏幕亮起四十七张照片"
+      ],
+      "fact_evidence": {
+        "面包店只在周六营业": [
+          {
+            "phrase": "这里周六才营业。",
+            "chunk_hash": "01033216f08dde0d328b62720e891ca7e4b55034dfa984f5dc223cf59c5097b6",
+            "start": 422,
+            "end": 430,
+            "excerpt": "三个小圆面包挪到第二层，从底下抽出空烤盘。\n\n“这里周六才营业。”\n\n“我知道。”\n\n林晚从包里掏出笔记本。封面"
+          }
+        ],
+        "周六下午四点，林晚在夜航船书店把存储卡插进读卡器，屏幕亮起四十七张照片": [
+          {
+            "phrase": "周六下午四点。夜航船书店。",
+            "chunk_hash": "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+            "start": 0,
+            "end": 13,
+            "excerpt": "周六下午四点。夜航船书店。\n\n林晚把存储卡插进读卡器，屏幕亮起四十七张照片"
+          },
+          {
+            "phrase": "屏幕亮起四十七张照片",
+            "chunk_hash": "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+            "start": 27,
+            "end": 37,
+            "excerpt": "午四点。夜航船书店。\n\n林晚把存储卡插进读卡器，屏幕亮起四十七张照片。凌晨三点二十八分灯亮，三点三十一分周野走进操作"
+          }
+        ]
+      },
+      "wr_keys": [
+        [
+          "周野面包店",
+          "open_days",
+          "周六营业"
+        ],
+        [
+          "林晚",
+          "weekday",
+          "周六下午在书店整理照片"
+        ]
+      ]
+    },
+    {
+      "query_index": "J10",
+      "tier": "wr_key_evidence",
+      "query": "十点半卷帘门半拉、林晚站在柜台边，想核对店里的时间线：操作间四点零七分灯灭、四点二十八分窗户推开；她六点四十就到店外。",
+      "query_intent": [
+        "event",
+        "scene"
+      ],
+      "section": 6,
+      "subsection": 2,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        3,
+        4
+      ],
+      "gold_anchor_hashes": [
+        "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+        "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+        "5f2725d7ad722078afd7b7d9d2d057228e3ef7c46c902a20010a544b40a0214c",
+        "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+        "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901"
+      ],
+      "gold_chunk_hashes": [
+        "046cf9d04b6ef7882df309251914a69d981fe7f5506b64b3d2e22ca4dbd16e42",
+        "12baab1da3afb84d9cb28b00292c7913e5be7b427ca66696abf38453644bc4c0",
+        "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+        "1c06394046a3af8a65fade629caa9c6e7e243c72ef9e0f41b6e80a1c30b9b267",
+        "1d25aec73fa4c038828162d8de486aedb4a2cd932bbd86a431600272b37db68b",
+        "269910b70e1fae91d2dc9b1c1158475a1885fd4bbaea228534bdc0e510ddb78d",
+        "2a9b46ab0adcc447bc5395d58eae1b91916b8a6e0b1327918803f11690c5543c",
+        "2d8c1a034328e009bd45d8f5b92396f11cfe80a687e8b559769a63b021b7b2c2",
+        "360b1bc2fcd45f15aff304b974c1c9ce583b4e2cce3a4e6415f32306cbe7d2c1",
+        "3b3f92609fa87415b47fc73c23676f09d220ccac7075a6334d8551250a35fdb6",
+        "3c6740efa4777f3db5fdfe3a98d9c0b175a442c628906e371386b397503ac2e0",
+        "3c805c16955f768de1c43b832bbfc570adf5501f9f4850ae2c9cac31dfeedba0",
+        "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+        "40c2908780d80440fb89bf6fdd4386ec2d3e5994fff805779be3a857621c103a",
+        "40c2f9ea80d61002f08242a1df509b8d94550257c45c2d275a9b55eaf4e3d2cb",
+        "50bf414f4129efc794856d29596b2d7b0a0454efa83550e526068df0cf7cf39f",
+        "53c6a1d5036e2ed520698b4237b26d3901870eef27b9f837e450aa79ba2d6d52",
+        "58eac5d3acae96f15d539f5d495be421ad08942c34a14a39f4a508247d59e86c",
+        "5ba14dce39d7858e9f9a80e5585402ef78862dccadd7f744f2446458467f0401",
+        "5f2725d7ad722078afd7b7d9d2d057228e3ef7c46c902a20010a544b40a0214c",
+        "6e3db201a158c68139680e371311b7e55197270d2ecd782e878c53ff5d658222",
+        "6f169269efd120e43b39bc7032892cd993ecaefeefc1b4dd21a7de3c69c1d533",
+        "70db5443c4524bdb30dbeb471661767bfc4fcc7017143fbba134ee76ee38687e",
+        "74d556f8b1f4e75d7fdf89ea2ab43130d0449b13f52a6d7c9ac87e5dfbe9adb3",
+        "7602df05818a720549612a3a912e8ab4d624ba15b336c30e82edbf43aa3b41b5",
+        "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+        "85b87b1afbbe0ca3d02a6c823e09c789b2fe9f3a3ee0e5afb7a364d9a624ed97",
+        "89afc9d24697169c4aa556ddcdcad7f36b4c52b260ddc5a87ad2b7a815848f63",
+        "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+        "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+        "8f00f0d708cf415291b45ff5b913793b6f1e2018932ffdc0071aa77d7422445b",
+        "94ffca53cd6d6ae970c609746af333d6002bb8874eb3ed549ddc3da6ac838738",
+        "95fa12d1a39d1b0311afd6918630514a87689e1623ca8e6ba00b77e48de92bab",
+        "9eb6ad842f5a6d3e03451293b6bc800612f2dcca8aeb40bef7a87e463293750e",
+        "9f5682b8359e8f33da7c34d8296f7a41d09a391c5e1dba3f86de0a75269b098b",
+        "a5d6d268da0d965662992205c3f6aab8243a7ba03d4bb9ccbc2095ef243686a7",
+        "a7705df39d0303b74ff6c4a9b993f0fd46116e73ea4a1f57b80857557fb7d6dd",
+        "ac5c3217fed6000cdbf0af1ced338a66afa5afb62ab99796681ef8ceeb3211fa",
+        "b16d38f18dc3d2175da91178050fd5a2545c8e85655931c00d402ce1824bbd56",
+        "b4785f6c5f1a23b6cdd6055a65960a8942b990fcc63930ab70e8ca51fe195274",
+        "b4c2bcb6bae72690942eb5f140f5708ba6a6e1462600ba073b38bad76c66b038",
+        "b53af365860a2868e95e393829881520c7a6e2795d69ca5d85ac2fa5f639c5ff",
+        "b69a554ab5a945534f224637a5d93b8902ab2d24c463e3dd7296d567a8ff6a3a",
+        "b6f75afb4f54a9cd75ff5609222a10dd0b9dff2502c3b159b61acd306512096b",
+        "b8839c728c7b8fc794275bdf909125ade3d04b9a96e91b13f3a36b5ff8888678",
+        "bd79d92b1ccb0df5f86a2ff5c3e526e423cebf2d4a1280494f5653602c9eb170",
+        "bd7a462e2ed5b1ae06d3c680015de2d4abf2752edd5de31c8a1d834a4cac3e2a",
+        "c0acbce127f24f5d7b0d080d8c8e20f076bd10f64af94970f72427a1d4a77f03",
+        "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+        "c4ebf7f1bdb25ab337db83bc8998ebf4cdad00430a6ef09d9a3930551c6a697c",
+        "ce71faf45c4866095e03efe1fea8558dfb44edca23af83370413b03b8f616964",
+        "cfc010e0b0dab52c0fa917c4a24a32ad709e367d56ee36d4cce73c889cdcfd76",
+        "dbe80fd67b2e66cab2848d83b724986fdfd2829c0ca1315ffa25ddd53cee015c",
+        "e034521ed716e3f803f7fb1e2c89d8e52eb0f4f893adbcb9b0ee1b8fb23ffc59",
+        "e090d894e8f3627b85563e87a1bd21ff32e63caa5c72304703f06ecd69dbc5aa",
+        "e2de09ed4006a2ece42c205a066c3f58042d8c441986c489e22dced37255ebd0",
+        "ecc0259bf79ecee33744a83691a639b8a9ff4df2b048b5fbb520de71cfa5200b",
+        "eebbd2c11e1fa01966bf7f500674d2b8aa6e680cd7a392b6f4f675232cad61c9",
+        "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+        "fad26355565ca3317469cff633fde7fb2c54b7e274f29d1b8f1ded509e0e9c00",
+        "ffcc3731642c7fa6608338c2e11115cb4d7cf38b6f4f06909ba4549ec6b38d09"
+      ],
+      "must_recall_facts": [
+        "操作间四点零七分灯灭、四点二十八分窗户推开",
+        "周六清晨六点四十分林晚已到店外等候"
+      ],
+      "fact_evidence": {
+        "操作间四点零七分灯灭、四点二十八分窗户推开": [
+          {
+            "phrase": "四点零七分灯灭，四点二十八分窗户推开",
+            "chunk_hash": "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+            "start": 63,
+            "end": 81,
+            "excerpt": "晨三点二十八分灯亮，三点三十一分周野走进操作间，四点零七分灯灭，四点二十八分窗户推开，四点四十二分面粉翻飞。每一张都是背影，每一张都"
+          },
+          {
+            "phrase": "四点零七分灯灭，四点二十八分窗户推开",
+            "chunk_hash": "5f2725d7ad722078afd7b7d9d2d057228e3ef7c46c902a20010a544b40a0214c",
+            "start": 147,
+            "end": 165,
+            "excerpt": "晨三点二十八分灯亮，三点三十一分周野走进操作间，四点零七分灯灭，四点二十八分窗户推开，四点四十二分面粉在灯光里翻飞。每一张都是背影，"
+          }
+        ],
+        "周六清晨六点四十分林晚已到店外等候": [
+          {
+            "phrase": "周六清晨六点四十分",
+            "chunk_hash": "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+            "start": 0,
+            "end": 9,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上"
+          },
+          {
+            "phrase": "周六清晨六点四十分",
+            "chunk_hash": "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+            "start": 0,
+            "end": 9,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上"
+          },
+          {
+            "phrase": "周六清晨六点四十分",
+            "chunk_hash": "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+            "start": 0,
+            "end": 9,
+            "excerpt": "周六清晨六点四十分，天还没亮透。\n\n林晚坐在面包店对面的马路牙子上"
+          }
+        ]
+      },
+      "wr_keys": [
+        [
+          "操作间",
+          "clock",
+          "04:07灯灭、04:28开窗"
+        ],
+        [
+          "林晚",
+          "clock",
+          "06:40到店外"
+        ]
+      ]
+    },
+    {
+      "query_index": "J11",
+      "tier": "wr_key_evidence",
+      "query": "林晚忐忑地回到店里，需要面包店爆红后的营业规则：周野在柜台拍出限购纸板“每人限购两个”，纸板上写着“面包是给人吃的，不是给人拍的”。",
+      "query_intent": [
+        "event",
+        "scene"
+      ],
+      "section": 7,
+      "subsection": 2,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        4,
+        6
+      ],
+      "gold_anchor_hashes": [
+        "2117f6802f7dda497e3bb112345838a9851937fda58bd39636958d693e5779cb",
+        "487c354ce2cbfaa8820a8f3cbea4145a8f5d8bfac314362eba0296cad5d77fd6",
+        "4bfd3dd145054407da1f4abcecb49102e94d608a3070d82d70ae9f3520b1bace",
+        "7066c248712343ffb04eb3d05358c43b72d541b4153b82502749c3499e6d8241",
+        "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+        "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+        "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+        "ecc0259bf79ecee33744a83691a639b8a9ff4df2b048b5fbb520de71cfa5200b",
+        "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd"
+      ],
+      "gold_chunk_hashes": [
+        "046cf9d04b6ef7882df309251914a69d981fe7f5506b64b3d2e22ca4dbd16e42",
+        "0f6385ce50d18b1f0bc4357b97657e306c6b24a0c7eafcd2d53a4d48a036ab73",
+        "0f929ab4d64580fb1af2546c31b578ce63dba1c2847bfc14e055b42604abffc8",
+        "13219fb31e5bb378aab30a36e33ea9b5e71459828c91f6b0048753c7fd2d6f70",
+        "14e4a45f1620cafb5ac1daf50c9aaba50fae2653beca9b2891ae78254804b3a7",
+        "200546fa0480c511df58edeb5472c35ddee42c503065d68e85d5415bfb6ae729",
+        "2117f6802f7dda497e3bb112345838a9851937fda58bd39636958d693e5779cb",
+        "269910b70e1fae91d2dc9b1c1158475a1885fd4bbaea228534bdc0e510ddb78d",
+        "27872c41e9b54554288c65781dee7ad35fbfda81981206a88adb9672147c0aa5",
+        "2a9b46ab0adcc447bc5395d58eae1b91916b8a6e0b1327918803f11690c5543c",
+        "2ad638377bc4b28eb44682aec0daf1f3085726842cda29fb36d4c31c5fef9977",
+        "2d08931aca393e834c5bbb541c09e208f399cf281870e49ac2172f8b2b50015e",
+        "360b1bc2fcd45f15aff304b974c1c9ce583b4e2cce3a4e6415f32306cbe7d2c1",
+        "3c6740efa4777f3db5fdfe3a98d9c0b175a442c628906e371386b397503ac2e0",
+        "3c805c16955f768de1c43b832bbfc570adf5501f9f4850ae2c9cac31dfeedba0",
+        "40c2908780d80440fb89bf6fdd4386ec2d3e5994fff805779be3a857621c103a",
+        "41e56e8a566b780b993ef5ee51666b3cd76cb8b59b43a65e2497c2be1161a285",
+        "487c354ce2cbfaa8820a8f3cbea4145a8f5d8bfac314362eba0296cad5d77fd6",
+        "4bfd3dd145054407da1f4abcecb49102e94d608a3070d82d70ae9f3520b1bace",
+        "50bf414f4129efc794856d29596b2d7b0a0454efa83550e526068df0cf7cf39f",
+        "58eac5d3acae96f15d539f5d495be421ad08942c34a14a39f4a508247d59e86c",
+        "7066c248712343ffb04eb3d05358c43b72d541b4153b82502749c3499e6d8241",
+        "74d556f8b1f4e75d7fdf89ea2ab43130d0449b13f52a6d7c9ac87e5dfbe9adb3",
+        "77e2b54dfa95231d1b89fece4ca8ef08ff3f8a49a2ffc0e65039f55d1fbec41f",
+        "821796abdbb41dede866afcbc6efcf93121d3dd54ec266469a23648fecfa6351",
+        "85b87b1afbbe0ca3d02a6c823e09c789b2fe9f3a3ee0e5afb7a364d9a624ed97",
+        "8adc769ff32ba74e0d4227461f8938a9c037fc126e7e4ba203992bb8624e3eb5",
+        "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+        "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+        "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+        "8fbcb91024eb6a0bf5198823b88a08bc50f457e2d40b33f33d7bcc631548d1c9",
+        "95fa12d1a39d1b0311afd6918630514a87689e1623ca8e6ba00b77e48de92bab",
+        "98f09302496c96ec810475d08e6cfda1952d255e7abeef6ded05f8897be22fb0",
+        "9ae9cb4cf2dedbfb3c52c6b00334ac17d804069939e76209323d3f0699982940",
+        "a5d6d268da0d965662992205c3f6aab8243a7ba03d4bb9ccbc2095ef243686a7",
+        "ac0d7cd04388897631af8194b9b12a948f9a577672eef7be2a9c99c387eda60c",
+        "b2fdd8b91e4666cc716beeb0001314c04b374faea45eddcb50935f6d777b45a2",
+        "b4c2bcb6bae72690942eb5f140f5708ba6a6e1462600ba073b38bad76c66b038",
+        "bd173ac4619fad969e6db38efa512b16ad86b6979f51a2511057266cd3b6089f",
+        "bd79d92b1ccb0df5f86a2ff5c3e526e423cebf2d4a1280494f5653602c9eb170",
+        "bd7a462e2ed5b1ae06d3c680015de2d4abf2752edd5de31c8a1d834a4cac3e2a",
+        "c0acbce127f24f5d7b0d080d8c8e20f076bd10f64af94970f72427a1d4a77f03",
+        "c20221d5194c8f7b808db2b09790605f2c259890ccbfd12225f4a9921e154c05",
+        "c3a9f79d11a746a5f3e04a4689c34d098db861222bceb3901df9784b51520901",
+        "e034521ed716e3f803f7fb1e2c89d8e52eb0f4f893adbcb9b0ee1b8fb23ffc59",
+        "e34ada67298941a891aed7f0c1693084b35d33e177ddab6764057c8cc602ba9c",
+        "ebb8546bfc19bc0c62fe5865116e0b878f1797591e088622ee98ef4f0623e400",
+        "ecc0259bf79ecee33744a83691a639b8a9ff4df2b048b5fbb520de71cfa5200b",
+        "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+        "ffcc3731642c7fa6608338c2e11115cb4d7cf38b6f4f06909ba4549ec6b38d09"
+      ],
+      "must_recall_facts": [
+        "周野用记号笔在纸板上写字、笔画很重，规定每人限购两个",
+        "纸板告示写着“每人限购两个。面包是给人吃的，不是给人拍的。”"
+      ],
+      "fact_evidence": {
+        "周野用记号笔在纸板上写字、笔画很重，规定每人限购两个": [
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+            "start": 344,
+            "end": 355,
+            "excerpt": "转身进去，再出来时手里攥着一张纸板，拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n"
+          },
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+            "start": 12,
+            "end": 23,
+            "excerpt": "着一张纸板，拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n"
+          },
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+            "start": 376,
+            "end": 387,
+            "excerpt": "来时，手里攥着一张纸板。\n\n他把纸板拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n"
+          },
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "487c354ce2cbfaa8820a8f3cbea4145a8f5d8bfac314362eba0296cad5d77fd6",
+            "start": 135,
+            "end": 146,
+            "excerpt": "再出来时，手里攥着一张纸板。他把纸板拍在柜台上，记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n"
+          },
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "4bfd3dd145054407da1f4abcecb49102e94d608a3070d82d70ae9f3520b1bace",
+            "start": 111,
+            "end": 122,
+            "excerpt": "出来时，手里攥着一张纸板。\n他把纸板拍在柜台上。记号笔写的字，笔画很重，纸板边缘捏出褶皱：每人限购两个。面包是给人吃的"
+          },
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+            "start": 340,
+            "end": 351,
+            "excerpt": "来时，手里攥着一张纸板。\n\n他把纸板拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n"
+          },
+          {
+            "phrase": "记号笔写的字，笔画很重",
+            "chunk_hash": "2117f6802f7dda497e3bb112345838a9851937fda58bd39636958d693e5779cb",
+            "start": 275,
+            "end": 286,
+            "excerpt": "间。\n\n再出来时，手里攥着一张纸板，拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n"
+          },
+          {
+            "phrase": "纸板边缘捏出褶皱：每人限购两个",
+            "chunk_hash": "4bfd3dd145054407da1f4abcecb49102e94d608a3070d82d70ae9f3520b1bace",
+            "start": 123,
+            "end": 138,
+            "excerpt": "。\n他把纸板拍在柜台上。记号笔写的字，笔画很重，纸板边缘捏出褶皱：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒"
+          }
+        ],
+        "纸板告示写着“每人限购两个。面包是给人吃的，不是给人拍的。”": [
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "8befc639fc042aba34e0bf7d2029dce94331e3d6c1883d1bb5895efd6015e674",
+            "start": 356,
+            "end": 377,
+            "excerpt": "着一张纸板，拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排这么久，就买两个？”"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "8d386d61fe7924d0d0d8d6a8cc58d751b514a36e93c164ab484d24ed4976b81f",
+            "start": 24,
+            "end": 45,
+            "excerpt": "着一张纸板，拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排这么久，就买两个？”"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "ecc0259bf79ecee33744a83691a639b8a9ff4df2b048b5fbb520de71cfa5200b",
+            "start": 11,
+            "end": 32,
+            "excerpt": "号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排这么久，就买两个？”"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "f4583b790f83ff95c752aab3c918f05d1bd484100b38defc82b4e0b6089ed5dd",
+            "start": 388,
+            "end": 409,
+            "excerpt": "\n\n他把纸板拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排这么久，就买两个？”"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "487c354ce2cbfaa8820a8f3cbea4145a8f5d8bfac314362eba0296cad5d77fd6",
+            "start": 147,
+            "end": 168,
+            "excerpt": "板。他把纸板拍在柜台上，记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排了这么久，就买两个？"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "4bfd3dd145054407da1f4abcecb49102e94d608a3070d82d70ae9f3520b1bace",
+            "start": 132,
+            "end": 153,
+            "excerpt": "台上。记号笔写的字，笔画很重，纸板边缘捏出褶皱：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排了这么久，就买两个？"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "7066c248712343ffb04eb3d05358c43b72d541b4153b82502749c3499e6d8241",
+            "start": 10,
+            "end": 31,
+            "excerpt": "笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排了这么久，就买两个？"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "8b93fa5bd9a420b1e0ae7a70ddb0a85bdf4539ec69c14a2d93f55b093dc58af7",
+            "start": 352,
+            "end": 373,
+            "excerpt": "\n\n他把纸板拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排了这么久，就买两个？"
+          },
+          {
+            "phrase": "每人限购两个。面包是给人吃的，不是给人拍的",
+            "chunk_hash": "2117f6802f7dda497e3bb112345838a9851937fda58bd39636958d693e5779cb",
+            "start": 287,
+            "end": 308,
+            "excerpt": "着一张纸板，拍在柜台上。记号笔写的字，笔画很重：每人限购两个。面包是给人吃的，不是给人拍的。\n\n人群静了一秒。\n\n“排了这么久，就买两个？"
+          }
+        ]
+      },
+      "wr_keys": [
+        [
+          "面包店",
+          "operation_state",
+          "每人限购两个"
+        ],
+        [
+          "周野",
+          "operation_state",
+          "限购告示"
+        ]
+      ]
+    },
+    {
+      "query_index": "J12",
+      "tier": "wr_key_evidence",
+      "query": "收工前周野递焦脆边角料，林晚想起自己是怎么被允许留在店里的：他允许她拍但不许开闪光灯，凌晨门缝里那线橘光还亮着。",
+      "query_intent": [
+        "character",
+        "scene"
+      ],
+      "section": 8,
+      "subsection": 3,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        1,
+        3
+      ],
+      "gold_anchor_hashes": [
+        "05d32853bdfeef12cfe8b94e298863e35af56df3bb503676317170791180475f",
+        "0b277316d1c4df4247612483275de8abced0f426d6bcae155f058341143f381c",
+        "1c06394046a3af8a65fade629caa9c6e7e243c72ef9e0f41b6e80a1c30b9b267"
+      ],
+      "gold_chunk_hashes": [
+        "01033216f08dde0d328b62720e891ca7e4b55034dfa984f5dc223cf59c5097b6",
+        "05d32853bdfeef12cfe8b94e298863e35af56df3bb503676317170791180475f",
+        "07c151d44e5f470259c4a237851d0b81b09d0761d39f0b2d6ee07c03045e9c91",
+        "0b277316d1c4df4247612483275de8abced0f426d6bcae155f058341143f381c",
+        "0ed386a5652997bc589abc008a17725ab39978b64bd0feb804f7dbff6f38b853",
+        "12baab1da3afb84d9cb28b00292c7913e5be7b427ca66696abf38453644bc4c0",
+        "1c06394046a3af8a65fade629caa9c6e7e243c72ef9e0f41b6e80a1c30b9b267",
+        "1c5e14fb9b9bcc4adc8b84fa224a3ef9cef037164b6ec5230b7790bf25955a2a",
+        "1d25aec73fa4c038828162d8de486aedb4a2cd932bbd86a431600272b37db68b",
+        "2d8c1a034328e009bd45d8f5b92396f11cfe80a687e8b559769a63b021b7b2c2",
+        "2dd0a61a3f38cf0129c3bab5364a87a6a72a6db27d37631f3d8efe8c3e40e6ff",
+        "3b3f92609fa87415b47fc73c23676f09d220ccac7075a6334d8551250a35fdb6",
+        "3c9f20e9c8c3c962838fedf5ea2c183afef8d4557096979562d44e7b642fd1e4",
+        "40b31d27df45fb21cf16ffd2e871132372d2d637d8c3cfec97278322743e904b",
+        "40c2f9ea80d61002f08242a1df509b8d94550257c45c2d275a9b55eaf4e3d2cb",
+        "53c6a1d5036e2ed520698b4237b26d3901870eef27b9f837e450aa79ba2d6d52",
+        "5ba14dce39d7858e9f9a80e5585402ef78862dccadd7f744f2446458467f0401",
+        "5f2725d7ad722078afd7b7d9d2d057228e3ef7c46c902a20010a544b40a0214c",
+        "6e3db201a158c68139680e371311b7e55197270d2ecd782e878c53ff5d658222",
+        "6f169269efd120e43b39bc7032892cd993ecaefeefc1b4dd21a7de3c69c1d533",
+        "70db5443c4524bdb30dbeb471661767bfc4fcc7017143fbba134ee76ee38687e",
+        "7602df05818a720549612a3a912e8ab4d624ba15b336c30e82edbf43aa3b41b5",
+        "89afc9d24697169c4aa556ddcdcad7f36b4c52b260ddc5a87ad2b7a815848f63",
+        "8f00f0d708cf415291b45ff5b913793b6f1e2018932ffdc0071aa77d7422445b",
+        "94ffca53cd6d6ae970c609746af333d6002bb8874eb3ed549ddc3da6ac838738",
+        "9c14e3043794d26b2ef49f0abb89f413e6841e93724482ab560041ad3ebdebcf",
+        "9eb6ad842f5a6d3e03451293b6bc800612f2dcca8aeb40bef7a87e463293750e",
+        "9f5682b8359e8f33da7c34d8296f7a41d09a391c5e1dba3f86de0a75269b098b",
+        "a31c5489f176f921cd2dca2e74b3164a191edbc406a88fc5d12b235f6d22a4a3",
+        "a7705df39d0303b74ff6c4a9b993f0fd46116e73ea4a1f57b80857557fb7d6dd",
+        "a857f4560e69ef15a2e12ba43d5563794d0a092228d004e0c063f5bbb580bdf8",
+        "abfd2345b0ff4cd51e21f20a12dea3839102c496425bc8ed56f73ea51ae1f4ee",
+        "ac5c3217fed6000cdbf0af1ced338a66afa5afb62ab99796681ef8ceeb3211fa",
+        "b16d38f18dc3d2175da91178050fd5a2545c8e85655931c00d402ce1824bbd56",
+        "b4785f6c5f1a23b6cdd6055a65960a8942b990fcc63930ab70e8ca51fe195274",
+        "b53af365860a2868e95e393829881520c7a6e2795d69ca5d85ac2fa5f639c5ff",
+        "b69a554ab5a945534f224637a5d93b8902ab2d24c463e3dd7296d567a8ff6a3a",
+        "b6f75afb4f54a9cd75ff5609222a10dd0b9dff2502c3b159b61acd306512096b",
+        "b8839c728c7b8fc794275bdf909125ade3d04b9a96e91b13f3a36b5ff8888678",
+        "c4ebf7f1bdb25ab337db83bc8998ebf4cdad00430a6ef09d9a3930551c6a697c",
+        "cc9d9bf6895ba7e730e5daeb77011bb959d0b6bee1db402c27e372405046a5b2",
+        "ce71faf45c4866095e03efe1fea8558dfb44edca23af83370413b03b8f616964",
+        "cfc010e0b0dab52c0fa917c4a24a32ad709e367d56ee36d4cce73c889cdcfd76",
+        "d3ec748171ff4b1fc104f65c88af51cf599788d912eb8069757609810fdb3eec",
+        "d5214711e4fd3b05dfd845a0482c6a62823f81f54e3b36a1a2cf595aae4bffe5",
+        "d81f4ac91008ddbb9ca9ee184526bae4181f2c4af1b195efa78592f9277663d8",
+        "dbe80fd67b2e66cab2848d83b724986fdfd2829c0ca1315ffa25ddd53cee015c",
+        "ddebb2eb1fd9a4b9bdeaba599622170f34fc072ca6518c25fd9b5848ded1c07d",
+        "e090d894e8f3627b85563e87a1bd21ff32e63caa5c72304703f06ecd69dbc5aa",
+        "e2de09ed4006a2ece42c205a066c3f58042d8c441986c489e22dced37255ebd0",
+        "ecd2020ae0f1c1d591b5e8dc2b2f6805c2f419f3feba728f014c57f44d2298c8",
+        "ee6f957a534e5a372c71e857692de31f75b1a708f8e898ab5db38632f88c93ab",
+        "eebbd2c11e1fa01966bf7f500674d2b8aa6e680cd7a392b6f4f675232cad61c9",
+        "f426960f92496395b66c43d288e999746e253c0f96c009a665e47ac3ad11404c",
+        "f8b64077e552a50b56d2a0d9c78852d1868992a7b705e8f7ae981d5d98147c19",
+        "fad26355565ca3317469cff633fde7fb2c54b7e274f29d1b8f1ded509e0e9c00"
+      ],
+      "must_recall_facts": [
+        "周野允许林晚拍照但要求“不开闪光灯”",
+        "凌晨面包店门缝里那线橘光还亮着"
+      ],
+      "fact_evidence": {
+        "周野允许林晚拍照但要求“不开闪光灯”": [
+          {
+            "phrase": "“能拍吗。”林晚举起挂在脖子上的相机。“不开闪光灯。”",
+            "chunk_hash": "1c06394046a3af8a65fade629caa9c6e7e243c72ef9e0f41b6e80a1c30b9b267",
+            "start": 347,
+            "end": 374,
+            "excerpt": "周野看了眼操作间，路灯把他侧脸切成明暗两半。\n\n“能拍吗。”林晚举起挂在脖子上的相机。“不开闪光灯。”\n\n周野沉默了几秒，拎起垃圾袋扔进垃圾桶，走回来"
+          }
+        ],
+        "凌晨面包店门缝里那线橘光还亮着": [
+          {
+            "phrase": "门缝里那线橘光还亮着",
+            "chunk_hash": "05d32853bdfeef12cfe8b94e298863e35af56df3bb503676317170791180475f",
+            "start": 47,
+            "end": 57,
+            "excerpt": "还没亮，但路灯已经熄了。巷子陷入短暂的黑暗，只有门缝里那线橘光还亮着。她靠着槐树，数揉面的次数。每二十次折叠，帆布鞋"
+          },
+          {
+            "phrase": "门缝里那线橘光还亮着",
+            "chunk_hash": "0b277316d1c4df4247612483275de8abced0f426d6bcae155f058341143f381c",
+            "start": 514,
+            "end": 524,
+            "excerpt": "还没亮，但路灯已经熄了。巷子陷入短暂的黑暗，只有门缝里那线橘光还亮着。她靠着槐树，数揉面的次数。每二十次折叠，帆布鞋"
+          }
+        ]
+      },
+      "wr_keys": [
+        [
+          "周野",
+          "access",
+          "允许拍照但不许闪光灯"
+        ],
+        [
+          "操作间",
+          "light",
+          "凌晨门缝橘光"
+        ]
+      ]
+    },
+    {
+      "query_index": "J13",
+      "tier": "wr_key_evidence",
+      "query": "林晚翻周野的笔记，确认他记得哪些人的事：他知道老爷爷孙女九岁、离婚家庭；顾衍也跟她说过周野为什么离开设计院——“建筑设计等不了五天，面包可以”。",
+      "query_intent": [
+        "character",
+        "event"
+      ],
+      "section": 10,
+      "subsection": 3,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        5,
+        7
+      ],
+      "gold_anchor_hashes": [
+        "51772cff1f5c9ba0de9058552ea5e83c2d44057491a4a2590f4157801ca9e9e0",
+        "54fe65c93995faa7c67a3f620156e240424af5b16166ac7a9e67088d8ad482d7",
+        "8361d774186d2f02d7af132db0cdbcc407e0a1caf1fd998269b1615f87722a78",
+        "c8d3797b7a49d5baa0c47bc6d6211b6a3010d5c6e71276dc1bacd2fbcd339d8a",
+        "cc645493812205d792f589a9a3c9ca24e9730dcfa0873964e5cc8063de9f35e7",
+        "cf4a45caa796290c8468f22c5f854232f254c079f7134acf386955925ddb65db"
+      ],
+      "gold_chunk_hashes": [
+        "0c4a7f3bd3f13149201391225433eea121cdf0c9ef845daa259e89b36e80ee2e",
+        "1599117ea9e4669ddacb90d9d5df9fa78b0023a542caf0004b381db9e7ee2295",
+        "15e60b0df684d6b9756a711188ada73eda9b09b910b07b8dd715ca5213361885",
+        "1d7e29d010bc367ef5a6094e6b7c051f734eb05a5f6d1000a64e2b4c2ff9a37e",
+        "23deb057bbc425a0f76a60c8fbe340907cbd05808f37dc613a5f3faa3ca5d40c",
+        "2a451f94a23916249556a6d9513bb677ba21a24fd9fde5a6699f8efb1c6e61a4",
+        "2f4d72efd0f7f0e72a714d7ce01c4dec8534f295047dd40ca8efe4e5c226cd28",
+        "35581c7752909785e7d1b7d53fc0c5afaee492f73b0b002786dd32ff0d1d5062",
+        "3c93be1e1bb9e8fda6325f59f41cc2b45d2e05f2c5d014cfb2e51b62de691eea",
+        "46c6d353754698bade3101a3170c3957de7ff08a2e773df9abe38356d3e7d1b5",
+        "49387ef2d27ffa987afcd68349d6d930c4dd65b90f6bc121811d93f48b2888c1",
+        "4a92d315937d8a9a96e88204d4e466860cb2a55b571c9f324213d338aa67fdd5",
+        "4cce03947c3c023a71fdd68282f188eb44840db9a2e9d80c842e3df3865901c9",
+        "51772cff1f5c9ba0de9058552ea5e83c2d44057491a4a2590f4157801ca9e9e0",
+        "54fe65c93995faa7c67a3f620156e240424af5b16166ac7a9e67088d8ad482d7",
+        "55d87b2087b655facd1ddcdfcd35cee32ff2cec59b6143e7d090f0cb40632b53",
+        "578153c80b81b651a14e24baf00cafcba6e0fe58934b8217466d87e0cd332c83",
+        "57993e8e9d04a6e53d9b8aeb4f7da7372231c90cab5c121cf7b31fb9f3d47c08",
+        "63bbef15c57982d49ae9a369f956a445f855e8844a8c4d48b2987ea9cd657e56",
+        "679971a40ed8e2e6c797084c1d8444e3bc501c0e4bd3f952730c3371292d80cf",
+        "6bb0036a589d16eb6298630f6e0578ab06077c2a940bec8706d921f5d425889f",
+        "6f91e012e29407be8a5878d12e1d3a207cc5f59dc7a96d10235f7f5c5611fce8",
+        "700daef9629299660ff1848d3c3552505368266953c1ef79139911a3db1b15e6",
+        "708e20e063760ba3aa3bd60ab989093a8227d48e1dd0fe128f817abcab3b44fc",
+        "7726432d16bde26d775f76c700b504b3439c6c5cc53cb31c677d6a684730f01c",
+        "78172dfabd1eed97d93168a40db885768f43223b012b53b1756823b7030de71f",
+        "79036ce7d24e427248374d8e47ee660a6b177c56298d35fa7f3ee65315a7c559",
+        "8361d774186d2f02d7af132db0cdbcc407e0a1caf1fd998269b1615f87722a78",
+        "8e1461582f4bf23127a2cbcda5a3674e9b73fa4ea66507b0c3e9db617db8c7b8",
+        "9357415d4637ed1af7be0e40f0d098bb0bcb8192597c56302463d2cd6b71b523",
+        "a1bc0beb5d5f39afbea48d3c83c69fb2395fb813eb66d92fa307b5a7f2f1805c",
+        "a9d676b6f41205e596c9517011cbd242dbdb8a6835d61dce47f90f81d5fe9a8b",
+        "b4bf4305c3ba09eb8becdf3571cfdbae58ccce9e9c1cef5c1f8391975129e772",
+        "b52a8fd93840bde9c98935db02fd9b60dedadcbf299757da853fc3fdc12b3d32",
+        "b813ddeb3c18c280b9fa27ed73742c2f27514543560eda9ba04609a31d103358",
+        "ba521e7a9672215178b53b29cbbd94e21ff3c886bfcfc0cc121361c9b779b015",
+        "c34d5038a56916a8b1e28e366b11217096e469b09f6c8d08656570b392e98ba8",
+        "c8d3797b7a49d5baa0c47bc6d6211b6a3010d5c6e71276dc1bacd2fbcd339d8a",
+        "cc645493812205d792f589a9a3c9ca24e9730dcfa0873964e5cc8063de9f35e7",
+        "ce59847d85c229da3fc12d22f48b36b0502201004ace204b4532b861dcc01484",
+        "cf4a45caa796290c8468f22c5f854232f254c079f7134acf386955925ddb65db",
+        "dc8ef853c089a9dd5f590a5a6e4c2b308967c075bc80bd554b3e4086125c3f5b",
+        "ddd1779b600810365c2d15d6c5506904314be687f8001f39158b1e2a6ec50996",
+        "df39ba77efb7e6d99550c7a510f629b82b1747f9816224ead21e6befb06f10fd",
+        "dfb39cc0b550d2bcec9aa8f146282e77076d6965588be056c352353507597694",
+        "e131b7c3721587aed1ccb30bce1fd503469537dc91190f2655f3a96611c8552d",
+        "e3b9c31ca3290b911039f947e85f91effe604db5f41de05a9ec74af7599ab40d",
+        "e6702f7be77f3828b502bd48cb264267332490355afcefad706c76d7707b4b7b",
+        "f12f315f2b4df75dbc379f427e34071df63d8b2ef77e37c0d1bb5688c3ebb15d",
+        "fbbf9b8c476e786ab49010a8df2759a227e3c728b9774d9411de0ea398a5629e"
+      ],
+      "must_recall_facts": [
+        "周野知道老爷爷孙女九岁、离婚家庭",
+        "顾衍说过周野“建筑设计等不了五天，面包可以”"
+      ],
+      "fact_evidence": {
+        "周野知道老爷爷孙女九岁、离婚家庭": [
+          {
+            "phrase": "“你知道他的事？”",
+            "chunk_hash": "cc645493812205d792f589a9a3c9ca24e9730dcfa0873964e5cc8063de9f35e7",
+            "start": 358,
+            "end": 367,
+            "excerpt": "早。”\n\n周野撒了把面粉，白尘在灯光里翻卷。\n\n“你知道他的事？”\n\n“知道。孙女九岁，离婚家庭。周六接过来，先去"
+          },
+          {
+            "phrase": "“你知道他的事？”",
+            "chunk_hash": "cf4a45caa796290c8468f22c5f854232f254c079f7134acf386955925ddb65db",
+            "start": 10,
+            "end": 19,
+            "excerpt": "尘在灯光里翻卷。\n\n“你知道他的事？”\n\n“知道。孙女九岁，离婚家庭。周六接过来，先去"
+          },
+          {
+            "phrase": "知道。孙女九岁，离婚家庭",
+            "chunk_hash": "cc645493812205d792f589a9a3c9ca24e9730dcfa0873964e5cc8063de9f35e7",
+            "start": 370,
+            "end": 382,
+            "excerpt": "，白尘在灯光里翻卷。\n\n“你知道他的事？”\n\n“知道。孙女九岁，离婚家庭。周六接过来，先去公园喂鸽子，中午回来吃饭。进门"
+          },
+          {
+            "phrase": "知道。孙女九岁，离婚家庭",
+            "chunk_hash": "cf4a45caa796290c8468f22c5f854232f254c079f7134acf386955925ddb65db",
+            "start": 22,
+            "end": 34,
+            "excerpt": "尘在灯光里翻卷。\n\n“你知道他的事？”\n\n“知道。孙女九岁，离婚家庭。周六接过来，先去公园喂鸽子，中午回来吃饭。进门"
+          }
+        ],
+        "顾衍说过周野“建筑设计等不了五天，面包可以”": [
+          {
+            "phrase": "他说建筑设计等不了五天，面包可以",
+            "chunk_hash": "51772cff1f5c9ba0de9058552ea5e83c2d44057491a4a2590f4157801ca9e9e0",
+            "start": 354,
+            "end": 370,
+            "excerpt": "五年前。周野从设计院辞职那年。”顾衍重新坐下。“他说建筑设计等不了五天，面包可以。周一喂粉，周二喂粉，周三喂粉，周四喂粉，周五喂"
+          },
+          {
+            "phrase": "他说建筑设计等不了五天，面包可以",
+            "chunk_hash": "54fe65c93995faa7c67a3f620156e240424af5b16166ac7a9e67088d8ad482d7",
+            "start": 130,
+            "end": 146,
+            "excerpt": "周野从设计院辞职那年。”顾衍把咖啡杯转了半圈。“他说建筑设计等不了五天，面包可以。周一喂粉，周二喂粉，周三喂粉，周四喂粉，周五喂"
+          },
+          {
+            "phrase": "他说建筑设计等不了五天，面包可以",
+            "chunk_hash": "8361d774186d2f02d7af132db0cdbcc407e0a1caf1fd998269b1615f87722a78",
+            "start": 39,
+            "end": 55,
+            "excerpt": "五年前。周野从设计院辞职那年。”顾衍重新坐下。“他说建筑设计等不了五天，面包可以。周一喂粉，周二喂粉，周三喂粉，周四喂粉，周五喂"
+          },
+          {
+            "phrase": "他说建筑设计等不了五天，面包可以",
+            "chunk_hash": "c8d3797b7a49d5baa0c47bc6d6211b6a3010d5c6e71276dc1bacd2fbcd339d8a",
+            "start": 401,
+            "end": 417,
+            "excerpt": "五年前。周野从设计院辞职那年。”顾衍重新坐下。“他说建筑设计等不了五天，面包可以。周一喂粉，周二喂粉，周三喂粉，周四喂粉，周五喂"
+          }
+        ]
+      },
+      "wr_keys": [
+        [
+          "周野",
+          "knowledge",
+          "老爷爷孙女九岁离婚家庭"
+        ],
+        [
+          "顾衍",
+          "knowledge",
+          "周野离开设计院的原因"
+        ]
+      ]
+    },
+    {
+      "query_index": "J14",
+      "tier": "wr_key_evidence",
+      "query": "工坊开业，林晚看着课程表想起自己辞职后的状态：辞职信最后只留“下周日前交接完毕”，后来父亲最后一通电话没接、再回拨已停机。",
+      "query_intent": [
+        "character",
+        "event"
+      ],
+      "section": 17,
+      "subsection": 1,
+      "requires_causal_retrieval": false,
+      "gold_sections": [
+        2,
+        11
+      ],
+      "gold_anchor_hashes": [
+        "34cf99986d35cff4a3aaf44193af3bea77afd770f6586a663a43fa28bc553bf9",
+        "3ab151c96366a2fdc7d0c4cabfeeaefebda3d22a4835023693d961fc0c547edf",
+        "73a5816fcff6a4144428117b6e444e68002fbabbb4c4cf0ea4edd37f4161743a",
+        "ea7d9b84c06b66fe3ab12f8855b947e7d88c6bb2e197ddafe587642341feb3be"
+      ],
+      "gold_chunk_hashes": [
+        "20ddbcb0f3aed5a9cfd9a74e470b6c0160f874d48a6b2eedc42b7bb8dda6ce51",
+        "30708d1dc08621c4c845e431fd3d4a20fa5caf6d36ccd0b2537ab95c86c41028",
+        "34cf99986d35cff4a3aaf44193af3bea77afd770f6586a663a43fa28bc553bf9",
+        "3ab151c96366a2fdc7d0c4cabfeeaefebda3d22a4835023693d961fc0c547edf",
+        "43a145f7e7dea0d16b22379c6d86263c5589093a2a1782873b1b074a098507d1",
+        "444056f47e12dd30a944ee6ac2e3a9f5387fb2622299cc80aad410ca6670aa04",
+        "462498b6d453036fe5b7ba7054eef5f866ea06b5ecd4c14bfd3343e05caee288",
+        "474e5d230a7ef1b832f5a1b21e3d1bd5051cb116a520f2e1140406d02fa21e98",
+        "4e13b24c86a4d9f9828486f2c15e8c915a2d8daf789b70957a8754c7c17191b5",
+        "5282f36229ff76627f3bca233755eed25f12dffa45767de8b7b46bd88ff740b7",
+        "52a979ed344791735dd36a0bd50dee63115fbc95692f51ac65a17bf8fa006d6e",
+        "52e28798c4718b77b439c3c9e60c6b25f214c80e24742b768f9534feea13391c",
+        "543a01aa553d0b445371b80079e76ac9f08c05732eceb37451de96b095f95ab8",
+        "5ba10cdb5b61acd2e9c70ca21400892ed35f2dcf49419f153e5a37eec7a41ca8",
+        "6d6a0a4054a69a13f333d0971e44941dabec8c0f83d420872f66175f2a97b415",
+        "73a5816fcff6a4144428117b6e444e68002fbabbb4c4cf0ea4edd37f4161743a",
+        "7cd60a2c4eb1a2db1254d3cae7df279332b9843a48978c12e1e93ee54bf45b67",
+        "7d2e11a5ebfff6133230a5401bb921b42968154cd2469dfc44f3a1e178f75842",
+        "7f45725022d8a3b7f55a72493f539df9f70cde0e68e7d4d7e2d449493630d4d8",
+        "81976b817510664d7683dc0f53c6c6f137fc166a7850e10541af23a100b3e36c",
+        "8493d4d768a8a10b5b1a26c0e1764011f323ede5276a57eaaa1994e4acce39df",
+        "87e697f301e9172cf1113659100a39f6be02b74fb08ad67f0cff53bc5d443d0e",
+        "8966bf1327985155054c989b59e3995732023960a647cebf2250472fc210f538",
+        "909c2d58244fc194ee14fb25342bfce7cd1d79a6377fb6cb17e033ae8f039006",
+        "96aca982c55d9a3a8bb8cb127611c31caf11b024046c2b258b2748e5d39c0742",
+        "96e1976894ec6bd58a5bd48faf573de3fe07fe5cc35f26d7dff2176fd5cf1a13",
+        "a51b34fca07995be72965476be8fd27d444496988f1296463d65c1683ce17954",
+        "a52099f801083ceb4f33960ed39834a1c4c1b11c55c92b09e6d76a05222ed5be",
+        "ac53ae20cb0f52c7d5671a8d25177d5523729280e9f4633f1f642d9439a9dab9",
+        "b13e3ad1995abaf74ed7606bb090b0279faec21c8f1eb9f5e83e71daa09045fb",
+        "c0817ff659f38d69bc0a4a8ee458be849bd3847d7be6dab92ff42d7e4c7e28f9",
+        "cbc45a257cc61ae0820df9d414471feee2f0b36b486966e7c9eead93f1b6f96f",
+        "ce6adfa3ade0b93e34c1e2738e2735a4c630c194ea2b00fd114afa5ed3b44645",
+        "ce6cb1433eacb44105d1fc3319d7288cc439c52051c2b0f7240c93abcb40d089",
+        "d0fb2d4805a165bc23bb7b988cf89f78943868563b006b73bed35e2a823af876",
+        "d3f7f494a19e83aef820d6dd57ba65360119388e72ad5b6140e633eb5fb6c89a",
+        "dc9a46e16f078b76755304b3692b8c0cd482f3b69ed58227cbe14cd497da7919",
+        "e079ca4d6f95827672b8b43a5b7fb7544f9ebc82378bbd60627ce6d87f75f2cf",
+        "e577ddfbea67c06e4fdafe7ac2dd76eae90becf4111af9f5fde0bae47f3aa608",
+        "e9f0edb127c0456a571c0ace462acb5fe2a53aca9c431a557eadd5ea0e0ef54c",
+        "ea7beee87bfd47aa9282cfdc608714df07614c0e8902bc646fdff894850bb8a5",
+        "ea7d9b84c06b66fe3ab12f8855b947e7d88c6bb2e197ddafe587642341feb3be",
+        "ef25db29b87b03f0e2504be87b4bd245afe8a62e8fb3c0246ee3e6dbf91c2562",
+        "f73d95be85abaf0fcb0fc21eb42ed0a11008e8b05a59890894652f65d9fe1c8f",
+        "fbba13d0434144ce43a4e121122c1676a0c328fa2af0ee21b31a2e4c5fc61e90",
+        "fc5f0e97f47421b3d4d4a3475dc564b38a75e6cc039385495cec3a0c96c9a9c1",
+        "fcbb920dc980a7b1b3e1ac9383a911b6f6f4c8d9170341d2092f80b354a9b4d7"
+      ],
+      "must_recall_facts": [
+        "林晚辞职信最后只留“下周日前交接完毕”",
+        "她想起父亲最后一次来电话是凌晨三点、没接，第二天回拨已停机"
+      ],
+      "fact_evidence": {
+        "林晚辞职信最后只留“下周日前交接完毕”": [
+          {
+            "phrase": "最后只留一句：下周日前交接完毕",
+            "chunk_hash": "34cf99986d35cff4a3aaf44193af3bea77afd770f6586a663a43fa28bc553bf9",
+            "start": 136,
+            "end": 151,
+            "excerpt": "案一职。删掉。再敲：感谢三年来的合作机会。删掉。最后只留一句：下周日前交接完毕。发送。收件人是自己的私人邮箱。合上屏幕。房间沉"
+          }
+        ],
+        "她想起父亲最后一次来电话是凌晨三点、没接，第二天回拨已停机": [
+          {
+            "phrase": "她想起父亲最后一次来电话，凌晨三点，她没接。第二天回拨，停机",
+            "chunk_hash": "3ab151c96366a2fdc7d0c4cabfeeaefebda3d22a4835023693d961fc0c547edf",
+            "start": 127,
+            "end": 157,
+            "excerpt": "盯着屏幕。拇指摩挲过那三个字，直到屏幕自动熄灭。她想起父亲最后一次来电话，凌晨三点，她没接。第二天回拨，停机。再后来，号码成空号。她把手机塞回口袋，继续擦烤"
+          },
+          {
+            "phrase": "她想起父亲最后一次来电话，凌晨三点，她没接。第二天回拨，停机",
+            "chunk_hash": "73a5816fcff6a4144428117b6e444e68002fbabbb4c4cf0ea4edd37f4161743a",
+            "start": 369,
+            "end": 399,
+            "excerpt": "看了很久。拇指摩挲过那三个字，直到屏幕自动熄灭。她想起父亲最后一次来电话，凌晨三点，她没接。第二天回拨，停机。再后来，号码成空号。她把手机关掉，塞回口袋。\n"
+          },
+          {
+            "phrase": "她想起父亲最后一次来电话，凌晨三点，她没接。第二天回拨，停机",
+            "chunk_hash": "ea7d9b84c06b66fe3ab12f8855b947e7d88c6bb2e197ddafe587642341feb3be",
+            "start": 162,
+            "end": 192,
+            "excerpt": "里的水龙头没关紧，水滴砸在不锈钢盆底，一声一声。她想起父亲最后一次来电话，凌晨三点，她没接。第二天回拨，停机。再后来，号码成空号。她拇指摩挲过屏幕上那三个字"
+          }
+        ]
+      },
+      "wr_keys": [
+        [
+          "林晚",
+          "employment:lin-wan/status",
+          "已辞职并约定交接"
+        ],
+        [
+          "林晚",
+          "employment",
+          "裸辞后与父亲失联"
+        ]
+      ]
+    }
+  ]
+}

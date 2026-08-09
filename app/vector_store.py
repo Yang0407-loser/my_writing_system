@@ -137,7 +137,14 @@ class VectorStore:
         if task_id:
             where_filter = {"task_id": task_id}
 
+        # Reranking needs a wider coarse set to have anything to reorder. When
+        # the flag is off this stays exactly the legacy candidate size.
+        rerank_on = bool(getattr(settings, "RAG_RERANKER_ENABLED", False))
         requested_candidates = max(k, candidate_k or k)
+        if rerank_on:
+            requested_candidates = max(
+                requested_candidates, int(settings.RAG_RERANKER_CANDIDATE_K)
+            )
         n = min(requested_candidates, self._collection.count())
         if n == 0:
             self._last_search_trace = {
@@ -199,6 +206,23 @@ class VectorStore:
                 for item in out
             ],
         }
+        if rerank_on and out:
+            # Fail-open by construction: rerank_items never raises and returns
+            # the legacy slice on any provider error, timeout or degradation.
+            try:
+                from .reranker import rerank_items
+
+                selected, rerank_trace = rerank_items(query, out, k)
+            except Exception as error:  # import-level failure only
+                logger.warning("RAG reranker unavailable: %s", error, exc_info=True)
+                self._last_search_trace["rerank"] = {
+                    "applied": False,
+                    "reason": f"import_failed:{type(error).__name__}",
+                }
+                return out[:k]
+            self._last_search_trace["rerank"] = rerank_trace
+            self._last_search_trace["returned_count"] = len(selected)
+            return selected
         return out[:k]
 
     @property

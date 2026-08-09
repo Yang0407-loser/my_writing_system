@@ -54,6 +54,30 @@ RejectionReason = Literal[
     "missing_arc_milestone_source",
     "invalid_category",
     "invalid_contract_shape",
+    # —— V2.1 紧凑传输层的形状细分理由 ——
+    # 2026-07-26 唯一真实 Demo 的 32/32 拒绝全部归入笼统的
+    # invalid_contract_shape，无法离线定位失败层；细分后恢复层把具体
+    # ValueError 消息原样写入 rejection_counts。invalid_contract_shape
+    # 保留为未识别细节的兜底。
+    "invalid_claim_shape",
+    "invalid_claim_enum",
+    "invalid_source_index",
+    "invalid_span",
+    "empty_span",
+    "span_too_long",
+    "invalid_compact_text",
+    "invalid_semantic_parts",
+    "missing_semantic_component",
+    "invalid_open_event_shape",
+    "invalid_completion_status",
+    "missing_open_event_actor",
+    "unsupported_open_event_component",
+    "invalid_arc_shape",
+    "invalid_milestone_source",
+    "invalid_arc_status",
+    # —— V2.2 短引锚定新增 ——
+    "invalid_quote",
+    "quote_not_found",
 ]
 
 
@@ -130,6 +154,10 @@ class HandoverEvidence(BaseModel):
     start: int = Field(ge=0)
     end: int = Field(gt=0)
     excerpt: str = Field(min_length=1, max_length=MAX_EVIDENCE_EXCERPT)
+    # 定位短引（2026-07-27）：excerpt 扩展为整句后，模型直接断言的仍是短引本身。
+    # 时态标记等"断言级"检查以 anchor 为准（为空时回退 excerpt，旧路径语义不变）。
+    # Demo #6 证实句级标记检查会被证据句中无关的状态否定（如"没有…"）系统性误伤。
+    anchor: str = ""
 
 
 class HandoverClaim(BaseModel):
@@ -228,6 +256,9 @@ class HandoverValidationResult(BaseModel):
     accepted_claim_count: int = Field(ge=0)
     rejected_claim_count: int = Field(ge=0)
     rejection_counts: dict[str, int] = Field(default_factory=dict)
+    # 形状类拒绝的骨架分布（容器类型+长度+元素类型名，不含任何内容字符）。
+    # 2026-07-26 V2.2 Demo：19 个 item 死于 arity 错误但形状不可知——arity 遥测。
+    rejection_shape_skeletons: dict[str, int] | None = None
     source_traceability_rate: float = Field(ge=0, le=1)
 
 
@@ -422,9 +453,10 @@ def _claim_rejection(
     if any(term in claim_text for term in _PSYCHOLOGY_TERMS):
         if not all(term in evidence_text for term in _PSYCHOLOGY_TERMS if term in claim_text):
             return "unsupported_psychology"
+    tense_text = "".join(item.anchor or item.excerpt for item in claim.evidence)
     if (
         claim.temporal_status == "current"
-        and any(marker in evidence_text for marker in _NON_CURRENT_MARKERS)
+        and any(marker in tense_text for marker in _NON_CURRENT_MARKERS)
     ):
         return "tense_or_state_mismatch"
     if claim.with_hash().claim_hash in stale_completed_claim_hashes:
@@ -602,26 +634,55 @@ class HandoverContractValidatorV2:
         )
 
 
+def _claim_note_text(item: HandoverClaim) -> str:
+    """Consumable projection of a claim.
+
+    带短语的旧路径保持原样（主+谓+宾拼接）；V2.3 引文即主张（三段为空）时
+    投影为证据整句——下游 Writer 拿到的是自带语境的逐字原文（消费端优先）。
+    """
+    text = f"{item.subject}{item.predicate}{item.object}"
+    if text:
+        return text
+    return item.evidence[0].excerpt if item.evidence else ""
+
+
+def _open_event_note_text(item: HandoverOpenEvent) -> str:
+    text = f"{item.action}{item.object}".strip()
+    if text:
+        return text
+    return item.evidence[0].excerpt if item.evidence else ""
+
+
+def _deduped(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            ordered.append(value)
+    return ordered
+
+
 def adapt_v2_to_legacy_handover_note(
     validation: HandoverValidationResult,
 ) -> dict[str, Any]:
     contract = validation.contract
     claims = contract.end_state.claims
-    foreshadowing = [
-        f"{item.subject}{item.predicate}{item.object}"
+    foreshadowing = _deduped([
+        _claim_note_text(item)
         for item in claims
         if item.category == "foreshadow_state"
         and item.certainty == "confirmed"
-    ]
-    character_states = [
-        f"{item.subject}{item.predicate}{item.object}"
+    ])
+    character_states = _deduped([
+        _claim_note_text(item)
         for item in claims
         if item.category in {"character_state", "relationship_state"}
         and item.temporal_status == "current"
         and item.certainty == "confirmed"
-    ]
-    new_facts = [
-        f"{item.subject}{item.predicate}{item.object}"
+    ])
+    new_facts = _deduped([
+        _claim_note_text(item)
         for item in claims
         if item.category in {
             "time_state",
@@ -631,12 +692,12 @@ def adapt_v2_to_legacy_handover_note(
         }
         and item.temporal_status == "current"
         and item.certainty == "confirmed"
-    ]
-    open_threads = [
-        f"{item.action}{item.object}".strip()
+    ])
+    open_threads = _deduped([
+        _open_event_note_text(item)
         for item in contract.open_events
         if item.completion_status in {"open", "partially_completed"}
-    ]
+    ])
     arc_progress = {
         item.character_id: "done"
         for item in contract.arc_progress

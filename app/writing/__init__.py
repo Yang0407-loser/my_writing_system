@@ -58,6 +58,34 @@ from .writer_execution_contract import (
     WriterExecutionContractController,
     WriterExecutionContractProvider,
 )
+from .commercial_narrative_harness import (
+    CommercialNarrativeHarness,
+    classify_scene,
+    compile_commercial_narrative_harness,
+    harness_hash,
+    render_commercial_narrative_harness,
+)
+from .narrative_integrity import (
+    NarrativeIntegrityPolicy,
+    WorldPressureContract,
+    compile_narrative_integrity,
+    compile_world_pressure_contract,
+    compose_narrative_control_context,
+    narrative_integrity_hash,
+    render_narrative_integrity,
+    render_world_pressure_contract,
+    world_pressure_hash,
+)
+from .narrative_reality_checks import NarrativeRealityChecker, RealityWarning
+from .anti_ai_expression_kernel import (
+    ANTI_AI_EXPRESSION_KERNEL_V0,
+    KERNEL_VERSION as ANTI_AI_EXPRESSION_KERNEL_VERSION,
+    AntiAIExpressionController,
+    ExpressionKernel,
+    expression_kernel_hash,
+    normalize_anti_ai_expression_mode,
+    render_expression_kernel,
+)
 
 __all__ = [
     "CommitArtifact",
@@ -107,4 +135,27 @@ __all__ = [
     "WriterExecutionContractBuildResult",
     "WriterExecutionContractController",
     "WriterExecutionContractProvider",
+    "CommercialNarrativeHarness",
+    "classify_scene",
+    "compile_commercial_narrative_harness",
+    "harness_hash",
+    "render_commercial_narrative_harness",
+    "NarrativeIntegrityPolicy",
+    "WorldPressureContract",
+    "compile_narrative_integrity",
+    "compile_world_pressure_contract",
+    "compose_narrative_control_context",
+    "narrative_integrity_hash",
+    "render_narrative_integrity",
+    "render_world_pressure_contract",
+    "world_pressure_hash",
+    "NarrativeRealityChecker",
+    "RealityWarning",
+    "ANTI_AI_EXPRESSION_KERNEL_V0",
+    "ANTI_AI_EXPRESSION_KERNEL_VERSION",
+    "AntiAIExpressionController",
+    "ExpressionKernel",
+    "expression_kernel_hash",
+    "normalize_anti_ai_expression_mode",
+    "render_expression_kernel",
 ]

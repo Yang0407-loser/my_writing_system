@@ -165,9 +165,9 @@ class LLMClient:
     所有下游调用自动使用该 key，无需修改 agent 代码。
     """
 
-    def __init__(self):
+    def __init__(self, model: str | None = None):
         self._base_url = settings.LLM_BASE_URL
-        self._model = settings.LLM_MODEL
+        self._model = model or settings.LLM_MODEL
         # Cache: api_key -> OpenAI client (reuse same key's client)
         self._clients: dict[str, OpenAI] = {}
         logger.info(f"LLM 客户端初始化: model={self._model}, base_url={self._base_url}")
@@ -364,10 +364,16 @@ def _parse_retry_after(e: RateLimitError) -> float:
 
 # 全局单例
 _llm_client: LLMClient | None = None
+_model_llm_clients: dict[str, LLMClient] = {}
 
 
-def get_llm_client() -> LLMClient:
+def get_llm_client(model: str | None = None) -> LLMClient:
+    """Return the global client or a cached client for an explicit model."""
     global _llm_client
+    if model:
+        if model not in _model_llm_clients:
+            _model_llm_clients[model] = LLMClient(model=model)
+        return _model_llm_clients[model]
     if _llm_client is None:
         _llm_client = LLMClient()
     return _llm_client

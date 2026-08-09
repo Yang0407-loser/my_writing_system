@@ -112,9 +112,62 @@ def test_state_frame_is_deterministic_traceable_and_frozen():
         first.section = 9
 
 
-def test_production_writer_does_not_import_state_frame():
+def test_production_writer_does_not_import_state_frame_content_layer():
+    """StateFrame 内容不得进入 Writer——守卫收窄版（2026-07-26）。
+
+    原守卫按"导入名含 state_frame"一刀切。2026-07-25 的小节级快照持久化批次
+    （已验收 `accepted`）合法引入了纯观测的 StateFrameHistoryRecorder——它只做
+    capture_before / bind_prompt_hash / capture_after，不向 messages 注入任何
+    StateFrame 内容——导致该守卫从 c1f3298 起长期红灯，掩护作用失效。
+
+    收窄后的契约：
+    - 允许：`state_frame_persistence` 且只允许导入 StateFrameHistoryRecorder；
+    - 禁止：state_frame（compiler）、state_frame_builder、state_frame_v1、
+      state_frame_quality、story_state_view 等一切能把 StateFrame 内容编译
+      进 Writer 输入的模块，以及任何 StateFrame*/StoryState* 符号。
+    """
+    allowed_modules = {"app.writing.state_frame_persistence"}
+    allowed_names = {"StateFrameHistoryRecorder"}
+    forbidden_module_markers = (
+        "state_frame_builder",
+        "state_frame_v1",
+        "state_frame_quality",
+        "story_state_view",
+    )
+
     tree = ast.parse(Path("app/agents/writer.py").read_text(encoding="utf-8"))
-    imports = [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))]
-    rendered = "\n".join(ast.unparse(node) for node in imports)
-    assert "state_frame" not in rendered
-    assert "StateFrame" not in rendered
+    violations = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if "state_frame" in alias.name or "story_state" in alias.name:
+                    violations.append(ast.unparse(node))
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            normalized = module.lstrip(".")
+            has_marker = (
+                "state_frame" in normalized or "story_state" in normalized
+            )
+            if not has_marker:
+                # 符号名兜底：禁止从任何模块导入 StateFrame*/StoryState* 内容符号
+                for alias in node.names:
+                    name = alias.name
+                    if (
+                        name.startswith(("StateFrame", "StoryState"))
+                        and name not in allowed_names
+                    ):
+                        violations.append(ast.unparse(node))
+                continue
+            if any(marker in normalized for marker in forbidden_module_markers):
+                violations.append(ast.unparse(node))
+                continue
+            if not normalized.endswith("state_frame_persistence"):
+                violations.append(ast.unparse(node))
+                continue
+            for alias in node.names:
+                if alias.name not in allowed_names:
+                    violations.append(ast.unparse(node))
+    assert not violations, (
+        "Writer 引入了 StateFrame 内容层（只允许 state_frame_persistence 的 "
+        f"StateFrameHistoryRecorder 观测器）：{violations}"
+    )

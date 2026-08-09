@@ -1,0 +1,48 @@
+{
+  "schema_version": "world-runtime-writer-canary-fixture-v1",
+  "experiment_id": "world-runtime-writer-canary-2026-08-03-v1",
+  "provider": {
+    "temperature": 0.45,
+    "max_tokens": 1600,
+    "max_retries": 0
+  },
+  "preregistered_gates": {
+    "minimum_samples_for_promotion": 24,
+    "maximum_runtime_prompt_token_delta_mean": 1100,
+    "must_event_retention_non_inferior": true,
+    "hard_reality_violation_rate_lower": true,
+    "length_band": [500, 1100],
+    "field_leakage_forbidden": true,
+    "unsourced_setting_rate_non_inferior": true,
+    "human_prose_review_required": true,
+    "silent_reruns_allowed": false
+  },
+  "scenes": [
+    {
+      "scene_id": "bakery-deadline",
+      "premise": "周六凌晨四点二十分，林晚来到‘野面包’。临街店面六点才营业，但操作间三点半已经开始制作，周野正在里面。林晚必须在这一小节里进入操作间、提交并发布自己的文章、把已发布的文章发给季晴且让她读到、最后把辞职通知发到公司人事邮箱。她时间紧，情绪克制。故事时间保持在六点以前。",
+      "characters": "林晚（文章作者，辞职通知尚未送达公司）；周野（在操作间工作）；季晴（起初不知道文章内容）。",
+      "required_term_groups": [
+        ["操作间", "侧门"],
+        ["提交"],
+        ["发布", "上线", "审核通过"],
+        ["季晴"],
+        ["链接", "文章"],
+        ["人事邮箱", "人事", "HR"]
+      ]
+    },
+    {
+      "scene_id": "bakery-fast-cut",
+      "premise": "用偏快的切场写同一个周六清晨：四点二十分，野面包的临街店面仍应关闭，六点才对外营业，操作间从三点半起可以制作。周野让林晚进入操作间。林晚随后完成文章提交与发布，把链接发给季晴并确认她读到，又把辞职通知发进公司人事邮箱。所有动作都要在正文中发生，不能用一句结果概括，也不要写到六点以后。",
+      "characters": "林晚、周野、季晴；公司目前尚未确认收到辞职通知，其他同事目前不知道文章。",
+      "required_term_groups": [
+        ["操作间", "侧门"],
+        ["提交"],
+        ["发布", "上线", "审核通过"],
+        ["季晴"],
+        ["链接", "文章"],
+        ["人事邮箱", "人事", "HR"]
+      ]
+    }
+  ]
+}

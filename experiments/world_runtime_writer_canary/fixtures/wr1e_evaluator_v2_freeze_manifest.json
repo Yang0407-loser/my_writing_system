@@ -1,0 +1,17 @@
+{
+  "schema_version": "world-runtime-evaluator-v2-freeze-manifest-v1",
+  "frozen_at": "2026-08-04",
+  "evaluator_source_sha256": "289494faa51ba749e3639a612bb42d528dcea1815767d44df2c12406d874072f",
+  "calibration_fixture_sha256": "cebdf48c18a8d2144cce0c151830847b359a0419f6fc0f6392ec173662775980",
+  "holdout_fixture_sha256": "554d5c094312e036d1dd8448c04dc5af94201defdbea4812b220af5070089a6b",
+  "calibration_report_sha256": "3161c430447b8e53f72deb11e92150046c4dcbc50d2877f292708ce7bbf64768",
+  "holdout_report_sha256": "2abc0a1c4e85e110114e2013f5c5c9d7103249b1ee136bd1ca47016c4cea547b",
+  "calibration_case_count": 12,
+  "holdout_case_count": 12,
+  "minimum_precision_recall": 0.9,
+  "calibration_gate_passed": true,
+  "holdout_gate_passed": true,
+  "holdout_blind_to_implementer": false,
+  "generation_authorized": false,
+  "production_authorized": false
+}

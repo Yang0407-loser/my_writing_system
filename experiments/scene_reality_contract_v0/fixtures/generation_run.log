@@ -1,0 +1,12 @@
+E:\writer\my_writing_system\.venv\Lib\site-packages\jieba\_compat.py:18: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+15:35:06 [writing_system.llm] [-] INFO: LLM 客户端初始化: model=deepseek-v4-flash, base_url=https://api.deepseek.com/v1
+15:35:06 [writing_system.llm] [-] INFO: LLM [scene_reality_contract_v0 vunversioned]: est_input=9558tk, est_total<=14958tk, cumulative=0tk, temp=0.5, json=False
+15:35:15 [writing_system.llm] [-] INFO: LLM response: 8.9s, finish=stop, tokens_in=4593, tokens_out=571, cumulative=5164
+15:35:15 [writing_system.llm] [-] INFO: LLM [scene_reality_contract_v0 vunversioned]: est_input=10904tk, est_total<=14304tk, cumulative=5164tk, temp=0.5, json=False
+15:35:28 [writing_system.llm] [-] INFO: LLM response: 12.7s, finish=stop, tokens_in=5262, tokens_out=868, cumulative=11294
+15:35:28 [writing_system.llm] [-] INFO: LLM [scene_reality_contract_v0 vunversioned]: est_input=12521tk, est_total<=15721tk, cumulative=11294tk, temp=0.5, json=False
+15:35:41 [writing_system.llm] [-] INFO: LLM response: 13.9s, finish=stop, tokens_in=6050, tokens_out=902, cumulative=18246
+15:35:41 [writing_system.llm] [-] INFO: LLM [scene_reality_contract_v0 vunversioned]: est_input=14157tk, est_total<=17957tk, cumulative=18246tk, temp=0.5, json=False
+15:35:55 [writing_system.llm] [-] INFO: LLM response: 14.0s, finish=stop, tokens_in=6853, tokens_out=981, cumulative=26080
+{"model": "deepseek-v4-flash", "generation_calls": 4, "revision_calls": 0, "baseline_warning_count": 7, "candidate_warning_count": 3, "resolved_issue_count": 5, "new_warning_codes": [], "automatic_criteria_pass": false, "promotion_status": "failed", "outputs": {"prompt": "E:\\writer\\my_writing_system\\reports\\scene-reality-contract-v0-prompt-2026-08-02.txt", "output": "E:\\writer\\my_writing_system\\reports\\scene-reality-contract-v0-output-2026-08-02.txt", "json": "E:\\writer\\my_writing_system\\reports\\scene-reality-contract-v0-2026-08-02.json", "md": "E:\\writer\\my_writing_system\\reports\\scene-reality-contract-v0-2026-08-02.md"}}

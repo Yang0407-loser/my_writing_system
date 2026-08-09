@@ -20,6 +20,8 @@ output/
 .phase4r_final_trial_runtime/
 .phase4r_state_frame_runtime/
 .handover_content_audit_runtime/
+.world_runtime_writer_canary_runtime/
+.world_runtime_writer_canary_v2_runtime/
 
 # Python
 __pycache__/

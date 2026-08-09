@@ -1,0 +1,104 @@
+{
+  "schema_version": "world-runtime-semantic-development-wr2c2-v2",
+  "partition_role": "visible_development_v2_not_holdout",
+  "cases": [
+    {
+      "case_id": "DEV2-SALE-01", "scene_id": "adversarial-storefront-hours", "state_variant": "before",
+      "text": "五点还差一刻，收款码先响了一声。周野随即把两只牛角包装袋递出半掩的临街门。",
+      "changes": [{"change_type":"storefront_public_sale","subject":"bakery:wild-bread:storefront","predicate":"public_sale_event","after_value":"occurred","mechanism":"digital_payment_exchange","expected_validation":"invalid"}]
+    },
+    {
+      "case_id": "DEV2-HANDOFF-01", "scene_id": "adversarial-storefront-hours", "state_variant": "before",
+      "text": "对方没有付款，林晚还是从门缝递出去一袋刚出炉的餐包，说算她请的。",
+      "changes": [{"change_type":"storefront_public_handoff","subject":"bakery:wild-bread:storefront","predicate":"public_goods_handoff","after_value":"occurred","mechanism":"free_handoff","expected_validation":"invalid"}]
+    },
+    {
+      "case_id": "DEV2-KNOWLEDGE-01", "scene_id": "adversarial-unpublished-knowledge", "state_variant": "before",
+      "text": "林晚把全文文件丢进工作群。几分钟后，阿吴引用正文里那句“天快亮了”，问她是不是要删。",
+      "changes": [{"change_type":"knowledge_state","subject":"character:coworker","predicate":"article_knowledge","after_value":"perceived","mechanism":"group_file_send_and_body_response","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-ACK-01", "scene_id": "adversarial-employment-transition", "state_variant": "after",
+      "text": "人事系统随后发出回执，写明辞职通知已经受理。",
+      "changes": [{"change_type":"resignation_acknowledgement","subject":"company:lin-wan","predicate":"resignation_acknowledged","after_value":true,"mechanism":"institutional_reply","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-UNSOURCED-01", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented",
+      "text": "新任采购主管孙岚翻了翻账本，让周野下午改用另一家面粉。",
+      "changes": [{"change_type":"unsourced_project_fact","subject":"character:sun-lan","predicate":"identity_role","after_value":"bakery_procurement_supervisor","mechanism":"text_assertion","expected_validation":"unresolved"}]
+    },
+    {
+      "case_id": "DEV2-OBJECT-POUR-01", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented",
+      "text": "林晚端起茶几上的碗，将剩下的绿豆汤全倒进洗手池，又把空碗放回原处。",
+      "changes": [{"change_type":"object_state","subject":"object:green-bean-soup-bowl","predicate":"content_state","after_value":"empty","mechanism":"actor_pours_out","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-OBJECT-COMPOSITE-01", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented",
+      "text": "门窗整夜紧闭，也没人来过；可她早晨进屋时，那只碗已经洗好并摆进厨房橱柜。",
+      "changes": [{"change_type":"object_state","subject":"object:green-bean-soup-bowl","predicate":"content_state","after_value":"clean_and_stored","mechanism":"missing_actor_or_event","expected_validation":"invalid"}]
+    },
+    {
+      "case_id": "DEV2-REPEAT-01", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented",
+      "text": "发布记录明明已经生成，她却返回编辑页，再次触发了发布操作。",
+      "changes": [{"change_type":"repeated_completed_event","subject":"article:lin-wan","predicate":"publication_event","after_value":"repeated","mechanism":"explicit_repeat_marker","expected_validation":"invalid"}]
+    },
+    {
+      "case_id": "DEV2-EMPLOYMENT-CHAIN-01", "scene_id": "adversarial-employment-transition", "state_variant": "after",
+      "text": "人事邮件正式确认她的离职当日生效。交接单签完后，公司把她的在职状态改成了已离职。",
+      "changes": [
+        {"change_type":"resignation_acknowledgement","subject":"company:lin-wan","predicate":"resignation_acknowledged","after_value":true,"mechanism":"institutional_reply","expected_validation":"valid"},
+        {"change_type":"employment_state","subject":"employment:lin-wan","predicate":"status","after_value":"ended","mechanism":"acknowledged_effective_resignation","expected_validation":"valid"}
+      ]
+    },
+    {
+      "case_id": "DEV2-EMPLOYMENT-SELF-01", "scene_id": "adversarial-employment-transition", "state_variant": "after",
+      "text": "邮箱没有任何人事回复，林晚却自行宣布劳动关系已经结束，第二天不会再来。",
+      "changes": [{"change_type":"employment_state","subject":"employment:lin-wan","predicate":"status","after_value":"ended","mechanism":"self_assumed_effective","expected_validation":"invalid"}]
+    },
+    {
+      "case_id": "DEV2-PUBLISH-01", "scene_id": "adversarial-unpublished-knowledge", "state_variant": "before",
+      "text": "她先提交定稿；审核完成后，站点把文章标记为公开发布。",
+      "changes": [{"change_type":"publication_state","subject":"article:lin-wan","predicate":"publication_state","after_value":"published","mechanism":"submit_and_platform_publish","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-DELIVERY-01", "scene_id": "adversarial-employment-transition", "state_variant": "before",
+      "text": "辞职通知寄往单位的人事地址，邮件服务器返回了投递成功记录。",
+      "changes": [{"change_type":"resignation_delivery","subject":"resignation:lin-wan","predicate":"lifecycle_state","after_value":"delivered","mechanism":"institutional_email_delivery","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-PERSONAL-01", "scene_id": "adversarial-employment-transition", "state_variant": "before",
+      "text": "她没有联系公司，只把辞职信抄送到自己的私人邮箱作备份。",
+      "changes": [{"change_type":"resignation_personal_record","subject":"resignation:lin-wan","predicate":"personal_record_state","after_value":"saved","mechanism":"private_email_copy","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-CLOCK-01", "scene_id": "adversarial-storefront-hours", "state_variant": "before",
+      "text": "第二盘面团进炉时，墙钟的分针刚走到五点二十五。",
+      "changes": [{"change_type":"clock_state","subject":"world_clock","predicate":"time","after_value":"05:25","mechanism":"explicit_time_progression","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-LOCATION-01", "scene_id": "adversarial-storefront-hours", "state_variant": "before",
+      "text": "侧门打开后，林晚迈进操作间，在揉面台边停了下来。",
+      "changes": [{"change_type":"location_state","subject":"character:lin-wan","predicate":"location","after_value":"bakery:wild-bread:workshop","mechanism":"explicit_entry","expected_validation":"valid"}]
+    },
+    {
+      "case_id": "DEV2-NEGATED-SALE-01", "scene_id": "adversarial-storefront-hours", "state_variant": "before",
+      "text": "顾客亮出付款页面，周野摇头没有收款，也没有把柜台上的面包交出去。", "changes": []
+    },
+    {
+      "case_id": "DEV2-PLANNED-KNOWLEDGE-01", "scene_id": "adversarial-unpublished-knowledge", "state_variant": "before",
+      "text": "林晚准备改完最后一段再把链接发给季晴，此刻聊天框仍是空的。", "changes": []
+    },
+    {
+      "case_id": "DEV2-FICTIONAL-ENTITY-01", "scene_id": "adversarial-unpublished-knowledge", "state_variant": "before",
+      "text": "她在小说草稿里写了一个名叫孙岚的采购主管，随后删掉了这段人物小传。", "changes": []
+    },
+    {
+      "case_id": "DEV2-REPEAT-CHECK-01", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented",
+      "text": "她只查看了一遍发布记录，确认文章仍在线，没有碰发布按钮。", "changes": []
+    },
+    {
+      "case_id": "DEV2-OBJECT-NOOP-01", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented",
+      "text": "林晚看见盛着冷汤的碗仍在茶几原位，没有伸手。", "changes": []
+    }
+  ]
+}

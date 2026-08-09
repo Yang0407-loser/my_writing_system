@@ -132,7 +132,7 @@ def mock_llm(mocker):
         mock_client.chat_completion.return_value = response_text
         mock_client.chat_completion_stream.return_value = [response_text]
 
-        def fake_init(self, llm_client=None):
+        def fake_init(self, llm_client=None, model=None):
             self.llm = mock_client
             self.last_raw_response = ""
 

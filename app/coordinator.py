@@ -13,6 +13,7 @@ from .agents.continuity_editor import ContinuityEditor
 from .agents.character_manager import CharacterManager
 from .blackboard import Blackboard
 from .vector_store import VectorStore
+from .embedding.factory import preflight_embedding_backend
 from .world_state import WorldStateManager
 from .narrative_event import EventGraph, NarrativeEvent
 from .utils.prompt_templates import OUTLINE_REVIEW_PROMPT
@@ -216,6 +217,19 @@ def writing_task(
         phase_timings = {}
 
     try:
+        # ── 基础设施前置检查 ──
+        # embedding 后端只在 _phase_writing 里才被触碰，那时 character_arcs 和
+        # world_state 的 LLM token 已经花掉了；后端不可达抛出的 RuntimeError 又
+        # 正好命中 autoretry_for，导致整任务重放、规划阶段重复计费。
+        # 2026-07-26 的真实事故：5 次重放烧掉 26,058 token（占该任务约 40%）。
+        # 这里探活零成本，且不改变重试语义——后端在退避窗口内恢复，任务照样成功。
+        backend_ok, backend_reason = preflight_embedding_backend()
+        if not backend_ok:
+            logger.warning(
+                f"[{task_id[:8]}] embedding 后端预检失败，零 token 退出: {backend_reason}"
+            )
+            raise RuntimeError(f"EmbeddingBackendUnavailable: {backend_reason}")
+
         # ── 阶段路由 ──
         phase_order = [
             "characters", "style", "outline", "awaiting_outline",
@@ -685,6 +699,12 @@ def _phase_writing(bb, task_id, state):
     existing_backrefs = state.get("backref_suggestions", [])
     # 从 Redis 重建 WorldStateManager（state 序列化会丢失对象引用）
     event_graph = EventGraph(bb, task_id)
+    # 本阶段每次进入都会从当前 character_arcs 全量重建里程碑。Celery 重试会从
+    # characters 阶段整个重跑，弧线由 LLM 重新生成（措辞每次不同），若不先清空，
+    # 每次尝试都会往图里追加一份同义改写，导致 pre_check 的必写事件列表按尝试
+    # 次数线性膨胀，并被拼进 Writer prompt。清空后重建即幂等；逐字未变的里程碑
+    # 通过 ledger 恢复 done/deviated 进度。
+    arc_reset = event_graph.reset_arc_milestones()
     world_state = WorldStateManager(bb, task_id, event_graph=event_graph) if settings.ENABLE_WORLD_STATE else None
     # 将角色弧线里程碑注入 EventGraph
     arc_event_ids: dict[str, list[str]] = {}  # character_id -> [event_id, ...]
@@ -759,6 +779,25 @@ def _phase_writing(bb, task_id, state):
                 for j in range(i + 1, len(eids)):
                     event_graph.link_events(eids[i], eids[j])
                     edge_count += 1
+    restored_status = event_graph.restore_milestone_status(arc_reset["carried_status"])
+    rebuilt = event_graph.get_summary()["arc_milestones_total"]
+    logger.info(
+        "arc_milestone_rebuild=%s",
+        _json.dumps(
+            {
+                "section_scope": "all",
+                "contract_version": contract_version,
+                "removed_before_rebuild": arc_reset["removed"],
+                "rebuilt_total": rebuilt,
+                "status_carried_over": restored_status,
+                "edge_count": edge_count,
+                "idempotent": arc_reset["removed"] == 0 or rebuilt <= arc_reset["removed"],
+                "production_effect": "arc_milestone_rebuild_only",
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+    )
     if edge_count > 0:
         if contract_version == "v2":
             logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条显式事件边 "
@@ -887,6 +926,12 @@ def _phase_writing(bb, task_id, state):
             _add_timeline(bb, task_id, "writing", "system",
                           f"关系上下文已加载 ({len(relation_context)} 字符)")
 
+        if state.get("style_evaluations"):
+            bb.set(
+                task_id,
+                "style_evaluation_v1",
+                state["style_evaluations"],
+            )
         result = writer.run(
             topic=topic,
             style=style,
@@ -936,6 +981,17 @@ def _phase_writing(bb, task_id, state):
     section_timings = result.get("section_timings", [])
     if section_timings:
         state["section_timings"] = section_timings
+    state["style_evaluations"] = result.get(
+        "style_evaluations", state.get("style_evaluations", [])
+    )
+    prior_policy_observations = state.get("style_policy_observations", [])
+    new_policy_observations = result.get("style_policy_observations", [])
+    policy_by_subsection = {
+        (item.get("section"), item.get("subsection")): item
+        for item in [*prior_policy_observations, *new_policy_observations]
+        if isinstance(item, dict)
+    }
+    state["style_policy_observations"] = list(policy_by_subsection.values())
 
     # 合并 on_section_done 中累积的数据（交互模式下由回调填充）
     if _accum["section_texts"]:

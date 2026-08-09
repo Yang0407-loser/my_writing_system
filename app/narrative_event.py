@@ -200,6 +200,66 @@ class EventGraph:
                 e2.relation_metadata[event_id1] = reverse
             self._save()
 
+    @staticmethod
+    def _milestone_key(event: NarrativeEvent) -> tuple:
+        """Identity of a milestone across regenerations of the same arcs."""
+        return (
+            event.character_id,
+            event.section,
+            event.subsection,
+            event.description,
+        )
+
+    def reset_arc_milestones(self) -> dict:
+        """Drop every arc milestone and return a ledger of non-pending status.
+
+        Arc milestones are a pure function of the current ``character_arcs``:
+        the writing phase rebuilds them from scratch on entry.  When that phase
+        is re-entered — a Celery retry, or a resume — the planner regenerates
+        the arcs, and ``add_arc_milestone`` appends a *new* uuid for every
+        milestone.  Without clearing first, each pass leaves its own paraphrase
+        of the same beats in the graph, so ``pre_check`` hands Writer a
+        required-event list that grows once per attempt.
+
+        Content hashing does not solve this: successive planner runs word the
+        same beat differently, so the duplicates are semantic, not literal.
+        Clearing before the rebuild is what makes it idempotent.
+
+        The returned ledger lets the caller restore ``done``/``deviated`` for
+        milestones that come back verbatim, so resuming a task with unchanged
+        arcs keeps its progress.
+        """
+        ledger: dict[tuple, str] = {}
+        remaining: dict[str, NarrativeEvent] = {}
+        removed = 0
+        for event_id, event in self._events.items():
+            if event.type != "arc_milestone":
+                remaining[event_id] = event
+                continue
+            if event.status != "pending":
+                ledger[self._milestone_key(event)] = event.status
+            removed += 1
+        if removed:
+            self._events = remaining
+            self._save()
+        return {"removed": removed, "carried_status": ledger}
+
+    def restore_milestone_status(self, carried_status: dict) -> int:
+        """Re-apply progress to milestones that survived a rebuild verbatim."""
+        if not carried_status:
+            return 0
+        count = 0
+        for event in self._events.values():
+            if event.type != "arc_milestone":
+                continue
+            status = carried_status.get(self._milestone_key(event))
+            if status and event.status != status:
+                event.status = status
+                count += 1
+        if count:
+            self._save()
+        return count
+
     def update_arc_status(self, character_id: str, status: str) -> int:
         """更新指定角色的所有 pending 弧线状态。status: done|deviated。
         Returns: 更新数量。

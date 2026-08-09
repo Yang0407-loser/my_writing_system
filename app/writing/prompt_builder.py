@@ -32,6 +32,9 @@ class PromptBuilder:
         token_by_source: dict[str, int] | None = None,
     ) -> PromptArtifact:
         values = dict(prepared.prepared_context_fields)
+        # Backward-compatible default for legacy fixtures/checkpoints.  Empty
+        # preserves the pre-kernel Writer prompt byte-for-byte at this slot.
+        values.setdefault("anti_ai_expression_constraints", "")
         template = (
             WRITING_SECTION1_PROMPT
             if (prepared.section, prepared.subsection) == (1, 1)

@@ -14,9 +14,13 @@ from ..utils.prompt_templates import (
     HANDOVER_EXTRACTION_PROMPT,
     HANDOVER_EXTRACTION_PROMPT_V2,
     HANDOVER_EXTRACTION_PROMPT_V21,
+    HANDOVER_EXTRACTION_PROMPT_V22,
+    HANDOVER_EXTRACTION_PROMPT_V23,
 )
 from ..utils.word_counter import count_chinese_chars
 from ..utils.style_brief import StyleSummarizer
+from ..realization_policy import compile_realization_policy, render_realization_policy
+from ..style_evaluation import StyleDriftTracker
 from ..utils.json_parser import parse_json
 from ..config import settings
 from ..world_state import WorldStateManager
@@ -27,6 +31,8 @@ from ..retrieval_pipeline import QueryPlanner, ShadowRetriever
 from ..writing import (
     GenerationArtifact,
     GenerationController,
+    AntiAIExpressionController,
+    NarrativeRealityChecker,
     PromptBuilder,
     SceneSpecCanaryController,
     StateCommitter,
@@ -40,6 +46,16 @@ from ..writing import (
     SubsectionInput,
     SubsectionPipeline,
     WriterExecutionContractController,
+    compile_commercial_narrative_harness,
+    compile_narrative_integrity,
+    compile_world_pressure_contract,
+    compose_narrative_control_context,
+    harness_hash,
+    narrative_integrity_hash,
+    render_commercial_narrative_harness,
+    render_narrative_integrity,
+    render_world_pressure_contract,
+    world_pressure_hash,
 )
 from .. import foreshadowing_store
 from .. import rule_store
@@ -47,6 +63,7 @@ from ..writing.state_frame_persistence import StateFrameHistoryRecorder
 from ..writing.subsection_handover_history import (
     HandoverExtractionObservation,
     observation_from_note,
+    payload_for_persistence,
     task_id_hash as handover_task_id_hash,
 )
 from ..writing.subsection_handover_persistence import (
@@ -62,13 +79,22 @@ from ..writing.handover_contract_v2 import (
 )
 from ..writing.handover_contract_v21 import (
     HANDOVER_COMPACT_V21_MAX_OUTPUT_TOKENS,
+    HANDOVER_COMPACT_V21_VERSION,
+    HANDOVER_COMPACT_V22_MAX_OUTPUT_TOKENS,
+    HANDOVER_COMPACT_V22_VERSION,
+    HANDOVER_COMPACT_V23_MAX_OUTPUT_TOKENS,
+    HANDOVER_COMPACT_V23_VERSION,
     build_compact_source_registry,
     render_v21_prompt_context,
     restore_and_validate_v21,
+    restore_and_validate_v22,
+    restore_and_validate_v23,
 )
 from ..utils.llm_client import estimate_tokens as estimate_llm_tokens
 
 logger = logging.getLogger("writing_system.writer")
+
+_HANDOVER_NEXT_BOUNDARY_VERSIONS = frozenset({"v2", "v2.1", "v2.2", "v2.3"})
 
 
 def _estimate_prompt_tokens(text: str) -> int:
@@ -120,6 +146,9 @@ class Writer(BaseAgent):
     - 流式模式 (stream_callback 不为 None)：使用 streaming LLM，每收到 token 回调 stream_callback
     """
 
+    def __init__(self):
+        super().__init__(model=settings.WRITER_LLM_MODEL)
+
     def run(
         self,
         topic: str,
@@ -149,6 +178,7 @@ class Writer(BaseAgent):
         experience_context: str = "",
         narrative_beats: list[dict] | None = None,
         reference_text: str = "",
+        rag_metadata_provider: Callable[[int, int], dict | None] | None = None,
     ) -> dict:
         """返回 {draft, handover_notes, backref_suggestions, section_texts}。
 
@@ -212,6 +242,59 @@ class Writer(BaseAgent):
         section_texts = dict(existing_section_texts) if existing_section_texts else {}
         previous_sub_texts = []  # P2: 累积已生成的小节正文，用于重复检测
         existing_draft = existing_draft or {}
+        style_control_mode = settings.WRITER_STYLE_CONTROL_MODE
+        style_policy_observations: list[dict] = []
+        anti_ai_expression_controller = AntiAIExpressionController(
+            settings.WRITER_ANTI_AI_EXPRESSION_MODE
+        )
+        anti_ai_expression_observations: list[dict] = []
+        commercial_harness_mode = settings.WRITER_COMMERCIAL_HARNESS_MODE
+        if commercial_harness_mode not in {"off", "shadow", "canary"}:
+            commercial_harness_mode = "shadow"
+        commercial_harness_observations: list[dict] = []
+        narrative_integrity_mode = settings.WRITER_NARRATIVE_INTEGRITY_MODE
+        if narrative_integrity_mode not in {"off", "shadow", "canary"}:
+            narrative_integrity_mode = "shadow"
+        narrative_integrity_observations: list[dict] = []
+        world_pressure_mode = settings.WRITER_WORLD_PRESSURE_MODE
+        if world_pressure_mode not in {"off", "shadow", "canary"}:
+            world_pressure_mode = "shadow"
+        world_pressure_observations: list[dict] = []
+        narrative_reality_checker = NarrativeRealityChecker(
+            enabled=settings.WRITER_NARRATIVE_REALITY_CHECKS,
+            allowed_names=[
+                str(item.get("name", ""))
+                for item in (characters or [])
+                if isinstance(item, dict) and item.get("name")
+            ],
+        )
+        style_drift_tracker = StyleDriftTracker(
+            style,
+            character_names=[
+                str(item.get("name", ""))
+                for item in (characters or [])
+                if isinstance(item, dict) and item.get("name")
+            ],
+        )
+        if blackboard:
+            try:
+                previous_style_evaluations = blackboard.get(
+                    task_id, "style_evaluation_v1"
+                )
+                if isinstance(previous_style_evaluations, str):
+                    previous_style_evaluations = json.loads(
+                        previous_style_evaluations
+                    )
+                style_drift_tracker.reports.extend(
+                    item
+                    for item in (previous_style_evaluations or [])
+                    if isinstance(item, dict)
+                )
+            except Exception:
+                logger.warning(
+                    f"[{task_id[:8]}] 历史风格评测恢复失败，fallback=current-run-only",
+                    exc_info=True,
+                )
 
         prev_handover = None
         if prev_handover_list:
@@ -224,7 +307,12 @@ class Writer(BaseAgent):
 
         # 用 LLM 将模糊风格参数翻译为具体行为指令（一次调用，全任务复用）
         style_behavior_text = ""
-        if style and isinstance(style, dict) and settings.ENABLE_STYLE_BEHAVIOR:
+        if (
+            style
+            and isinstance(style, dict)
+            and settings.ENABLE_STYLE_BEHAVIOR
+            and style_control_mode in {"legacy", "shadow"}
+        ):
             try:
                 import json as _json
                 from ..utils.prompt_templates import STYLE_BEHAVIOR_PROMPT
@@ -239,7 +327,12 @@ class Writer(BaseAgent):
 
         # v0.9.4: 构建风格示例文本（参数→模板，照猫画虎）
         style_examples = ""
-        if style and isinstance(style, dict) and settings.ENABLE_STYLE_BEHAVIOR:
+        if (
+            style
+            and isinstance(style, dict)
+            and settings.ENABLE_STYLE_BEHAVIOR
+            and style_control_mode in {"legacy", "shadow"}
+        ):
             try:
                 from ..utils.style_mapping import build_style_examples
                 style_examples = build_style_examples(style)
@@ -250,7 +343,11 @@ class Writer(BaseAgent):
 
         # v0.9.5: 参考原文 few-shot（比预写示例更强的风格信号）
         reference_passages = ""
-        if reference_text and reference_text.strip():
+        if (
+            reference_text
+            and reference_text.strip()
+            and style_control_mode in {"legacy", "shadow"}
+        ):
             import re as _re
             paras = _re.split(r'\n{2,}', reference_text.strip())
             paras = [p.strip() for p in paras if len(p.strip()) > 80]
@@ -704,11 +801,199 @@ class Writer(BaseAgent):
                     if focus:
                         beat_reminder += f" 本节的叙事重心是: {focus}。"
 
+                realization_policy = compile_realization_policy(style, beat=beat)
+                rendered_realization_policy = render_realization_policy(
+                    realization_policy
+                )
+                policy_observation = {
+                    "section": section_num,
+                    "subsection": sub_num,
+                    "mode": style_control_mode,
+                    "version": realization_policy.version,
+                    "policy_hash": hashlib.sha256(
+                        rendered_realization_policy.encode("utf-8")
+                    ).hexdigest(),
+                    "characters": len(rendered_realization_policy),
+                    "injected": style_control_mode == "policy",
+                }
+                style_policy_observations.append(policy_observation)
+                if blackboard:
+                    try:
+                        blackboard.set(
+                            task_id,
+                            "style_policy_observations_v1",
+                            style_policy_observations,
+                        )
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] Realization Policy shadow记录失败 "
+                            f"(第{section_num}.{sub_num}节)，fallback=return-only",
+                            exc_info=True,
+                        )
+
                 # --- 确定性 Prompt 边界（R1：字段和值保持原样） ---
+                base_style_context = (
+                    rendered_realization_policy
+                    if style_control_mode == "policy"
+                    else (reference_passages + "\n" + style_examples).strip()
+                )
+                commercial_harness = compile_commercial_narrative_harness(
+                    scene_text="\n".join(
+                        [sub_desc, *(str(item) for item in (key_points or []))]
+                    ),
+                    required_events=execution_required_events,
+                )
+                rendered_commercial_harness = render_commercial_narrative_harness(
+                    commercial_harness
+                )
+                integrity_policy = compile_narrative_integrity(
+                    required_events=execution_required_events,
+                )
+                rendered_integrity_policy = render_narrative_integrity(
+                    integrity_policy
+                )
+                world_pressure_contract = compile_world_pressure_contract(
+                    settings.WRITER_WORLD_PRESSURE_PRESET
+                )
+                rendered_world_pressure = (
+                    render_world_pressure_contract(world_pressure_contract)
+                    if world_pressure_contract is not None
+                    else ""
+                )
+                active_integrity_parts: list[str] = []
+                if narrative_integrity_mode == "canary":
+                    active_integrity_parts.append(rendered_integrity_policy)
+                if (
+                    world_pressure_mode == "canary"
+                    and rendered_world_pressure
+                ):
+                    active_integrity_parts.append(rendered_world_pressure)
+                effective_integrity_constraints = "\n\n".join(
+                    active_integrity_parts
+                )
+                effective_style_context = compose_narrative_control_context(
+                    integrity_context="",
+                    integrity_mode="shadow",
+                    genre_context=rendered_commercial_harness,
+                    genre_mode=commercial_harness_mode,
+                    style_context=base_style_context,
+                )
+                anti_ai_expression_constraints = (
+                    anti_ai_expression_controller.final_prompt_constraints()
+                )
+                if anti_ai_expression_controller.mode != "off":
+                    anti_ai_observation = anti_ai_expression_controller.observation(
+                        section=section_num,
+                        subsection=sub_num,
+                    )
+                    anti_ai_expression_observations.append(anti_ai_observation)
+                    if blackboard:
+                        try:
+                            blackboard.set(
+                                task_id,
+                                "anti_ai_expression_kernel_v0",
+                                anti_ai_expression_observations,
+                            )
+                        except Exception:
+                            logger.warning(
+                                f"[{task_id[:8]}] Anti-AI Expression observation failed "
+                                f"(section={section_num}.{sub_num}, fallback=return-only)",
+                                exc_info=True,
+                            )
+                integrity_observation = {
+                    "section": section_num,
+                    "subsection": sub_num,
+                    "mode": narrative_integrity_mode,
+                    "version": integrity_policy.version,
+                    "policy_hash": narrative_integrity_hash(integrity_policy),
+                    "characters": len(rendered_integrity_policy),
+                    "required_event_count": integrity_policy.required_event_count,
+                    "source_refs": list(integrity_policy.source_refs),
+                    "injected": narrative_integrity_mode == "canary",
+                    "delivery": (
+                        "hard_constraints"
+                        if narrative_integrity_mode == "canary"
+                        else "shadow"
+                    ),
+                }
+                narrative_integrity_observations.append(integrity_observation)
+                if blackboard and narrative_integrity_mode != "off":
+                    try:
+                        blackboard.set(
+                            task_id,
+                            "narrative_integrity_observations_v0",
+                            narrative_integrity_observations,
+                        )
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] Narrative Integrity observation failed "
+                            f"(section={section_num}.{sub_num}, fallback=return-only)",
+                            exc_info=True,
+                        )
+                if world_pressure_contract is not None:
+                    world_pressure_observation = {
+                        "section": section_num,
+                        "subsection": sub_num,
+                        "mode": world_pressure_mode,
+                        "version": world_pressure_contract.version,
+                        "preset": world_pressure_contract.preset,
+                        "contract_hash": world_pressure_hash(world_pressure_contract),
+                        "characters": len(rendered_world_pressure),
+                        "world_setting_present": bool(world_setting.strip()),
+                        "injected": world_pressure_mode == "canary",
+                        "delivery": (
+                            "hard_constraints"
+                            if world_pressure_mode == "canary"
+                            else "shadow"
+                        ),
+                    }
+                    world_pressure_observations.append(world_pressure_observation)
+                    if blackboard and world_pressure_mode != "off":
+                        try:
+                            blackboard.set(
+                                task_id,
+                                "world_pressure_observations_v0",
+                                world_pressure_observations,
+                            )
+                        except Exception:
+                            logger.warning(
+                                f"[{task_id[:8]}] World Pressure observation failed "
+                                f"(section={section_num}.{sub_num}, fallback=return-only)",
+                                exc_info=True,
+                            )
+                commercial_observation = {
+                    "section": section_num,
+                    "subsection": sub_num,
+                    "mode": commercial_harness_mode,
+                    "version": commercial_harness.version,
+                    "harness_hash": harness_hash(commercial_harness),
+                    "characters": len(rendered_commercial_harness),
+                    "scene_mode": commercial_harness.scene_mode,
+                    "required_event_count": commercial_harness.required_event_count,
+                    "source_refs": list(commercial_harness.source_refs),
+                    "classification_evidence": commercial_harness.classification_evidence,
+                    "injected": commercial_harness_mode == "canary",
+                }
+                commercial_harness_observations.append(commercial_observation)
+                if blackboard and commercial_harness_mode != "off":
+                    try:
+                        blackboard.set(
+                            task_id,
+                            "commercial_narrative_harness_v0",
+                            commercial_harness_observations,
+                        )
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] Commercial Harness observation failed "
+                            f"(section={section_num}.{sub_num}, fallback=return-only)",
+                            exc_info=True,
+                        )
+
                 prompt_values = {
                     "mandatory_events": mandatory_events,
                     "character_constraints": self._build_character_constraints(characters),
                     "style_constraints": style_constraints,
+                    "narrative_integrity_constraints": effective_integrity_constraints,
                     "progress_context": progress_context,
                     "rules_context": rules_ctx if rules_ctx else "",
                     "topic": topic,
@@ -735,13 +1020,16 @@ class Writer(BaseAgent):
                     "retrieved_context": retrieved_context if retrieved_context else "（无相关段落）",
                     "target_words": target_words,
                     "beat_reminder": beat_reminder,
-                    "style_examples": (reference_passages + "\n" + style_examples).strip(),
+                    "style_examples": effective_style_context,
+                    "anti_ai_expression_constraints": anti_ai_expression_constraints,
                 }
                 context_token_estimates = {
                     "outline": _estimate_prompt_tokens(
                         f"{section_outline}\n{sub_desc}\n{'、'.join(key_points)}"
                     ),
-                    "rules": _estimate_prompt_tokens(rules_ctx),
+                    "rules": _estimate_prompt_tokens(
+                        rules_ctx + "\n" + effective_integrity_constraints
+                    ),
                     "characters": _estimate_prompt_tokens(character_context + "\n" + arc_context),
                     "handover": _estimate_prompt_tokens(handover_context),
                     "recent_summary": _estimate_prompt_tokens(summary_context),
@@ -752,7 +1040,8 @@ class Writer(BaseAgent):
                     "events": _estimate_prompt_tokens(ranked_events_str + "\n" + mandatory_events),
                     "style": _estimate_prompt_tokens(
                         style_structured + "\n" + density_instruction + "\n"
-                        + reference_passages + "\n" + style_examples
+                        + effective_style_context + "\n"
+                        + anti_ai_expression_constraints
                     ),
                 }
                 source_manifest = [
@@ -928,7 +1217,8 @@ class Writer(BaseAgent):
                                 ),
                                 None,
                             )
-                            if settings.WRITER_HANDOVER_CONTRACT_VERSION in {"v2", "v2.1"}
+                            if settings.WRITER_HANDOVER_CONTRACT_VERSION
+                            in _HANDOVER_NEXT_BOUNDARY_VERSIONS
                             else None
                         ),
                         task_id=task_id,
@@ -995,6 +1285,87 @@ class Writer(BaseAgent):
                     ),
                 )
 
+                if settings.WRITER_STYLE_EVALUATION:
+                    try:
+                        style_evaluation = style_drift_tracker.observe(
+                            sub_text,
+                            section=section_num,
+                            subsection=sub_num,
+                            beat=beat,
+                        )
+                        section_timings[-1]["style_status"] = style_evaluation[
+                            "status"
+                        ]
+                        if blackboard:
+                            blackboard.set(
+                                task_id,
+                                "style_evaluation_v1",
+                                style_drift_tracker.reports,
+                            )
+                            blackboard.xadd_event(
+                                task_id,
+                                {
+                                    "event": "style_evaluation",
+                                    "section": section_num,
+                                    "subsection": sub_num,
+                                    "status": style_evaluation["status"],
+                                    "text_hash": style_evaluation["text_hash"],
+                                },
+                            )
+                    except Exception:
+                        logger.warning(
+                            f"[{task_id[:8]}] 风格漂移评测失败 "
+                            f"(第{section_num}.{sub_num}节)，fallback=offline-eval",
+                            exc_info=True,
+                        )
+
+                # Objective-reality checks are deliberately observation-only:
+                # no prompt injection, rewrite, retry, or production gating.
+                try:
+                    reality_record = narrative_reality_checker.observe(
+                        sub_text,
+                        section=section_num,
+                        subsection=sub_num,
+                        known_context="\n".join(
+                            part for part in (
+                                world_setting,
+                                world_facts_str,
+                                handover_context,
+                                section_outline,
+                                sub_desc,
+                                "、".join(str(item) for item in key_points),
+                            )
+                            if part
+                        ),
+                    )
+                    if reality_record is not None and blackboard:
+                        blackboard.set(
+                            task_id,
+                            "narrative_reality_warnings_v0",
+                            narrative_reality_checker.records,
+                        )
+                        blackboard.xadd_event(
+                            task_id,
+                            {
+                                "event": "narrative_reality_check",
+                                "section": section_num,
+                                "subsection": sub_num,
+                                "warning_count": reality_record["warning_count"],
+                                "warning_codes": [
+                                    item["code"]
+                                    for item in reality_record["warnings"]
+                                ],
+                                "text_hash": reality_record["text_hash"],
+                                "production_effect": False,
+                            },
+                        )
+                except Exception:
+                    logger.warning(
+                        f"[{task_id[:8]}] Narrative Reality Checker failed "
+                        f"(section={section_num}.{sub_num}, fallback=continue)",
+                        exc_info=True,
+                    )
+
                 # --- 累积 ---
                 section_text += f"【{sub_title}】\n{sub_text}\n\n"
                 full_draft += f"【{sub_title}】\n{sub_text}\n\n"
@@ -1006,6 +1377,12 @@ class Writer(BaseAgent):
                     section_handover_parts=section_handover_parts,
                     backref=backref,
                     backref_suggestions=backref_suggestions,
+                )
+                # The next subsection needs the latest local end-state now;
+                # waiting until section end leaves same-section scenes with
+                # only raw prose and no structured continuity boundary.
+                prev_handover = self._advance_local_handover(
+                    prev_handover, handover_note
                 )
 
                 # --- 进度更新 ---
@@ -1053,6 +1430,16 @@ class Writer(BaseAgent):
                     from ..utils.llm_client import get_cumulative_tokens
                     return get_cumulative_tokens()
 
+                rag_metadata = None
+                if rag_metadata_provider is not None:
+                    try:
+                        rag_metadata = rag_metadata_provider(section_num, sub_num)
+                    except Exception as exc:
+                        logger.warning(
+                            f"[{task_id[:8]}] rag_metadata provider failed "
+                            f"(section={section_num}.{sub_num}), fallback=legacy",
+                            exc_info=True,
+                        )
                 commit_artifact = state_committer.commit_subsection(
                     idempotency_key=f"{task_id}:{section_num}:{sub_num}",
                     source_hash=prompt_artifact.messages_hash,
@@ -1068,6 +1455,7 @@ class Writer(BaseAgent):
                     topic=topic,
                     stream_callback=stream_callback,
                     token_usage_provider=_token_usage_provider,
+                    rag_metadata=rag_metadata,
                 )
                 if commit_artifact.warnings:
                     logger.warning(f"[{task_id[:8]}] token 消耗写入黑板失败")
@@ -1307,6 +1695,13 @@ class Writer(BaseAgent):
             "section_texts": section_texts,
             "context_state": cm.serialize(),
             "section_timings": section_timings,
+            "style_evaluations": style_drift_tracker.reports,
+            "style_policy_observations": style_policy_observations,
+            "anti_ai_expression_observations": anti_ai_expression_observations,
+            "commercial_harness_observations": commercial_harness_observations,
+            "narrative_integrity_observations": narrative_integrity_observations,
+            "world_pressure_observations": world_pressure_observations,
+            "narrative_reality_warnings": narrative_reality_checker.records,
             "character_arcs": copy_character_arcs(character_arcs),
             "character_state_propagation": dict(character_state_propagation),
         }
@@ -1692,7 +2087,13 @@ class Writer(BaseAgent):
         # 检查交接数据是否为空
         has_content = any(
             prev_handover.get(k)
-            for k in ("foreshadowing", "character_state", "open_threads", "new_facts")
+            for k in (
+                "foreshadowing",
+                "character_state",
+                "open_threads",
+                "new_facts",
+                "next_boundary",
+            )
         )
         if not has_content:
             return "（上节无遗留线索）"
@@ -1713,7 +2114,8 @@ class Writer(BaseAgent):
                     msgs, temperature=0.3, max_tokens=300, prompt_name="handover_brief"
                 )
                 if brief and len(brief) >= 20:
-                    return brief
+                    boundary = Writer._render_handover_boundary(prev_handover)
+                    return f"{brief}\n{boundary}" if boundary else brief
             except Exception:
                 import logging
                 logging.getLogger("writing_system.writer").warning(
@@ -1728,7 +2130,48 @@ class Writer(BaseAgent):
             parts.append(f"人物状态: {prev_handover['character_state']}")
         if prev_handover.get("open_threads"):
             parts.append(f"待承接: {prev_handover['open_threads']}")
+        if prev_handover.get("new_facts"):
+            facts = prev_handover["new_facts"]
+            if isinstance(facts, list):
+                facts = "；".join(str(item) for item in facts if item)
+            if facts:
+                parts.append(f"已确认事实: {facts}")
+        boundary = Writer._render_handover_boundary(prev_handover)
+        if boundary:
+            parts.append(boundary)
         return "上一节留下的交接笔记：\n  " + "\n  ".join(parts) if parts else "（上节无遗留线索）"
+
+    @staticmethod
+    def _advance_local_handover(
+        previous: dict | None, current: dict | None,
+    ) -> dict | None:
+        """Promote a valid subsection handover without erasing fail-open state."""
+        return current if current else previous
+
+    @staticmethod
+    def _render_handover_boundary(prev_handover: dict) -> str:
+        boundary = prev_handover.get("next_boundary")
+        if not isinstance(boundary, dict):
+            return ""
+        lines = ["【小节连续性边界】"]
+        completed = [
+            str(item).strip()
+            for item in (boundary.get("must_not_repeat_events") or [])
+            if str(item).strip()
+        ]
+        allowed = [
+            str(item).strip()
+            for item in (boundary.get("allowed_start_events") or [])
+            if str(item).strip()
+        ]
+        if completed:
+            lines.append("已完成、不得重新演一遍：" + "；".join(completed))
+        if allowed:
+            lines.append("下一小节允许承接：" + "；".join(allowed))
+        reason = str(boundary.get("stop_or_transition_reason") or "").strip()
+        if reason:
+            lines.append("转换要求：" + reason)
+        return "\n".join(lines) if len(lines) > 1 else ""
 
     @classmethod
     def _check_character_violations(cls, sub_text: str, characters) -> list[str]:
@@ -1837,7 +2280,7 @@ class Writer(BaseAgent):
         task_id: str = "",
     ) -> tuple[dict | None, HandoverExtractionObservation]:
         """Run the configured extraction once and expose fail-safe status."""
-        if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2.1":
+        if settings.WRITER_HANDOVER_CONTRACT_VERSION in {"v2.1", "v2.2", "v2.3"}:
             return self._extract_handover_v21_with_observation(
                 section_text=section_text,
                 section_num=section_num,
@@ -1902,8 +2345,31 @@ class Writer(BaseAgent):
         next_subsection: dict | None,
         task_id: str = "",
     ) -> tuple[dict | None, HandoverExtractionObservation]:
-        """Run one compact V2.1 extraction and restore authoritative V2 data."""
+        """Run one compact extraction (v2.1 spans / v2.2 quotes) and restore V2 data."""
         started = time.perf_counter()
+        # 版本参数化：v2.1/v2.2/v2.3 共享 registry/boundary/fail-open 骨架，
+        # 只在 Prompt、恢复函数、输出上限与版本标识上分叉。
+        if settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2.3":
+            contract_version_label = "v2.3"
+            payload_version = HANDOVER_COMPACT_V23_VERSION
+            producer_version = "writer-handover-contract-v2.3"
+            prompt_template = HANDOVER_EXTRACTION_PROMPT_V23
+            restore_payload = restore_and_validate_v23
+            handover_max_output_tokens = HANDOVER_COMPACT_V23_MAX_OUTPUT_TOKENS
+        elif settings.WRITER_HANDOVER_CONTRACT_VERSION == "v2.2":
+            contract_version_label = "v2.2"
+            payload_version = HANDOVER_COMPACT_V22_VERSION
+            producer_version = "writer-handover-contract-v2.2"
+            prompt_template = HANDOVER_EXTRACTION_PROMPT_V22
+            restore_payload = restore_and_validate_v22
+            handover_max_output_tokens = HANDOVER_COMPACT_V22_MAX_OUTPUT_TOKENS
+        else:
+            contract_version_label = "v2.1"
+            payload_version = HANDOVER_COMPACT_V21_VERSION
+            producer_version = "writer-handover-contract-v2.1"
+            prompt_template = HANDOVER_EXTRACTION_PROMPT_V21
+            restore_payload = restore_and_validate_v21
+            handover_max_output_tokens = HANDOVER_COMPACT_V21_MAX_OUTPUT_TOKENS
         arc_events = (
             event_graph.get_arc_events(section_num, sub_num)
             if event_graph is not None
@@ -1933,11 +2399,12 @@ class Writer(BaseAgent):
             current_outline=current_outline,
             next_outline=following_outline,
         )
-        prompt = HANDOVER_EXTRACTION_PROMPT_V21.format(
+        prompt = prompt_template.format(
             **render_v21_prompt_context(registry)
         )
         metadata: dict[str, object] = {}
         compact_payload_hash = None
+        persisted_payload: dict | None = None
         raw_output_tokens = None
         finish_reason = "unavailable"
         truncation_status = "not_truncated"
@@ -1951,7 +2418,7 @@ class Writer(BaseAgent):
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
-                max_tokens=HANDOVER_COMPACT_V21_MAX_OUTPUT_TOKENS,
+                max_tokens=handover_max_output_tokens,
                 json_mode=True,
                 completion_metadata_sink=metadata.update,
             )
@@ -1966,12 +2433,23 @@ class Writer(BaseAgent):
             if not isinstance(payload, dict):
                 raise ValueError("InvalidCompactHandoverPayload")
             compact_payload_hash = sha256_handover_json(payload)
-            validation = restore_and_validate_v21(
+            persisted_payload = payload_for_persistence(payload)
+            validation = restore_payload(
                 payload,
                 registry=registry,
                 next_boundary=boundary,
             )
             note = adapt_v2_to_legacy_handover_note(validation)
+            note["next_boundary"] = {
+                "next_section": boundary.next_section,
+                "next_subsection": boundary.next_subsection,
+                "next_title": boundary.next_title,
+                "allowed_start_events": list(boundary.allowed_start_events),
+                "must_not_repeat_events": list(boundary.must_not_repeat_events),
+                "stop_or_transition_reason": boundary.stop_or_transition_reason,
+                "boundary_status": boundary.boundary_status,
+                "conflict_reasons": list(boundary.conflict_reasons),
+            }
             local_rejections = sum(
                 item.item_id.startswith(("state:", "fact:", "open:", "arc:"))
                 for item in validation.rejections
@@ -1982,21 +2460,23 @@ class Writer(BaseAgent):
             restored_count = max(0, total_items - local_rejections)
             observation = observation_from_note(note).model_copy(
                 update={
-                    "producer_version": "writer-handover-contract-v2.1",
-                    "contract_version": "v2.1",
+                    "producer_version": producer_version,
+                    "contract_version": contract_version_label,
                     "typed_contract_hash": validation.contract.contract_hash,
                     "accepted_claim_count": validation.accepted_claim_count,
                     "rejected_claim_count": validation.rejected_claim_count,
                     "rejection_counts": validation.rejection_counts,
+                    "rejection_shape_skeletons": validation.rejection_shape_skeletons,
                     "next_boundary_hash": sha256_handover_json(
                         boundary.model_dump(mode="json")
                     ),
                     "source_manifest": tuple(
                         source.public_manifest() for source in sources.values()
                     ),
-                    "payload_version": "2.1",
+                    "payload_version": payload_version,
                     "source_registry_hash": registry.registry_hash,
                     "compact_payload_hash": compact_payload_hash,
+                    "compact_payload": persisted_payload,
                     "raw_output_tokens": raw_output_tokens,
                     "finish_reason": finish_reason,
                     "truncation_status": truncation_status,
@@ -2011,7 +2491,7 @@ class Writer(BaseAgent):
                         "task_id_hash": handover_task_id_hash(task_id) if task_id else None,
                         "section": section_num,
                         "subsection": sub_num,
-                        "version": "2.1",
+                        "version": payload_version,
                         "source_registry_count": len(registry.entries),
                         "source_registry_hash": registry.registry_hash,
                         "finish_reason": finish_reason,
@@ -2020,6 +2500,7 @@ class Writer(BaseAgent):
                         "compact_payload_hash": compact_payload_hash,
                         "restored_claim_count": restored_count,
                         "locally_rejected_claim_count": local_rejections,
+                        "rejection_shape_skeletons": validation.rejection_shape_skeletons,
                         "typed_contract_hash": validation.contract.contract_hash,
                         "fallback_reason": None,
                         "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
@@ -2032,7 +2513,8 @@ class Writer(BaseAgent):
             return note, observation
         except Exception as error:
             logger.warning(
-                "V2.1 handover extraction failed (S%s.%s); preserving fail-open behavior",
+                "%s handover extraction failed (S%s.%s); preserving fail-open behavior",
+                contract_version_label,
                 section_num,
                 sub_num,
             )
@@ -2043,7 +2525,7 @@ class Writer(BaseAgent):
                         "task_id_hash": handover_task_id_hash(task_id) if task_id else None,
                         "section": section_num,
                         "subsection": sub_num,
-                        "version": "2.1",
+                        "version": payload_version,
                         "source_registry_count": len(registry.entries),
                         "source_registry_hash": registry.registry_hash,
                         "finish_reason": finish_reason,
@@ -2065,17 +2547,18 @@ class Writer(BaseAgent):
                 executed=True,
                 execution_status="error",
                 error_type=type(error).__name__,
-                producer_version="writer-handover-contract-v2.1",
-                contract_version="v2.1",
+                producer_version=producer_version,
+                contract_version=contract_version_label,
                 next_boundary_hash=sha256_handover_json(
                     boundary.model_dump(mode="json")
                 ),
                 source_manifest=tuple(
                     source.public_manifest() for source in sources.values()
                 ),
-                payload_version="2.1",
+                payload_version=payload_version,
                 source_registry_hash=registry.registry_hash,
                 compact_payload_hash=compact_payload_hash,
+                compact_payload=persisted_payload,
                 raw_output_tokens=raw_output_tokens,
                 finish_reason=finish_reason,
                 truncation_status=truncation_status,
@@ -2152,6 +2635,7 @@ class Writer(BaseAgent):
                     "accepted_claim_count": validation.accepted_claim_count,
                     "rejected_claim_count": validation.rejected_claim_count,
                     "rejection_counts": validation.rejection_counts,
+                    "rejection_shape_skeletons": validation.rejection_shape_skeletons,
                     "next_boundary_hash": sha256_handover_json(
                         boundary.model_dump(mode="json")
                     ),

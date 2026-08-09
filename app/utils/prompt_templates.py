@@ -119,6 +119,7 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 {mandatory_events}
 {character_constraints}
 {style_constraints}
+{narrative_integrity_constraints}
 {beat_reminder}
 
 {progress_context}
@@ -171,7 +172,7 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 {summary_context}
 {retrieved_context}
 
-请输出本小节的纯正文，控制字数在 {target_words} 字左右。保持与前面内容的连贯性。
+{anti_ai_expression_constraints}请输出本小节的纯正文，控制字数在 {target_words} 字左右。保持与前面内容的连贯性。
 注意：只输出小说正文，不要附加任何标记、注释或元数据。"""
 
 # ----------------------------------------------------------------
@@ -183,6 +184,7 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 {mandatory_events}
 {character_constraints}
 {style_constraints}
+{narrative_integrity_constraints}
 {beat_reminder}
 
 {progress_context}
@@ -232,7 +234,7 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 {summary_context}
 {retrieved_context}
 
-请输出本小节的纯正文，控制字数在 {target_words} 字左右。
+{anti_ai_expression_constraints}请输出本小节的纯正文，控制字数在 {target_words} 字左右。
 注意：只输出小说正文，不要附加任何标记、注释或元数据。"""
 
 # ----------------------------------------------------------------
@@ -360,15 +362,83 @@ f（新事实，最多3条）：[来源索引,start,end,类别,时间,确定性,
 o（未完成事件，最多3条）：[来源索引,start,end,状态,"人物,人物|动作|对象"]
 a（角色弧，最多2条）：[里程碑来源索引,证据来源索引,start,end,状态]
 
-类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔。
+类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔；s只用ts/ls/cs/rs/os/fs，f只用ts/ls/kf/os/fs。
 时间：c当前、p过去、pl计划、co条件、u未知。确定性：c已确认、u明确未知。
 事件状态：o未完成、p部分完成、c已完成、u未知。角色弧状态只用p/c/u。
 
 规则：
-- start/end必须精确引用对应来源原文，0<=start<end；三段短语合计不超过16字，主体、动作和非空对象都必须在证据中逐字出现。
+- 来源索引与start/end输出为JSON数字，不加引号，不用小数。
+- start/end必须精确引用对应来源原文，0<=start<end；三段短语合计不超过16字（不含|分隔符），主体、动作和非空对象都必须在证据中逐字出现。
 - 只保留下一小节直接需要的状态、未完成事件、持久变化和有里程碑来源的弧线进展。
 - 计划、回忆、条件、否定或推测不得写成已完成事实。
 - 不推断心理，不输出source ID/hash、证据原文、边界、验证结果或拒绝理由。
+- 没有内容时保留空数组，不得凑数。"""
+
+
+# V2.2：证据锚定由字符偏移改为原文短引。两次真实 Demo 证明模型无法数出
+# 精确字符位置（33/37 invalid_span），但逐字引用是模型擅长的任务。
+HANDOVER_EXTRACTION_PROMPT_V22 = """你是文学事实提取助手。只输出一行紧凑 JSON，不要 Markdown、解释或额外字段。
+
+来源注册表每行格式：[索引,类型,里程碑event_id,角色ID,原文]：
+{source_registry}
+
+输出格式：{{"v":"2.2","s":[],"o":[],"f":[],"a":[]}}
+
+s（节尾状态，最多4条）：[来源索引,"原文短引",类别,时间,确定性,"主体|动作/状态|对象"]
+f（新事实，最多3条）：[来源索引,"原文短引",类别,时间,确定性,"主体|动作/状态|对象"]
+o（未完成事件，最多3条）：[来源索引,"原文短引",状态,"人物,人物|动作|对象"]
+a（角色弧，最多2条）：[里程碑来源索引,证据来源索引,"原文短引",状态]
+
+示例——若来源0的原文包含"林晚放下相机，仍在等待周野的回应。"，则一个合法输出是：
+{{"v":"2.2","s":[[0,"林晚放下相机","cs","c","c","林晚|放下|相机"]],"o":[[0,"林晚放下相机，仍在等待周野的回应","o","林晚|等待|回应"]],"f":[],"a":[]}}
+
+反例——若来源0的原文是"林晚把相机递给周野，转身走进面包店。"，短引写"相机被递给了周野"无效：改写后的句子在原文中逐字搜不到。合法短引必须逐字复制原文，如"林晚把相机递给周野"。
+
+类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔；s只用ts/ls/cs/rs/os/fs，f只用ts/ls/kf/os/fs。
+时间：c当前、p过去、pl计划、co条件、u未知。确定性：c已确认、u明确未知。
+事件状态：o未完成、p部分完成、c已完成、u未知。角色弧状态只用p/c/u。
+
+规则：
+- 每个item都是定长JSON数组：s和f恰好6项，o恰好4项，a恰好4项，不得增减、合并或改用对象。
+- 来源注册表中没有类型为arc_milestone的行时，a必须为空数组。
+- 原文短引：从对应来源的原文中逐字复制4~20个连续字符，不得改写、增删、拼接或跨句合并；短语的主体、动作和非空对象都必须逐字出现在短引之内。
+- 先选引文，后写短语：每条item先在原文中选定并逐字复制短引，再用短引内出现的字词组成短语各段；不得先想结论再造引文。
+- 来源索引输出为JSON数字，不加引号，不用小数。
+- 三段短语合计不超过16字（不含|分隔符）。
+- 只保留下一小节直接需要的状态、未完成事件、持久变化和有里程碑来源的弧线进展。
+- 计划、回忆、条件、否定或推测不得写成已完成事实。
+- 不推断心理，不输出start/end、source ID/hash、边界、验证结果或拒绝理由。
+- 没有内容时保留空数组，不得凑数。"""
+
+HANDOVER_EXTRACTION_PROMPT_V23 = """你是文学事实提取助手。只输出一行紧凑 JSON，不要 Markdown、解释或额外字段。
+
+来源注册表每行格式：[索引,类型,里程碑event_id,角色ID,原文]：
+{source_registry}
+
+输出格式：{{"v":"2.3","s":[],"o":[],"f":[],"a":[]}}
+
+s（节尾状态，最多4条）：[来源索引,"原文短引",类别,时间,确定性]
+f（新事实，最多3条）：[来源索引,"原文短引",类别,时间,确定性]
+o（未完成事件，最多3条）：[来源索引,"原文短引",状态]
+a（角色弧，最多2条）：[里程碑来源索引,证据来源索引,"原文短引",状态]
+
+示例——若来源0的原文包含"林晚放下相机，仍在等待周野的回应。"，则一个合法输出是：
+{{"v":"2.3","s":[[0,"林晚放下相机","cs","c","c"]],"o":[[0,"林晚放下相机，仍在等待周野的回应","o"]],"f":[],"a":[]}}
+
+反例——若来源0的原文是"林晚把相机递给周野，转身走进面包店。"，短引写"相机被递给了周野"无效：改写后的句子在原文中逐字搜不到。合法短引必须逐字复制原文，如"林晚把相机递给周野"。
+
+类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔；s只用ts/ls/cs/rs/os/fs，f只用ts/ls/kf/os/fs。
+时间：c当前、p过去、pl计划、co条件、u未知。确定性：c已确认、u明确未知。
+事件状态：o未完成、p部分完成、c已完成、u未知。角色弧状态只用p/c/u。
+
+规则：
+- 每个item都是定长JSON数组：s和f恰好5项，o恰好3项，a恰好4项，不得增减、合并或改用对象。
+- 来源注册表中没有类型为arc_milestone的行时，a必须为空数组。
+- 原文短引：从对应来源的原文中逐字复制4~20个连续字符，不得改写、增删、拼接或跨句合并；优先选包含事实核心的完整片段。
+- 来源索引输出为JSON数字，不加引号，不用小数。
+- 只保留下一小节直接需要的状态、未完成事件和持久变化。
+- 计划、回忆、条件或推测不得标为当前(c)。
+- 不推断心理，不输出start/end、source ID/hash、边界、验证结果或拒绝理由。
 - 没有内容时保留空数组，不得凑数。"""
 
 # ----------------------------------------------------------------
@@ -384,7 +454,9 @@ HANDOVER_BRIEF_PROMPT = """你是一位资深的小说编辑。请把以下结�
 - 120-200 字自然语言，编辑口吻
 - 只写"作家需要知道什么才能接上"，不写模板、不写客套
 - 如果某个字段为空，直接跳过不提
-- 重点突出"读者还不知道但作家需要记得"的伏笔"""
+- 重点突出"读者还不知道但作家需要记得"的伏笔
+- next_boundary 中 must_not_repeat_events 是已完成事件，不得写成再次发生
+- next_boundary 中 allowed_start_events 是下一小节允许承接的目标，不得提前越过"""
 
 # ----------------------------------------------------------------
 # Continuity Editor — 汇总回溯修正，生成修正清单
@@ -1069,7 +1141,7 @@ PROMPT_REGISTRY = {
     "writing":          {"version":"0.9.1","used_by":["Writer"],"changelog":"v0.9.0 6-source fusion / v0.9.1 sys prompt migrated"},
     "writer_system":    {"version":"0.9.1","used_by":["Writer"],"changelog":"v0.9.1 migrated from writer.py"},
     "handover_extraction":{"version":"0.9.1","used_by":["Writer"],"changelog":"v0.8.0 initial / v0.9.1 brief added"},
-    "handover_brief":   {"version":"0.9.1","used_by":["Writer"],"changelog":"v0.9.1 JSON->NL mirrors style_brief"},
+    "handover_brief":   {"version":"0.9.2","used_by":["Writer"],"changelog":"v0.9.2 preserves deterministic subsection continuity boundaries"},
     "character_extraction":{"version":"0.9.0","used_by":["CharacterManager"],"changelog":"v0.9.0 NL->16-field card"},
     "character_arc":    {"version":"0.9.0","used_by":["CharacterManager"],"changelog":"v0.9.0 milestones to subsection"},
     "character_consistency":{"version":"0.8.0","used_by":["ConsistencyChecker"],"changelog":"v0.8.0 text vs card cross-check"},
