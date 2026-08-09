@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, case, select
 from sqlalchemy.orm import Session
 
 from .models import CanonicalCommit, OutboxEvent
@@ -70,7 +70,23 @@ class OutboxDispatcher:
                 OutboxEvent.status.in_(("pending", "failed")),
                 OutboxEvent.available_at <= datetime.now(timezone.utc),
             )
-            .order_by(OutboxEvent.available_at, OutboxEvent.id)
+            .order_by(
+                OutboxEvent.available_at,
+                case(
+                    {
+                        "legacy_world_event": 1,
+                        "handover_context": 2,
+                        "chroma_story_chunks": 3,
+                        "redis_stream": 4,
+                        "task_preview": 5,
+                        "markdown_export": 6,
+                        "analytics": 7,
+                    },
+                    value=OutboxEvent.projection_name,
+                    else_=99,
+                ),
+                OutboxEvent.id,
+            )
         )
 
     def _dispatch(self, statement: Select[tuple[OutboxEvent]]) -> DispatchSummary:
@@ -126,4 +142,3 @@ class OutboxDispatcher:
                 summary["published"] += 1
             session.commit()
         return summary
-

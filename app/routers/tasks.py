@@ -14,6 +14,31 @@ from ..celery_app import celery_app
 router = APIRouter(tags=["tasks"])
 
 
+def _canonical_response_fields(data: dict) -> dict:
+    document_id = data.get("document_id")
+    revision_id = data.get("current_revision_id")
+    commit_id = data.get("last_commit_id")
+    document_ref = None
+    if document_id:
+        document_ref = {
+            "document_id": document_id,
+            "revision_id": revision_id,
+            "commit_id": commit_id,
+        }
+    return {
+        "document_ref": document_ref,
+        "commit_status": data.get("commit_status") or (
+            "committed" if commit_id else None
+        ),
+        "state_version_id": data.get("current_state_version_id")
+        or data.get("state_version_id"),
+        "critical_projection_status": data.get("critical_projection_status"),
+        "non_blocking_projection_status": data.get(
+            "non_blocking_projection_status"
+        ),
+    }
+
+
 @router.post("/tasks")
 def create_draft_task():
     """创建 draft task，返回 task_id。之后的所有编辑操作都以此 task_id 为锚点。"""
@@ -64,6 +89,7 @@ def get_task_status(task_id: str):
     data = bb.get_all(task_id)
     if not data:
         raise HTTPException(status_code=404, detail="任务不存在")
+    canonical_fields = _canonical_response_fields(data)
     return TaskStatus(
         task_id=task_id,
         status=data.get("status", "unknown"),
@@ -93,6 +119,7 @@ def get_task_status(task_id: str):
         reference_text=data.get("reference_text") or data.get("config_reference_text"),
         style_profile=data.get("style_profile") or data.get("config_style_profile"),
         target_words_per_section=data.get("target_words_per_section") or data.get("config_target_words"),
+        **canonical_fields,
     )
 
 
@@ -101,14 +128,22 @@ def get_task_result(task_id: str):
     task = writing_task.AsyncResult(task_id)
     if task.ready():
         if task.successful():
-            return task.result
+            result = task.result
+            if isinstance(result, dict):
+                return {**result, **_canonical_response_fields(result)}
+            return result
         else:
             raise HTTPException(status_code=500, detail=str(task.info))
     else:
         data = bb.get_all(task_id)
         if not data:
             raise HTTPException(status_code=404, detail="任务不存在")
-        return {"task_id": task_id, "status": data.get("status", "pending"), "message": "任务尚未完成"}
+        return {
+            "task_id": task_id,
+            "status": data.get("status", "pending"),
+            "message": "任务尚未完成",
+            **_canonical_response_fields(data),
+        }
 
 
 # ── Redis Stream 流式事件 ───────────────────────────────────────

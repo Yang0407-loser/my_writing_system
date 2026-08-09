@@ -21,7 +21,7 @@ from .utils.prompt_templates import OUTLINE_REVIEW_PROMPT
 from .utils.json_parser import parse_json
 from .utils.word_counter import count_chinese_chars
 from .utils.llm_client import set_api_key, reset_token_counter, get_cumulative_tokens, get_token_breakdown, set_cost_label
-from .config import settings, set_task_id
+from .config import CanonicalSettings, settings, set_task_id
 from .character_arc_contract import (
     build_v2_edge_plan,
     iter_v2_event_milestones,
@@ -37,6 +37,37 @@ from .writing.character_state_propagation import (
 )
 
 logger = logging.getLogger("writing_system.coordinator")
+
+
+def execute_canonical_subsection(
+    runtime,
+    command,
+    *,
+    rollout: CanonicalSettings | None = None,
+    pre_foundation_resume: bool = False,
+):
+    """Select exactly one subsection write path at the Coordinator boundary."""
+
+    rollout = rollout or CanonicalSettings(
+        database_url=settings.CANONICAL_DATABASE_URL,
+        commit_mode=settings.CANONICAL_COMMIT_MODE,
+        canary_task_ids=settings.CANONICAL_CANARY_TASK_IDS,
+        canary_subsection_ids=settings.CANONICAL_CANARY_SUBSECTION_IDS,
+    )
+    task_id = str(getattr(command, "task_id", "") or "")
+    subsection_id = str(getattr(command, "subsection_id", "") or "")
+    path = rollout.resolve_path(
+        task_id,
+        subsection_id,
+        pre_foundation_resume=pre_foundation_resume,
+    )
+    if path == "legacy":
+        return None
+    if runtime is None or not task_id or not subsection_id:
+        raise RuntimeError(
+            "canonical internal_required/canary binding missing; fail closed"
+        )
+    return runtime.execute(command)
 
 
 def _safe_serialize(obj):
@@ -674,6 +705,10 @@ def _phase_world_state(bb, task_id, state):
 
 def _phase_writing(bb, task_id, state):
     """Phase 3: 继承制写作 —— 委托 Writer.run() 统一执行。"""
+    if settings.CANONICAL_COMMIT_MODE == "internal_required":
+        raise RuntimeError(
+            "canonical runtime binding unavailable in legacy Writer.run path; fail closed"
+        )
     topic = state.get("config_topic", "")
     style = state.get("style_profile") or {}
     outline = state.get("outline_v2") or []
@@ -1470,6 +1505,17 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             "output_file": state.get("_output_file", ""),
             "events": events_data,
             "analysis": analysis,
+            "document_id": state.get("document_id", ""),
+            "current_revision_id": state.get("current_revision_id", ""),
+            "last_commit_id": state.get("last_commit_id", ""),
+            "state_version_id": state.get("current_state_version_id", ""),
+            "commit_status": state.get("commit_status", ""),
+            "critical_projection_status": state.get(
+                "critical_projection_status", ""
+            ),
+            "non_blocking_projection_status": state.get(
+                "non_blocking_projection_status", ""
+            ),
         })
     except Exception:
         logger.warning("任务历史写入失败", exc_info=True)

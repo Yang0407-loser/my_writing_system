@@ -20,18 +20,9 @@ class TaskStore:
         # 仅在首次实例化时执行 schema migration（按 db_path 去重）
         if db_path not in self._MIGRATIONS_DONE:
             self._MIGRATIONS_DONE.add(db_path)
-            for col, col_type in [
-                ("world_setting", "TEXT DEFAULT ''"),
-                ("story_synopsis", "TEXT DEFAULT ''"),
-                ("target_words", "INTEGER DEFAULT 0"),
-                ("world_state_json", "TEXT DEFAULT '{}'"),
-                ("events_json", "TEXT DEFAULT '[]'"),
-                ("analysis_json", "TEXT DEFAULT '{}'"),
-            ]:
-                try:
-                    self._conn.execute(f"ALTER TABLE task_history ADD COLUMN {col} {col_type}")
-                except sqlite3.OperationalError:
-                    pass
+            from .task_store_migrations import apply_task_store_migrations
+
+            apply_task_store_migrations(self._conn)
 
     def _ensure_tables(self):
         self._conn.execute("""
@@ -56,6 +47,13 @@ class TaskStore:
                 analysis_json TEXT DEFAULT '{}',
                 draft_preview TEXT DEFAULT '',
                 output_file TEXT DEFAULT '',
+                document_id TEXT DEFAULT '',
+                current_revision_id TEXT DEFAULT '',
+                last_commit_id TEXT DEFAULT '',
+                state_version_id TEXT DEFAULT '',
+                commit_status TEXT DEFAULT '',
+                critical_projection_status TEXT DEFAULT '',
+                non_blocking_projection_status TEXT DEFAULT '',
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
@@ -68,7 +66,9 @@ class TaskStore:
             "task_id", "topic", "word_count", "section_count", "status", "mode",
             "style_json", "outline_json", "handover_json", "characters_json",
             "review_json", "world_setting", "story_synopsis", "target_words",
-"world_state_json", "events_json", "analysis_json", "draft_preview", "output_file",
+            "world_state_json", "events_json", "analysis_json", "draft_preview", "output_file",
+            "document_id", "current_revision_id", "last_commit_id", "state_version_id",
+            "commit_status", "critical_projection_status", "non_blocking_projection_status",
         ]
         draft_text = data.get("draft", "") or ""
         values = {
@@ -92,6 +92,15 @@ class TaskStore:
             "analysis_json": json.dumps(data.get("analysis", {}), ensure_ascii=False),
             "draft_preview": draft_text[:2000],
             "output_file": data.get("output_file", ""),
+            "document_id": data.get("document_id", ""),
+            "current_revision_id": data.get("current_revision_id", ""),
+            "last_commit_id": data.get("last_commit_id", ""),
+            "state_version_id": data.get("state_version_id", ""),
+            "commit_status": data.get("commit_status", ""),
+            "critical_projection_status": data.get("critical_projection_status", ""),
+            "non_blocking_projection_status": data.get(
+                "non_blocking_projection_status", ""
+            ),
         }
 
         existing = self._conn.execute(

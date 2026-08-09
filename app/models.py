@@ -361,6 +361,11 @@ class TaskStatus(BaseModel):
     reference_text: str | None = None
     style_profile: dict | None = None
     target_words_per_section: int | None = None
+    document_ref: dict | None = None
+    commit_status: str | None = None
+    state_version_id: str | None = None
+    critical_projection_status: str | None = None
+    non_blocking_projection_status: str | None = None
 
 
 class FinalResult(BaseModel):
@@ -377,6 +382,11 @@ class FinalResult(BaseModel):
     character_arcs: list[dict] | None = None
     world_state: dict | None = None  # v0.6.0: 世界事实库
     output_file: str = ""  # 导出的 .md 文件路径
+    document_ref: dict | None = None
+    commit_status: str | None = None
+    state_version_id: str | None = None
+    critical_projection_status: str | None = None
+    non_blocking_projection_status: str | None = None
 
 
 # ============================================================

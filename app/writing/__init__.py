@@ -52,6 +52,12 @@ from .legacy_subsection_projection import (
     LegacyProjectionError,
     LegacySubsectionProjection,
 )
+from .canonical_subsection_runtime import (
+    CanonicalSubsectionCommand,
+    CanonicalSubsectionRuntime,
+    CanonicalSubsectionRuntimeResult,
+    canonical_idempotency_key,
+)
 from .shadow_validation import ShadowBoundaryValidationRunner
 from .post_write_extraction import SharedPostWriteExtractor
 from .shadow_post_write_extraction import ShadowPostWriteExtractionRunner
@@ -136,6 +142,10 @@ __all__ = [
     "LegacyProjectionEnvelope",
     "LegacyProjectionError",
     "LegacySubsectionProjection",
+    "CanonicalSubsectionCommand",
+    "CanonicalSubsectionRuntime",
+    "CanonicalSubsectionRuntimeResult",
+    "canonical_idempotency_key",
     "ShadowBoundaryValidationRunner",
     "ShadowPostWriteExtractionRunner",
     "SharedPostWriteExtractor",

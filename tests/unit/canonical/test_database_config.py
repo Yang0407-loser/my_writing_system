@@ -72,3 +72,27 @@ def test_test_environment_has_an_isolated_sqlite_default():
 def test_non_database_scheme_is_rejected():
     with pytest.raises(ValueError, match="SQLAlchemy SQLite or PostgreSQL"):
         CanonicalSettings.from_env(_env(CANONICAL_DATABASE_URL="redis://localhost/0"))
+
+
+def test_rollout_route_is_exact_and_pre_foundation_resume_stays_legacy():
+    canary = CanonicalSettings.from_env(
+        _env(
+            CANONICAL_COMMIT_MODE="canary",
+            CANONICAL_CANARY_TASK_IDS="task-a",
+            CANONICAL_CANARY_SUBSECTION_IDS="sub-1",
+        )
+    )
+    assert canary.resolve_path("task-a", "sub-1") == "canonical"
+    assert canary.resolve_path("task-a", "sub-2") == "legacy"
+    assert canary.resolve_path("task-b", "sub-1") == "legacy"
+
+    required = CanonicalSettings.from_env(
+        _env(CANONICAL_COMMIT_MODE="internal_required")
+    )
+    assert required.resolve_path("internal", "sub-1") == "canonical"
+    assert (
+        required.resolve_path(
+            "legacy-resume", "sub-1", pre_foundation_resume=True
+        )
+        == "legacy"
+    )

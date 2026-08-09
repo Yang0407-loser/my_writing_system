@@ -57,6 +57,26 @@ class CanonicalSettings:
             ),
         )
 
+    def resolve_path(
+        self,
+        task_id: str,
+        subsection_id: str,
+        *,
+        pre_foundation_resume: bool = False,
+    ) -> str:
+        """Select one write path; canonical and legacy never dual-write."""
+
+        if pre_foundation_resume or self.commit_mode == "legacy":
+            return "legacy"
+        if self.commit_mode == "internal_required":
+            return "canonical"
+        task_selected = bool(self.canary_task_ids) and task_id in self.canary_task_ids
+        subsection_selected = (
+            bool(self.canary_subsection_ids)
+            and subsection_id in self.canary_subsection_ids
+        )
+        return "canonical" if task_selected and subsection_selected else "legacy"
+
 
 _canonical_settings = CanonicalSettings.from_env(os.environ)
 
