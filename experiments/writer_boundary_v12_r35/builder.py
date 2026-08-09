@@ -21,10 +21,13 @@ from .models import (
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "experiments/writer_boundary_v12_r35/fixtures/v1_2_r35_activation_layer.json"
-R34_MANIFEST = ROOT / "outputs/writer-boundary-v1-2-r3-4-generation-package/manifest.json"
-R34_PROBE_PLAN = ROOT / "outputs/writer-boundary-v1-2-r3-4-generation-package/capability-probe-plan.json"
-R341_AGGREGATE = ROOT / "outputs/writer-boundary-v1-2-r3-4-1-review-protocol/review/r3-4-1-targeted-review-aggregate.json"
-LLM_CLIENT_SOURCE = ROOT / "app/utils/llm_client.py"
+SOURCE_FIXTURES = ROOT / "experiments/writer_boundary_v12_shared/fixtures"
+R34_MANIFEST = SOURCE_FIXTURES / "r34_manifest.json"
+R34_PROBE_PLAN = SOURCE_FIXTURES / "r34_capability_probe_plan.json"
+R341_AGGREGATE = SOURCE_FIXTURES / "r341_targeted_review_aggregate.json"
+LLM_CLIENT_SOURCE = SOURCE_FIXTURES / (
+    "llm_client_2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39.py"
+)
 DEFAULT_OUTPUT = ROOT / "outputs/writer-boundary-v1-2-r3-5-activation-layer"
 DEFAULT_REPORT = ROOT / "reports/writer-boundary-v1-2-r3-5-activation-layer-disabled-2026-07-31.md"
 

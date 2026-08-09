@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.2-r3.3.1-targeted-review-aggregate",
+  "experiment_id": "writer-boundary-v1-2-r3-3-1",
+  "review_schema_gate": {
+    "passed": true,
+    "uniform_strict_schema": true,
+    "distinct_reviewer_ids": true,
+    "four_delivery_checks_each": true,
+    "severity_counts_recomputed": true,
+    "reviewer_results_modified": false
+  },
+  "independence_gate": {
+    "passed": true,
+    "independent_fresh_conversations": true,
+    "inherited_project_history": false,
+    "other_r3_3_1_reviews_accessed": false,
+    "prior_review_reports_accessed": false,
+    "implementation_modified": false,
+    "external_or_story_model_called": false
+  },
+  "reviewers": [
+    {
+      "reviewer_id": "R331-INDEPENDENT-REVIEWER-01",
+      "verdict": "pass",
+      "severity_counts": {"P0": 0, "P1": 0, "P2": 0, "P3": 0},
+      "delivery_checks_passed": 4,
+      "kernel_validator_runbook_passed": true
+    },
+    {
+      "reviewer_id": "R331-INDEPENDENT-REVIEWER-02",
+      "verdict": "pass",
+      "severity_counts": {"P0": 0, "P1": 0, "P2": 0, "P3": 0},
+      "delivery_checks_passed": 4,
+      "kernel_validator_runbook_passed": true
+    },
+    {
+      "reviewer_id": "R331-INDEPENDENT-REVIEWER-03",
+      "verdict": "pass",
+      "severity_counts": {"P0": 0, "P1": 0, "P2": 0, "P3": 0},
+      "delivery_checks_passed": 4,
+      "kernel_validator_runbook_passed": true
+    }
+  ],
+  "raw_finding_counts": {"P0": 0, "P1": 0, "P2": 0, "P3": 0},
+  "delivery_summary": {
+    "reviewer_reports": 3,
+    "delivery_checks": 12,
+    "sha256_matches": 12,
+    "byte_length_matches": 12,
+    "crlf_absent": 12,
+    "all_passed": true
+  },
+  "runbook_summary": {
+    "execution_model_parse_required": true,
+    "validate_audits_required": true,
+    "preference_model_parse_required": true,
+    "validate_votes_required": true,
+    "model_validation_alone_is_acceptance": false,
+    "all_reviewers_confirmed": true
+  },
+  "aggregate_verdict": "authorize_generation_package_build_only",
+  "single_composite_score": null,
+  "authorization": {
+    "generation_package_build_authorized": true,
+    "real_generation_authorized": false,
+    "model_call_authorized": false,
+    "fiction_generation_authorized": false,
+    "authorized_next_stage": "build_versioned_real_generation_package_with_generation_disabled"
+  }
+}

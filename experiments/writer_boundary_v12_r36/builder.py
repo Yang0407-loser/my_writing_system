@@ -17,11 +17,14 @@ from .models import SingleProbeAuthorization, SingleProbeCallGate
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "experiments/writer_boundary_v12_r36/fixtures/v1_2_r36_single_probe_call.json"
-R35_MANIFEST = ROOT / "outputs/writer-boundary-v1-2-r3-5-activation-layer/manifest.json"
-R35_ACTIVATION_GATE = ROOT / "outputs/writer-boundary-v1-2-r3-5-activation-layer/activation-gate.json"
-R35_AGGREGATE = ROOT / "outputs/writer-boundary-v1-2-r3-5-activation-layer/review/r3-5-independent-review-aggregate.json"
-R35_ENVELOPE = ROOT / "outputs/writer-boundary-v1-2-r3-5-activation-layer/private/probe-envelope.locked.json"
-LLM_CLIENT_SOURCE = ROOT / "app/utils/llm_client.py"
+SOURCE_FIXTURES = ROOT / "experiments/writer_boundary_v12_shared/fixtures"
+R35_MANIFEST = SOURCE_FIXTURES / "r35_manifest.json"
+R35_ACTIVATION_GATE = SOURCE_FIXTURES / "r35_activation_gate.json"
+R35_AGGREGATE = SOURCE_FIXTURES / "r35_independent_review_aggregate.json"
+R35_ENVELOPE = SOURCE_FIXTURES / "r35_probe_envelope_locked.json"
+LLM_CLIENT_SOURCE = SOURCE_FIXTURES / (
+    "llm_client_2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39.py"
+)
 DEFAULT_OUTPUT = ROOT / "outputs/writer-boundary-v1-2-r3-6-single-probe-call"
 DEFAULT_REPORT = ROOT / "reports/writer-boundary-v1-2-r3-6-single-probe-call-2026-07-31.md"
 

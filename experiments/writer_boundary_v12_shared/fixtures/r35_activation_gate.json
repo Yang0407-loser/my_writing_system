@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.2-r3.5-activation-gate",
+  "activation_layer_built": true,
+  "layer_build_authorized": true,
+  "capability_probe_call_authorized": false,
+  "probe_execution_enabled": false,
+  "probe_request_quota": 0,
+  "real_generation_authorized": false,
+  "real_generation_enabled": false,
+  "model_call_authorized": false,
+  "provider_client_creation_authorized": false,
+  "network_access_authorized": false
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.2-r3.5",
+  "experiment_id": "writer-boundary-v1-2-r3-5",
+  "source_pins_valid": true,
+  "activation_layer_built": true,
+  "activation_layer_build_authorized": true,
+  "capability_probe_status": "built_disabled_not_run",
+  "capability_probe_call_authorized": false,
+  "probe_execution_enabled": false,
+  "probe_request_quota": 0,
+  "provider_client_created": false,
+  "provider_requests_sent": 0,
+  "probe_attempts": 0,
+  "probe_responses": 0,
+  "real_generation_authorized": false,
+  "real_generation_enabled": false,
+  "model_call_authorized": false,
+  "model_calls": 0,
+  "fiction_texts": 0,
+  "next_stage_authorized": "independent_r3_5_activation_layer_static_audit"
+}

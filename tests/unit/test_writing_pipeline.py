@@ -340,7 +340,8 @@ def test_writer_public_signatures_remain_frozen():
         "event_graph: app.narrative_event.EventGraph | None = None, resume_context: dict | None = None, "
         "constraints: list[dict] | None = None, rules_context: str = '', subplot_context: str = '', "
         "relation_context: str = '', improvement_context: str = '', experience_context: str = '', "
-        "narrative_beats: list[dict] | None = None, reference_text: str = '') -> dict"
+        "narrative_beats: list[dict] | None = None, reference_text: str = '', "
+        "rag_metadata_provider: Callable[[int, int], dict | None] | None = None) -> dict"
     )
     assert str(inspect.signature(Writer.revise_subsection)) == (
         "(self, original_text: str, instruction: str) -> str"

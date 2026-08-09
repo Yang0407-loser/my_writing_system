@@ -1,0 +1,2 @@
+# Historical provenance fixtures are byte-addressed; never rewrite or text-diff them.
+experiments/writer_boundary_v12_shared/fixtures/* binary

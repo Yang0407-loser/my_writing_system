@@ -338,7 +338,7 @@ git -C E:\writer\my_writing_system-foundation status --short
 - Create: `experiments/writer_boundary_v12_shared/fixtures/llm_client_<expected-sha256>.py` only if exact historical bytes can be recovered
 - Modify: affected r34/r35/r36 tests and fixture manifests
 
-- [ ] **Step 1：Prompt contract 的 Red/Green**
+- [x] **Step 1：Prompt contract 的 Red/Green**
 
 运行两条当前失败测试，确认缺少 `anti_ai_expression_constraints`；在 prompt fixture values 中补空字符串兼容值，不改 production prompt 语义。
 
@@ -346,7 +346,7 @@ git -C E:\writer\my_writing_system-foundation status --short
 & .\.venv\Scripts\python.exe -m pytest tests\unit\test_scene_reality_contract_v0.py -q
 ```
 
-- [ ] **Step 2：冻结 Writer 公共签名**
+- [x] **Step 2：冻结 Writer 公共签名**
 
 ADR 记录 `rag_metadata_provider` 是已上线的可选只读参数；更新唯一 contract snapshot，禁止借此调整其他参数的名称、顺序和默认值。
 
@@ -354,13 +354,13 @@ ADR 记录 `rag_metadata_provider` 是已上线的可选只读参数；更新唯
 & .\.venv\Scripts\python.exe -m pytest tests\unit\test_writing_pipeline.py::test_writer_public_signatures_remain_frozen -q
 ```
 
-- [ ] **Step 3：修复实验 hash 的错误耦合**
+- [x] **Step 3：修复实验 hash 的错误耦合**
 
 先从实验 provenance 对应 Git commit 恢复 `llm_client.py` 原始字节并验证 hash 等于 manifest 中固定值，再让 r34/r35/r36 builder 指向不可变 snapshot；不得把三份历史 manifest 的 hash 直接改成当前 live `app/utils/llm_client.py` hash。
 
 如果无法恢复匹配字节：把三组实验标记为 `archived_invalid_source_pin`，测试改为明确验证“禁止执行”，不能伪造新 hash 让旧结果显得仍有效。
 
-- [ ] **Step 4：定向与全量验证**
+- [x] **Step 4：定向与全量验证**
 
 ```powershell
 & .\.venv\Scripts\python.exe -m pytest tests\unit\test_writer_boundary_v12_r34.py tests\unit\test_writer_boundary_v12_r35.py tests\unit\test_writer_boundary_v12_r36.py -q
@@ -368,6 +368,8 @@ ADR 记录 `rag_metadata_provider` 是已上线的可选只读参数；更新唯
 ```
 
 预期：零失败；warnings 分类记录但不在本任务顺手升级 jieba/Chroma。
+
+执行记录（2026-08-09）：Task 2 定向 Gate 在干净工作树中为 `55 passed / 2 skipped / 1 warning`；两项 skip 明确依赖未入库的私有历史 task-state，其 prompt 装配覆盖已由无敏感信息的合成输入承担。历史 `llm_client.py` 已从 commit `ee46ab5` 按字节恢复，SHA-256 保持 `2bfd086b...a67c39`，三代 builder 及其他来源 pin 均改指向仓库内不可变 fixture，未修改任何历史 manifest 期望 hash。完整 pytest 仍被 Task 1 已记录的敏感模块 collection blocker 阻断；仅忽略该节点后的剩余失败属于后续 Foundation 任务，详见 `reports/foundation/p0-task2-contract-recovery.md`。因此 Task 2 范围 Green，但 P0 总 Gate 仍为 Red。
 
 ### Task 3：阻断 checkpoint 密钥并修复 Redis stream 生命周期错误
 

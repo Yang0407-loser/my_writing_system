@@ -9,12 +9,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from experiments.scene_reality_contract_v0.contract import (
     SCENE_REALITY_CONTRACT_V0_TEXT,
     render_scene_reality_contract_v01,
     scene_reality_contract_hash,
 )
-from experiments.scene_reality_contract_v0.inputs import load_experiment_inputs
+from experiments.scene_reality_contract_v0.inputs import (
+    ExperimentInputs,
+    load_experiment_inputs,
+)
 from experiments.scene_reality_contract_v0.prompting import (
     build_v01_prompt_values,
     build_prompt_values,
@@ -29,7 +34,51 @@ REPORTS = Path(__file__).resolve().parents[2] / "reports"
 
 
 def _inputs():
+    private_fixture = FIXTURES / "baseline_task_state.json"
+    if not private_fixture.is_file():
+        pytest.skip("requires the private, secret-bearing baseline task-state fixture")
     return load_experiment_inputs(EXPERIMENTS_DIR)
+
+
+def _prompt_inputs() -> ExperimentInputs:
+    """Non-sensitive inputs for exercising prompt assembly in clean worktrees."""
+    subsections = [
+        {
+            "subsection": index,
+            "title": f"合成小节 {index}",
+            "description": f"完成合成事件 {index}",
+            "key_points": [f"合成事件 {index}"],
+            "target_words": 300,
+        }
+        for index in range(1, 5)
+    ]
+    reference_paragraph = (
+        "这是只用于测试提示词装配的合成参考段落，不来自真实任务或用户素材。"
+        "它保持足够长度，以覆盖参考段落筛选逻辑，同时不携带任何私有内容。"
+    ) * 2
+    return ExperimentInputs(
+        task_id="synthetic-scene-reality-test",
+        topic="合成场景现实约束测试",
+        style={"narrative_density": 0.7, "dialogue_ratio": 0.2},
+        outline=[
+            {
+                "section": 1,
+                "title": "合成章节",
+                "key_points": ["完成全部合成事件"],
+                "subsections": subsections,
+            }
+        ],
+        characters=[],
+        character_arcs=[],
+        world_setting="合成世界中有一家只在周六营业的野面包店。",
+        story_synopsis="四个合成小节依次推进。",
+        reference_text=f"{reference_paragraph}\n\n{reference_paragraph}",
+        target_words=1200,
+        narrative_beats=[],
+        rules_context="仅用于无敏感信息的提示词装配测试。",
+        world_facts=[],
+        events=[],
+    )
 
 
 def test_contract_is_frozen_and_hashable():
@@ -71,7 +120,7 @@ def test_inputs_recovered_from_fixture():
 
 
 def test_contract_lands_in_hard_constraint_area():
-    inputs = _inputs()
+    inputs = _prompt_inputs()
     values = build_prompt_values(
         inputs,
         section=1,
@@ -94,7 +143,7 @@ def test_contract_lands_in_hard_constraint_area():
 
 
 def test_contract_not_disguised_as_world_setting():
-    inputs = _inputs()
+    inputs = _prompt_inputs()
     assert "Scene Reality Contract v0" not in inputs.world_setting
     assert "野面包" in inputs.world_setting
 
@@ -133,7 +182,7 @@ def test_baseline_has_seven_known_warnings():
 
 
 def test_reference_passages_selection():
-    inputs = _inputs()
+    inputs = _prompt_inputs()
     passages = reference_passages_from_text(inputs.reference_text)
     assert "参考段落" in passages
     assert len(passages) > 100
@@ -184,7 +233,7 @@ def test_v01_declares_only_allowed_repairs_for_source_outline_conflicts():
 
 
 def test_v01_contract_lands_in_hard_area_with_events_before_soft_guidance():
-    inputs = _inputs()
+    inputs = _prompt_inputs()
     for subsection in range(1, 5):
         values = build_v01_prompt_values(
             inputs,

@@ -1,0 +1,110 @@
+{
+  "schema_version": "writer_boundary_v1_2_r3_5_independent_review_aggregate_v1",
+  "experiment_id": "writer-boundary-v1-2-r3-5-activation-layer",
+  "aggregation_status": "completed",
+  "input_gate": {
+    "passed": true,
+    "reviewer_count": 3,
+    "selected_reviewer_ids": [
+      "R35-INDEPENDENT-REVIEWER-01",
+      "R35-INDEPENDENT-REVIEWER-03",
+      "R35-INDEPENDENT-REVIEWER-04"
+    ],
+    "distinct_reviewer_ids": true,
+    "all_structural_schemas_valid": true,
+    "all_source_pin_checks_valid": true,
+    "source_pin_checks_passed": 12,
+    "all_independence_semantics_valid": true,
+    "all_severity_counts_mechanical": true,
+    "all_authorization_fields_frozen_false": true,
+    "reviewer_outputs_modified": false
+  },
+  "reviewers": [
+    {
+      "reviewer_id": "R35-INDEPENDENT-REVIEWER-01",
+      "file": "reviewer-01-independent.private.json",
+      "file_sha256": "3cd9b96e4bd266941a96eca694ea99ed49730a17937b8220f3cb6c51bd2e4f0e",
+      "verdict": "pass",
+      "tests_run": 24,
+      "failed_tests": 0,
+      "severity_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 0
+      },
+      "user_may_authorize_one_capability_probe_recommended": true
+    },
+    {
+      "reviewer_id": "R35-INDEPENDENT-REVIEWER-03",
+      "file": "reviewer-03-independent.private.json",
+      "file_sha256": "2faa61c7738718cd412be6727525c89b168141882ec48f5bf4a96d543ffc2e97",
+      "verdict": "pass",
+      "tests_run": 7,
+      "failed_tests": 0,
+      "severity_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 0
+      },
+      "user_may_authorize_one_capability_probe_recommended": true
+    },
+    {
+      "reviewer_id": "R35-INDEPENDENT-REVIEWER-04",
+      "file": "reviewer-04-independent.private.json",
+      "file_sha256": "a8abc806f612800233711f04be3e5b61da141eb7f5ddab65209befd597910f7d",
+      "verdict": "pass",
+      "tests_run": 14,
+      "failed_tests": 0,
+      "severity_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 0
+      },
+      "user_may_authorize_one_capability_probe_recommended": true
+    }
+  ],
+  "excluded_review_attempts": [
+    {
+      "reviewer_id": "R35-INDEPENDENT-REVIEWER-02",
+      "file_sha256": "b518658ba31c157592e66891b0803f4bfdcfc447f7476cbe96377753c4b3d6df",
+      "reason": "Recursive output scan accessed Reviewer 01 while declaring no other-review access.",
+      "included_in_tally": false,
+      "original_file_currently_present": false
+    },
+    {
+      "reviewer_id": "R35-INDEPENDENT-REVIEWER-02",
+      "file_sha256": "c2dc91fafdbd4df16f007119b0824b797dab706911e500ba431bca7c11abd9b7",
+      "reason": "Replacement read and overwrote its predecessor and exposed evidence lines from Reviewers 01 and 03 while declaring no other-review access.",
+      "included_in_tally": false,
+      "original_file_currently_present": true
+    }
+  ],
+  "raw_finding_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "test_evidence": {
+    "tests_recorded": 45,
+    "failed_tests": 0
+  },
+  "recommendation_tally": {
+    "recommend_user_authorize_one_capability_probe": 3,
+    "do_not_recommend": 0,
+    "recommendation_share": 1.0
+  },
+  "aggregate_verdict": "recommend_user_authorize_exactly_one_capability_probe_only",
+  "single_total_score": null,
+  "authorization": {
+    "capability_probe_call_authorized": false,
+    "provider_request_authorized": false,
+    "real_generation_authorized": false,
+    "model_call_authorized": false,
+    "authorized_next_stage": "await_explicit_user_authorization_for_one_versioned_capability_probe"
+  },
+  "boundary_note": "The unanimous recommendation is advisory. This aggregate does not authorize a provider request or model call."
+}

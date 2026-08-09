@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from experiments.writer_boundary_v12_r36.builder import (
+    LLM_CLIENT_SOURCE,
     R35_ACTIVATION_GATE,
     R35_AGGREGATE,
     R35_ENVELOPE,
@@ -21,6 +22,33 @@ from experiments.writer_boundary_v12_r36.executor import (
     execute_once,
 )
 from experiments.writer_boundary_v12_r36.models import SingleProbeCallGate
+
+
+@pytest.fixture
+def matching_runtime_configuration(monkeypatch):
+    """Provide deterministic non-secret runtime settings for fake provider calls."""
+    from app.config import settings
+
+    _, envelope = validate_inputs()
+    monkeypatch.setattr(settings, "LLM_API_KEY", "test-only-placeholder")
+    monkeypatch.setattr(settings, "LLM_BASE_URL", envelope.call_spec.base_url)
+    monkeypatch.setattr(settings, "LLM_MODEL", envelope.call_spec.model)
+
+
+def test_r36_source_pins_are_repository_fixtures():
+    fixture_root = (
+        Path(__file__).resolve().parents[2]
+        / "experiments/writer_boundary_v12_shared/fixtures"
+    )
+    for source in (
+        R35_MANIFEST,
+        R35_ACTIVATION_GATE,
+        R35_AGGREGATE,
+        R35_ENVELOPE,
+        LLM_CLIENT_SOURCE,
+    ):
+        assert source.is_relative_to(fixture_root)
+        assert source.is_file()
 
 
 def test_inputs_are_pinned_and_authorization_is_exactly_one_probe():
@@ -65,7 +93,10 @@ def test_gate_rejects_quota_above_one_and_transport_retry():
         SingleProbeCallGate.model_validate(raw)
 
 
-def test_successful_call_occurs_once_and_consumes_quota(tmp_path: Path):
+def test_successful_call_occurs_once_and_consumes_quota(
+    tmp_path: Path,
+    matching_runtime_configuration,
+):
     output = tmp_path / "output"
     build(output, tmp_path / "report.md")
     calls = []
@@ -92,7 +123,10 @@ def test_successful_call_occurs_once_and_consumes_quota(tmp_path: Path):
         assert db.execute("SELECT COUNT(*) FROM probe_attempts").fetchone()[0] == 1
 
 
-def test_failed_call_is_not_retried_and_quota_remains_consumed(tmp_path: Path):
+def test_failed_call_is_not_retried_and_quota_remains_consumed(
+    tmp_path: Path,
+    matching_runtime_configuration,
+):
     output = tmp_path / "output"
     build(output, tmp_path / "report.md")
     calls = []
@@ -117,7 +151,10 @@ def test_build_refuses_to_reset_existing_ledger(tmp_path: Path):
         build(output, tmp_path / "report.md")
 
 
-def test_execution_outputs_never_enable_real_or_fiction_generation(tmp_path: Path):
+def test_execution_outputs_never_enable_real_or_fiction_generation(
+    tmp_path: Path,
+    matching_runtime_configuration,
+):
     output = tmp_path / "output"
     build(output, tmp_path / "report.md")
 

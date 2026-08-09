@@ -24,6 +24,16 @@ from experiments.writer_boundary_v12_r35.controller import (
 from experiments.writer_boundary_v12_r35.models import ActivationGate
 
 
+def test_r35_source_pins_are_repository_fixtures():
+    fixture_root = (
+        Path(__file__).resolve().parents[2]
+        / "experiments/writer_boundary_v12_shared/fixtures"
+    )
+    for source in (R34_MANIFEST, R34_PROBE_PLAN, R341_AGGREGATE, LLM_CLIENT_SOURCE):
+        assert source.is_relative_to(fixture_root)
+        assert source.is_file()
+
+
 def test_inputs_are_pinned_and_review_is_unanimous_advisory():
     validate_inputs()
     aggregate = json.loads(R341_AGGREGATE.read_text(encoding="utf-8"))

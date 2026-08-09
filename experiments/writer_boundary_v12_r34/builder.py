@@ -22,9 +22,12 @@ from .models import GenerationGate, GenerationQueueItem
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "experiments/writer_boundary_v12_r34/fixtures/v1_2_r34_generation_package.json"
-R331_APPROVAL = ROOT / "outputs/writer-boundary-v1-2-r3-3-1/review/r3-3-1-targeted-review-aggregate.json"
-R3_REQUESTS = ROOT / "outputs/writer-boundary-v1-2-r3/requests/locked-requests.synthetic.json"
-LLM_CLIENT_SOURCE = ROOT / "app/utils/llm_client.py"
+SOURCE_FIXTURES = ROOT / "experiments/writer_boundary_v12_shared/fixtures"
+R331_APPROVAL = SOURCE_FIXTURES / "r331_targeted_review_aggregate.json"
+R3_REQUESTS = SOURCE_FIXTURES / "r3_locked_requests_synthetic.json"
+LLM_CLIENT_SOURCE = SOURCE_FIXTURES / (
+    "llm_client_2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39.py"
+)
 DEFAULT_OUTPUT = ROOT / "outputs/writer-boundary-v1-2-r3-4-generation-package"
 DEFAULT_REPORT = ROOT / "reports/writer-boundary-v1-2-r3-4-generation-package-disabled-2026-07-30.md"
 

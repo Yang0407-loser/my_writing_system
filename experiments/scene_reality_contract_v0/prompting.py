@@ -303,6 +303,9 @@ def build_prompt_values(
         "target_words": target_words,
         "beat_reminder": beat_reminder,
         "style_examples": _style_examples_context(inputs),
+        # Keep this historical prompt reproduction compatible with the current
+        # production template without changing the experiment's prompt semantics.
+        "anti_ai_expression_constraints": "",
     }
     return values
 

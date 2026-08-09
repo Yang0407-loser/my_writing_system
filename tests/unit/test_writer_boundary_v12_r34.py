@@ -22,6 +22,16 @@ from experiments.writer_boundary_v12_r34.builder import (
 from experiments.writer_boundary_v12_r34.models import GenerationGate
 
 
+def test_r34_source_pins_are_repository_fixtures():
+    fixture_root = (
+        Path(__file__).resolve().parents[2]
+        / "experiments/writer_boundary_v12_shared/fixtures"
+    )
+    for source in (R331_APPROVAL, R3_REQUESTS, LLM_CLIENT_SOURCE):
+        assert source.is_relative_to(fixture_root)
+        assert source.is_file()
+
+
 def gate() -> GenerationGate:
     return GenerationGate(
         schema_version="1.2-r3.4-generation-gate",
