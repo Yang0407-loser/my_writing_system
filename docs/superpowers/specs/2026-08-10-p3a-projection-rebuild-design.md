@@ -175,7 +175,7 @@ registered / disabled
 
 - `registered / disabled`：代码中存在 Projector，但 Canonical Commit 不为它创建 Envelope。
 - `bootstrapping`：`projection_rebuild_runs` 从 Canon 重建历史状态，不依赖历史 Envelope/Delivery。
-- `activated_for_new_commits`：在项目行锁保护的 PostgreSQL 事务中记录 `activation_position`；从该 position 开始的新 Commit 才创建 Envelope + Delivery。
+- `activated_for_new_commits`：在项目行锁保护的 PostgreSQL 事务中记录 `activation_after_position`；只有 position 严格大于该阈值的新 Commit 才创建 Envelope + Delivery。
 - `catching_up_activation_gap`：初始 Watermark 与 activation 前 Canon Head 之间的提交仍由同一个 Rebuild Run 直接从 Canon 补齐，不补造 Envelope。
 - `active / current`：activation gap 已 reconciliation，随后由正常 Delivery 增量消费维持 current。
 
@@ -282,7 +282,7 @@ Delivery 行保留当前状态，Attempt 行保留不可覆盖的历史证据。
 - `active_rebuild_run_id`
 - `projector_version`
 - `enrollment_status`: disabled / bootstrapping / active
-- `activation_position`: 第一个正常创建 Envelope + Delivery 的 Canon position
+- `activation_after_position`: 启用时已经由 Canon bootstrap/gap replay 覆盖的 Head；只有更大 position 才正常创建 Envelope + Delivery
 - 维护请求、恢复和健康时间戳
 
 Partition Cursor 是进度与有序消费依据，不是内容权威。它只能在当前 Lease token 成功确认且不存在更早空洞时前移。
@@ -296,7 +296,7 @@ Partition Cursor 是进度与有序消费依据，不是内容权威。它只能
 - target tenant/project/projector scope
 - pinned `projector_version`
 - `watermark_position`、对应 commit/revision/state version
-- bootstrap 专用 `activation_head_position/activation_position`
+- bootstrap 专用 `activation_after_position`
 - `status`
 - `checkpoint_position`
 - rebuild Lease：`leased_by/leased_until/lease_token`
@@ -350,7 +350,7 @@ Candidate validated
 → best-effort Celery wake-up
 ```
 
-Outbox Envelope 和 Delivery 必须与 Canonical Commit 在同一 PostgreSQL 事务中创建。Commit Service 只为该作品中 `enrollment_status = active` 且当前 position 不早于 `activation_position` 的 Projector fan out。Celery publish 只能发生在数据库提交以后；发送失败只记录日志/指标，不能改变 commit 结果。
+Outbox Envelope 和 Delivery 必须与 Canonical Commit 在同一 PostgreSQL 事务中创建。Commit Service 只为该作品中 `enrollment_status = active` 且当前 position 严格大于 `activation_after_position` 的 Projector fan out。Celery publish 只能发生在数据库提交以后；发送失败只记录日志/指标，不能改变 commit 结果。
 
 ### 6.2 严格有序 Claim
 
@@ -506,16 +506,16 @@ register capability, enrollment = disabled
 → rebuild Canon <= W
 → reconcile W
 → lock canonical project row and read current head H
-→ atomically set enrollment = active, activation_position = H + 1
-→ new commits at position >= H + 1 create Envelope + Delivery
+→ atomically set enrollment = active, activation_after_position = H
+→ new commits at position > H create Envelope + Delivery
 → replay Canon range W < position <= H directly through rebuild run
 → reconcile activation gap through H
-→ release incremental claims from H + 1
+→ release incremental claims for positions > H
 → catch up pending Deliveries to current head
 → current / lag = 0
 ```
 
-`H + 1` 表示项目的下一个 stream position，不要求全局连续。原子 activation transaction 与 Canonical Commit 使用同一项目行锁，因此不存在某个 Commit 既落在历史 Rebuild 之外、又没有获得新 Envelope 的窗口。
+`activation_after_position` 是排他阈值，不假设下一个真实 Commit position 等于 `H + 1`。原子 activation transaction 与 Canonical Commit 使用同一项目行锁，因此不存在某个 Commit 既落在历史 Rebuild 之外、又没有获得新 Envelope 的窗口。
 
 如果 activation 后 gap reconciliation 失败：
 
@@ -640,9 +640,9 @@ P3A 期间可保留旧 Outbox `status/attempts/...` 为明确标记的 deprecate
 
 - 历史 Commit 的 Outbox Envelope/Delivery 数量在 bootstrap 前后不增加。
 - Projector 能从 Canon 重建至 initial Watermark。
-- activation transaction 能确定唯一 `activation_position`。
+- activation transaction 能确定唯一 `activation_after_position`。
 - initial Watermark 与 activation Head 之间的 gap 只通过 Canon replay 补齐。
-- `activation_position` 之后的新 Commit 全部且仅创建一个 Envelope + Delivery。
+- position 严格大于 `activation_after_position` 的新 Commit 全部且仅创建一个 Envelope + Delivery。
 - gap reconciliation 失败时不开放正常 claim、不宣称 current，恢复后最终 lag = 0。
 
 ### 11.6 回归与证据
@@ -690,7 +690,7 @@ P3A 只有同时满足以下条件才完成：
 - [x] Reconciliation failure 不修改 Canon，也不错误恢复 Projection readiness。
 - [x] Critical/non-blocking Dead-letter 语义与 Foundation Barrier 一致。
 - [x] 现有 P2 Outbox Envelope 粒度被保留，没有无收益的 Fan-out 迁移。
-- [x] 新增 Projector 不回填历史 Envelope/Delivery，通过 Canon bootstrap rebuild 后从原子 activation position 开始 fan-out。
+- [x] 新增 Projector 不回填历史 Envelope/Delivery，通过 Canon bootstrap rebuild 后对严格大于原子 `activation_after_position` 的 Commit 开始 fan-out。
 - [x] 在线影子 Rebuild 明确 Deferred 且不开展实验。
 - [x] P3B、P4 与 P3A 的阶段边界明确。
 - [x] 不宣称跨系统 exactly-once。
