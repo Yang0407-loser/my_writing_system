@@ -17,6 +17,7 @@ from .models import (
     CanonicalSubsection,
     DocumentRevision,
     EventLedger,
+    IdempotencyRecord,
 )
 
 
@@ -36,6 +37,16 @@ class CanonicalRepository:
                 CanonicalProject.id == self.project_id,
                 CanonicalProject.tenant_id == self.tenant_id,
             )
+        )
+
+    def get_project_for_update(self) -> CanonicalProject | None:
+        return self.session.scalar(
+            select(CanonicalProject)
+            .where(
+                CanonicalProject.id == self.project_id,
+                CanonicalProject.tenant_id == self.tenant_id,
+            )
+            .with_for_update()
         )
 
     def create_project(
@@ -142,6 +153,31 @@ class CanonicalRepository:
                 CanonicalSubsection.project_id == self.project_id,
             )
         )
+
+    def get_subsection_for_update(
+        self, subsection_id: str
+    ) -> CanonicalSubsection | None:
+        return self.session.scalar(
+            select(CanonicalSubsection)
+            .where(
+                CanonicalSubsection.id == subsection_id,
+                CanonicalSubsection.tenant_id == self.tenant_id,
+                CanonicalSubsection.project_id == self.project_id,
+            )
+            .with_for_update()
+        )
+
+    def get_idempotency_record(
+        self, idempotency_key: str, *, for_update: bool = False
+    ) -> IdempotencyRecord | None:
+        statement = select(IdempotencyRecord).where(
+            IdempotencyRecord.tenant_id == self.tenant_id,
+            IdempotencyRecord.project_id == self.project_id,
+            IdempotencyRecord.idempotency_key == idempotency_key,
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        return self.session.scalar(statement)
 
     def create_commit_envelope(
         self,
