@@ -9,6 +9,8 @@ import pytest
 from app.canonical.projection_ports import ProjectionExecutor, ProjectionMessage
 from app.canonical.projection_registry import (
     BASELINE_PROJECTOR_SPECS,
+    CRITICAL_RETRY,
+    NON_BLOCKING_RETRY,
     ProjectorRegistry,
     ProjectorSpec,
     RetryPolicy,
@@ -26,6 +28,23 @@ def test_baseline_registry_has_exact_p2_manifest():
         ("markdown_export", "non_blocking"),
         ("analytics", "non_blocking"),
     ]
+
+
+def test_baseline_retry_policies_have_exact_frozen_values():
+    assert (
+        CRITICAL_RETRY.max_attempts,
+        CRITICAL_RETRY.base_delay_seconds,
+        CRITICAL_RETRY.max_delay_seconds,
+        CRITICAL_RETRY.lease_seconds,
+        CRITICAL_RETRY.heartbeat_seconds,
+    ) == (8, 2, 300, 120, 30)
+    assert (
+        NON_BLOCKING_RETRY.max_attempts,
+        NON_BLOCKING_RETRY.base_delay_seconds,
+        NON_BLOCKING_RETRY.max_delay_seconds,
+        NON_BLOCKING_RETRY.lease_seconds,
+        NON_BLOCKING_RETRY.heartbeat_seconds,
+    ) == (5, 2, 300, 120, 30)
 
 
 def test_registry_preserves_order_and_rejects_duplicate_projector_ids():

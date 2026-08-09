@@ -100,6 +100,15 @@ def test_attempt_partition_rebuild_and_reconciliation_metadata_freeze_state_owne
     )
 
 
+def test_every_p3a_state_table_has_its_scoped_index():
+    assert "ix_projection_attempts_delivery" in _index_names(ProjectionAttempt)
+    assert "ix_projection_partitions_scope" in _index_names(ProjectionPartition)
+    assert "ix_projection_rebuild_runs_scope" in _index_names(ProjectionRebuildRun)
+    assert "ix_projection_reconciliations_scope" in _index_names(
+        ProjectionReconciliation
+    )
+
+
 def test_analytics_rows_are_deduplicated_by_semantic_projection_identity():
     assert "uq_projection_analytics_event_identity" in _constraint_names(
         ProjectionAnalyticsEvent, UniqueConstraint
