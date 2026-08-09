@@ -266,13 +266,15 @@ rg -l -i "(api[_-]?key|authorization|bearer|secret).{0,20}[:=]" experiments test
 
 禁止执行 `git add -A`、`git clean`、`git reset --hard` 或递归删除。
 
-执行分类（待用户批准）：A 为当前 tracked 生产源码/测试/文档与两份 Foundation 计划；B 为需逐文件审核的 untracked `app/`、`tests/`、`experiments/` 与证据报告；C 为 `.world_runtime_*`、reviewer/cowork runtime、`outputs/` 与运行报告；D 至少包含被忽略但含非空凭据的 `.env`、未忽略且需复核的 `.env.example`、以及未忽略且含非空 `api_key` 的 `experiments/scene_reality_contract_v0/fixtures/baseline_task_state.json`。C/D 当前均未删除、未 stage。
+执行分类（用户已于 2026-08-09 批准）：A 为当前 tracked 生产源码/测试/文档与两份 Foundation 计划；B 为经扫描后纳入的 untracked `app/`、`tests/`、`docs/`、`experiments/`；C 为 `.world_runtime_*`、reviewer/cowork runtime、`outputs/` 与未复核报告；D 至少包含被忽略但含非空凭据的 `.env`、未忽略且含非空 `api_key` 的 `experiments/scene_reality_contract_v0/fixtures/baseline_task_state.json`，以及秘密扫描命中的待审文件。C/D 均原地保留，未删除、未纳入 baseline commit。
 
-- [ ] **Step 3：经用户确认后建立保护分支与 checkpoint commit**
+- [x] **Step 3：经用户确认后建立保护分支与 checkpoint commit**
 
 只对批准路径执行显式 `git add <paths...>`，创建 `chore: freeze pre-foundation baseline` 提交。若用户不批准提交，停止实施；不要在当前脏工作区继续 Foundation 代码改造。
 
-- [ ] **Step 4：创建隔离 worktree**
+执行记录（2026-08-09）：创建保护分支 `foundation/baseline-2026-08-09` 与提交 `903c14a chore: freeze pre-foundation baseline`，冻结 549 个批准文件。暂存审计结果为高置信秘密命中 0、超过 5 MiB 文件 0、未批准新增根目录 0；两份未复核 `reports/` 变更和三个敏感待审文件均未纳入。`git diff --cached --check` 记录到既有尾随空格/文件末空行，作为基线卫生债保留，未在 checkpoint 中批量改写历史实验材料。
+
+- [x] **Step 4：创建隔离 worktree**
 
 ```powershell
 git worktree add E:\writer\my_writing_system-foundation -b feat/p0-p2-foundation
@@ -280,6 +282,8 @@ git -C E:\writer\my_writing_system-foundation status --short
 ```
 
 预期：新 worktree 干净，后续所有命令在该目录执行。
+
+执行记录（2026-08-09）：已创建分支 `feat/p0-p2-foundation` 与隔离工作树 `E:\writer\my_writing_system-foundation`，起点为 `903c14a`。原工作区中未纳入 checkpoint 的用户资产保持原位。
 
 ### Task 1：隔离测试环境并复现已知失败
 
