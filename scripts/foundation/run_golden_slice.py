@@ -12,9 +12,7 @@ from typing import Any
 
 # This script owns an isolated temporary SQLite database when no explicit Gate
 # database is provided. Set test mode before importing app.config transitively.
-if not os.getenv("CANONICAL_DATABASE_URL") and not os.getenv(
-    "TEST_CANONICAL_DATABASE_URL"
-):
+if not os.getenv("CANONICAL_DATABASE_URL"):
     os.environ.setdefault("WRITER_TESTING", "1")
 
 from alembic import command

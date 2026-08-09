@@ -1,6 +1,15 @@
 # 开发进度
 
-> 最后更新: 2026-06-02
+> 最后更新: 2026-08-10
+
+## P0 + P1/P2 Foundation
+
+- 状态：服务端 Foundation 已完成；批准受控的 `internal_required` 内部新任务 dogfood，不代表外部生产就绪。
+- Canonical 数据链路：Candidate → State Transition → 双 Head 原子提交 → Revision/State/Ledger/Idempotency/Outbox → Critical Projection Barrier。
+- Python 3.11 全量 Gate：`1903 passed, 2 skipped, 5 warnings`；2 个 skip 仅对应未纳入版本库的私有含密钥夹具，PostgreSQL skip 为 0。
+- PostgreSQL 16 Gate：Canonical 集成 `24 passed, 0 skipped`；真实 Golden Slice 为 `backend=postgresql`、`gate_eligible=true`、`phase=ready`。
+- 回滚边界：已提交 Canon 始终保持权威；critical projection 未追平时禁止下一小节生成；legacy 回滚只影响尚未开始的写入。
+- 下一阶段：P3A 投影与恢复平台、P3B 鉴权/租户隔离/凭据/CI/可观测性/备份安全门，完成后才可讨论外部生产接入和客户端收尾。
 
 ## 架构变更 (v3.x) — 深度一致性 + 精简协作
 

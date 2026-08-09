@@ -3,14 +3,14 @@
     "commit_status": "committed",
     "critical_projection_status": "ready",
     "document_ref": {
-      "commit_id": "fc6c0c37-4e39-408c-87c6-36bfbd6afbad",
+      "commit_id": "12066852-04b7-4a32-a297-9430f126e3bf",
       "document_id": "document-foundation-golden",
-      "revision_id": "c34070e9-4066-4efa-92b5-399d77cbf2a0"
+      "revision_id": "1d49a243-cac9-46be-a862-b02953959e9a"
     },
     "non_blocking_projection_status": "ready",
-    "state_version_id": "42527f1f-ef5b-431d-839d-7f6f935be007"
+    "state_version_id": "13d0da80-2e9f-46a0-9f10-86c6f458e132"
   },
-  "backend": "sqlite",
+  "backend": "postgresql",
   "counts": {
     "chroma_chunks": 6,
     "critical_projection": 3,
@@ -18,9 +18,9 @@
     "non_blocking_projection": 4,
     "outbox": 7
   },
-  "duration_ms": 244.665,
+  "duration_ms": 324.003,
   "fixture_schema_version": "foundation-golden-slice-v1",
-  "gate_eligible": false,
+  "gate_eligible": true,
   "hashes": {
     "canonical_state": "ba2d1a358a1c653f875ab09744d30e0e53723f11adbca309f1dcf9d22993c0b6",
     "fixture_body": "3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5",
@@ -28,11 +28,11 @@
     "revision_content": "3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5"
   },
   "ids": {
-    "commit_id": "fc6c0c37-4e39-408c-87c6-36bfbd6afbad",
+    "commit_id": "12066852-04b7-4a32-a297-9430f126e3bf",
     "document_id": "document-foundation-golden",
     "project_id": "project-foundation-golden",
-    "revision_id": "c34070e9-4066-4efa-92b5-399d77cbf2a0",
-    "state_version_id": "42527f1f-ef5b-431d-839d-7f6f935be007",
+    "revision_id": "1d49a243-cac9-46be-a862-b02953959e9a",
+    "state_version_id": "13d0da80-2e9f-46a0-9f10-86c6f458e132",
     "subsection_id": "subsection-foundation-golden-0001",
     "tenant_id": "tenant-foundation-golden"
   },

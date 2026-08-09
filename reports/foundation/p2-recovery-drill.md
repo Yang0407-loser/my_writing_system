@@ -1,13 +1,13 @@
 # P2 Foundation Recovery Drill
 
-Date: 2026-08-09  
+Date: 2026-08-10
 Scope: deterministic Golden subsection, no real LLM, no credentials or full prompt in evidence.
 
 ## Initial implementation result
 
 The SQLite implementation rehearsal completed the full Candidate → State Transition → Canonical Commit → dual Heads → Outbox → critical Barrier path. The fixture, accepted Revision and materialized Document all produced SHA-256 `3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5`. All seven fixed outbox rows reached `published` and the critical Barrier reached `ready`.
 
-This is implementation evidence, not the final Gate: the verifier correctly rejects it because `backend=sqlite`. A fresh real PostgreSQL run remains mandatory under FND-008.
+The initial SQLite rehearsal was implementation evidence only. The final Gate was rerun on isolated PostgreSQL 16; the evidence now records `backend=postgresql`, `gate_eligible=true`, `phase=ready`, and the verifier returns `passed=true`.
 
 ## Fault matrix exercised
 
@@ -20,7 +20,7 @@ This is implementation evidence, not the final Gate: the verifier correctly reje
 | Dispatcher terminates during critical projection | Restart scans failed/pending rows and does not republish successful critical rows | `test_dispatcher_restart_continues_failed_rows_without_republishing_successes` |
 | Same message delivered 100 times | One Commit, one Revision, one fixed seven-row manifest | `test_same_message_100_times_is_one_commit_revision_and_manifest` |
 | Derived Chroma data deleted | Replaying accepted Canon produces identical deterministic chunk IDs/content metadata | `test_deleted_derived_chunks_rebuild_identically_from_canon` |
-| Two writers share a State Head | PostgreSQL concurrency test exists and is fail-closed skipped without the daemon | `test_postgres_atomic_commit.py`; FND-008 |
+| Two writers share a State Head | One commit succeeds and the other receives an explicit `StateVersionConflict` | `test_different_subsections_on_same_state_head_yield_state_conflict`; PostgreSQL Gate passed |
 
 ## Recovery rule
 

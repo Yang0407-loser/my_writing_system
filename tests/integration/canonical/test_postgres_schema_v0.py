@@ -14,8 +14,8 @@ from app.canonical.repositories import CanonicalRepository
 pytestmark = pytest.mark.postgres
 
 
-def _id(prefix: str) -> str:
-    return f"{prefix}-{uuid4()}"
+def _id(_prefix: str) -> str:
+    return str(uuid4())
 
 
 def test_postgres_is_at_alembic_head_and_enforces_dual_heads_and_unique(
