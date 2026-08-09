@@ -68,3 +68,9 @@ revision or state from `created_at`; they follow the two explicit Head pointers.
 | `event_ledger` | Commit Service appends ordered events | Append-only; no delete | Restore ordered by commit and ordinal; verify ledger hash |
 | `idempotency_records` | Commit Service reserves then completes in the same transaction as Canon | No routine delete; retention is post-Foundation policy | Completed result reconstructs retry response; reserved rows roll back with failed transaction |
 | `outbox_events` | Commit Service inserts fixed manifest; dispatcher updates delivery fields | Published rows retained through Foundation audit window | Rebuild pending projections from canonical rows/manifest; barrier reads row status |
+
+## P2 implemented data path and remaining boundary
+
+The implemented P2 path is `loaded Revision/State Heads → immutable Candidate → pure complete State Transition → one Canonical SQL transaction → fixed Outbox manifest → critical Barrier → next subsection`. Retry preflight reads the completed SQL idempotency result before any LLM call. TaskStore and HTTP responses carry Canonical references additively; `draft_preview` remains compatibility-only.
+
+P2 projectors are synchronous, single-process adapters. Deterministic Chroma IDs provide replay convergence for the Golden path, but distributed claims, leases, dead letters, full projector rebuild/reconciliation and cross-sink crash-window guarantees remain P3A. Authentication, complete tenant isolation, credential references, backup/restore and external production admission remain P3B.
