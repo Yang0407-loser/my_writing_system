@@ -1,0 +1,786 @@
+{
+  "schema_version": "writer-pre-foundation-v0",
+  "task_response_contracts": {
+    "completed_result": {
+      "fields": {
+        "character_arcs": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "characters": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "draft": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "fix_checklist": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "handover_notes": {
+          "required": false,
+          "type": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "outline": {
+          "required": true,
+          "type": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "output_file": {
+          "required": false,
+          "type": {
+            "type": "string"
+          }
+        },
+        "review": {
+          "required": true,
+          "type": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "style": {
+          "required": true,
+          "type": {
+            "additionalProperties": true,
+            "type": "object"
+          }
+        },
+        "task_id": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "timeline": {
+          "required": false,
+          "type": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "topic": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "world_state": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "history_detail": {
+      "fields": {
+        "task": {
+          "required": true,
+          "type": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "history_list": {
+      "fields": {
+        "tasks": {
+          "required": true,
+          "type": {
+            "type": "array"
+          }
+        },
+        "total": {
+          "required": true,
+          "type": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "pending_result": {
+      "fields": {
+        "message": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "task_id": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "fields": {
+        "ai_detect_log": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "character_arcs": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "characters": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "constraints": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "draft": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "error": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "fix_checklist": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "foreshadowings": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "handover_notes": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "outline": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "outline_reviews": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "outline_v1": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "progress": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "reference_text": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "review": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "section_reviews": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "status": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "story_synopsis": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "style": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "style_profile": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "target_words_per_section": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "task_id": {
+          "required": true,
+          "type": {
+            "type": "string"
+          }
+        },
+        "timeline": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "token_cost": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "token_usage": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "topic": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "world_setting": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "world_state": {
+          "required": false,
+          "type": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "writer_run": {
+    "parameters": [
+      {
+        "annotation": "str",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "topic",
+        "required": true
+      },
+      {
+        "annotation": "dict",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "style",
+        "required": true
+      },
+      {
+        "annotation": "list[dict]",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "outline",
+        "required": true
+      },
+      {
+        "annotation": "inspect._empty",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "vector_store",
+        "required": true
+      },
+      {
+        "annotation": "inspect._empty",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "blackboard",
+        "required": true
+      },
+      {
+        "annotation": "str",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "task_id",
+        "required": true
+      },
+      {
+        "annotation": "list[dict] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "characters",
+        "required": false
+      },
+      {
+        "annotation": "list[dict] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "character_arcs",
+        "required": false
+      },
+      {
+        "annotation": "Callable | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "stream_callback",
+        "required": false
+      },
+      {
+        "annotation": "bool",
+        "default": false,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "interactive",
+        "required": false
+      },
+      {
+        "annotation": "Callable | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "on_section_done",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "world_setting",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "prev_draft",
+        "required": false
+      },
+      {
+        "annotation": "list[dict] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "prev_handover_list",
+        "required": false
+      },
+      {
+        "annotation": "dict[str, str] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "existing_draft",
+        "required": false
+      },
+      {
+        "annotation": "dict[int, str] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "existing_section_texts",
+        "required": false
+      },
+      {
+        "annotation": "app.world_state.WorldStateManager | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "world_state",
+        "required": false
+      },
+      {
+        "annotation": "app.narrative_event.EventGraph | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "event_graph",
+        "required": false
+      },
+      {
+        "annotation": "dict | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "resume_context",
+        "required": false
+      },
+      {
+        "annotation": "list[dict] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "constraints",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "rules_context",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "subplot_context",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "relation_context",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "improvement_context",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "experience_context",
+        "required": false
+      },
+      {
+        "annotation": "list[dict] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "narrative_beats",
+        "required": false
+      },
+      {
+        "annotation": "str",
+        "default": "",
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "reference_text",
+        "required": false
+      },
+      {
+        "annotation": "Callable[[int, int], dict | None] | None",
+        "default": null,
+        "kind": "POSITIONAL_OR_KEYWORD",
+        "name": "rag_metadata_provider",
+        "required": false
+      }
+    ],
+    "return_annotation": "dict"
+  }
+}

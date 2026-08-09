@@ -22,6 +22,7 @@ output/
 .handover_content_audit_runtime/
 .world_runtime_writer_canary_runtime/
 .world_runtime_writer_canary_v2_runtime/
+.foundation_tmp/
 
 # Python
 __pycache__/

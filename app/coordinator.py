@@ -12,6 +12,7 @@ from .agents.reviewer import Reviewer
 from .agents.continuity_editor import ContinuityEditor
 from .agents.character_manager import CharacterManager
 from .blackboard import Blackboard
+from .checkpoint_sanitizer import sanitize_checkpoint
 from .vector_store import VectorStore
 from .embedding.factory import preflight_embedding_backend
 from .world_state import WorldStateManager
@@ -150,18 +151,14 @@ def writing_task(
     if resume:
         # resume_from_task_id: 从其他任务的检查点恢复（避免竞态条件）
         checkpoint_src = resume_from_task_id or task_id
-        state = bb.load_checkpoint(checkpoint_src)
-        if not state:
+        loaded_state = bb.load_checkpoint(checkpoint_src)
+        if not loaded_state:
             bb.set(task_id, "status", "failed")
             bb.set(task_id, "error", "检查点不存在，无法恢复")
             return {"task_id": task_id, "status": "failed", "error": "checkpoint not found"}
+        state = sanitize_checkpoint(loaded_state)
         # 将检查点转移到当前 task_id，后续 save_checkpoint 使用当前 ID
         bb.save_checkpoint(task_id, state)
-        # Restore per-task API key from checkpoint; fall back to the new param
-        resume_key = state.get("api_key", "") or api_key
-        if resume_key:
-            set_api_key(resume_key)
-            state["api_key"] = resume_key
         phase = state.get("phase", "init")
         bb.set(task_id, "status", "running")
     else:
@@ -176,7 +173,6 @@ def writing_task(
 
             "config_style_profile": style_profile or {},
             "config_outline": outline or [],
-            "api_key": api_key,
         }
         # 同步 config 到主 Redis hash，让 /status 可返回
         bb.set(task_id, "topic", topic)

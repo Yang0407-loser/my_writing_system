@@ -1,0 +1,6782 @@
+{
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ArcProjectionConfirmBody": {
+          "properties": {
+            "after_state": {
+              "default": "",
+              "title": "After State",
+              "type": "string"
+            },
+            "before_state": {
+              "default": "",
+              "title": "Before State",
+              "type": "string"
+            },
+            "characters": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Characters",
+              "type": "array"
+            },
+            "classification": {
+              "title": "Classification",
+              "type": "string"
+            },
+            "event_text_hash": {
+              "title": "Event Text Hash",
+              "type": "string"
+            },
+            "nodes": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Nodes",
+              "type": "array"
+            },
+            "observable_evidence": {
+              "default": "",
+              "title": "Observable Evidence",
+              "type": "string"
+            },
+            "projection_id": {
+              "title": "Projection Id",
+              "type": "string"
+            },
+            "rationale": {
+              "default": "",
+              "title": "Rationale",
+              "type": "string"
+            },
+            "trigger": {
+              "default": "",
+              "title": "Trigger",
+              "type": "string"
+            }
+          },
+          "required": [
+            "projection_id",
+            "event_text_hash",
+            "classification"
+          ],
+          "title": "ArcProjectionConfirmBody",
+          "type": "object"
+        },
+        "ArcProjectionPreviewBody": {
+          "properties": {
+            "characters": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Characters",
+              "type": "array"
+            },
+            "nodes": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Nodes",
+              "type": "array"
+            }
+          },
+          "title": "ArcProjectionPreviewBody",
+          "type": "object"
+        },
+        "CharacterProfile": {
+          "description": "单个人物的完整设定（16 个字段）。",
+          "properties": {
+            "age": {
+              "default": "",
+              "title": "Age",
+              "type": "string"
+            },
+            "appearance": {
+              "default": "",
+              "title": "Appearance",
+              "type": "string"
+            },
+            "background": {
+              "default": "",
+              "title": "Background",
+              "type": "string"
+            },
+            "catchphrase": {
+              "default": "",
+              "title": "Catchphrase",
+              "type": "string"
+            },
+            "custom": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Custom",
+              "type": "object"
+            },
+            "gender": {
+              "default": "",
+              "title": "Gender",
+              "type": "string"
+            },
+            "id": {
+              "default": "",
+              "title": "Id",
+              "type": "string"
+            },
+            "key_lines": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Key Lines",
+              "type": "array"
+            },
+            "motivation": {
+              "default": "",
+              "title": "Motivation",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "personality": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Personality",
+              "type": "array"
+            },
+            "relationships": {
+              "default": [],
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Relationships",
+              "type": "array"
+            },
+            "secret": {
+              "default": "",
+              "title": "Secret",
+              "type": "string"
+            },
+            "strengths": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Strengths",
+              "type": "array"
+            },
+            "symbolism": {
+              "default": "",
+              "title": "Symbolism",
+              "type": "string"
+            },
+            "weaknesses": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Weaknesses",
+              "type": "array"
+            },
+            "world_position": {
+              "default": "",
+              "title": "World Position",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "title": "CharacterProfile",
+          "type": "object"
+        },
+        "DeleteNodeBody": {
+          "properties": {
+            "index": {
+              "default": 0,
+              "title": "Index",
+              "type": "integer"
+            },
+            "node": {
+              "additionalProperties": true,
+              "title": "Node",
+              "type": "object"
+            },
+            "parent_id": {
+              "default": "",
+              "title": "Parent Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "node"
+          ],
+          "title": "DeleteNodeBody",
+          "type": "object"
+        },
+        "DetectRequest": {
+          "properties": {
+            "text": {
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "title": "DetectRequest",
+          "type": "object"
+        },
+        "DialogueRequest": {
+          "properties": {
+            "session_context": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Session Context",
+              "type": "object"
+            },
+            "user_message": {
+              "default": "",
+              "title": "User Message",
+              "type": "string"
+            }
+          },
+          "title": "DialogueRequest",
+          "type": "object"
+        },
+        "DraftBody": {
+          "properties": {
+            "draft": {
+              "default": "",
+              "title": "Draft",
+              "type": "string"
+            }
+          },
+          "title": "DraftBody",
+          "type": "object"
+        },
+        "DrawRequest": {
+          "properties": {
+            "context": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Context",
+              "type": "object"
+            },
+            "num_cards": {
+              "default": 4,
+              "title": "Num Cards",
+              "type": "integer"
+            },
+            "step": {
+              "title": "Step",
+              "type": "string"
+            },
+            "user_requirement": {
+              "default": "",
+              "title": "User Requirement",
+              "type": "string"
+            }
+          },
+          "required": [
+            "step"
+          ],
+          "title": "DrawRequest",
+          "type": "object"
+        },
+        "EdgeBody": {
+          "properties": {
+            "distance": {
+              "default": "",
+              "title": "Distance",
+              "type": "string"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "source_id": {
+              "default": "",
+              "title": "Source Id",
+              "type": "string"
+            },
+            "target_id": {
+              "default": "",
+              "title": "Target Id",
+              "type": "string"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            },
+            "travel_time": {
+              "default": "",
+              "title": "Travel Time",
+              "type": "string"
+            },
+            "type": {
+              "default": "road",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "title": "EdgeBody",
+          "type": "object"
+        },
+        "FactionBody": {
+          "properties": {
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "genre": {
+              "default": "",
+              "title": "Genre",
+              "type": "string"
+            },
+            "goal": {
+              "default": "",
+              "title": "Goal",
+              "type": "string"
+            },
+            "is_active": {
+              "default": true,
+              "title": "Is Active",
+              "type": "boolean"
+            },
+            "leader_name": {
+              "default": "",
+              "title": "Leader Name",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "source": {
+              "default": "user",
+              "title": "Source",
+              "type": "string"
+            },
+            "strength": {
+              "default": 5,
+              "title": "Strength",
+              "type": "integer"
+            },
+            "tags": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Tags",
+              "type": "array"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            },
+            "territory": {
+              "default": "",
+              "title": "Territory",
+              "type": "string"
+            },
+            "type": {
+              "default": "宗门",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "title": "FactionBody",
+          "type": "object"
+        },
+        "ForeshadowingBody": {
+          "properties": {
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "importance": {
+              "default": 5,
+              "title": "Importance",
+              "type": "integer"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "plant_chapter": {
+              "default": 0,
+              "title": "Plant Chapter",
+              "type": "integer"
+            },
+            "related_characters": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Related Characters",
+              "type": "array"
+            },
+            "related_items": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Related Items",
+              "type": "array"
+            },
+            "resolve_chapter": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resolve Chapter"
+            },
+            "status": {
+              "default": "pending",
+              "title": "Status",
+              "type": "string"
+            },
+            "tags": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Tags",
+              "type": "array"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          "title": "ForeshadowingBody",
+          "type": "object"
+        },
+        "HTTPValidationError": {
+          "properties": {
+            "detail": {
+              "items": {
+                "$ref": "#/components/schemas/ValidationError"
+              },
+              "title": "Detail",
+              "type": "array"
+            }
+          },
+          "title": "HTTPValidationError",
+          "type": "object"
+        },
+        "ImportBody": {
+          "properties": {
+            "json_str": {
+              "title": "Json Str",
+              "type": "string"
+            },
+            "on_conflict": {
+              "default": "skip",
+              "title": "On Conflict",
+              "type": "string"
+            }
+          },
+          "required": [
+            "json_str"
+          ],
+          "title": "ImportBody",
+          "type": "object"
+        },
+        "ItemBody": {
+          "properties": {
+            "abilities": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Abilities",
+              "type": "array"
+            },
+            "current_owner": {
+              "default": "",
+              "title": "Current Owner",
+              "type": "string"
+            },
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "origin_chapter": {
+              "default": 0,
+              "title": "Origin Chapter",
+              "type": "integer"
+            },
+            "rarity": {
+              "default": "common",
+              "title": "Rarity",
+              "type": "string"
+            },
+            "status": {
+              "default": "active",
+              "title": "Status",
+              "type": "string"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            },
+            "type": {
+              "default": "material",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "title": "ItemBody",
+          "type": "object"
+        },
+        "MemberBody": {
+          "properties": {
+            "character_name": {
+              "title": "Character Name",
+              "type": "string"
+            },
+            "faction_id": {
+              "title": "Faction Id",
+              "type": "string"
+            },
+            "joined_chapter": {
+              "default": 0,
+              "title": "Joined Chapter",
+              "type": "integer"
+            },
+            "role": {
+              "default": "弟子",
+              "title": "Role",
+              "type": "string"
+            }
+          },
+          "required": [
+            "faction_id",
+            "character_name"
+          ],
+          "title": "MemberBody",
+          "type": "object"
+        },
+        "NodeBody": {
+          "properties": {
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "parent_id": {
+              "default": "",
+              "title": "Parent Id",
+              "type": "string"
+            },
+            "properties": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Properties",
+              "type": "object"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            },
+            "type": {
+              "default": "city",
+              "title": "Type",
+              "type": "string"
+            },
+            "x": {
+              "default": 0,
+              "title": "X",
+              "type": "number"
+            },
+            "y": {
+              "default": 0,
+              "title": "Y",
+              "type": "number"
+            }
+          },
+          "title": "NodeBody",
+          "type": "object"
+        },
+        "OutlineBudgetAdviceBody": {
+          "properties": {
+            "chapter_budget": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Chapter Budget"
+            },
+            "character_names": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Character Names",
+              "type": "array"
+            },
+            "nodes": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Nodes",
+              "type": "array"
+            },
+            "style_brief": {
+              "default": "",
+              "title": "Style Brief",
+              "type": "string"
+            },
+            "style_profile": {
+              "additionalProperties": true,
+              "title": "Style Profile",
+              "type": "object"
+            }
+          },
+          "title": "OutlineBudgetAdviceBody",
+          "type": "object"
+        },
+        "OutlineNodesBody": {
+          "properties": {
+            "nodes": {
+              "default": [],
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Nodes",
+              "type": "array"
+            }
+          },
+          "title": "OutlineNodesBody",
+          "type": "object"
+        },
+        "RedrawRequest": {
+          "properties": {
+            "card_index": {
+              "default": 0,
+              "title": "Card Index",
+              "type": "integer"
+            },
+            "context": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Context",
+              "type": "object"
+            },
+            "step": {
+              "title": "Step",
+              "type": "string"
+            },
+            "user_feedback": {
+              "default": "",
+              "title": "User Feedback",
+              "type": "string"
+            }
+          },
+          "required": [
+            "step"
+          ],
+          "title": "RedrawRequest",
+          "type": "object"
+        },
+        "ReviseRequest": {
+          "properties": {
+            "instruction": {
+              "title": "Instruction",
+              "type": "string"
+            },
+            "section": {
+              "title": "Section",
+              "type": "integer"
+            },
+            "subsection": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subsection"
+            }
+          },
+          "required": [
+            "section",
+            "instruction"
+          ],
+          "title": "ReviseRequest",
+          "type": "object"
+        },
+        "RouteBody": {
+          "properties": {
+            "chapter_end": {
+              "default": 100,
+              "title": "Chapter End",
+              "type": "integer"
+            },
+            "chapter_start": {
+              "default": 1,
+              "title": "Chapter Start",
+              "type": "integer"
+            },
+            "path_nodes": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Path Nodes",
+              "type": "array"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          "title": "RouteBody",
+          "type": "object"
+        },
+        "RuleBody": {
+          "properties": {
+            "content": {
+              "default": "",
+              "title": "Content",
+              "type": "string"
+            },
+            "created_by": {
+              "default": "user",
+              "title": "Created By",
+              "type": "string"
+            },
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "enabled": {
+              "default": true,
+              "title": "Enabled",
+              "type": "boolean"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "priority": {
+              "default": 5,
+              "title": "Priority",
+              "type": "integer"
+            },
+            "scope": {
+              "default": "global",
+              "title": "Scope",
+              "type": "string"
+            },
+            "type": {
+              "default": "global",
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "title": "RuleBody",
+          "type": "object"
+        },
+        "SubplotBody": {
+          "properties": {
+            "antagonist_id": {
+              "default": "",
+              "title": "Antagonist Id",
+              "type": "string"
+            },
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "elements": {
+              "default": [],
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Elements",
+              "type": "array"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "pov": {
+              "default": "protagonist",
+              "title": "Pov",
+              "type": "string"
+            },
+            "priority": {
+              "default": 5,
+              "title": "Priority",
+              "type": "integer"
+            },
+            "protagonist_id": {
+              "default": "",
+              "title": "Protagonist Id",
+              "type": "string"
+            },
+            "related_subplots": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Related Subplots",
+              "type": "array"
+            },
+            "status": {
+              "default": "planned",
+              "title": "Status",
+              "type": "string"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            },
+            "type": {
+              "default": "character_arc",
+              "title": "Type",
+              "type": "string"
+            },
+            "volume_end": {
+              "default": 5,
+              "title": "Volume End",
+              "type": "integer"
+            },
+            "volume_start": {
+              "default": 1,
+              "title": "Volume Start",
+              "type": "integer"
+            }
+          },
+          "title": "SubplotBody",
+          "type": "object"
+        },
+        "SummarizeRequest": {
+          "properties": {
+            "conversation_history": {
+              "default": [],
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Conversation History",
+              "type": "array"
+            },
+            "session_context": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Session Context",
+              "type": "object"
+            }
+          },
+          "title": "SummarizeRequest",
+          "type": "object"
+        },
+        "TaskStatus": {
+          "properties": {
+            "ai_detect_log": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ai Detect Log"
+            },
+            "character_arcs": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Character Arcs"
+            },
+            "characters": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Characters"
+            },
+            "constraints": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Constraints"
+            },
+            "draft": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Draft"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            },
+            "fix_checklist": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fix Checklist"
+            },
+            "foreshadowings": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Foreshadowings"
+            },
+            "handover_notes": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handover Notes"
+            },
+            "outline": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outline"
+            },
+            "outline_reviews": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outline Reviews"
+            },
+            "outline_v1": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Outline V1"
+            },
+            "progress": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Progress"
+            },
+            "reference_text": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference Text"
+            },
+            "review": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review"
+            },
+            "section_reviews": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section Reviews"
+            },
+            "status": {
+              "title": "Status",
+              "type": "string"
+            },
+            "story_synopsis": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Story Synopsis"
+            },
+            "style": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Style"
+            },
+            "style_profile": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Style Profile"
+            },
+            "target_words_per_section": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Words Per Section"
+            },
+            "task_id": {
+              "title": "Task Id",
+              "type": "string"
+            },
+            "timeline": {
+              "anyOf": [
+                {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Timeline"
+            },
+            "token_cost": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token Cost"
+            },
+            "token_usage": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Token Usage"
+            },
+            "topic": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Topic"
+            },
+            "world_setting": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "World Setting"
+            },
+            "world_state": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "World State"
+            }
+          },
+          "required": [
+            "task_id",
+            "status"
+          ],
+          "title": "TaskStatus",
+          "type": "object"
+        },
+        "TransactionBody": {
+          "properties": {
+            "chapter": {
+              "default": 0,
+              "title": "Chapter",
+              "type": "integer"
+            },
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "from_owner": {
+              "default": "",
+              "title": "From Owner",
+              "type": "string"
+            },
+            "item_id": {
+              "title": "Item Id",
+              "type": "string"
+            },
+            "to_owner": {
+              "default": "",
+              "title": "To Owner",
+              "type": "string"
+            }
+          },
+          "required": [
+            "item_id"
+          ],
+          "title": "TransactionBody",
+          "type": "object"
+        },
+        "ValidationError": {
+          "properties": {
+            "ctx": {
+              "title": "Context",
+              "type": "object"
+            },
+            "input": {
+              "title": "Input"
+            },
+            "loc": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "title": "Location",
+              "type": "array"
+            },
+            "msg": {
+              "title": "Message",
+              "type": "string"
+            },
+            "type": {
+              "title": "Error Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "loc",
+            "msg",
+            "type"
+          ],
+          "title": "ValidationError",
+          "type": "object"
+        },
+        "WriteRequest": {
+          "properties": {
+            "character_text": {
+              "default": "",
+              "title": "Character Text",
+              "type": "string"
+            },
+            "characters": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/CharacterProfile"
+              },
+              "title": "Characters",
+              "type": "array"
+            },
+            "outline": {
+              "default": [],
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Outline",
+              "type": "array"
+            },
+            "reference_text": {
+              "minLength": 1,
+              "title": "Reference Text",
+              "type": "string"
+            },
+            "story_synopsis": {
+              "default": "",
+              "title": "Story Synopsis",
+              "type": "string"
+            },
+            "style_profile": {
+              "additionalProperties": true,
+              "default": {},
+              "title": "Style Profile",
+              "type": "object"
+            },
+            "target_words_per_section": {
+              "default": 10000,
+              "minimum": 500.0,
+              "title": "Target Words Per Section",
+              "type": "integer"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            },
+            "topic": {
+              "minLength": 1,
+              "title": "Topic",
+              "type": "string"
+            },
+            "world_setting": {
+              "default": "",
+              "title": "World Setting",
+              "type": "string"
+            }
+          },
+          "required": [
+            "topic",
+            "reference_text"
+          ],
+          "title": "WriteRequest",
+          "type": "object"
+        },
+        "WriteResponse": {
+          "properties": {
+            "status": {
+              "default": "pending",
+              "title": "Status",
+              "type": "string"
+            },
+            "task_id": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "task_id"
+          ],
+          "title": "WriteResponse",
+          "type": "object"
+        },
+        "app__routers__character_relations__RelationBody": {
+          "properties": {
+            "character_a": {
+              "default": "",
+              "title": "Character A",
+              "type": "string"
+            },
+            "character_b": {
+              "default": "",
+              "title": "Character B",
+              "type": "string"
+            },
+            "current_stage": {
+              "default": 0,
+              "title": "Current Stage",
+              "type": "integer"
+            },
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "direction": {
+              "default": "positive",
+              "title": "Direction",
+              "type": "string"
+            },
+            "intensity": {
+              "default": 5,
+              "title": "Intensity",
+              "type": "integer"
+            },
+            "relation_type": {
+              "default": "盟友",
+              "title": "Relation Type",
+              "type": "string"
+            },
+            "source": {
+              "default": "manual",
+              "title": "Source",
+              "type": "string"
+            },
+            "source_section": {
+              "default": 0,
+              "title": "Source Section",
+              "type": "integer"
+            },
+            "stages": {
+              "default": [],
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Stages",
+              "type": "array"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          "title": "RelationBody",
+          "type": "object"
+        },
+        "app__routers__factions__RelationBody": {
+          "properties": {
+            "description": {
+              "default": "",
+              "title": "Description",
+              "type": "string"
+            },
+            "established_chapter": {
+              "default": 0,
+              "title": "Established Chapter",
+              "type": "integer"
+            },
+            "faction_a": {
+              "title": "Faction A",
+              "type": "string"
+            },
+            "faction_b": {
+              "title": "Faction B",
+              "type": "string"
+            },
+            "relation": {
+              "default": "中立",
+              "title": "Relation",
+              "type": "string"
+            },
+            "task_id": {
+              "default": "",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "faction_a",
+            "faction_b"
+          ],
+          "title": "RelationBody",
+          "type": "object"
+        }
+      }
+    },
+    "info": {
+      "title": "多智能体协作写作系统",
+      "version": "0.9.0"
+    },
+    "openapi": "3.1.0",
+    "paths": {
+      "/": {
+        "get": {
+          "description": "重定向到新版前端 (v0.9)。",
+          "operationId": "index__get",
+          "responses": {
+            "200": {
+              "content": {
+                "text/html": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Index"
+        }
+      },
+      "/api/ai-detect/analyze": {
+        "post": {
+          "operationId": "analyze_api_ai_detect_analyze_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Analyze",
+          "tags": [
+            "ai_detect"
+          ]
+        }
+      },
+      "/api/ai-detect/high-freq": {
+        "post": {
+          "operationId": "high_freq_api_ai_detect_high_freq_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "High Freq",
+          "tags": [
+            "ai_detect"
+          ]
+        }
+      },
+      "/api/ai-detect/patterns": {
+        "post": {
+          "operationId": "patterns_api_ai_detect_patterns_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Patterns",
+          "tags": [
+            "ai_detect"
+          ]
+        }
+      },
+      "/api/cards/draw": {
+        "post": {
+          "description": "生成多张方案卡片。",
+          "operationId": "draw_cards_api_cards_draw_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrawRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Draw Cards",
+          "tags": [
+            "cards"
+          ]
+        }
+      },
+      "/api/cards/genres": {
+        "get": {
+          "description": "返回可用题材列表（P8）。",
+          "operationId": "list_genres_api_cards_genres_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "List Genres",
+          "tags": [
+            "cards"
+          ]
+        }
+      },
+      "/api/cards/inspirations": {
+        "get": {
+          "description": "获取灵感库数据。",
+          "operationId": "get_inspirations_api_cards_inspirations_get",
+          "parameters": [
+            {
+              "description": "分类筛选",
+              "in": "query",
+              "name": "category",
+              "required": false,
+              "schema": {
+                "default": "",
+                "description": "分类筛选",
+                "title": "Category",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Inspirations",
+          "tags": [
+            "cards"
+          ]
+        }
+      },
+      "/api/cards/redraw": {
+        "post": {
+          "description": "重抽单张卡片。",
+          "operationId": "redraw_card_api_cards_redraw_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedrawRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Redraw Card",
+          "tags": [
+            "cards"
+          ]
+        }
+      },
+      "/api/cards/steps": {
+        "get": {
+          "description": "返回可用步骤列表（供前端展示步骤向导）。",
+          "operationId": "list_steps_api_cards_steps_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "List Steps",
+          "tags": [
+            "cards"
+          ]
+        }
+      },
+      "/api/character-relations": {
+        "get": {
+          "operationId": "list_relations_api_character_relations_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Relations",
+          "tags": [
+            "character-relations"
+          ]
+        },
+        "post": {
+          "operationId": "create_relation_api_character_relations_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__routers__character_relations__RelationBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Relation",
+          "tags": [
+            "character-relations"
+          ]
+        }
+      },
+      "/api/character-relations/presets": {
+        "get": {
+          "operationId": "get_presets_api_character_relations_presets_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Get Presets",
+          "tags": [
+            "character-relations"
+          ]
+        }
+      },
+      "/api/character-relations/{relation_id}": {
+        "delete": {
+          "operationId": "delete_relation_api_character_relations__relation_id__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "relation_id",
+              "required": true,
+              "schema": {
+                "title": "Relation Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Relation",
+          "tags": [
+            "character-relations"
+          ]
+        },
+        "get": {
+          "operationId": "get_relation_api_character_relations__relation_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "relation_id",
+              "required": true,
+              "schema": {
+                "title": "Relation Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Relation",
+          "tags": [
+            "character-relations"
+          ]
+        },
+        "put": {
+          "operationId": "update_relation_api_character_relations__relation_id__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "relation_id",
+              "required": true,
+              "schema": {
+                "title": "Relation Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__routers__character_relations__RelationBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Relation",
+          "tags": [
+            "character-relations"
+          ]
+        }
+      },
+      "/api/character-relations/{relation_id}/advance-stage": {
+        "post": {
+          "operationId": "advance_stage_api_character_relations__relation_id__advance_stage_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "relation_id",
+              "required": true,
+              "schema": {
+                "title": "Relation Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "stage_index",
+              "required": true,
+              "schema": {
+                "title": "Stage Index",
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "status",
+              "required": false,
+              "schema": {
+                "default": "done",
+                "title": "Status",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Advance Stage",
+          "tags": [
+            "character-relations"
+          ]
+        }
+      },
+      "/api/characters": {
+        "get": {
+          "operationId": "list_characters_api_characters_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "search",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Search",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "limit",
+              "required": false,
+              "schema": {
+                "default": 50,
+                "title": "Limit",
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "trait",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Trait",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Characters",
+          "tags": [
+            "characters"
+          ]
+        },
+        "post": {
+          "operationId": "create_character_api_characters_post",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "on_conflict",
+              "required": false,
+              "schema": {
+                "default": "skip",
+                "title": "On Conflict",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Character",
+          "tags": [
+            "characters"
+          ]
+        }
+      },
+      "/api/characters/batch-save": {
+        "post": {
+          "operationId": "batch_save_characters_api_characters_batch_save_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Batch Save Characters",
+          "tags": [
+            "characters"
+          ]
+        }
+      },
+      "/api/characters/extract": {
+        "post": {
+          "operationId": "extract_characters_api_characters_extract_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Extract Characters",
+          "tags": [
+            "characters"
+          ]
+        }
+      },
+      "/api/characters/stats": {
+        "get": {
+          "operationId": "get_character_stats_api_characters_stats_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Get Character Stats",
+          "tags": [
+            "characters"
+          ]
+        }
+      },
+      "/api/characters/{char_id}": {
+        "delete": {
+          "operationId": "delete_character_api_characters__char_id__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "char_id",
+              "required": true,
+              "schema": {
+                "title": "Char Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Character",
+          "tags": [
+            "characters"
+          ]
+        },
+        "get": {
+          "operationId": "get_character_api_characters__char_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "char_id",
+              "required": true,
+              "schema": {
+                "title": "Char Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Character",
+          "tags": [
+            "characters"
+          ]
+        },
+        "put": {
+          "operationId": "update_character_api_characters__char_id__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "char_id",
+              "required": true,
+              "schema": {
+                "title": "Char Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Character",
+          "tags": [
+            "characters"
+          ]
+        }
+      },
+      "/api/dialogue/chat": {
+        "post": {
+          "operationId": "chat_api_dialogue_chat_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DialogueRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Chat",
+          "tags": [
+            "dialogue"
+          ]
+        }
+      },
+      "/api/dialogue/quick-prompts": {
+        "get": {
+          "operationId": "quick_prompts_api_dialogue_quick_prompts_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Quick Prompts",
+          "tags": [
+            "dialogue"
+          ]
+        }
+      },
+      "/api/dialogue/summarize": {
+        "post": {
+          "operationId": "summarize_api_dialogue_summarize_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizeRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Summarize",
+          "tags": [
+            "dialogue"
+          ]
+        }
+      },
+      "/api/experience": {
+        "get": {
+          "operationId": "list_events_api_experience_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Events",
+          "tags": [
+            "experience"
+          ]
+        }
+      },
+      "/api/experience/context": {
+        "get": {
+          "operationId": "get_context_api_experience_context_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "chapter",
+              "required": false,
+              "schema": {
+                "default": 1,
+                "title": "Chapter",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Context",
+          "tags": [
+            "experience"
+          ]
+        }
+      },
+      "/api/experience/{event_id}": {
+        "get": {
+          "operationId": "get_event_api_experience__event_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "event_id",
+              "required": true,
+              "schema": {
+                "title": "Event Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Event",
+          "tags": [
+            "experience"
+          ]
+        }
+      },
+      "/api/factions": {
+        "get": {
+          "operationId": "list_factions_api_factions_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "type",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Type",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Factions",
+          "tags": [
+            "factions"
+          ]
+        },
+        "post": {
+          "operationId": "create_faction_api_factions_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactionBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Faction",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/context/build": {
+        "get": {
+          "operationId": "get_faction_context_api_factions_context_build_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Faction Context",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/relations": {
+        "post": {
+          "operationId": "set_relation_api_factions_relations_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__routers__factions__RelationBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Set Relation",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/relations/list": {
+        "get": {
+          "operationId": "get_relations_api_factions_relations_list_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "faction",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Faction",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Relations",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/relations/{rid}": {
+        "delete": {
+          "operationId": "remove_relation_api_factions_relations__rid__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "rid",
+              "required": true,
+              "schema": {
+                "title": "Rid",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Remove Relation",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/{fid}": {
+        "delete": {
+          "operationId": "delete_faction_api_factions__fid__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fid",
+              "required": true,
+              "schema": {
+                "title": "Fid",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Faction",
+          "tags": [
+            "factions"
+          ]
+        },
+        "get": {
+          "operationId": "get_faction_api_factions__fid__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fid",
+              "required": true,
+              "schema": {
+                "title": "Fid",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Faction",
+          "tags": [
+            "factions"
+          ]
+        },
+        "put": {
+          "operationId": "update_faction_api_factions__fid__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fid",
+              "required": true,
+              "schema": {
+                "title": "Fid",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactionBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Faction",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/{fid}/members": {
+        "post": {
+          "operationId": "add_member_api_factions__fid__members_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fid",
+              "required": true,
+              "schema": {
+                "title": "Fid",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Add Member",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/factions/{fid}/members/{name}": {
+        "delete": {
+          "operationId": "remove_member_api_factions__fid__members__name__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fid",
+              "required": true,
+              "schema": {
+                "title": "Fid",
+                "type": "string"
+              }
+            },
+            {
+              "in": "path",
+              "name": "name",
+              "required": true,
+              "schema": {
+                "title": "Name",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Remove Member",
+          "tags": [
+            "factions"
+          ]
+        }
+      },
+      "/api/foreshadowings": {
+        "get": {
+          "operationId": "list_foreshadowings_api_foreshadowings_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Foreshadowings",
+          "tags": [
+            "foreshadowings"
+          ]
+        },
+        "post": {
+          "operationId": "create_foreshadowing_api_foreshadowings_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForeshadowingBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Foreshadowing",
+          "tags": [
+            "foreshadowings"
+          ]
+        }
+      },
+      "/api/foreshadowings/chapter/{chapter}": {
+        "get": {
+          "description": "获取某章节相关的活跃伏笔及上下文字符串。",
+          "operationId": "get_chapter_foreshadowings_api_foreshadowings_chapter__chapter__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "chapter",
+              "required": true,
+              "schema": {
+                "title": "Chapter",
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Chapter Foreshadowings",
+          "tags": [
+            "foreshadowings"
+          ]
+        }
+      },
+      "/api/foreshadowings/{fs_id}": {
+        "delete": {
+          "operationId": "delete_foreshadowing_api_foreshadowings__fs_id__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fs_id",
+              "required": true,
+              "schema": {
+                "title": "Fs Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Foreshadowing",
+          "tags": [
+            "foreshadowings"
+          ]
+        },
+        "get": {
+          "operationId": "get_foreshadowing_api_foreshadowings__fs_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fs_id",
+              "required": true,
+              "schema": {
+                "title": "Fs Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Foreshadowing",
+          "tags": [
+            "foreshadowings"
+          ]
+        },
+        "put": {
+          "operationId": "update_foreshadowing_api_foreshadowings__fs_id__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "fs_id",
+              "required": true,
+              "schema": {
+                "title": "Fs Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForeshadowingBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Foreshadowing",
+          "tags": [
+            "foreshadowings"
+          ]
+        }
+      },
+      "/api/generate/fill-key-points": {
+        "post": {
+          "operationId": "fill_key_points_api_generate_fill_key_points_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Fill Key Points",
+          "tags": [
+            "generate"
+          ]
+        }
+      },
+      "/api/generate/import-outline": {
+        "post": {
+          "operationId": "import_outline_api_generate_import_outline_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Import Outline",
+          "tags": [
+            "generate"
+          ]
+        }
+      },
+      "/api/generate/split-node": {
+        "post": {
+          "operationId": "split_outline_node_api_generate_split_node_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Split Outline Node",
+          "tags": [
+            "generate"
+          ]
+        }
+      },
+      "/api/generate/story-synopsis": {
+        "post": {
+          "operationId": "generate_story_synopsis_api_generate_story_synopsis_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Generate Story Synopsis",
+          "tags": [
+            "generate"
+          ]
+        }
+      },
+      "/api/generate/subsection-descriptions": {
+        "post": {
+          "operationId": "generate_subsection_descriptions_api_generate_subsection_descriptions_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Generate Subsection Descriptions",
+          "tags": [
+            "generate"
+          ]
+        }
+      },
+      "/api/generate/world-setting": {
+        "post": {
+          "operationId": "generate_world_setting_api_generate_world_setting_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Generate World Setting",
+          "tags": [
+            "generate"
+          ]
+        }
+      },
+      "/api/items": {
+        "get": {
+          "operationId": "list_items_api_items_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "owner",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Owner",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Items",
+          "tags": [
+            "items"
+          ]
+        },
+        "post": {
+          "operationId": "create_item_api_items_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Item",
+          "tags": [
+            "items"
+          ]
+        }
+      },
+      "/api/items/inventory/{character_id}": {
+        "get": {
+          "operationId": "character_inventory_api_items_inventory__character_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "character_id",
+              "required": true,
+              "schema": {
+                "title": "Character Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Character Inventory",
+          "tags": [
+            "items"
+          ]
+        }
+      },
+      "/api/items/transactions": {
+        "post": {
+          "operationId": "record_transaction_api_items_transactions_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Record Transaction",
+          "tags": [
+            "items"
+          ]
+        }
+      },
+      "/api/items/{item_id}": {
+        "put": {
+          "operationId": "update_item_api_items__item_id__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "item_id",
+              "required": true,
+              "schema": {
+                "title": "Item Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Item",
+          "tags": [
+            "items"
+          ]
+        }
+      },
+      "/api/map/edges": {
+        "get": {
+          "operationId": "list_edges_api_map_edges_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Edges",
+          "tags": [
+            "map"
+          ]
+        },
+        "post": {
+          "operationId": "create_edge_api_map_edges_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EdgeBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Edge",
+          "tags": [
+            "map"
+          ]
+        }
+      },
+      "/api/map/full": {
+        "get": {
+          "operationId": "full_map_api_map_full_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Full Map",
+          "tags": [
+            "map"
+          ]
+        }
+      },
+      "/api/map/nodes": {
+        "get": {
+          "operationId": "list_nodes_api_map_nodes_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "parent_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Parent Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Nodes",
+          "tags": [
+            "map"
+          ]
+        },
+        "post": {
+          "operationId": "create_node_api_map_nodes_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Node",
+          "tags": [
+            "map"
+          ]
+        }
+      },
+      "/api/map/nodes/{node_id}": {
+        "get": {
+          "operationId": "get_node_api_map_nodes__node_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "node_id",
+              "required": true,
+              "schema": {
+                "title": "Node Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Node",
+          "tags": [
+            "map"
+          ]
+        }
+      },
+      "/api/map/route": {
+        "get": {
+          "operationId": "get_route_api_map_route_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Route",
+          "tags": [
+            "map"
+          ]
+        },
+        "post": {
+          "operationId": "set_route_api_map_route_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Set Route",
+          "tags": [
+            "map"
+          ]
+        }
+      },
+      "/api/rules": {
+        "get": {
+          "operationId": "list_rules_api_rules_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "enabled_only",
+              "required": false,
+              "schema": {
+                "default": false,
+                "title": "Enabled Only",
+                "type": "boolean"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Rules",
+          "tags": [
+            "rules"
+          ]
+        },
+        "post": {
+          "operationId": "create_rule_api_rules_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Rule",
+          "tags": [
+            "rules"
+          ]
+        }
+      },
+      "/api/rules/context": {
+        "get": {
+          "description": "获取注入 prompt 的规则上下文字符串。",
+          "operationId": "get_rules_context_api_rules_context_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Get Rules Context",
+          "tags": [
+            "rules"
+          ]
+        }
+      },
+      "/api/rules/export": {
+        "post": {
+          "operationId": "export_rules_api_rules_export_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Rule Ids"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Export Rules",
+          "tags": [
+            "rules"
+          ]
+        }
+      },
+      "/api/rules/import": {
+        "post": {
+          "operationId": "import_rules_api_rules_import_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Import Rules",
+          "tags": [
+            "rules"
+          ]
+        }
+      },
+      "/api/rules/presets/list": {
+        "get": {
+          "description": "返回所有系统预设规则的简略列表。",
+          "operationId": "list_presets_api_rules_presets_list_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "List Presets",
+          "tags": [
+            "rules"
+          ]
+        }
+      },
+      "/api/rules/{rule_id}": {
+        "delete": {
+          "operationId": "delete_rule_api_rules__rule_id__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "rule_id",
+              "required": true,
+              "schema": {
+                "title": "Rule Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Rule",
+          "tags": [
+            "rules"
+          ]
+        },
+        "get": {
+          "operationId": "get_rule_api_rules__rule_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "rule_id",
+              "required": true,
+              "schema": {
+                "title": "Rule Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Rule",
+          "tags": [
+            "rules"
+          ]
+        },
+        "put": {
+          "operationId": "update_rule_api_rules__rule_id__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "rule_id",
+              "required": true,
+              "schema": {
+                "title": "Rule Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Rule",
+          "tags": [
+            "rules"
+          ]
+        }
+      },
+      "/api/style/analyze": {
+        "post": {
+          "description": "分析参考文本，返回 4 维风格参数。",
+          "operationId": "analyze_style_api_style_analyze_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Analyze Style",
+          "tags": [
+            "style"
+          ]
+        }
+      },
+      "/api/style/preset": {
+        "post": {
+          "description": "获取预设风格。",
+          "operationId": "get_style_preset_api_style_preset_post",
+          "parameters": [
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Style Preset",
+          "tags": [
+            "style"
+          ]
+        }
+      },
+      "/api/subplots": {
+        "get": {
+          "operationId": "list_subplots_api_subplots_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Subplots",
+          "tags": [
+            "subplots"
+          ]
+        },
+        "post": {
+          "operationId": "create_subplot_api_subplots_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubplotBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Subplot",
+          "tags": [
+            "subplots"
+          ]
+        }
+      },
+      "/api/subplots/auto-bind": {
+        "post": {
+          "operationId": "auto_bind_api_subplots_auto_bind_post",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "total_chapters",
+              "required": false,
+              "schema": {
+                "default": 50,
+                "title": "Total Chapters",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Auto Bind",
+          "tags": [
+            "subplots"
+          ]
+        }
+      },
+      "/api/subplots/heat-map": {
+        "get": {
+          "operationId": "heat_map_api_subplots_heat_map_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "total_chapters",
+              "required": false,
+              "schema": {
+                "default": 50,
+                "title": "Total Chapters",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Heat Map",
+          "tags": [
+            "subplots"
+          ]
+        }
+      },
+      "/api/subplots/{subplot_id}": {
+        "delete": {
+          "operationId": "delete_subplot_api_subplots__subplot_id__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "subplot_id",
+              "required": true,
+              "schema": {
+                "title": "Subplot Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Subplot",
+          "tags": [
+            "subplots"
+          ]
+        },
+        "get": {
+          "operationId": "get_subplot_api_subplots__subplot_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "subplot_id",
+              "required": true,
+              "schema": {
+                "title": "Subplot Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Subplot",
+          "tags": [
+            "subplots"
+          ]
+        },
+        "put": {
+          "operationId": "update_subplot_api_subplots__subplot_id__put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "subplot_id",
+              "required": true,
+              "schema": {
+                "title": "Subplot Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubplotBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Subplot",
+          "tags": [
+            "subplots"
+          ]
+        }
+      },
+      "/debug": {
+        "get": {
+          "operationId": "legacy_debug_redirect_debug_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Legacy Debug Redirect"
+        }
+      },
+      "/interactive": {
+        "get": {
+          "operationId": "legacy_interactive_redirect_interactive_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Legacy Interactive Redirect"
+        }
+      },
+      "/result/{task_id}": {
+        "get": {
+          "operationId": "get_task_result_result__task_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Task Result",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/status/{task_id}": {
+        "get": {
+          "operationId": "get_task_status_status__task_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TaskStatus"
+                  }
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Task Status",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/stream/{task_id}": {
+        "get": {
+          "description": "轮询获取任务的流式事件（替代 WebSocket）。\n\n前端每 300-500ms 调用一次，传入上次最后收到的事件 ID。\n返回格式：\n{\n    \"events\": [[\"msg_id\", {\"event\": \"token\", ...}], ...],\n    \"status\": \"running\" | \"completed\" | \"failed\",\n    \"last_id\": \"最新事件 ID\"\n}",
+          "operationId": "stream_events_stream__task_id__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "description": "上一次收到的事件 ID，首次请求传 '0-0'",
+              "in": "query",
+              "name": "last_id",
+              "required": false,
+              "schema": {
+                "default": "0-0",
+                "description": "上一次收到的事件 ID，首次请求传 '0-0'",
+                "title": "Last Id",
+                "type": "string"
+              }
+            },
+            {
+              "description": "每次返回的最大事件数",
+              "in": "query",
+              "name": "count",
+              "required": false,
+              "schema": {
+                "default": 100,
+                "description": "每次返回的最大事件数",
+                "title": "Count",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Stream Events",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks": {
+        "get": {
+          "description": "列出历史任务。",
+          "operationId": "list_tasks_tasks_get",
+          "parameters": [
+            {
+              "in": "query",
+              "name": "limit",
+              "required": false,
+              "schema": {
+                "default": 50,
+                "title": "Limit",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "List Tasks",
+          "tags": [
+            "history"
+          ]
+        },
+        "post": {
+          "description": "创建 draft task，返回 task_id。之后的所有编辑操作都以此 task_id 为锚点。",
+          "operationId": "create_draft_task_tasks_post",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Create Draft Task",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}": {
+        "delete": {
+          "description": "删除任务：清 Redis、SQLite 归档和该任务的向量块。",
+          "operationId": "delete_task_tasks__task_id__delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Task",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}/analyze": {
+        "post": {
+          "description": "写后分析：人物关系图 + 时间链。",
+          "operationId": "analyze_task_tasks__task_id__analyze_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Analyze Task",
+          "tags": [
+            "analysis"
+          ]
+        }
+      },
+      "/tasks/{task_id}/approve-outline": {
+        "post": {
+          "description": "用户审批大纲（兼容旧 API，内部转发到 /decide）。",
+          "operationId": "approve_outline_tasks__task_id__approve_outline_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "action",
+              "required": false,
+              "schema": {
+                "default": "approve",
+                "title": "Action",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "feedback",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "Feedback",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Approve Outline",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}/continue": {
+        "post": {
+          "description": "基于已完成任务续写新章节。\n\nBody:\n    additional_outline: 新增的大纲（节×小节结构），必填\n    target_words_per_section: 每节目标字数，默认沿用前作\n    mode: 'celery' | 'interactive'",
+          "operationId": "continue_writing_tasks__task_id__continue_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Continue Writing",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}/decide": {
+        "post": {
+          "description": "向任务的检查点发送决策并触发继续。\n\n- phase=outline: 大纲审批（action: approve / revise）\n- phase=section: 节完成确认（action: approve / stop）",
+          "operationId": "task_decision_tasks__task_id__decide_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "description": "阶段: 'outline' 或 'section'",
+              "in": "query",
+              "name": "phase",
+              "required": true,
+              "schema": {
+                "description": "阶段: 'outline' 或 'section'",
+                "title": "Phase",
+                "type": "string"
+              }
+            },
+            {
+              "description": "'approve' | 'revise' | 'stop'",
+              "in": "query",
+              "name": "action",
+              "required": false,
+              "schema": {
+                "default": "approve",
+                "description": "'approve' | 'revise' | 'stop'",
+                "title": "Action",
+                "type": "string"
+              }
+            },
+            {
+              "description": "修订反馈（action=revise 时必填）",
+              "in": "query",
+              "name": "feedback",
+              "required": false,
+              "schema": {
+                "default": "",
+                "description": "修订反馈（action=revise 时必填）",
+                "title": "Feedback",
+                "type": "string"
+              }
+            },
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Task Decision",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}/draft": {
+        "get": {
+          "operationId": "get_task_draft_tasks__task_id__draft_get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Task Draft",
+          "tags": [
+            "outline"
+          ]
+        },
+        "put": {
+          "operationId": "save_task_draft_tasks__task_id__draft_put",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Save Task Draft",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/edit-field": {
+        "post": {
+          "operationId": "edit_task_field_tasks__task_id__edit_field_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "query",
+              "name": "field",
+              "required": true,
+              "schema": {
+                "title": "Field",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Edit Task Field",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}/events": {
+        "get": {
+          "description": "获取任务的叙事事件图谱。",
+          "operationId": "get_task_events_tasks__task_id__events_get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Task Events",
+          "tags": [
+            "analysis"
+          ]
+        }
+      },
+      "/tasks/{task_id}/history": {
+        "delete": {
+          "description": "删除任务历史记录。",
+          "operationId": "delete_task_history_tasks__task_id__history_delete",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Delete Task History",
+          "tags": [
+            "history"
+          ]
+        },
+        "get": {
+          "description": "获取单个任务的历史记录详情。",
+          "operationId": "get_task_history_tasks__task_id__history_get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Task History",
+          "tags": [
+            "history"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline": {
+        "get": {
+          "operationId": "get_outline_tasks__task_id__outline_get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Outline",
+          "tags": [
+            "outline"
+          ]
+        },
+        "post": {
+          "operationId": "save_outline_tasks__task_id__outline_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutlineNodesBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Save Outline",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/arc-projection/confirm": {
+        "post": {
+          "description": "Validate and store one review decision without touching character_arcs.",
+          "operationId": "confirm_outline_arc_projection_tasks__task_id__outline_arc_projection_confirm_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArcProjectionConfirmBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Confirm Outline Arc Projection",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/arc-projection/preview": {
+        "post": {
+          "description": "Read-only thin-UI preview; it never mutates outline or production arcs.",
+          "operationId": "preview_outline_arc_projection_tasks__task_id__outline_arc_projection_preview_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArcProjectionPreviewBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Preview Outline Arc Projection",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/budget-advice": {
+        "post": {
+          "description": "Return deterministic advice without reading or mutating task storage.",
+          "operationId": "get_outline_budget_advice_tasks__task_id__outline_budget_advice_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutlineBudgetAdviceBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Outline Budget Advice",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/delete-node": {
+        "post": {
+          "operationId": "stage_delete_node_tasks__task_id__outline_delete_node_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteNodeBody"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Stage Delete Node",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/restore/{version_id}": {
+        "post": {
+          "operationId": "restore_outline_tasks__task_id__outline_restore__version_id__post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "path",
+              "name": "version_id",
+              "required": true,
+              "schema": {
+                "title": "Version Id",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Restore Outline",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/undo-count": {
+        "get": {
+          "operationId": "get_undo_count_tasks__task_id__outline_undo_count_get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Undo Count",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/undo-delete": {
+        "post": {
+          "operationId": "undo_delete_node_tasks__task_id__outline_undo_delete_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Undo Delete Node",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/outline/versions": {
+        "get": {
+          "operationId": "get_outline_versions_tasks__task_id__outline_versions_get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get Outline Versions",
+          "tags": [
+            "outline"
+          ]
+        }
+      },
+      "/tasks/{task_id}/review/continuity": {
+        "post": {
+          "description": "评估任务所有相邻章节之间的承续质量。",
+          "operationId": "review_continuity_tasks__task_id__review_continuity_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Review Continuity",
+          "tags": [
+            "analysis"
+          ]
+        }
+      },
+      "/tasks/{task_id}/revise": {
+        "post": {
+          "operationId": "revise_subsection_tasks__task_id__revise_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviseRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Revise Subsection",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/tasks/{task_id}/state-frame/{section}/{subsection}": {
+        "get": {
+          "operationId": "get_state_frame_tasks__task_id__state_frame__section___subsection__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "path",
+              "name": "section",
+              "required": true,
+              "schema": {
+                "title": "Section",
+                "type": "integer"
+              }
+            },
+            {
+              "in": "path",
+              "name": "subsection",
+              "required": true,
+              "schema": {
+                "title": "Subsection",
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get State Frame",
+          "tags": [
+            "state-frames"
+          ]
+        }
+      },
+      "/tasks/{task_id}/state-frame/{section}/{subsection}/{artifact}": {
+        "get": {
+          "operationId": "get_state_frame_artifact_tasks__task_id__state_frame__section___subsection___artifact__get",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            },
+            {
+              "in": "path",
+              "name": "section",
+              "required": true,
+              "schema": {
+                "title": "Section",
+                "type": "integer"
+              }
+            },
+            {
+              "in": "path",
+              "name": "subsection",
+              "required": true,
+              "schema": {
+                "title": "Subsection",
+                "type": "integer"
+              }
+            },
+            {
+              "in": "path",
+              "name": "artifact",
+              "required": true,
+              "schema": {
+                "title": "Artifact",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Get State Frame Artifact",
+          "tags": [
+            "state-frames"
+          ]
+        }
+      },
+      "/tasks/{task_id}/update-outline": {
+        "post": {
+          "description": "在审批阶段直接替换大纲。\n\n接受树状或扁平格式。树状格式会被扁平化为 [{section, subsections}] 并存两份：\n- outline_tree: 原始树（前端编辑器恢复用）\n- outline: 扁平版（写作管线用）\n\n仅在 status 为 awaiting_outline_approval 或 awaiting_section_confirm 时可用。",
+          "operationId": "update_outline_tasks__task_id__update_outline_post",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "task_id",
+              "required": true,
+              "schema": {
+                "title": "Task Id",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Body",
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Update Outline",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/v2": {
+        "get": {
+          "operationId": "legacy_debug_redirect_v2_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Legacy Debug Redirect"
+        }
+      },
+      "/write": {
+        "post": {
+          "operationId": "create_writing_task_write_post",
+          "parameters": [
+            {
+              "description": "执行模式: 'celery' 或 'interactive'",
+              "in": "query",
+              "name": "mode",
+              "required": false,
+              "schema": {
+                "default": "celery",
+                "description": "执行模式: 'celery' 或 'interactive'",
+                "title": "Mode",
+                "type": "string"
+              }
+            },
+            {
+              "in": "header",
+              "name": "X-API-Key",
+              "required": false,
+              "schema": {
+                "default": "",
+                "title": "X-Api-Key",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/WriteResponse"
+                  }
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "summary": "Create Writing Task",
+          "tags": [
+            "tasks"
+          ]
+        }
+      },
+      "/write-ui": {
+        "get": {
+          "operationId": "legacy_write_ui_redirect_write_ui_get",
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Legacy Write Ui Redirect"
+        }
+      },
+      "/write-ui-v2": {
+        "get": {
+          "description": "新版前端 (v0.9) —— ES模块化架构。",
+          "operationId": "write_ui_v2_page_write_ui_v2_get",
+          "responses": {
+            "200": {
+              "content": {
+                "text/html": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "Successful Response"
+            }
+          },
+          "summary": "Write Ui V2 Page"
+        }
+      }
+    }
+  },
+  "schema_version": "openapi-pre-foundation-v0"
+}

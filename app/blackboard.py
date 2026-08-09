@@ -1,6 +1,7 @@
 import json
 import redis
 from .config import settings
+from .checkpoint_sanitizer import is_credential_field, sanitize_checkpoint
 
 
 class Blackboard:
@@ -172,6 +173,16 @@ class Blackboard:
                     )
                 except (json.JSONDecodeError, TypeError):
                     pass
+        state_dict = sanitize_checkpoint(state_dict)
+        legacy_credential_fields = [
+            field
+            for field in self._redis.hkeys(key)
+            if is_credential_field(
+                field.decode("utf-8") if isinstance(field, bytes) else field
+            )
+        ]
+        if legacy_credential_fields:
+            self._redis.hdel(key, *legacy_credential_fields)
         mapping = {}
         for field, value in state_dict.items():
             mapping[field] = json.dumps(value, ensure_ascii=False, default=str)
@@ -191,7 +202,7 @@ class Blackboard:
                 result[field] = json.loads(val)
             except (json.JSONDecodeError, TypeError):
                 result[field] = val
-        return result
+        return sanitize_checkpoint(result)
 
     def delete_checkpoint(self, task_id: str) -> None:
         self._redis.delete(self.checkpoint_key(task_id))

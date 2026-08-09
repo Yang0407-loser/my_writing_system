@@ -395,8 +395,8 @@ def delete_task(task_id: str):
     """删除任务：清 Redis、SQLite 归档和该任务的向量块。"""
     try:
         bb.delete_checkpoint(task_id)
-        bb._redis.delete(task_id)  # 主 hash
-        bb._redis.delete(f"stream:{task_id}")  # stream key
+        bb.delete(task_id)
+        bb.stream_delete(task_id)
     except Exception:
         logger.warning(f"任务检查点清理失败: {task_id}", exc_info=True)
     try:

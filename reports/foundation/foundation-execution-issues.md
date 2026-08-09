@@ -1,0 +1,16 @@
+# Foundation Execution Issue Ledger
+
+This ledger records issues discovered during the first implementation pass. In
+accordance with the approved execution policy, non-blocking issues remain open
+until Tasks 3-20 have received their initial implementation, then enter the
+central remediation pass. Gate criteria are not relaxed by deferral.
+
+| ID | First observed | Impact | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| FND-001 | Task 2 full-suite diagnostic | The default full suite cannot finish collection because a historical experiment module is absent. | `experiments.world_runtime_writer_canary.wr310_reviewer_real_task_side_by_side` is imported by a collected test but is not present in the worktree. | Deferred to central remediation |
+| FND-002 | Task 2 full-suite diagnostic | With the single collection blocker ignored, 124 legacy tests fail; many depend on unversioned historical/runtime artifacts or secret-bearing local setup. | Diagnostic result: `1396 passed, 124 failed, 17 skipped, 6 warnings`. | Deferred to central remediation |
+| FND-003 | Foundation planning | The mandatory PostgreSQL/Docker integration gate has not yet been proven in this workstation environment. | External service availability is not established by the deterministic unit baseline. | Open; validate at the PostgreSQL gate |
+| FND-004 | Foundation planning | Runtime parity risk: the active local interpreter is Python 3.14 while the plan's production target is Python 3.11. | Baseline commands execute through the existing project virtual environment on Python 3.14. | Open; validate compatibility during final gates |
+| FND-005 | Task 3 Red test | A resume-path exception can be masked by an `UnboundLocalError`, hiding the original failure and weakening diagnostics. | `writing_task` reads `phase_timings` in its exception handler although that local is initialized only on the new-task branch. | Deferred to central remediation |
+| FND-006 | Task 3 directed gate | All five Task 3 assertions pass, but pytest exits 1 during session cleanup because Windows reports the temporary `tasks.db` is still in use. | `tests/conftest.py:39` fails in `shutil.rmtree(_TEST_RUNTIME_DIR)` with `PermissionError [WinError 32]`. | Deferred to central remediation |
+| FND-007 | Task 5 snapshot generation | OpenAPI generation reports a duplicate operation ID, making generated-client naming ambiguous even though the frozen schema is deterministic. | FastAPI warns: `Duplicate Operation ID list_tasks_tasks_get`; both task routers expose a `list_tasks` function on `/tasks`. | Deferred to central remediation |

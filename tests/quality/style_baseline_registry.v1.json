@@ -10,6 +10,8 @@
       "registry_status": "active",
       "artifact_path": "tests/quality/style_baseline.json",
       "artifact_sha256": "b5e9223756a51e812b475e52bbaf462cbe970baa8e3f6476502b77451cc45780",
+      "golden_slice_fixture": "tests/fixtures/foundation_golden_slice_v1.json",
+      "source_sha256": "0B1E3153D81E1CE1A1BAA8D23BDB6A8629BABD29EF29CA381D4922EBB7B42F96",
       "license_or_authorization": {
         "status": "internal_generated_regression_artifact",
         "evidence": "Existing project golden-story fixture; not classified as human-authored reference."
