@@ -285,6 +285,8 @@ git -C E:\writer\my_writing_system-foundation status --short
 
 执行记录（2026-08-09）：已创建分支 `feat/p0-p2-foundation` 与隔离工作树 `E:\writer\my_writing_system-foundation`，起点为 `903c14a`。原工作区中未纳入 checkpoint 的用户资产保持原位。
 
+新鲜基线验证（2026-08-09）：完整 unit 首先因已排除的敏感模块 `experiments/world_runtime_writer_canary/wr310_reviewer_real_task_side_by_side.py` 仍被测试直接导入而产生 1 个 collection error；显式忽略该单测后，其余结果为 `1305 passed / 156 failed / 15 skipped / 2 warnings`。失败主要集中在无凭据实验、缺失敏感 fixture 与历史 hash/provenance/产物耦合。integration 在约 10 分钟内无任何进度摘要、进程处于低 CPU 外部等待，按有界基线策略终止并记录为 hang/timeout，不能记为通过。pytest 生成的缓存和单个未跟踪报告已清理，未修改源码。以上结果是 Task 1 的真实 Red baseline，不把旧工作区参考数冒充新隔离基线。
+
 ### Task 1：隔离测试环境并复现已知失败
 
 **文件：**
