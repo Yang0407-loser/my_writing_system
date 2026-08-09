@@ -12,6 +12,12 @@ from .contracts import CommitArtifact
 
 
 class StateCommitter:
+    """Legacy-only compatibility facade.
+
+    Canonical commits and retries never consult this instance's `_committed`
+    cache; canonical idempotency is enforced by SQL and its external writes are
+    performed by ``LegacySubsectionProjection`` after commit.
+    """
     CHECKPOINT_VERSION = "phase4r-r1"
 
     def __init__(self) -> None:

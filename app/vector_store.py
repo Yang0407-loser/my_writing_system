@@ -63,7 +63,9 @@ class VectorStore:
                 embedding_function=self._embed_fn,
             )
 
-    def add_text(self, text: str, metadata: dict) -> str | None:
+    def add_text(
+        self, text: str, metadata: dict, *, document_id: str | None = None
+    ) -> str | None:
         """Add one non-empty, task-scoped chunk and skip exact duplicates.
 
         Returns the stored/existing document ID.  Empty chunks return ``None``
@@ -94,6 +96,19 @@ class VectorStore:
                     {"content_hash": content_hash},
                 ]
             }
+        if document_id:
+            existing_by_id = self._collection.get(ids=[document_id])
+            existing_ids = existing_by_id.get("ids", []) if existing_by_id else []
+            if existing_ids:
+                # Canonical projection IDs are deterministic. Replace semantics
+                # make a replay converge even if projection metadata evolves.
+                self._collection.upsert(
+                    ids=[document_id],
+                    documents=[normalized_text],
+                    metadatas=[safe_metadata],
+                )
+                return document_id
+
         existing = self._collection.get(where=hash_filter, limit=1)
         existing_ids = existing.get("ids", []) if existing else []
         if existing_ids:
@@ -103,7 +118,7 @@ class VectorStore:
             )
             return existing_ids[0]
 
-        doc_id = str(uuid.uuid4())
+        doc_id = document_id or str(uuid.uuid4())
         self._collection.add(
             ids=[doc_id],
             documents=[normalized_text],

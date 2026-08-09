@@ -261,3 +261,30 @@ class SubsectionHandoverHistoryRecorder:
                 elapsed_ms=(time.perf_counter() - started) * 1000,
             )
             return None
+
+    def capture_canonical_projection(self, envelope: Any) -> str | None:
+        """Persist a handover only from an accepted Canonical revision."""
+
+        observation_payload = dict(
+            envelope.generation_metadata.get("handover_observation") or {}
+        )
+        observation = (
+            HandoverExtractionObservation.model_validate(observation_payload)
+            if observation_payload
+            else HandoverExtractionObservation(
+                executed=bool(envelope.handover_candidate),
+                execution_status=(
+                    "success" if envelope.handover_candidate else "skipped"
+                ),
+                skip_reason=(None if envelope.handover_candidate else "missing"),
+            )
+        )
+        return self.capture_committed(
+            section=envelope.section,
+            subsection=envelope.subsection,
+            output_sha256=envelope.content_hash,
+            prompt_messages_hash=envelope.prompt_hash,
+            commit_idempotency_key=envelope.commit_id,
+            handover_note=envelope.handover_candidate,
+            observation=observation,
+        )

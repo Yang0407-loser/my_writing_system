@@ -47,6 +47,11 @@ from .character_state_propagation import (
 )
 from .subsection_pipeline import SubsectionPipeline
 from .subsection_generator import SubsectionGenerator
+from .legacy_subsection_projection import (
+    LegacyProjectionEnvelope,
+    LegacyProjectionError,
+    LegacySubsectionProjection,
+)
 from .shadow_validation import ShadowBoundaryValidationRunner
 from .post_write_extraction import SharedPostWriteExtractor
 from .shadow_post_write_extraction import ShadowPostWriteExtractionRunner
@@ -128,6 +133,9 @@ __all__ = [
     "SubsectionPipeline",
     "SubsectionPipelineArtifact",
     "SubsectionGenerator",
+    "LegacyProjectionEnvelope",
+    "LegacyProjectionError",
+    "LegacySubsectionProjection",
     "ShadowBoundaryValidationRunner",
     "ShadowPostWriteExtractionRunner",
     "SharedPostWriteExtractor",

@@ -197,6 +197,14 @@ class CanonicalCommitService:
                 metadata_json={
                     "task_id": candidate.task_id,
                     "candidate_hash": candidate.candidate_hash,
+                    "section": candidate.section,
+                    "subsection": candidate.subsection,
+                    "ordinal": candidate.ordinal,
+                    "title": candidate.title,
+                    "topic": candidate.topic,
+                    "prompt_hash": candidate.prompt_hash,
+                    "handover_candidate": candidate.handover_candidate,
+                    "state_frame": candidate.state_frame,
                     "generation_metadata": candidate.generation_metadata,
                 },
             )

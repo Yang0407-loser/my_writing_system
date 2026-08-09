@@ -4,6 +4,7 @@ from app.vector_store import VectorStore
 class FakeCollection:
     def __init__(self):
         self.add_calls = []
+        self.upsert_calls = []
         self.query_calls = []
         self.get_result = {"ids": [], "metadatas": []}
         self.query_result = {
@@ -23,6 +24,9 @@ class FakeCollection:
 
     def add(self, **kwargs):
         self.add_calls.append(kwargs)
+
+    def upsert(self, **kwargs):
+        self.upsert_calls.append(kwargs)
 
     def get(self, **kwargs):
         return self.get_result
@@ -75,6 +79,22 @@ def test_add_text_normalizes_metadata_and_adds_provenance():
     assert len(metadata["content_hash"]) == 64
     assert metadata["source_version"] == 1
     assert metadata["created_at"]
+
+
+def test_add_text_replays_deterministic_document_id_with_replace_semantics():
+    collection = FakeCollection()
+    collection.get_result = {"ids": ["canonical-chunk-fixed"], "metadatas": [{}]}
+    store = make_store(collection)
+
+    result = store.add_text(
+        "正文块",
+        {"task_id": "task-1", "commit_id": "commit-1"},
+        document_id="canonical-chunk-fixed",
+    )
+
+    assert result == "canonical-chunk-fixed"
+    assert collection.add_calls == []
+    assert collection.upsert_calls[0]["ids"] == ["canonical-chunk-fixed"]
 
 
 def test_search_with_meta_traces_coarse_candidates_but_returns_legacy_k():
