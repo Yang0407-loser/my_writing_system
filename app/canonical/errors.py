@@ -19,3 +19,7 @@ class IdempotencyConflict(CanonicalError):
 
 class ProjectionBarrierPending(CanonicalError):
     """Critical projections have not reached the committed canonical state."""
+
+
+class ScopeRequired(CanonicalError):
+    """A canonical operation omitted mandatory tenant or project scope."""
