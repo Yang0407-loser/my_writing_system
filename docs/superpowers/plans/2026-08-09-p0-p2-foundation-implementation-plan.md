@@ -296,11 +296,11 @@ git -C E:\writer\my_writing_system-foundation status --short
 - Create: `tests/unit/test_test_environment_isolation.py`
 - Create: `reports/foundation/p0-test-baseline.md`
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 用 subprocess 在临时 cwd 放置带非默认 `WRITER_HANDOVER_CONTRACT_VERSION` 的 `.env`，同时设置 `WRITER_TESTING=1`；断言导入 `app.config` 后仍取测试明确设置的值或代码默认值，而不是临时 `.env`。
 
-- [ ] **Step 2：证明测试先失败**
+- [x] **Step 2：证明测试先失败**
 
 ```powershell
 & .\.venv\Scripts\python.exe -m pytest tests\unit\test_test_environment_isolation.py -q
@@ -308,13 +308,13 @@ git -C E:\writer\my_writing_system-foundation status --short
 
 预期：当前无条件 `load_dotenv()` 导致失败。
 
-- [ ] **Step 3：最小实现**
+- [x] **Step 3：最小实现**
 
 - `tests/conftest.py` 必须在任何 `app.*` import 前设置 `WRITER_TESTING=1`。
 - 测试显式设置 Handover v1、World Runtime off、WR4 off、Canonical legacy 和临时 SQLite 路径。
 - `app/config.py` 在 `WRITER_TESTING=1` 时不调用 `load_dotenv()`；生产启动行为不变。
 
-- [ ] **Step 4：运行单元与集成基线**
+- [x] **Step 4：运行单元与集成基线**
 
 ```powershell
 & .\.venv\Scripts\python.exe -m pytest tests\unit -q
@@ -322,6 +322,8 @@ git -C E:\writer\my_writing_system-foundation status --short
 ```
 
 将结果写入 `reports/foundation/p0-test-baseline.md`。当前审计参考是 `1452 passed / 28 failed` 与 `54 passed / 1 failed`；执行时以新鲜输出为准。
+
+执行记录（2026-08-09）：dotenv 隔离与全局 SQLite 测试资源清理均完成 Red→Green，定向隔离测试 `3 passed`。完整 unit 仍被 1 个敏感依赖 collection error 阻断；忽略且仅忽略该节点后为 `1308 passed / 156 failed / 15 skipped / 2 warnings`。完整 integration 在 Hugging Face 模型缓存可用且强制 offline 后为 `55 passed / 6 warnings`。详细证据、失败分类和 Gate 解释见 `reports/foundation/p0-test-baseline.md`；Task 1 完成不表示 P0 Gate 通过。
 
 ### Task 2：处理 29 个已解释失败，不用“更新期望值”掩盖回归
 

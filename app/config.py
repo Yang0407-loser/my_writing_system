@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+if os.getenv("WRITER_TESTING") != "1":
+    load_dotenv()
 
 
 class Settings:

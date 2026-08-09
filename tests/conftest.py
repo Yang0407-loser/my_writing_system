@@ -1,7 +1,42 @@
 """共享测试 fixtures。"""
 
+import os
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+
+
+_TEST_RUNTIME_DIR = Path(tempfile.mkdtemp(prefix="writer-tests-"))
+
+# These assignments must run before any app.* import. Tests are isolated from
+# developer .env files and from production/runtime stores by default.
+os.environ["WRITER_TESTING"] = "1"
+os.environ["WRITER_HANDOVER_CONTRACT_VERSION"] = "v1"
+os.environ["WRITER_WORLD_RUNTIME_MODE"] = "off"
+os.environ["RAG_PHASE3_SHADOW"] = "false"
+os.environ["RAG_RERANKER_ENABLED"] = "false"
+os.environ["CANONICAL_COMMIT_MODE"] = "legacy"
+os.environ["CANONICAL_DATABASE_URL"] = (
+    f"sqlite:///{(_TEST_RUNTIME_DIR / 'canonical.db').as_posix()}"
+)
+os.environ["TASK_DB_PATH"] = str(_TEST_RUNTIME_DIR / "tasks.db")
+os.environ["CHARACTER_DB_PATH"] = str(_TEST_RUNTIME_DIR / "characters.db")
+os.environ["CHROMA_DATA_PATH"] = str(_TEST_RUNTIME_DIR / "chroma")
+
 import pytest
 from unittest.mock import MagicMock
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Remove only the per-session test runtime directory owned above."""
+    dependencies = sys.modules.get("app.dependencies")
+    if dependencies is not None:
+        store = getattr(dependencies, "char_store", None)
+        connection = getattr(store, "_conn", None)
+        if connection is not None:
+            connection.close()
+    shutil.rmtree(_TEST_RUNTIME_DIR)
 
 
 @pytest.fixture
