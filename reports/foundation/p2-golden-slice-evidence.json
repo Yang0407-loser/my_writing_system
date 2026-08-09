@@ -1,0 +1,95 @@
+{
+  "api_result": {
+    "commit_status": "committed",
+    "critical_projection_status": "ready",
+    "document_ref": {
+      "commit_id": "75c7bf6a-c24c-468f-a78d-077c5c550da2",
+      "document_id": "document-foundation-golden",
+      "revision_id": "2a5c5b81-e051-47ac-af65-d6f6f48a1bf5"
+    },
+    "non_blocking_projection_status": "ready",
+    "state_version_id": "430b5476-ccbb-4f69-afd5-006d639fc8df"
+  },
+  "backend": "sqlite",
+  "counts": {
+    "chroma_chunks": 6,
+    "critical_projection": 3,
+    "ledger": 1,
+    "non_blocking_projection": 4,
+    "outbox": 7
+  },
+  "duration_ms": 762.439,
+  "fixture_schema_version": "foundation-golden-slice-v1",
+  "gate_eligible": false,
+  "hashes": {
+    "canonical_state": "ba2d1a358a1c653f875ab09744d30e0e53723f11adbca309f1dcf9d22993c0b6",
+    "fixture_body": "3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5",
+    "materialized_document": "3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5",
+    "revision_content": "3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5"
+  },
+  "ids": {
+    "commit_id": "75c7bf6a-c24c-468f-a78d-077c5c550da2",
+    "document_id": "document-foundation-golden",
+    "project_id": "project-foundation-golden",
+    "revision_id": "2a5c5b81-e051-47ac-af65-d6f6f48a1bf5",
+    "state_version_id": "430b5476-ccbb-4f69-afd5-006d639fc8df",
+    "subsection_id": "subsection-foundation-golden-0001",
+    "tenant_id": "tenant-foundation-golden"
+  },
+  "outbox": {
+    "analytics": {
+      "attempts": 1,
+      "barrier_kind": "non_blocking",
+      "status": "published"
+    },
+    "chroma_story_chunks": {
+      "attempts": 1,
+      "barrier_kind": "critical",
+      "status": "published"
+    },
+    "handover_context": {
+      "attempts": 1,
+      "barrier_kind": "critical",
+      "status": "published"
+    },
+    "legacy_world_event": {
+      "attempts": 1,
+      "barrier_kind": "critical",
+      "status": "published"
+    },
+    "markdown_export": {
+      "attempts": 1,
+      "barrier_kind": "non_blocking",
+      "status": "published"
+    },
+    "redis_stream": {
+      "attempts": 1,
+      "barrier_kind": "non_blocking",
+      "status": "published"
+    },
+    "task_preview": {
+      "attempts": 1,
+      "barrier_kind": "non_blocking",
+      "status": "published"
+    }
+  },
+  "runtime": {
+    "checkpoint_fields": [
+      "critical_projection_status",
+      "current_revision_id",
+      "current_state_version_id",
+      "document_id",
+      "generation_attempt_id",
+      "idempotency_key",
+      "last_commit_id"
+    ],
+    "critical_projection_status": "ready",
+    "non_blocking_projection_status": "ready",
+    "phase": "ready"
+  },
+  "schema_version": "foundation-p2-evidence-v1",
+  "secret_scan": {
+    "contains_secret": false,
+    "findings": []
+  }
+}
