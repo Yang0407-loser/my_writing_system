@@ -5,9 +5,11 @@
 ## P0 + P1/P2 Foundation
 
 - 状态：服务端 Foundation 已完成；批准受控的 `internal_required` 内部新任务 dogfood，不代表外部生产就绪。
+- 稳定基线：Foundation 实施落点 `10f4252`；合并基线标签 `narrative-os-foundation-v1`。
 - Canonical 数据链路：Candidate → State Transition → 双 Head 原子提交 → Revision/State/Ledger/Idempotency/Outbox → Critical Projection Barrier。
 - Python 3.11 全量 Gate：`1903 passed, 2 skipped, 5 warnings`；2 个 skip 仅对应未纳入版本库的私有含密钥夹具，PostgreSQL skip 为 0。
 - PostgreSQL 16 Gate：Canonical 集成 `24 passed, 0 skipped`；真实 Golden Slice 为 `backend=postgresql`、`gate_eligible=true`、`phase=ready`。
+- 合并后 smoke：在 `foundation/baseline-2026-08-09` 上重新执行核心 Foundation 测试 `103 passed`，并重新生成/验证 PostgreSQL Golden Slice。
 - 回滚边界：已提交 Canon 始终保持权威；critical projection 未追平时禁止下一小节生成；legacy 回滚只影响尚未开始的写入。
 - 下一阶段：P3A 投影与恢复平台、P3B 鉴权/租户隔离/凭据/CI/可观测性/备份安全门，完成后才可讨论外部生产接入和客户端收尾。
 

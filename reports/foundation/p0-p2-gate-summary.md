@@ -1,7 +1,9 @@
 # P0–P2 Foundation Gate Summary
 
 Date: 2026-08-10
-Branch: `feat/p0-p2-foundation`
+Source branch: `feat/p0-p2-foundation`
+Merged baseline: `foundation/baseline-2026-08-09`
+Stable tag: `narrative-os-foundation-v1`
 Decision: **Approved for controlled `internal_required` internal dogfood only**
 
 ## Final centralized-remediation verification
@@ -15,6 +17,7 @@ Decision: **Approved for controlled `internal_required` internal dogfood only**
 | PostgreSQL Golden Slice | 0 | `backend=postgresql`, `gate_eligible=true`, `phase=ready`; fixed seven-projection manifest published and hashes agree |
 | `verify_foundation_gate.py --evidence reports/foundation/p2-golden-slice-evidence.json` | 0 | `passed=true`, no errors, and the evidence secret scan is clean |
 | rollback drill (included in Canonical integration) | 0 | Canon remained authoritative across mode rollback and an unready critical Barrier |
+| Post-merge Foundation smoke | 0 | `103 passed` on the merged baseline; PostgreSQL Golden Slice regenerated with `gate_eligible=true` and verifier `passed=true` |
 
 ## Directed implementation evidence
 

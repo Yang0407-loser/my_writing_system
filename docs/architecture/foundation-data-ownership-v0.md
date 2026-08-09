@@ -1,10 +1,15 @@
 # Foundation Data Ownership v0
 
+> Implementation status: **DONE** as of 2026-08-10. The controlled internal
+> dogfood baseline is tagged `narrative-os-foundation-v1`; the Foundation
+> implementation tip before baseline documentation is `10f4252`. This status
+> does not grant external production readiness. See
+> `docs/architecture/narrative-os-architecture-status.md`.
+
 ## Purpose and boundary
 
-This document freezes the pre-Foundation ownership reality and the intended P2
-authority boundary. It is an inventory, not a claim that the legacy system
-already has transactional canonical state. In Foundation v0, tenant identifiers
+This document records the pre-Foundation ownership reality and the implemented P2
+authority boundary. In Foundation v0, tenant identifiers
 are mandatory scope keys and audit context; complete tenant isolation remains a
 P3B deliverable.
 
