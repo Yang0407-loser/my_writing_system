@@ -32,7 +32,7 @@ def test_legacy_task_store_is_versioned_and_gains_canonical_refs(tmp_path):
     assert {"document_id", "current_revision_id", "last_commit_id"} <= columns
     assert CANONICAL_REFS_MIGRATION in versions
     assert store.get("old")["draft_preview"] == "legacy"
-    store._conn.close()
+    store.close()
 
 
 def test_task_store_keeps_preview_but_persists_canonical_status_refs(tmp_path):
@@ -58,4 +58,30 @@ def test_task_store_keeps_preview_but_persists_canonical_status_refs(tmp_path):
     assert saved["last_commit_id"] == "commit-1"
     assert saved["state_version_id"] == "state-1"
     assert saved["critical_projection_status"] == "ready"
-    store._conn.close()
+    store.close()
+
+
+def test_recreated_database_at_same_path_reapplies_versioned_migrations(tmp_path):
+    path = tmp_path / "recreated-tasks.db"
+    first = TaskStore(str(path))
+    first.close()
+    path.unlink()
+
+    second = TaskStore(str(path))
+    versions = {
+        row[0]
+        for row in second._conn.execute(
+            "SELECT version FROM task_store_schema_migrations"
+        )
+    }
+
+    assert CANONICAL_REFS_MIGRATION in versions
+    second.close()
+
+
+def test_context_managed_stores_do_not_accumulate_live_connections(tmp_path):
+    for index in range(20):
+        with TaskStore(str(tmp_path / f"tasks-{index}.db")) as store:
+            store.save(f"task-{index}", {})
+
+    assert len(TaskStore._INSTANCES) == 0

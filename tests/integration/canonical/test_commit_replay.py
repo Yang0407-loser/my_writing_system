@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+import pytest
+
 from app.canonical.commit_service import CanonicalCommitService
 from app.canonical.database import build_engine, build_session_factory
 from tests.integration.canonical.helpers import (
@@ -9,6 +11,9 @@ from tests.integration.canonical.helpers import (
     scoped_counts,
     seed_project,
 )
+
+
+pytestmark = pytest.mark.postgres
 
 
 def test_one_hundred_ordered_and_reordered_replays_keep_one_revision(

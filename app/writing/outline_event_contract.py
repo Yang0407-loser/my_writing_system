@@ -12,7 +12,7 @@ import re
 from collections.abc import Iterable, Mapping
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 OUTLINE_EVENT_CONTRACT_VERSION = "outline-event-contract-v1"

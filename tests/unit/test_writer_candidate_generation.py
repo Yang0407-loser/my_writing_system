@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from app.canonical.contracts import CanonicalStateSnapshot
 from app.canonical.hashing import sha256_text
-from app.writing import GenerationController, PromptBuilder
+from app.writing import GenerationArtifact, GenerationController, PromptBuilder
 from app.writing.subsection_generator import SubsectionGenerator
 from tests.unit.test_writing_pipeline import FakeLLM, prepared_input
 
@@ -91,6 +91,29 @@ def test_candidate_uses_injected_state_version_without_latest_head_lookup(monkey
     candidate, *_ = _generate(monkeypatch, snapshot=snapshot)
 
     assert candidate.base_state_version_id == "state-that-was-actually-loaded"
+
+
+def test_handover_and_validation_observe_length_adjusted_candidate(monkeypatch):
+    final_text = "length-adjusted final draft"
+    monkeypatch.setattr(
+        GenerationController,
+        "adjust_length",
+        MagicMock(
+            return_value=GenerationArtifact(
+                raw_output="initial draft",
+                draft=final_text,
+                finish_reason="adjusted",
+                latency_ms=1,
+                output_hash=sha256_text(final_text),
+            )
+        ),
+    )
+
+    candidate, _prepared, _llm, extractor, validator = _generate(monkeypatch)
+
+    assert candidate.draft == final_text
+    assert extractor.call_args.kwargs["section_text"] == final_text
+    validator.assert_called_once_with(final_text)
 
 
 def test_candidate_seam_has_no_runtime_store_mutations(monkeypatch):

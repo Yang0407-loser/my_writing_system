@@ -86,7 +86,7 @@ def test_report_keeps_mandatory_and_arc_chains_separate_and_scoped():
 def test_character_arc_post_check_remains_warning_only():
     source = WRITER.read_text(encoding="utf-8")
     start = source.index("pc = post_check(sub_text, required_events)")
-    end = source.index("adjusted_artifact = self._adjust_generated_length", start)
+    end = source.index("self._adjust_generated_length(", start)
     post_check_block = source[start:end]
     assert "logger.warning" in post_check_block
     assert '"event": "rule_warning"' in post_check_block

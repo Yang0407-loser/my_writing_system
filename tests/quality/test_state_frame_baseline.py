@@ -32,12 +32,13 @@ def test_state_frame_preserves_unknowns_and_excludes_other_responsibilities():
     assert by_id["open_and_conflict"]["counts"]["open_loops"] == 1
 
 
-def test_production_writer_has_no_state_frame_import():
+def test_production_writer_only_uses_state_frame_as_compatibility_persistence():
     tree = ast.parse((ROOT / "app" / "agents" / "writer.py").read_text(encoding="utf-8"))
     imports = "\n".join(
         ast.unparse(node)
         for node in ast.walk(tree)
         if isinstance(node, (ast.Import, ast.ImportFrom))
     )
-    assert "state_frame" not in imports
-    assert "StateFrame" not in imports
+    assert "StateFrameHistoryRecorder" in imports
+    assert "StateFrameCompiler" not in imports
+    assert "StateFrameService" not in imports

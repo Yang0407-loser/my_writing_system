@@ -18,7 +18,6 @@ from .state_frame_v1 import (
     canonical_hash,
     task_id_hash,
 )
-from .world_runtime_contracts import canonical_hash
 
 
 LEGACY_PROJECTION_VERSION = "world-runtime-legacy-projection-wr3.1-v1"

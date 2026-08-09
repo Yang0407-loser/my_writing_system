@@ -263,8 +263,6 @@ def _basic_checks(
 
 def _validate_runtime(manifest: dict[str, Any]) -> None:
     provider = manifest["samples"][0]["provider"]
-    if not settings.LLM_API_KEY:
-        raise ValueError("LLM credential unavailable")
     if settings.LLM_BASE_URL != provider["base_url"]:
         raise ValueError("LLM base URL differs from frozen contract")
     if settings.LLM_MODEL != provider["model"]:
@@ -293,8 +291,7 @@ def execute(output_dir: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
     manifest = load_json(output_dir / "private/locked-manifest.json")
     ledger_path = output_dir / "attempt-ledger.json"
     ledger = load_json(ledger_path)
-    _validate_runtime(manifest)
-    client = get_llm_client()
+    client = None
     fixture = load_json(FIXTURE)
     scenes = {item["scene_id"]: item for item in fixture["scenes"]}
     prev_receipts = _existing_receipts(output_dir)
@@ -338,6 +335,9 @@ def execute(output_dir: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
             raise RuntimeError(
                 f"unexpected ledger state for {sample_id}: {state}"
             )
+        if client is None:
+            _validate_runtime(manifest)
+            client = get_llm_client()
         state["status"] = "attempted"
         state["attempt_count"] = 1
         write_json(ledger_path, ledger)
@@ -456,7 +456,6 @@ def build_public(output_dir: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
         raise ValueError("all 16 generations must succeed")
     manifest = load_json(output_dir / "private/locked-manifest.json")
     fixture = load_json(FIXTURE)
-    scene_map = {item["scene_id"]: item for item in fixture["scenes"]}
     rng = random.Random(secrets.randbits(128))
     public_ids = [f"Q{index:02d}" for index in range(1, 17)]
     rng.shuffle(public_ids)

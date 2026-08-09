@@ -114,28 +114,28 @@ def analyze_task(task_id: str, x_api_key: str = Header("", alias="X-API-Key")):
 
     # 持久化到 SQLite
     try:
-        ts = TaskStore()
-        existing = ts.get(task_id)
-        if existing:
-            ts.save(task_id, {**{
-                "topic": existing.get("topic", ""),
-                "word_count": existing.get("word_count", 0),
-                "section_count": existing.get("section_count", 0),
-                "status": existing.get("status", "completed"),
-                "mode": existing.get("mode", "celery"),
-                "style": existing.get("style_json", {}),
-                "outline": existing.get("outline_json", []),
-                "handover_notes": existing.get("handover_json", []),
-                "characters": existing.get("characters_json", []),
-                "review": existing.get("review_json", {}),
-                "world_setting": existing.get("world_setting", ""),
-                "story_synopsis": existing.get("story_synopsis", ""),
-                "target_words": existing.get("target_words", 0),
-                "world_state": existing.get("world_state_json", {}),
-                "draft": existing.get("draft_preview", ""),
-                "output_file": existing.get("output_file", ""),
-                "events": existing.get("events_json", []),
-            }, "analysis": analysis})
+        with TaskStore() as ts:
+            existing = ts.get(task_id)
+            if existing:
+                ts.save(task_id, {**{
+                    "topic": existing.get("topic", ""),
+                    "word_count": existing.get("word_count", 0),
+                    "section_count": existing.get("section_count", 0),
+                    "status": existing.get("status", "completed"),
+                    "mode": existing.get("mode", "celery"),
+                    "style": existing.get("style_json", {}),
+                    "outline": existing.get("outline_json", []),
+                    "handover_notes": existing.get("handover_json", []),
+                    "characters": existing.get("characters_json", []),
+                    "review": existing.get("review_json", {}),
+                    "world_setting": existing.get("world_setting", ""),
+                    "story_synopsis": existing.get("story_synopsis", ""),
+                    "target_words": existing.get("target_words", 0),
+                    "world_state": existing.get("world_state_json", {}),
+                    "draft": existing.get("draft_preview", ""),
+                    "output_file": existing.get("output_file", ""),
+                    "events": existing.get("events_json", []),
+                }, "analysis": analysis})
     except Exception:
         logger.warning(f"分析结果缓存写入失败 for task {task_id}", exc_info=True)
 

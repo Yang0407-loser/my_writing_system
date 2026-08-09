@@ -57,7 +57,7 @@ def test_shadow_extraction_error_after_commit_cannot_change_saved_text():
 
 def test_writer_hook_is_after_commit_and_does_not_replace_legacy_extractors():
     source = inspect.getsource(Writer.run)
-    commit = source.index("commit_artifact = state_committer.commit_subsection(")
+    commit = source.index("state_committer.commit_subsection(")
     shadow = source.index("shadow_post_write_extractor.observe_committed(")
     relation = source.index("extract_relations_from_text")
     experience = source.index("extract_from_section")

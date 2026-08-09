@@ -84,8 +84,8 @@ def test_capture_hooks_surround_writer_and_follow_commit_observers():
     )
     before = source.index("state_frame_history.capture_before")
     prompt_build = source.index("prompt_artifact = PromptBuilder().build")
-    writer_call = source.index("raw_output = self._generate_with_retry")
-    commit = source.index("commit_artifact = state_committer.commit_subsection")
+    writer_call = source.index("self._generate_with_retry(")
+    commit = source.index("state_committer.commit_subsection(")
     observer = source.index("shadow_post_write_extractor.observe_committed")
     after = source.index("state_frame_history.capture_after")
     assert before < prompt_build < writer_call < commit < observer < after

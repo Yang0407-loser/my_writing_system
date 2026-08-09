@@ -35,11 +35,11 @@ def test_report_captures_fixed_cost_and_canary_limits():
 
 def test_handover_order_is_recorded_but_not_changed():
     source = inspect.getsource(Writer.run)
-    assert source.index("handover_note = self._extract_handover") < source.index(
-        "adjusted_artifact = self._adjust_generated_length"
+    assert source.index("self._extract_handover_with_observation(") < source.index(
+        "self._adjust_generated_length("
     )
     assert source.index("commit_handover_effects") < source.index(
-        "adjusted_artifact = self._adjust_generated_length"
+        "self._adjust_generated_length("
     )
 
 

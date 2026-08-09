@@ -24,12 +24,24 @@ os.environ["TASK_DB_PATH"] = str(_TEST_RUNTIME_DIR / "tasks.db")
 os.environ["CHARACTER_DB_PATH"] = str(_TEST_RUNTIME_DIR / "characters.db")
 os.environ["CHROMA_DATA_PATH"] = str(_TEST_RUNTIME_DIR / "chroma")
 
-import pytest
-from unittest.mock import MagicMock
+# Historical quality audits are read-only and resolve their approved local
+# fixture by hash. Keep the private database out of version control while
+# making it available inside the isolated per-session runtime when present.
+_LOCAL_TASK_FIXTURE = Path(__file__).resolve().parents[1] / "tasks.db"
+if _LOCAL_TASK_FIXTURE.exists():
+    shutil.copy2(_LOCAL_TASK_FIXTURE, _TEST_RUNTIME_DIR / "tasks.db")
+
+import pytest  # noqa: E402
+from unittest.mock import MagicMock  # noqa: E402
 
 
 def pytest_sessionfinish(session, exitstatus):
     """Remove only the per-session test runtime directory owned above."""
+    task_store = sys.modules.get("app.task_store")
+    if task_store is not None:
+        store_class = getattr(task_store, "TaskStore", None)
+        if store_class is not None:
+            store_class.close_all()
     dependencies = sys.modules.get("app.dependencies")
     if dependencies is not None:
         store = getattr(dependencies, "char_store", None)
@@ -185,8 +197,6 @@ def mock_redis_store(mocker):
     mocker.patch("app.blackboard.Blackboard._redis", new_callable=lambda: fr)
     # Also need to mock the connection in blackboard's __init__
     import app.blackboard
-    original = app.blackboard.Blackboard.__init__
-
     def mock_init(self):
         self._redis = fr
 

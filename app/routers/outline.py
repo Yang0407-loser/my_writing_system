@@ -9,10 +9,9 @@ import logging
 import redis
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from ..config import settings
 
 logger = logging.getLogger(__name__)
-
-from ..config import settings
 
 router = APIRouter(tags=["outline"])
 
@@ -466,8 +465,8 @@ def get_outline(task_id: str):
     try:
         from ..task_store import TaskStore
         from ..config import settings as _settings
-        ts = TaskStore(_settings.TASK_DB_PATH)
-        record = ts.get(task_id)
+        with TaskStore(_settings.TASK_DB_PATH) as ts:
+            record = ts.get(task_id)
         if record:
             saved_outline = record.get("outline_json") or []
             if saved_outline and isinstance(saved_outline, list) and len(saved_outline) > 0:

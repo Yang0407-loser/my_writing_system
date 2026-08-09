@@ -63,10 +63,10 @@
   },
   "capacity": {
     "typical": {"characters": 148, "estimated_tokens": 127},
-    "worst_legal": {"characters": 452, "estimated_tokens": 444},
+    "worst_legal": {"characters": 452, "estimated_tokens": 474},
     "wrapper_tokens": 29,
     "output_cap_tokens": 600,
-    "worst_case_safety_margin_tokens": 156,
+    "worst_case_safety_margin_tokens": 126,
     "typical_gate_passed": true,
     "worst_gate_passed": true,
     "safety_margin_gate_passed": true,

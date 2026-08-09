@@ -74,6 +74,31 @@ def test_non_database_scheme_is_rejected():
         CanonicalSettings.from_env(_env(CANONICAL_DATABASE_URL="redis://localhost/0"))
 
 
+def test_internal_required_rejects_sqlite_outside_tests():
+    with pytest.raises(ValueError, match="requires PostgreSQL"):
+        CanonicalSettings.from_env(
+            {
+                "WRITER_TESTING": "0",
+                "CANONICAL_DATABASE_URL": "sqlite:///./production.db",
+                "CANONICAL_COMMIT_MODE": "internal_required",
+            }
+        )
+
+
+def test_internal_required_accepts_postgres_outside_tests():
+    configured = CanonicalSettings.from_env(
+        {
+            "WRITER_TESTING": "0",
+            "CANONICAL_DATABASE_URL": (
+                "postgresql+psycopg://writer:secret@postgres:5432/writer"
+            ),
+            "CANONICAL_COMMIT_MODE": "internal_required",
+        }
+    )
+
+    assert configured.commit_mode == "internal_required"
+
+
 def test_rollout_route_is_exact_and_pre_foundation_resume_stays_legacy():
     canary = CanonicalSettings.from_env(
         _env(

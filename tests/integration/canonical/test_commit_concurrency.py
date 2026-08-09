@@ -3,6 +3,8 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
+import pytest
+
 from app.canonical.commit_service import CanonicalCommitService
 from app.canonical.database import build_engine, build_session_factory
 from tests.integration.canonical.helpers import (
@@ -10,6 +12,9 @@ from tests.integration.canonical.helpers import (
     scoped_counts,
     seed_project,
 )
+
+
+pytestmark = pytest.mark.postgres
 
 
 def _commit_once(database_url, prepared, key):

@@ -1,15 +1,14 @@
-import os
-import re
 import uuid
 import logging
 from fastapi import APIRouter, Header, HTTPException, Query
 
-logger = logging.getLogger(__name__)
 from ..models import WriteRequest, WriteResponse, TaskStatus, ReviseRequest
 from ..dependencies import bb
 from ..task_store import TaskStore
 from ..coordinator import writing_task
 from ..celery_app import celery_app
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["tasks"])
 
@@ -304,7 +303,8 @@ def revise_subsection(task_id: str, req: ReviseRequest, x_api_key: str = Header(
     from ..agents.writer import Writer
     from ..utils.llm_client import set_api_key
     import re as _regex
-    if x_api_key: set_api_key(x_api_key)
+    if x_api_key:
+        set_api_key(x_api_key)
     writer = Writer()
 
     draft = data.get("draft", "")
@@ -377,7 +377,6 @@ def continue_writing(task_id: str, body: dict, x_api_key: str = Header("", alias
 
     # 加载前作状态
     prev_checkpoint = bb.load_checkpoint(task_id) or {}
-    prev_draft_map = prev_checkpoint.get("draft", {})
     prev_section_texts = prev_checkpoint.get("section_texts", {})
     assembled_prev = "\n\n".join(
         prev_section_texts.get(str(i), "") for i in sorted(int(k) for k in prev_section_texts.keys())
@@ -418,13 +417,6 @@ def continue_writing(task_id: str, body: dict, x_api_key: str = Header("", alias
 
 # ── 任务列表 / 删除 ──────────────────────────────────────────────
 
-@router.get("/tasks")
-def list_tasks():
-    """列出所有历史任务。"""
-    ts = TaskStore()
-    return {"tasks": ts.list_all()}
-
-
 @router.delete("/tasks/{task_id}")
 def delete_task(task_id: str):
     """删除任务：清 Redis、SQLite 归档和该任务的向量块。"""
@@ -436,7 +428,10 @@ def delete_task(task_id: str):
         logger.warning(f"任务检查点清理失败: {task_id}", exc_info=True)
     try:
         ts = TaskStore()
-        ts.delete(task_id)
+        try:
+            ts.delete(task_id)
+        finally:
+            ts.close()
     except Exception:
         logger.warning(f"任务历史删除失败: {task_id}", exc_info=True)
     try:

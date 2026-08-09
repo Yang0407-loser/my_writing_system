@@ -59,8 +59,8 @@ def canonical_session(tmp_path):
             genesis_state_version_id="state-genesis",
         )
         repo.create_document("document-1", "Document")
-        repo.create_subsection("subsection-1", "document-1", 1)
-        repo.create_subsection("subsection-2", "document-1", 2)
+        repo.create_subsection("subsection-1", "document-1", 1, 1, 1)
+        repo.create_subsection("subsection-2", "document-1", 2, 1, 2)
         session.commit()
         yield session
     engine.dispose()
@@ -199,6 +199,41 @@ def test_stale_revision_is_rejected(canonical_session):
 
     with pytest.raises(RevisionConflict):
         service.commit(stale, "stale-key")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("document_id", "other-document"),
+        ("ordinal", 2),
+        ("section", 2),
+        ("subsection", 2),
+    ],
+)
+def test_candidate_binding_must_match_locked_subsection(
+    canonical_session, field, value
+):
+    prepared = _prepared(canonical_session)
+    mismatched = prepared.candidate.model_copy(update={field: value})
+    # model_copy intentionally bypasses the factory hash recalculation; rebuild
+    # through create so this test reaches the locked-row binding guard.
+    payload = mismatched.model_dump(
+        exclude={"candidate_hash", "draft_hash", "created_at"}
+    )
+    candidate = SubsectionCandidate.create(**payload)
+    transition = LegacyStateTransitionAdapter().compile(
+        base_state=_base_state(canonical_session), candidate=candidate
+    )
+
+    with pytest.raises(RevisionConflict, match="binding"):
+        CanonicalCommitService(
+            canonical_session, "tenant-1", "project-1"
+        ).commit(
+            PreparedCanonicalCommit(
+                candidate=candidate, state_transition=transition
+            ),
+            f"binding-{field}",
+        )
 
 
 def test_state_head_conflict_rejects_other_unchanged_subsection(canonical_session):

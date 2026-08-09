@@ -13,7 +13,6 @@ from app.canonical.database import build_engine, build_session_factory
 from app.canonical.hashing import sha256_text
 from app.canonical.models import (
     CanonicalCommit,
-    CanonicalStateVersion,
     DocumentRevision,
     IdempotencyRecord,
     OutboxEvent,
@@ -37,7 +36,11 @@ def seed_project(database_url, tenant_id, project_id, *, subsection_count=2):
         repo.create_document(document_id, "Concurrency")
         for ordinal in range(1, subsection_count + 1):
             repo.create_subsection(
-                f"subsection-{project_id}-{ordinal}", document_id, ordinal
+                f"subsection-{project_id}-{ordinal}",
+                document_id,
+                ordinal,
+                1,
+                ordinal,
             )
         session.commit()
     engine.dispose()

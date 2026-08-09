@@ -7,13 +7,14 @@ import pytest
 from app.canonical.commit_service import PROJECTION_MANIFEST
 from app.canonical.contracts import CanonicalStateSnapshot
 from app.canonical.errors import RevisionConflict
-from app.canonical.repositories import CanonicalRepository
 from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
     CanonicalSubsectionRuntime,
     canonical_idempotency_key,
 )
-from tests.unit.canonical.test_commit_service import _prepared, canonical_session
+from tests.unit.canonical.test_commit_service import _prepared
+
+pytest_plugins = ["tests.unit.canonical.test_commit_service"]
 
 
 def _command(**overrides):

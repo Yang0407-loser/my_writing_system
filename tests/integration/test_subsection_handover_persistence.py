@@ -103,7 +103,7 @@ def test_checkpoint_mirror_preserves_legacy_projection():
     assert legacy_checkpoint_projection(restored) == legacy
 
 
-def test_task_store_analysis_merge_read_only_restart_and_no_schema_change(
+def test_task_store_analysis_merge_read_only_restart_and_additive_schema(
     tmp_path,
 ):
     _, _, history = _capture_four()
@@ -121,7 +121,18 @@ def test_task_store_analysis_merge_read_only_restart_and_no_schema_change(
         "analysis": merged,
         "handover_notes": legacy_handover,
     })
-    store._conn.close()
+    store.close()
+
+    connection = sqlite3.connect(db_path)
+    schema_before_read = {
+        row[0]: tuple(
+            connection.execute(f"PRAGMA table_info({row[0]})").fetchall()
+        )
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+    }
+    connection.close()
 
     recovered = load_task_history_read_only(str(db_path), "task")
     assert recovered is not None
@@ -131,7 +142,7 @@ def test_task_store_analysis_merge_read_only_restart_and_no_schema_change(
     assert task["analysis_json"]["existing_metric"] == {"value": 1}
     assert "state_frame_history_v1" in task["analysis_json"]
     assert task["handover_json"] == legacy_handover
-    reopened._conn.close()
+    reopened.close()
 
     connection = sqlite3.connect(db_path)
     columns = {
@@ -144,9 +155,18 @@ def test_task_store_analysis_merge_read_only_restart_and_no_schema_change(
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()
     }
+    schema_after_read = {
+        row[0]: tuple(
+            connection.execute(f"PRAGMA table_info({row[0]})").fetchall()
+        )
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+    }
     connection.close()
     assert SUBSECTION_HANDOVER_HISTORY_KEY not in columns
-    assert tables == {"task_history"}
+    assert tables == {"task_history", "task_store_schema_migrations"}
+    assert schema_after_read == schema_before_read
 
 
 def test_writer_hook_order_and_legacy_consumers_remain_separate():

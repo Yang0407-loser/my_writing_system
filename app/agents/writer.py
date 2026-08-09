@@ -24,7 +24,7 @@ from ..style_evaluation import StyleDriftTracker
 from ..utils.json_parser import parse_json
 from ..config import settings
 from ..world_state import WorldStateManager
-from ..narrative_event import EventGraph, rank_and_fill, format_events_for_prompt
+from ..narrative_event import EventGraph, format_events_for_prompt
 from ..rule_checks import pre_check, post_check
 from ..retrieval_observability import measure_retrieval_usage
 from ..retrieval_pipeline import QueryPlanner, ShadowRetriever
@@ -149,6 +149,12 @@ class Writer(BaseAgent):
 
     def __init__(self):
         super().__init__(model=settings.WRITER_LLM_MODEL)
+        self._canonical_subsection_executor = None
+
+    def bind_canonical_subsection_executor(self, executor) -> None:
+        """Bind a Coordinator-owned executor without exposing its DB session."""
+
+        self._canonical_subsection_executor = executor
 
     def generate_subsection_candidate(self, **kwargs):
         """Canonical facade for one side-effect-free subsection generation.
@@ -386,8 +392,10 @@ class Writer(BaseAgent):
             if n > 0:
                 indices = set()
                 indices.add(0)
-                if n > 1: indices.add(n - 1)
-                if n > 3: indices.add(n // 2)
+                if n > 1:
+                    indices.add(n - 1)
+                if n > 3:
+                    indices.add(n // 2)
                 for i in [2, n - 2, n // 4, 3 * n // 4]:
                     if 0 <= i < n and len(indices) < 5:
                         indices.add(i)
@@ -411,6 +419,21 @@ class Writer(BaseAgent):
         if total_kp == 0 and total_desc == 0:
             logger.warning(f"[{task_id[:8]}] 大纲缺少 key_points 和 description，"
                           f"将从标题自动生成约束（约束力较弱）。建议为每个大纲节点添加关键事件。")
+
+        subsection_ordinals = {
+            (
+                int(section.get("section", 0)),
+                int(subsection.get("subsection", 0)),
+            ): ordinal
+            for ordinal, (section, subsection) in enumerate(
+                (
+                    (section, subsection)
+                    for section in outline
+                    for subsection in section.get("subsections", [])
+                ),
+                start=1,
+            )
+        }
 
         sec_idx = 0
         while sec_idx < len(outline):
@@ -744,7 +767,8 @@ class Writer(BaseAgent):
                     try:
                         from ..faction_store import build_faction_context
                         fc_ctx = build_faction_context(task_id, section_num)
-                        if fc_ctx: parts.append(fc_ctx)
+                        if fc_ctx:
+                            parts.append(fc_ctx)
                     except Exception:
                         logger.warning(
                             f"[{task_id[:8]}] 势力上下文加载失败 (第{section_num}.{sub_num}节)，fallback=skip",
@@ -753,7 +777,8 @@ class Writer(BaseAgent):
                     try:
                         from ..map_manager import build_location_context
                         lc_ctx = build_location_context(task_id)
-                        if lc_ctx: parts.append(lc_ctx)
+                        if lc_ctx:
+                            parts.append(lc_ctx)
                     except Exception:
                         logger.warning(
                             f"[{task_id[:8]}] 地图上下文加载失败 (第{section_num}.{sub_num}节)，fallback=skip",
@@ -762,7 +787,8 @@ class Writer(BaseAgent):
                     try:
                         from ..item_manager import build_item_context
                         ic_ctx = build_item_context(task_id)
-                        if ic_ctx: parts.append(ic_ctx)
+                        if ic_ctx:
+                            parts.append(ic_ctx)
                     except Exception:
                         logger.warning(
                             f"[{task_id[:8]}] 物品上下文加载失败 (第{section_num}.{sub_num}节)，fallback=skip",
@@ -1096,9 +1122,19 @@ class Writer(BaseAgent):
                     prepared_context_fields=prompt_values,
                     source_manifest=source_manifest,
                 )
+                canonical_subsection_id = str(
+                    sub.get("canonical_subsection_id") or sub.get("id") or ""
+                )
+                canonical_selected = bool(
+                    self._canonical_subsection_executor
+                    and self._canonical_subsection_executor.selects(
+                        task_id=task_id,
+                        subsection_id=canonical_subsection_id,
+                    )
+                )
                 subsection_pipeline = SubsectionPipeline(prepared)
                 state_frame_before_id = None
-                if state_frame_history is not None:
+                if state_frame_history is not None and not canonical_selected:
                     before_source_hash = hashlib.sha256(
                         json.dumps(
                             source_manifest,
@@ -1117,14 +1153,13 @@ class Writer(BaseAgent):
                 )
                 execution_contract_application = None
                 scene_spec_application = None
-                if execution_contract_controller.enabled or scene_spec_canary.enabled:
-                    next_subsection = next(
-                        (
-                            item for item in subsections
-                            if int(item.get("subsection", 0)) == sub_num + 1
-                        ),
-                        None,
-                    )
+                next_subsection = next(
+                    (
+                        item for item in subsections
+                        if int(item.get("subsection", 0)) == sub_num + 1
+                    ),
+                    None,
+                )
                 if execution_contract_controller.mode == "canary":
                     execution_contract_application = execution_contract_controller.apply(
                         prompt_artifact,
@@ -1162,16 +1197,51 @@ class Writer(BaseAgent):
                 subsection_pipeline.record_prompt(prompt_artifact)
                 messages = prompt_artifact.messages
                 input_tokens_estimate = prompt_artifact.estimated_tokens
-                if state_frame_history is not None:
+                if state_frame_history is not None and not canonical_selected:
                     state_frame_history.bind_prompt_hash(
                         state_frame_before_id,
                         prompt_artifact.messages_hash,
                     )
 
+                canonical_outcome = None
+                if canonical_selected:
+                    def _canonical_post_validator(draft):
+                        warnings = (
+                            list(post_check(draft, required_events).get("warnings", []))
+                            if required_events
+                            else []
+                        )
+                        return {"complete": True, "warnings": warnings}
+
+                    canonical_outcome = self._canonical_subsection_executor.execute(
+                        prepared=prepared,
+                        subsection_id=canonical_subsection_id,
+                        ordinal=subsection_ordinals[(section_num, sub_num)],
+                        title=sub_title,
+                        topic=topic,
+                        mandatory_events_text=mandatory_events,
+                        token_by_source=context_token_estimates,
+                        characters=characters,
+                        previous_texts=previous_sub_texts,
+                        prev_sub_text=(
+                            previous_sub_texts[-1] if previous_sub_texts else ""
+                        ),
+                        target_goal=prepared.outline_target,
+                        character_context=character_context,
+                        event_graph=event_graph,
+                        current_subsection=sub,
+                        next_subsection=next_subsection,
+                        state_frame=None,
+                        post_validator=_canonical_post_validator,
+                    )
+
                 # --- LLM 调用（支持重试） ---
                 t_llm_start = time.time()
                 logger.info(f"[{task_id[:8]}] 第{section_num}.{sub_num}小节 LLM 开始 (max_tokens={call_max_tokens})")
-                raw_output = self._generate_with_retry(
+                raw_output = (
+                    canonical_outcome.draft
+                    if canonical_outcome is not None
+                    else self._generate_with_retry(
                     messages=messages,
                     call_max_tokens=call_max_tokens,
                     stream_callback=stream_callback,
@@ -1182,7 +1252,8 @@ class Writer(BaseAgent):
                     previous_texts=previous_sub_texts,
                     prev_sub_text=previous_sub_texts[-1] if previous_sub_texts else "",
                     target_goal=f"第{section_num}节{sec.get('title','')}: {sub_desc or '、'.join(key_points)}",
-                    task_id=task_id,
+                        task_id=task_id,
+                    )
                 )
                 t_llm = time.time() - t_llm_start
                 out_chars = count_chinese_chars(raw_output)
@@ -1230,7 +1301,12 @@ class Writer(BaseAgent):
                             exc_info=True,
                         )
                 handover_note, handover_observation = (
-                    self._extract_handover_with_observation(
+                    (
+                        canonical_outcome.handover_note,
+                        canonical_outcome.handover_observation,
+                    )
+                    if canonical_outcome is not None
+                    else self._extract_handover_with_observation(
                         sub_text,
                         section_num,
                         sub_num,
@@ -1255,17 +1331,20 @@ class Writer(BaseAgent):
                     )
                 )
                 backref = handover_note.get("found_contradictions", "") if handover_note else ""
-                state_committer.commit_handover_effects(
-                    idempotency_key=f"handover-effects:{task_id}:{section_num}:{sub_num}",
-                    handover_note=handover_note,
-                    event_graph=event_graph,
-                    world_state=world_state,
-                    world_state_enabled=settings.ENABLE_WORLD_STATE,
-                    task_id=task_id,
-                    section=section_num,
-                    subsection=sub_num,
-                    logger=logger,
-                )
+                if canonical_outcome is None:
+                    state_committer.commit_handover_effects(
+                        idempotency_key=(
+                            f"handover-effects:{task_id}:{section_num}:{sub_num}"
+                        ),
+                        handover_note=handover_note,
+                        event_graph=event_graph,
+                        world_state=world_state,
+                        world_state_enabled=settings.ENABLE_WORLD_STATE,
+                        task_id=task_id,
+                        section=section_num,
+                        subsection=sub_num,
+                        logger=logger,
+                    )
 
                 # --- 写作后规则检查 ---
                 validation_result = {"complete": True, "warnings": []}
@@ -1283,18 +1362,29 @@ class Writer(BaseAgent):
                             blackboard.xadd_event(task_id, {"event": "rule_warning", "section": section_num, "subsection": sub_num, "warnings": pc["warnings"]})
 
                 # --- 长度与句尾控制（R1：调用参数和顺序保持原样） ---
-                adjusted_artifact = self._adjust_generated_length(
-                    sub_text,
-                    target_words=target_words,
-                    call_max_tokens=call_max_tokens,
-                    stream_callback=stream_callback,
-                    section_num=section_num,
-                    sub_num=sub_num,
-                    task_id=task_id,
+                adjusted_artifact = (
+                    canonical_outcome.generation_artifact
+                    if canonical_outcome is not None
+                    else self._adjust_generated_length(
+                        sub_text,
+                        target_words=target_words,
+                        call_max_tokens=call_max_tokens,
+                        stream_callback=stream_callback,
+                        section_num=section_num,
+                        sub_num=sub_num,
+                        task_id=task_id,
+                    )
                 )
-                initial_artifact = self._last_generation_artifact
+                initial_artifact = (
+                    canonical_outcome.generation_artifact
+                    if canonical_outcome is not None
+                    else self._last_generation_artifact
+                )
                 sub_text = adjusted_artifact.draft
-                generation_artifact = GenerationArtifact(
+                generation_artifact = (
+                    canonical_outcome.generation_artifact
+                    if canonical_outcome is not None
+                    else GenerationArtifact(
                     raw_output=initial_artifact.raw_output,
                     draft=sub_text,
                     generation_attempts=(
@@ -1304,6 +1394,7 @@ class Writer(BaseAgent):
                     finish_reason=adjusted_artifact.finish_reason,
                     latency_ms=initial_artifact.latency_ms + adjusted_artifact.latency_ms,
                     output_hash=adjusted_artifact.output_hash,
+                    )
                 )
                 subsection_pipeline.record_generation(generation_artifact)
                 subsection_pipeline.record_validation(validation_result)
@@ -1401,13 +1492,21 @@ class Writer(BaseAgent):
                 full_draft += f"【{sub_title}】\n{sub_text}\n\n"
                 previous_sub_texts.append(sub_text)  # P2: 追踪用于重复检测
 
-                state_committer.commit_local_handover(
-                    idempotency_key=f"handover-local:{task_id}:{section_num}:{sub_num}",
-                    handover_note=handover_note,
-                    section_handover_parts=section_handover_parts,
-                    backref=backref,
-                    backref_suggestions=backref_suggestions,
-                )
+                if canonical_outcome is not None:
+                    if handover_note:
+                        section_handover_parts.append(handover_note)
+                    if backref:
+                        backref_suggestions.extend(backref)
+                else:
+                    state_committer.commit_local_handover(
+                        idempotency_key=(
+                            f"handover-local:{task_id}:{section_num}:{sub_num}"
+                        ),
+                        handover_note=handover_note,
+                        section_handover_parts=section_handover_parts,
+                        backref=backref,
+                        backref_suggestions=backref_suggestions,
+                    )
                 # The next subsection needs the latest local end-state now;
                 # waiting until section end leaves same-section scenes with
                 # only raw prose and no structured continuity boundary.
@@ -1426,7 +1525,7 @@ class Writer(BaseAgent):
                     from ..ai_artifact_detector import analyze_text
                     ai_result = analyze_text(sub_text)
                     if blackboard:
-                        bb_key = f"ai_detect_log"
+                        bb_key = "ai_detect_log"
                         log = blackboard.get(task_id, bb_key) or []
                         if isinstance(log, str):
                             log = []
@@ -1464,13 +1563,16 @@ class Writer(BaseAgent):
                 if rag_metadata_provider is not None:
                     try:
                         rag_metadata = rag_metadata_provider(section_num, sub_num)
-                    except Exception as exc:
+                    except Exception:
                         logger.warning(
                             f"[{task_id[:8]}] rag_metadata provider failed "
                             f"(section={section_num}.{sub_num}), fallback=legacy",
                             exc_info=True,
                         )
-                commit_artifact = state_committer.commit_subsection(
+                commit_artifact = (
+                    canonical_outcome.commit_artifact
+                    if canonical_outcome is not None
+                    else state_committer.commit_subsection(
                     idempotency_key=f"{task_id}:{section_num}:{sub_num}",
                     source_hash=prompt_artifact.messages_hash,
                     draft=sub_text,
@@ -1485,7 +1587,8 @@ class Writer(BaseAgent):
                     topic=topic,
                     stream_callback=stream_callback,
                     token_usage_provider=_token_usage_provider,
-                    rag_metadata=rag_metadata,
+                        rag_metadata=rag_metadata,
+                    )
                 )
                 if commit_artifact.warnings:
                     logger.warning(f"[{task_id[:8]}] token 消耗写入黑板失败")
@@ -1512,7 +1615,7 @@ class Writer(BaseAgent):
                     source_manifest=prompt_artifact.source_manifest,
                     known_context=post_write_extraction_context,
                 )
-                if state_frame_history is not None:
+                if state_frame_history is not None and canonical_outcome is None:
                     state_frame_history.capture_after(
                         section=section_num,
                         subsection=sub_num,
@@ -1522,7 +1625,10 @@ class Writer(BaseAgent):
                         commit_idempotency_key=commit_artifact.idempotency_key,
                         before_record_id=state_frame_before_id,
                     )
-                if subsection_handover_history is not None:
+                if (
+                    subsection_handover_history is not None
+                    and canonical_outcome is None
+                ):
                     subsection_handover_history.capture_committed(
                         section=section_num,
                         subsection=sub_num,
@@ -1693,7 +1799,8 @@ class Writer(BaseAgent):
                         notified = blackboard.wait_for_notification(
                             task_id, "outline_updated", timeout=60)
                         if blackboard.get(task_id, "status") == "stopped":
-                            should_stop = True; break
+                            should_stop = True
+                            break
                         if not notified:
                             # 每 60s 超时检查一次，累计 10 分钟后退出
                             _waited = getattr(self, '_wait_deadline', 0) or 0
@@ -1715,8 +1822,10 @@ class Writer(BaseAgent):
                                 self._wait_deadline = 0
                                 blackboard.set(task_id, "status", "writing")
                                 logger.info(f"[{task_id[:8]}] 检测到 {_new_queued} 个新排队章节，继续写作")
-                                _should_exit = False; break
-                    if _should_exit: break
+                                _should_exit = False
+                                break
+                    if _should_exit:
+                        break
 
         return {
             "draft": full_draft.strip(),

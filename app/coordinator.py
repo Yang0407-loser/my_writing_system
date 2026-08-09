@@ -16,11 +16,11 @@ from .checkpoint_sanitizer import sanitize_checkpoint
 from .vector_store import VectorStore
 from .embedding.factory import preflight_embedding_backend
 from .world_state import WorldStateManager
-from .narrative_event import EventGraph, NarrativeEvent
+from .narrative_event import EventGraph
 from .utils.prompt_templates import OUTLINE_REVIEW_PROMPT
 from .utils.json_parser import parse_json
 from .utils.word_counter import count_chinese_chars
-from .utils.llm_client import set_api_key, reset_token_counter, get_cumulative_tokens, get_token_breakdown, set_cost_label
+from .utils.llm_client import set_api_key, reset_token_counter, get_cumulative_tokens, get_token_breakdown
 from .config import CanonicalSettings, settings, set_task_id
 from .character_arc_contract import (
     build_v2_edge_plan,
@@ -68,6 +68,199 @@ def execute_canonical_subsection(
             "canonical internal_required/canary binding missing; fail closed"
         )
     return runtime.execute(command)
+
+
+def _build_canonical_writer_bridge(
+    *,
+    writer,
+    bb,
+    task_id: str,
+    state: dict,
+    outline: list[dict],
+    vector_store,
+    world_state,
+    event_graph,
+):
+    """Build the real Coordinator-owned Canonical runtime for selected rows."""
+
+    from .canonical.database import build_engine, build_session_factory
+    from .canonical.repositories import CanonicalRepository
+    from .writing import (
+        CanonicalSubsectionRuntime,
+        CanonicalWriterBridge,
+        LegacySubsectionProjection,
+        StateCommitter,
+    )
+    from .writing.subsection_handover_persistence import (
+        SubsectionHandoverHistoryRecorder,
+    )
+
+    rollout = CanonicalSettings(
+        database_url=settings.CANONICAL_DATABASE_URL,
+        commit_mode=settings.CANONICAL_COMMIT_MODE,
+        canary_task_ids=settings.CANONICAL_CANARY_TASK_IDS,
+        canary_subsection_ids=settings.CANONICAL_CANARY_SUBSECTION_IDS,
+    )
+    pre_foundation_resume = bool(state.get("pre_foundation_resume"))
+    selected: list[tuple[str, int, int, int]] = []
+    ordinal = 0
+    for section in outline:
+        section_number = int(section.get("section", 0))
+        for subsection in section.get("subsections", []):
+            ordinal += 1
+            subsection_number = int(subsection.get("subsection", 0))
+            subsection_id = str(
+                subsection.get("canonical_subsection_id")
+                or subsection.get("id")
+                or ""
+            )
+            path = rollout.resolve_path(
+                task_id,
+                subsection_id,
+                pre_foundation_resume=pre_foundation_resume,
+            )
+            if path == "canonical":
+                if not subsection_id:
+                    raise RuntimeError(
+                        "canonical subsection binding is missing; fail closed"
+                    )
+                selected.append(
+                    (subsection_id, ordinal, section_number, subsection_number)
+                )
+    if not selected:
+        return None
+
+    tenant_id = str(state.get("canonical_tenant_id") or "")
+    project_id = str(state.get("canonical_project_id") or "")
+    document_id = str(state.get("document_id") or "")
+    if not tenant_id or not project_id or not document_id:
+        raise RuntimeError(
+            "canonical tenant/project/document binding is missing; fail closed"
+        )
+
+    engine = build_engine(rollout.database_url)
+    session = build_session_factory(engine)()
+    try:
+        repo = CanonicalRepository(session, tenant_id, project_id)
+        project = repo.get_project()
+        document = repo.get_document(document_id)
+        if project is None or document is None:
+            raise RuntimeError("canonical project/document binding is missing")
+        for subsection_id, expected_ordinal, section_number, subsection_number in selected:
+            bound = repo.get_subsection(subsection_id)
+            if (
+                bound is None
+                or bound.document_id != document_id
+                or bound.ordinal != expected_ordinal
+                or bound.legacy_section != section_number
+                or bound.legacy_subsection != subsection_number
+            ):
+                raise RuntimeError(
+                    "canonical subsection binding does not match the outline"
+                )
+
+        compatibility_committer = StateCommitter()
+
+        def world_event_sink(envelope):
+            compatibility_committer.commit_handover_effects(
+                idempotency_key=f"canonical-world:{envelope.event_id}",
+                handover_note=envelope.handover_candidate,
+                event_graph=event_graph,
+                world_state=world_state,
+                world_state_enabled=settings.ENABLE_WORLD_STATE,
+                task_id=task_id,
+                section=envelope.section,
+                subsection=envelope.subsection,
+                logger=logger,
+            )
+
+        def redis_stream_sink(envelope):
+            bb.xadd_event(
+                task_id,
+                {
+                    "event": "canonical_subsection_committed",
+                    "event_id": envelope.event_id,
+                    "section": envelope.section,
+                    "subsection": envelope.subsection,
+                    "text": envelope.draft,
+                    "commit_id": envelope.commit_id,
+                    "revision_id": envelope.revision_id,
+                    "content_hash": envelope.content_hash,
+                },
+            )
+
+        def task_preview_sink(envelope):
+            bb.set(task_id, "document_id", document_id)
+            bb.set(task_id, "current_revision_id", envelope.revision_id)
+            bb.set(task_id, "last_commit_id", envelope.commit_id)
+
+        def reference_sink(envelope):
+            bb.set(
+                task_id,
+                "canonical_projection_ref",
+                {
+                    "event_id": envelope.event_id,
+                    "commit_id": envelope.commit_id,
+                    "revision_id": envelope.revision_id,
+                    "content_hash": envelope.content_hash,
+                },
+            )
+
+        projection = LegacySubsectionProjection(
+            session,
+            tenant_id,
+            project_id,
+            world_event_sink=world_event_sink,
+            handover_recorder=SubsectionHandoverHistoryRecorder(bb, task_id),
+            vector_store=vector_store,
+            non_blocking_sinks={
+                "redis_stream": redis_stream_sink,
+                "task_preview": task_preview_sink,
+                "markdown_export": reference_sink,
+                "analytics": reference_sink,
+            },
+        )
+
+        def checkpoint_writer(payload):
+            state.update(payload)
+            state["commit_status"] = "committed"
+            for key in (
+                "document_id",
+                "current_revision_id",
+                "current_state_version_id",
+                "last_commit_id",
+                "critical_projection_status",
+            ):
+                bb.set(task_id, key, state.get(key))
+            bb.set(task_id, "commit_status", "committed")
+            bb.save_checkpoint(task_id, sanitize_checkpoint(state))
+
+        runtime = CanonicalSubsectionRuntime(
+            session=session,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            candidate_generator=lambda **_kwargs: None,
+            projectors=projection.as_projectors(),
+            checkpoint_writer=checkpoint_writer,
+        )
+    except Exception:
+        session.close()
+        engine.dispose()
+        raise
+
+    def close_runtime():
+        session.close()
+        engine.dispose()
+
+    return CanonicalWriterBridge(
+        writer=writer,
+        runtime=runtime,
+        rollout=rollout,
+        document_id=document_id,
+        runtime_executor=execute_canonical_subsection,
+        pre_foundation_resume=pre_foundation_resume,
+        close_callback=close_runtime,
+    )
 
 
 def _safe_serialize(obj):
@@ -170,6 +363,7 @@ def writing_task(
         set_api_key(api_key)
 
     bb = Blackboard()
+    phase_timings: dict[str, float] = {}
 
     # 防止重启后自动续跑已停止的任务
     if not resume:
@@ -241,7 +435,6 @@ def writing_task(
 
         bb.set(task_id, "status", "running")
         phase = state.get("phase", "characters")
-        phase_timings = {}
 
     try:
         # ── 基础设施前置检查 ──
@@ -348,12 +541,45 @@ def writing_task(
             f"[{task_id[:8]}] 任务失败，累计 Token: {get_cumulative_tokens()}, "
             f"阶段耗时: {_json.dumps(phase_timings) if phase_timings else 'N/A'}"
         )
-        bb.set(task_id, "status", "failed")
+        from .writing import CanonicalProjectionPending
+        projection_pending = isinstance(e, CanonicalProjectionPending)
+
+        bb.set(
+            task_id,
+            "status",
+            (
+                "awaiting_critical_projection"
+                if projection_pending
+                else "failed"
+            ),
+        )
         bb.set(task_id, "error", str(e))
         bb.xadd_event(task_id, {"event": "error", "message": str(e)[:500]})
         _add_timeline(bb, task_id, "error", "system", f"出错: {str(e)[:200]}")
-        bb.save_checkpoint(task_id, {"task_id": task_id, "phase": "failed", "status": "failed"})
-        _save_task_history(bb, task_id, state, status="failed", error=str(e)[:500])
+        failure_state = sanitize_checkpoint(
+            {
+                **state,
+                "task_id": task_id,
+                "phase": "writing" if projection_pending else "failed",
+                "status": (
+                    "awaiting_critical_projection"
+                    if projection_pending
+                    else "failed"
+                ),
+            }
+        )
+        bb.save_checkpoint(task_id, failure_state)
+        _save_task_history(
+            bb,
+            task_id,
+            state,
+            status=(
+                "awaiting_critical_projection"
+                if projection_pending
+                else "failed"
+            ),
+            error=str(e)[:500],
+        )
         raise
 
     timeline_raw = bb.get(task_id, "timeline")
@@ -606,11 +832,6 @@ def _phase_narrative_rhythm(bb, task_id, state):
 
     outline_v2 = state.get("outline_v2") or []
     characters = state.get("characters") or []
-    style = state.get("style_profile") or {}
-    topic = state.get("config_topic", "")
-
-    style_summary = f"情感{style.get('emotion_intensity', 50)}/100 句长{style.get('sentence_preference', 'balanced')} 感官{style.get('sensory_density', 'medium')}" if isinstance(style, dict) else ""
-
     # 简化的节奏生成：按小节位置计算 intensity 曲线
     total_subs = sum(len(s.get("subsections", [])) for s in outline_v2)
     beats = []
@@ -646,7 +867,7 @@ def _phase_world_state(bb, task_id, state):
         return state
 
     ws = WorldStateManager(bb, task_id)
-    event_graph = EventGraph(bb, task_id)  # v3: 初始事实也写入 EventGraph
+    EventGraph(bb, task_id)  # v3: 初始化并校验事件图存储
     world_setting_text = state.get("config_world_setting", "")
     characters = state.get("characters") or []
 
@@ -705,10 +926,6 @@ def _phase_world_state(bb, task_id, state):
 
 def _phase_writing(bb, task_id, state):
     """Phase 3: 继承制写作 —— 委托 Writer.run() 统一执行。"""
-    if settings.CANONICAL_COMMIT_MODE == "internal_required":
-        raise RuntimeError(
-            "canonical runtime binding unavailable in legacy Writer.run path; fail closed"
-        )
     topic = state.get("config_topic", "")
     style = state.get("style_profile") or {}
     outline = state.get("outline_v2") or []
@@ -727,7 +944,6 @@ def _phase_writing(bb, task_id, state):
     existing_draft = state.get("draft", {})
     existing_section_texts = state.get("section_texts", {})
     existing_handover = state.get("handover_chain", [])
-    existing_backrefs = state.get("backref_suggestions", [])
     # 从 Redis 重建 WorldStateManager（state 序列化会丢失对象引用）
     event_graph = EventGraph(bb, task_id)
     # 本阶段每次进入都会从当前 character_arcs 全量重建里程碑。Celery 重试会从
@@ -890,6 +1106,7 @@ def _phase_writing(bb, task_id, state):
         "character_arcs": None,
         "character_state_propagation": None,
     }
+    canonical_bridge = None
 
     def on_section_done(
         section_num,
@@ -963,6 +1180,19 @@ def _phase_writing(bb, task_id, state):
                 "style_evaluation_v1",
                 state["style_evaluations"],
             )
+        canonical_bridge = _build_canonical_writer_bridge(
+            writer=writer,
+            bb=bb,
+            task_id=task_id,
+            state=state,
+            outline=outline,
+            vector_store=vector_store,
+            world_state=world_state,
+            event_graph=event_graph,
+        )
+        if canonical_bridge is not None:
+            writer.bind_canonical_subsection_executor(canonical_bridge)
+
         result = writer.run(
             topic=topic,
             style=style,
@@ -998,6 +1228,9 @@ def _phase_writing(bb, task_id, state):
         bb.set(task_id, "status", "failed")
         bb.set(task_id, "error", f"写作阶段异常: {str(e)[:500]}")
         raise
+    finally:
+        if canonical_bridge is not None:
+            canonical_bridge.close()
 
     section_texts = result.get("section_texts", {})
     character_arcs, writer_propagation = _apply_writer_character_state(
@@ -1037,7 +1270,7 @@ def _phase_writing(bb, task_id, state):
     try:
         from .foreshadowing_store import (
             create_foreshadowing, update_foreshadowing,
-            list_foreshadowings, get_active_for_chapter,
+            list_foreshadowings,
         )
         all_fs = list_foreshadowings(task_id)
         existing_names = {f["name"] for f in all_fs}
@@ -1443,7 +1676,6 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
     """写入任务历史到 SQLite，完成和失败都记录。"""
     try:
         from .task_store import TaskStore
-        ts = TaskStore(settings.TASK_DB_PATH)
         event_graph = EventGraph(bb, task_id)
         events_data = [e.to_dict() for e in event_graph._events.values()]
         outline_data = state.get("outline_v2") or []
@@ -1463,7 +1695,8 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             history_for_checkpoint,
             merge_history_into_analysis,
         )
-        existing_task = ts.get(task_id) or {}
+        with TaskStore(settings.TASK_DB_PATH) as ts:
+            existing_task = ts.get(task_id) or {}
         existing_analysis = existing_task.get("analysis_json")
         analysis_base = (
             dict(existing_analysis)
@@ -1486,7 +1719,8 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             handover_history_for_checkpoint(bb, task_id),
         )
 
-        ts.save(task_id, {
+        with TaskStore(settings.TASK_DB_PATH) as ts:
+            ts.save(task_id, {
             "topic": state.get("config_topic", ""),
             "word_count": count_chinese_chars(assembled),
             "section_count": len(state.get("section_texts", {})),
@@ -1516,7 +1750,7 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             "non_blocking_projection_status": state.get(
                 "non_blocking_projection_status", ""
             ),
-        })
+            })
     except Exception:
         logger.warning("任务历史写入失败", exc_info=True)
 

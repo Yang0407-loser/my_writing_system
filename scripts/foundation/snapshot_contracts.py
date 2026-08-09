@@ -6,6 +6,7 @@ import argparse
 import inspect
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 
@@ -50,7 +51,17 @@ def _default_contract(parameter: inspect.Parameter) -> dict[str, Any]:
     return {"default": serialized, "required": False}
 
 
-def _signature_contract(callable_obj) -> dict[str, Any]:
+def _annotation_contract(annotation: Any) -> str:
+    """Normalize equivalent annotation spellings across supported Pythons."""
+    rendered = inspect.formatannotation(annotation)
+    rendered = rendered.replace("typing.", "").replace("collections.abc.", "")
+    optional = re.fullmatch(r"Optional\[(.*)\]", rendered)
+    if optional:
+        return f"{optional.group(1)} | None"
+    return rendered
+
+
+def build_callable_contract(callable_obj) -> dict[str, Any]:
     signature = inspect.signature(callable_obj)
     parameters = []
     for parameter in signature.parameters.values():
@@ -58,7 +69,7 @@ def _signature_contract(callable_obj) -> dict[str, Any]:
             continue
         parameters.append(
             {
-                "annotation": inspect.formatannotation(parameter.annotation),
+                "annotation": _annotation_contract(parameter.annotation),
                 "kind": parameter.kind.name,
                 "name": parameter.name,
                 **_default_contract(parameter),
@@ -66,7 +77,7 @@ def _signature_contract(callable_obj) -> dict[str, Any]:
         )
     return {
         "parameters": parameters,
-        "return_annotation": inspect.formatannotation(signature.return_annotation),
+        "return_annotation": _annotation_contract(signature.return_annotation),
     }
 
 
@@ -100,7 +111,7 @@ def build_writer_snapshot(writer_cls, task_status_model, final_result_model) -> 
     """Freeze Writer.run and the existing task response envelope contracts."""
     return {
         "schema_version": "writer-pre-foundation-v0",
-        "writer_run": _signature_contract(writer_cls.run),
+        "writer_run": build_callable_contract(writer_cls.run),
         "task_response_contracts": {
             "status": _model_contract(task_status_model),
             "completed_result": _model_contract(final_result_model),

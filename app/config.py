@@ -1,4 +1,7 @@
+import logging
 import os
+import sys
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Mapping
 from dotenv import load_dotenv
@@ -44,6 +47,17 @@ class CanonicalSettings:
             raise ValueError(
                 f"CANONICAL_COMMIT_MODE={commit_mode!r} is invalid; "
                 f"expected one of {sorted(valid_modes)}"
+            )
+        if (
+            commit_mode == "internal_required"
+            and not testing
+            and not database_url.startswith(
+                ("postgresql://", "postgresql+psycopg://")
+            )
+        ):
+            raise ValueError(
+                "CANONICAL_COMMIT_MODE=internal_required requires PostgreSQL "
+                "outside WRITER_TESTING"
             )
 
         return cls(
@@ -446,10 +460,6 @@ class Settings:
 settings = Settings()
 
 # ── 日志配置 ──────────────────────────────────────────────────────
-import logging
-import sys
-from contextvars import ContextVar
-
 # 当前任务 ID，由 coordinator 在 writing_task 入口设置
 _task_id_ctx: ContextVar[str] = ContextVar("task_id", default="-")
 

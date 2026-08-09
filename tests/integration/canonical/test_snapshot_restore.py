@@ -32,8 +32,8 @@ def _seed(session):
         genesis_state_version_id="state-genesis",
     )
     repo.create_document("document-golden", "Golden document")
-    repo.create_subsection("subsection-1", "document-golden", 1)
-    repo.create_subsection("subsection-2", "document-golden", 2)
+    repo.create_subsection("subsection-1", "document-golden", 1, 1, 1)
+    repo.create_subsection("subsection-2", "document-golden", 2, 1, 2)
     repo.create_commit_envelope(
         "commit-1", "a" * 64, 0, "state-genesis"
     )

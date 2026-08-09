@@ -5,7 +5,9 @@ from unittest.mock import MagicMock
 from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
 from app.canonical.outbox import OutboxDispatcher
 from app.canonical.projection_barrier import ProjectionBarrier
-from tests.unit.canonical.test_commit_service import _prepared, canonical_session
+from tests.unit.canonical.test_commit_service import _prepared
+
+pytest_plugins = ("tests.unit.canonical.test_commit_service",)
 
 
 def _components(session, projectors=None):

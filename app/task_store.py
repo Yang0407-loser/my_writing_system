@@ -1,28 +1,59 @@
 import sqlite3
 import json
-import os
-from datetime import datetime
+from weakref import WeakSet
 
 
 class TaskStore:
     """SQLite 任务历史存储 —— 持久化已完成任务的元数据。"""
 
-    _MIGRATIONS_DONE = set()
+    _INSTANCES = WeakSet()
 
     def __init__(self, db_path: str | None = None):
         if db_path is None:
             from .config import settings
             db_path = settings.TASK_DB_PATH
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._ensure_tables()
-        # 仅在首次实例化时执行 schema migration（按 db_path 去重）
-        if db_path not in self._MIGRATIONS_DONE:
-            self._MIGRATIONS_DONE.add(db_path)
+        self._closed = False
+        try:
+            self._conn.row_factory = sqlite3.Row
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._ensure_tables()
+            # Migration records live in the database, so every connection may
+            # safely apply them. A process-local path cache would incorrectly
+            # skip migrations when a test or operator recreates a database at
+            # the same path, and would also poison retries after a failure.
             from .task_store_migrations import apply_task_store_migrations
 
             apply_task_store_migrations(self._conn)
+        except Exception:
+            self._conn.close()
+            self._closed = True
+            raise
+        self._INSTANCES.add(self)
+
+    def close(self) -> None:
+        if not self._closed:
+            self._conn.close()
+            self._closed = True
+            self._INSTANCES.discard(self)
+
+    def __enter__(self) -> "TaskStore":
+        return self
+
+    def __exit__(self, _exc_type, _exc, _traceback) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            # Interpreter shutdown may already have torn down sqlite internals.
+            pass
+
+    @classmethod
+    def close_all(cls) -> None:
+        for store in list(cls._INSTANCES):
+            store.close()
 
     def _ensure_tables(self):
         self._conn.execute("""

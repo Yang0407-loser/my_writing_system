@@ -70,5 +70,20 @@ def test_pre_foundation_resume_is_explicitly_legacy():
 def test_main_writer_path_cannot_silently_bypass_internal_required(monkeypatch):
     monkeypatch.setattr(coordinator.settings, "CANONICAL_COMMIT_MODE", "internal_required")
 
-    with pytest.raises(RuntimeError, match="fail closed"):
-        coordinator._phase_writing(MagicMock(), "task-1", {})
+    with pytest.raises(RuntimeError, match="tenant/project/document binding"):
+        coordinator._build_canonical_writer_bridge(
+            writer=MagicMock(),
+            bb=MagicMock(),
+            task_id="task-1",
+            state={},
+            outline=[{
+                "section": 1,
+                "subsections": [{
+                    "id": "subsection-1",
+                    "subsection": 1,
+                }],
+            }],
+            vector_store=MagicMock(),
+            world_state=MagicMock(),
+            event_graph=MagicMock(),
+        )

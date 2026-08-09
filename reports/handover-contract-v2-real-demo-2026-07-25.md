@@ -54,4 +54,4 @@ V2 状态由“工程门槛通过、允许一次真实 Demo”收口为 `real_de
 
 ## 后续工程修复
 
-V2.1已将模型输出改为source索引、精确span、短枚举和最长16字的结构化语义；source ID/hash/excerpt与typed contract均由本地恢复。离线容量为典型127、最坏合法444 estimated tokens，600上限未提高。该结果只恢复了再次验证的工程条件，不改变本报告对V2真实Demo的失败结论，也不代表V2.1已通过真实生成验收。
+V2.1已将模型输出改为source索引、精确span、短枚举和最长16字的结构化语义；source ID/hash/excerpt与typed contract均由本地恢复。离线容量为典型127、最坏合法474 estimated tokens，600上限未提高。该结果只恢复了再次验证的工程条件，不改变本报告对V2真实Demo的失败结论，也不代表V2.1已通过真实生成验收。

@@ -128,7 +128,11 @@ def run_golden_slice(
         )
         repo.create_document(ids["document_id"], "Foundation Golden Document")
         repo.create_subsection(
-            ids["subsection_id"], ids["document_id"], fixture["subsection"]["ordinal"]
+            ids["subsection_id"],
+            ids["document_id"],
+            fixture["subsection"]["ordinal"],
+            1,
+            1,
         )
         session.commit()
 

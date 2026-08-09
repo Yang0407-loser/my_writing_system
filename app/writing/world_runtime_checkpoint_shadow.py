@@ -8,8 +8,6 @@ idempotent (same commit -> same payload).
 
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any
 
 from .world_runtime_contracts import canonical_hash

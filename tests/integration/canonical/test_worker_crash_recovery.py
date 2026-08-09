@@ -16,6 +16,9 @@ from tests.integration.canonical.helpers import (
 )
 
 
+pytestmark = pytest.mark.postgres
+
+
 def _crash_worker(database_url, prepared_json, key, barrier, ready_queue):
     prepared = PreparedCanonicalCommit.model_validate_json(prepared_json)
     if barrier == "before_transaction":

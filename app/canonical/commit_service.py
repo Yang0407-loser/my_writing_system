@@ -156,6 +156,15 @@ class CanonicalCommitService:
             subsection = self.repo.get_subsection_for_update(candidate.subsection_id)
             if subsection is None:
                 raise RevisionConflict("subsection is missing in scope")
+            if (
+                subsection.document_id != candidate.document_id
+                or subsection.ordinal != candidate.ordinal
+                or subsection.legacy_section != candidate.section
+                or subsection.legacy_subsection != candidate.subsection
+            ):
+                raise RevisionConflict(
+                    "Candidate binding does not match the locked canonical subsection"
+                )
             current_revision = self.repo.get_current_revision(candidate.subsection_id)
             current_revision_number = (
                 0 if current_revision is None else current_revision.revision_number

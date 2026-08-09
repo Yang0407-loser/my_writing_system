@@ -88,20 +88,10 @@ class SubsectionGenerator:
             task_id=prepared.task_id,
         )
 
-        handover, observation = self.handover_extractor(
-            section_text=generated.draft,
-            section_num=prepared.section,
-            sub_num=prepared.subsection,
-            character_context=character_context,
-            event_graph=event_graph,
-            current_subsection=current_subsection,
-            next_subsection=next_subsection,
-            task_id=prepared.task_id,
-        )
-        validation_payload = dict(self.post_validator(generated.draft))
-        if not validation_payload.get("complete"):
-            raise ValueError("candidate post-validation did not complete")
-
+        # Length adjustment is part of generation, not a post-validation
+        # projection.  Every artifact derived from the prose must therefore
+        # observe the final candidate text rather than the pre-adjustment
+        # draft.
         adjusted = self.generation_controller.adjust_length(
             generated.draft,
             target_words=prepared.target_words,
@@ -111,6 +101,21 @@ class SubsectionGenerator:
             sub_num=prepared.subsection,
             task_id=prepared.task_id,
         )
+
+        handover, observation = self.handover_extractor(
+            section_text=adjusted.draft,
+            section_num=prepared.section,
+            sub_num=prepared.subsection,
+            character_context=character_context,
+            event_graph=event_graph,
+            current_subsection=current_subsection,
+            next_subsection=next_subsection,
+            task_id=prepared.task_id,
+        )
+        validation_payload = dict(self.post_validator(adjusted.draft))
+        if not validation_payload.get("complete"):
+            raise ValueError("candidate post-validation did not complete")
+
         adapted = adapt_legacy_handover(
             handover,
             provenance={

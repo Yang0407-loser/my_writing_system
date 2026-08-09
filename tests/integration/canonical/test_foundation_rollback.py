@@ -10,7 +10,9 @@ from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
     CanonicalSubsectionRuntime,
 )
-from tests.unit.canonical.test_commit_service import _prepared, canonical_session
+from tests.unit.canonical.test_commit_service import _prepared
+
+pytest_plugins = ("tests.unit.canonical.test_commit_service",)
 
 
 def test_mode_rollback_preserves_committed_canon_and_does_not_cross_barrier(

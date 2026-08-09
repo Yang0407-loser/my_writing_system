@@ -33,7 +33,7 @@ def test_report_keeps_shadow_and_production_boundaries_explicit():
 
 def test_writer_runs_shadow_only_after_commit_and_preserves_legacy_extractors():
     source = inspect.getsource(Writer.run)
-    assert source.index("commit_artifact = state_committer.commit_subsection(") < source.index(
+    assert source.index("state_committer.commit_subsection(") < source.index(
         "shadow_post_write_extractor.observe_committed("
     )
     for legacy in (

@@ -34,7 +34,7 @@ def test_failed_outbox_survives_session_restart_and_retries(tmp_path):
             genesis_state_version_id="state-genesis",
         )
         repo.create_document("document-1", "Document")
-        repo.create_subsection("subsection-1", "document-1", 1)
+        repo.create_subsection("subsection-1", "document-1", 1, 1, 1)
         session.commit()
         result = CanonicalCommitService(session, "tenant-1", "project-1").commit(
             _prepared(session), "outbox-restart"

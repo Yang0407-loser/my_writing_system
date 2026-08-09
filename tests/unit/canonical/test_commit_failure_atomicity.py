@@ -15,7 +15,9 @@ from app.canonical.models import (
     IdempotencyRecord,
     OutboxEvent,
 )
-from tests.unit.canonical.test_commit_service import _prepared, canonical_session
+from tests.unit.canonical.test_commit_service import _prepared
+
+pytest_plugins = ("tests.unit.canonical.test_commit_service",)
 
 
 TRACKED_MODELS = (

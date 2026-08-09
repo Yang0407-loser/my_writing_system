@@ -58,6 +58,11 @@ from .canonical_subsection_runtime import (
     CanonicalSubsectionRuntimeResult,
     canonical_idempotency_key,
 )
+from .canonical_writer_bridge import (
+    CanonicalProjectionPending,
+    CanonicalWriterBridge,
+    CanonicalWriterOutcome,
+)
 from .shadow_validation import ShadowBoundaryValidationRunner
 from .post_write_extraction import SharedPostWriteExtractor
 from .shadow_post_write_extraction import ShadowPostWriteExtractionRunner
@@ -144,6 +149,9 @@ __all__ = [
     "LegacySubsectionProjection",
     "CanonicalSubsectionCommand",
     "CanonicalSubsectionRuntime",
+    "CanonicalProjectionPending",
+    "CanonicalWriterBridge",
+    "CanonicalWriterOutcome",
     "CanonicalSubsectionRuntimeResult",
     "canonical_idempotency_key",
     "ShadowBoundaryValidationRunner",

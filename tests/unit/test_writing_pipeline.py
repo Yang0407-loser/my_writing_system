@@ -1,12 +1,17 @@
 import ast
+import hashlib
 import inspect
+import json
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 
 from app.agents.writer import Writer
 from app.writing import (
+    CommitArtifact,
+    GenerationArtifact,
     GenerationController,
     MandatoryEventPolicy,
     PromptBuilder,
@@ -15,6 +20,7 @@ from app.writing import (
     SubsectionPipeline,
 )
 from app.writing.prompt_builder import messages_hash
+from scripts.foundation.snapshot_contracts import build_callable_contract
 
 
 def prepared_input(**overrides):
@@ -329,20 +335,12 @@ def test_subsection_pipeline_rejects_out_of_order_transitions():
 
 
 def test_writer_public_signatures_remain_frozen():
-    assert str(inspect.signature(Writer.run)) == (
-        "(self, topic: str, style: dict, outline: list[dict], vector_store, blackboard, task_id: str, "
-        "characters: list[dict] | None = None, character_arcs: list[dict] | None = None, "
-        "stream_callback: Callable | None = None, interactive: bool = False, "
-        "on_section_done: Callable | None = None, world_setting: str = '', prev_draft: str = '', "
-        "prev_handover_list: list[dict] | None = None, existing_draft: dict[str, str] | None = None, "
-        "existing_section_texts: dict[int, str] | None = None, "
-        "world_state: app.world_state.WorldStateManager | None = None, "
-        "event_graph: app.narrative_event.EventGraph | None = None, resume_context: dict | None = None, "
-        "constraints: list[dict] | None = None, rules_context: str = '', subplot_context: str = '', "
-        "relation_context: str = '', improvement_context: str = '', experience_context: str = '', "
-        "narrative_beats: list[dict] | None = None, reference_text: str = '', "
-        "rag_metadata_provider: Callable[[int, int], dict | None] | None = None) -> dict"
+    snapshot_path = (
+        Path(__file__).resolve().parents[2]
+        / "tests/contracts/writer-pre-foundation-v0.json"
     )
+    frozen = json.loads(snapshot_path.read_text(encoding="utf-8"))["writer_run"]
+    assert build_callable_contract(Writer.run) == frozen
     assert str(inspect.signature(Writer.revise_subsection)) == (
         "(self, original_text: str, instruction: str) -> str"
     )
@@ -446,3 +444,93 @@ def test_writer_run_remains_a_compatible_facade(monkeypatch):
         blackboard.values["narrative_reality_warnings_v0"]
         == result["narrative_reality_warnings"]
     )
+
+
+def test_writer_canonical_route_does_not_invoke_legacy_subsection_commit(
+    monkeypatch,
+):
+    monkeypatch.setattr("app.agents.writer.settings.ENABLE_RAG", False)
+    monkeypatch.setattr("app.agents.writer.settings.ENABLE_WORLD_STATE", False)
+    monkeypatch.setattr("app.agents.writer.settings.ENABLE_STYLE_BEHAVIOR", False)
+    monkeypatch.setattr("app.agents.writer.settings.WRITER_REVIEW_TRIGGER_SUBS", 999)
+    monkeypatch.setattr("app.agents.writer.settings.WRITER_REVIEW_TRIGGER_CHARS", 999999)
+    monkeypatch.setattr(
+        "app.agents.writer.foreshadowing_store.build_foreshadowing_context",
+        lambda *_: "",
+    )
+    monkeypatch.setattr("app.faction_store.build_faction_context", lambda *_: "")
+    monkeypatch.setattr("app.map_manager.build_location_context", lambda *_: "")
+    monkeypatch.setattr("app.item_manager.build_item_context", lambda *_: "")
+    legacy_commit = MagicMock(
+        side_effect=AssertionError("legacy subsection commit must not run")
+    )
+    monkeypatch.setattr(StateCommitter, "commit_subsection", legacy_commit)
+
+    class Blackboard:
+        def __init__(self):
+            self.values = {}
+
+        def get(self, _task_id, field):
+            return self.values.get(field)
+
+        def set(self, _task_id, field, value):
+            self.values[field] = value
+
+        def xadd_event(self, *_args, **_kwargs):
+            return None
+
+        def save_checkpoint(self, *_args, **_kwargs):
+            return None
+
+    final_text = "canonical accepted text"
+    generation = GenerationArtifact(
+        raw_output=final_text,
+        draft=final_text,
+        finish_reason="canonical",
+        latency_ms=1,
+        output_hash=hashlib.sha256(final_text.encode()).hexdigest(),
+    )
+    commit = CommitArtifact(
+        idempotency_key="canonical-key",
+        committed_fields=["canonical.revision"],
+        source_hash="prompt-hash",
+        output_hash=hashlib.sha256(final_text.encode()).hexdigest(),
+        checkpoint_version="canonical-foundation-v0",
+    )
+    executor = MagicMock()
+    executor.selects.return_value = True
+    executor.execute.return_value = SimpleNamespace(
+        draft=final_text,
+        handover_note={},
+        handover_observation={},
+        generation_artifact=generation,
+        commit_artifact=commit,
+    )
+    writer = Writer()
+    writer.llm = FakeLLM([])
+    writer.bind_canonical_subsection_executor(executor)
+
+    result = writer.run(
+        topic="canonical",
+        style={},
+        outline=[{
+            "section": 1,
+            "title": "Section",
+            "subsections": [{
+                "id": "subsection-1",
+                "subsection": 1,
+                "title": "Subsection",
+                "description": "canonical path",
+                "key_points": ["commit once"],
+                "target_words": 100,
+                "status": "queued",
+            }],
+        }],
+        vector_store=FakeVectorStore(),
+        blackboard=Blackboard(),
+        task_id="task-1",
+    )
+
+    assert final_text in result["draft"]
+    executor.execute.assert_called_once()
+    legacy_commit.assert_not_called()

@@ -15,7 +15,9 @@ from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionRuntime,
 )
 from app.writing.legacy_subsection_projection import LegacySubsectionProjection
-from tests.unit.canonical.test_commit_service import _prepared, canonical_session
+from tests.unit.canonical.test_commit_service import _prepared
+
+pytest_plugins = ("tests.unit.canonical.test_commit_service",)
 
 
 def _projectors(**overrides):
