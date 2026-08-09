@@ -10,6 +10,9 @@ from .contracts import (
     SubsectionCandidate,
     WorldMutationCandidate,
 )
+from .outbox import OutboxDispatcher
+from .projection_barrier import ProjectionBarrier
+from .projection_ports import ProjectionMessage, ProjectionPort
 
 __all__ = [
     "CandidateValidation",
@@ -20,4 +23,8 @@ __all__ = [
     "StateTransitionResult",
     "SubsectionCandidate",
     "WorldMutationCandidate",
+    "OutboxDispatcher",
+    "ProjectionBarrier",
+    "ProjectionMessage",
+    "ProjectionPort",
 ]
