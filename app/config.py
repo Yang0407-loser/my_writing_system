@@ -1,11 +1,75 @@
 import os
+from dataclasses import dataclass
+from typing import Mapping
 from dotenv import load_dotenv
 
 if os.getenv("WRITER_TESTING") != "1":
     load_dotenv()
 
 
+@dataclass(frozen=True)
+class CanonicalSettings:
+    """Validated settings for the canonical database and rollout boundary."""
+
+    database_url: str
+    commit_mode: str
+    canary_task_ids: frozenset[str]
+    canary_subsection_ids: frozenset[str]
+
+    @staticmethod
+    def _parse_allowlist(raw: str) -> frozenset[str]:
+        return frozenset(item.strip() for item in raw.split(",") if item.strip())
+
+    @classmethod
+    def from_env(cls, environ: Mapping[str, str]) -> "CanonicalSettings":
+        testing = environ.get("WRITER_TESTING", "0").strip() == "1"
+        database_url = environ.get("CANONICAL_DATABASE_URL", "").strip()
+        if not database_url:
+            if testing:
+                database_url = "sqlite+pysqlite:///:memory:"
+            else:
+                raise ValueError(
+                    "CANONICAL_DATABASE_URL is required outside WRITER_TESTING"
+                )
+        if not database_url.startswith(
+            ("sqlite://", "sqlite+pysqlite://", "postgresql://", "postgresql+psycopg://")
+        ):
+            raise ValueError(
+                "CANONICAL_DATABASE_URL must be a SQLAlchemy SQLite or PostgreSQL URL"
+            )
+
+        commit_mode = environ.get("CANONICAL_COMMIT_MODE", "legacy").strip().lower()
+        valid_modes = {"legacy", "canary", "internal_required"}
+        if commit_mode not in valid_modes:
+            raise ValueError(
+                f"CANONICAL_COMMIT_MODE={commit_mode!r} is invalid; "
+                f"expected one of {sorted(valid_modes)}"
+            )
+
+        return cls(
+            database_url=database_url,
+            commit_mode=commit_mode,
+            canary_task_ids=cls._parse_allowlist(
+                environ.get("CANONICAL_CANARY_TASK_IDS", "")
+            ),
+            canary_subsection_ids=cls._parse_allowlist(
+                environ.get("CANONICAL_CANARY_SUBSECTION_IDS", "")
+            ),
+        )
+
+
+_canonical_settings = CanonicalSettings.from_env(os.environ)
+
+
 class Settings:
+    # --- Canonical Foundation ---
+    CANONICAL_DATABASE_URL: str = _canonical_settings.database_url
+    CANONICAL_COMMIT_MODE: str = _canonical_settings.commit_mode
+    CANONICAL_CANARY_TASK_IDS: frozenset[str] = _canonical_settings.canary_task_ids
+    CANONICAL_CANARY_SUBSECTION_IDS: frozenset[str] = (
+        _canonical_settings.canary_subsection_ids
+    )
+
     # --- LLM ---
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
