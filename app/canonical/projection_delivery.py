@@ -10,7 +10,11 @@ from uuid import uuid4
 from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
 
-from .errors import PermanentProjectionError, RetryableProjectionError
+from .errors import (
+    PermanentProjectionError,
+    RetryableProjectionError,
+    UnknownProjectorVersionError,
+)
 from .hashing import sha256_json
 from .models import (
     CanonicalCommit,
@@ -130,12 +134,18 @@ class ProjectionDeliveryStore:
             filters.append("envelope.commit_id = :commit_id")
             params["commit_id"] = scan_filter.commit_id
 
-        lease_cases = []
+        registry_rows = []
         for index, spec in enumerate(self.registry.all()):
-            key = f"lease_{index}"
-            lease_cases.append(f"WHEN '{spec.projector_id}' THEN :{key}")
-            params[key] = spec.retry.lease_seconds
-        lease_sql = "CASE candidate.projector_id " + " ".join(lease_cases) + " ELSE 120 END"
+            registry_rows.append(
+                f"(:registry_id_{index}, :registry_version_{index}, :lease_{index})"
+            )
+            params[f"registry_id_{index}"] = spec.projector_id
+            params[f"registry_version_{index}"] = spec.version
+            params[f"lease_{index}"] = spec.retry.lease_seconds
+        if not registry_rows:
+            self.session.commit()
+            return None
+        registry_sql = ", ".join(registry_rows)
         token = uuid4().hex
         params["lease_token"] = token
         predicate = " AND ".join(filters)
@@ -143,16 +153,23 @@ class ProjectionDeliveryStore:
             predicate = " AND " + predicate
         statement = text(
             f"""
-            WITH eligible AS (
-              SELECT candidate.id
+            WITH registered(projector_id, projector_version, lease_seconds) AS (
+              VALUES {registry_sql}
+            ), eligible AS (
+              SELECT candidate.id, registered.lease_seconds
               FROM projection_deliveries candidate
               JOIN outbox_events envelope ON envelope.id = candidate.outbox_event_id
               JOIN projection_partitions partition
                 ON partition.tenant_id = candidate.tenant_id
                AND partition.project_id = candidate.project_id
                AND partition.projector_id = candidate.projector_id
+               AND partition.projector_version = candidate.projector_version
+              JOIN registered
+                ON registered.projector_id = candidate.projector_id
+               AND registered.projector_version = candidate.projector_version
               WHERE partition.enrollment_status = 'active'
                 AND partition.runtime_status = 'active'
+                AND candidate.stream_position = partition.last_published_position + 1
                 AND (
                   (candidate.status = 'pending' AND candidate.available_at <= :now)
                   OR (candidate.status = 'processing' AND candidate.leased_until < :now)
@@ -173,7 +190,7 @@ class ProjectionDeliveryStore:
               UPDATE projection_deliveries candidate
               SET status = 'processing', lease_token = :lease_token,
                   leased_by = :leased_by,
-                  leased_until = :now + ({lease_sql}) * interval '1 second',
+                  leased_until = :now + eligible.lease_seconds * interval '1 second',
                   attempt_count = candidate.attempt_count + 1,
                   last_attempt_at = :now, updated_at = :now
               FROM eligible
@@ -184,6 +201,7 @@ class ProjectionDeliveryStore:
             """
         )
         try:
+            self._dead_letter_unregistered(scan_filter, registry_sql, params, now)
             row = self.session.execute(statement, params).mappings().one_or_none()
             if row is None:
                 self.session.commit()
@@ -204,6 +222,76 @@ class ProjectionDeliveryStore:
         except Exception:
             self.session.rollback()
             raise
+
+    def _dead_letter_unregistered(
+        self,
+        scan_filter: ScanFilter,
+        registry_sql: str,
+        params: dict[str, Any],
+        now: datetime,
+    ) -> None:
+        filters = []
+        if scan_filter.tenant_id is not None:
+            filters.append("candidate.tenant_id = :tenant_id")
+        if scan_filter.project_id is not None:
+            filters.append("candidate.project_id = :project_id")
+        if scan_filter.projector_id is not None:
+            filters.append("candidate.projector_id = :projector_id")
+        if scan_filter.barrier_kind is not None:
+            filters.append("candidate.barrier_kind = :barrier_kind")
+        if scan_filter.commit_id is not None:
+            filters.append("envelope.commit_id = :commit_id")
+        predicate = ""
+        if filters:
+            predicate = " AND " + " AND ".join(filters)
+        error_message = "projector id/version is not registered"
+        invalid_rows = self.session.execute(
+            text(
+                f"""
+                WITH registered(projector_id, projector_version, lease_seconds) AS (
+                  VALUES {registry_sql}
+                ), invalid AS (
+                  SELECT candidate.id, candidate.outbox_event_id
+                  FROM projection_deliveries candidate
+                  JOIN outbox_events envelope
+                    ON envelope.id = candidate.outbox_event_id
+                  JOIN projection_partitions partition
+                    ON partition.tenant_id = candidate.tenant_id
+                   AND partition.project_id = candidate.project_id
+                   AND partition.projector_id = candidate.projector_id
+                   AND partition.projector_version = candidate.projector_version
+                  LEFT JOIN registered
+                    ON registered.projector_id = candidate.projector_id
+                   AND registered.projector_version = candidate.projector_version
+                  WHERE candidate.status = 'pending'
+                    AND partition.enrollment_status = 'active'
+                    AND partition.runtime_status = 'active'
+                    AND registered.projector_id IS NULL
+                    {predicate}
+                  FOR UPDATE OF candidate SKIP LOCKED
+                )
+                UPDATE projection_deliveries candidate
+                SET status = 'dead_letter',
+                    last_error_class = 'UnknownProjectorVersionError',
+                    last_error_message = :unknown_error_message,
+                    updated_at = :now
+                FROM invalid
+                WHERE candidate.id = invalid.id
+                RETURNING candidate.outbox_event_id
+                """
+            ),
+            {**params, "unknown_error_message": error_message},
+        ).scalars().all()
+        if invalid_rows:
+            self.session.execute(
+                update(OutboxEvent)
+                .where(OutboxEvent.id.in_(invalid_rows))
+                .values(
+                    status="failed",
+                    last_error=f"UnknownProjectorVersionError: {error_message}",
+                    updated_at=now,
+                )
+            )
 
     def _claim_sqlite(self, leased_by, scan_filter, now):
         candidate = self.session.scalar(
@@ -232,7 +320,30 @@ class ProjectionDeliveryStore:
         if prior:
             self.session.commit()
             return None
-        policy = self.registry.get(candidate.projector_id).retry
+        partition = self.session.scalar(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == candidate.tenant_id,
+                ProjectionPartition.project_id == candidate.project_id,
+                ProjectionPartition.projector_id == candidate.projector_id,
+                ProjectionPartition.projector_version == candidate.projector_version,
+                ProjectionPartition.enrollment_status == "active",
+                ProjectionPartition.runtime_status == "active",
+                ProjectionPartition.last_published_position + 1
+                == candidate.stream_position,
+            )
+        )
+        if partition is None:
+            self.session.commit()
+            return None
+        try:
+            spec = self.registry.get(candidate.projector_id)
+        except KeyError:
+            self.session.commit()
+            return None
+        if spec.version != candidate.projector_version:
+            self.session.commit()
+            return None
+        policy = spec.retry
         candidate.status = "processing"
         candidate.lease_token = uuid4().hex
         candidate.leased_by = leased_by
@@ -303,13 +414,24 @@ class ProjectionDeliveryStore:
 
     def heartbeat(self, claim: DeliveryClaim, *, now=None) -> bool:
         now = now or datetime.now(timezone.utc)
-        policy = self.registry.get(claim.projector_id).retry
+        registered = self._processing_registration(claim)
+        if registered is None:
+            self.session.rollback()
+            return False
+        projector_id, projector_version, policy = registered
+        if projector_id != claim.projector_id:
+            self.session.rollback()
+            raise UnknownProjectorVersionError(
+                f"delivery projector does not match claim: {projector_id}"
+            )
         result = self.session.execute(
             update(ProjectionDelivery)
             .where(
                 ProjectionDelivery.id == claim.delivery_id,
                 ProjectionDelivery.status == "processing",
                 ProjectionDelivery.lease_token == claim.lease_token,
+                ProjectionDelivery.projector_id == projector_id,
+                ProjectionDelivery.projector_version == projector_version,
             )
             .values(leased_until=now + timedelta(seconds=policy.lease_seconds), updated_at=now)
         )
@@ -336,11 +458,19 @@ class ProjectionDeliveryStore:
         if result.rowcount != 1:
             self.session.rollback()
             return False
-        self.session.execute(
+        attempt_result = self.session.execute(
             update(ProjectionAttempt)
-            .where(ProjectionAttempt.id == claim.attempt_id, ProjectionAttempt.lease_token == claim.lease_token)
+            .where(
+                ProjectionAttempt.id == claim.attempt_id,
+                ProjectionAttempt.delivery_id == claim.delivery_id,
+                ProjectionAttempt.lease_token == claim.lease_token,
+                ProjectionAttempt.outcome == "claimed",
+            )
             .values(outcome="succeeded", finished_at=now)
         )
+        if attempt_result.rowcount != 1:
+            self.session.rollback()
+            return False
         cursor_result = self.session.execute(
             update(ProjectionPartition)
             .where(
@@ -364,22 +494,64 @@ class ProjectionDeliveryStore:
 
     def record_failure(self, claim: DeliveryClaim, error: Exception, *, now=None) -> bool:
         now = now or datetime.now(timezone.utc)
-        attempt_count = self.session.scalar(
-            select(ProjectionDelivery.attempt_count).where(
+        delivery_state = self.session.execute(
+            select(
+                ProjectionDelivery.attempt_count,
+                ProjectionDelivery.projector_id,
+                ProjectionDelivery.projector_version,
+            ).where(
                 ProjectionDelivery.id == claim.delivery_id,
                 ProjectionDelivery.status == "processing",
                 ProjectionDelivery.lease_token == claim.lease_token,
             )
-        )
-        if attempt_count is None:
+        ).one_or_none()
+        if delivery_state is None:
             self.session.rollback()
             return False
-        transition = failure_transition(
-            error,
-            attempt_count,
-            self.registry.get(claim.projector_id).retry,
-            now,
+        attempt_count, projector_id, projector_version = delivery_state
+        try:
+            spec = self.registry.get(projector_id)
+        except KeyError:
+            error = UnknownProjectorVersionError(
+                f"unregistered projector: {projector_id}@{projector_version}"
+            )
+            spec = None
+        else:
+            if spec.version != projector_version:
+                error = UnknownProjectorVersionError(
+                    f"unregistered projector version: {projector_id}@{projector_version}"
+                )
+                spec = None
+        transition = (
+            FailureTransition(
+                "dead_letter", now, type(error).__name__, str(error), None
+            )
+            if spec is None
+            else failure_transition(error, attempt_count, spec.retry, now)
         )
+        attempt_result = self.session.execute(
+            update(ProjectionAttempt)
+            .where(
+                ProjectionAttempt.id == claim.attempt_id,
+                ProjectionAttempt.delivery_id == claim.delivery_id,
+                ProjectionAttempt.lease_token == claim.lease_token,
+                ProjectionAttempt.outcome == "claimed",
+            )
+            .values(
+                outcome=(
+                    "retry_scheduled"
+                    if transition.status == "pending"
+                    else "dead_lettered"
+                ),
+                finished_at=now,
+                error_class=transition.error_class[:255],
+                error_message=transition.error_message[:4000],
+                retry_delay_seconds=transition.retry_delay_seconds,
+            )
+        )
+        if attempt_result.rowcount != 1:
+            self.session.rollback()
+            return False
         result = self.session.execute(
             update(ProjectionDelivery)
             .where(
@@ -405,17 +577,6 @@ class ProjectionDeliveryStore:
             self.session.rollback()
             return False
         self.session.execute(
-            update(ProjectionAttempt).where(
-                ProjectionAttempt.id == claim.attempt_id,
-                ProjectionAttempt.lease_token == claim.lease_token,
-            ).values(
-                outcome=("retry_scheduled" if transition.status == "pending" else "dead_lettered"),
-                finished_at=now, error_class=transition.error_class[:255],
-                error_message=transition.error_message[:4000],
-                retry_delay_seconds=transition.retry_delay_seconds,
-            )
-        )
-        self.session.execute(
             update(OutboxEvent).where(OutboxEvent.id == claim.outbox_event_id).values(
                 status="failed", attempts=attempt_count,
                 available_at=transition.available_at,
@@ -425,6 +586,34 @@ class ProjectionDeliveryStore:
         )
         self.session.commit()
         return True
+
+    def _processing_registration(
+        self, claim: DeliveryClaim
+    ) -> tuple[str, str, RetryPolicy] | None:
+        delivery = self.session.execute(
+            select(
+                ProjectionDelivery.projector_id,
+                ProjectionDelivery.projector_version,
+            ).where(
+                ProjectionDelivery.id == claim.delivery_id,
+                ProjectionDelivery.status == "processing",
+                ProjectionDelivery.lease_token == claim.lease_token,
+            )
+        ).one_or_none()
+        if delivery is None:
+            return None
+        projector_id, projector_version = delivery
+        try:
+            spec = self.registry.get(projector_id)
+        except KeyError as exc:
+            raise UnknownProjectorVersionError(
+                f"unregistered projector: {projector_id}@{projector_version}"
+            ) from exc
+        if spec.version != projector_version:
+            raise UnknownProjectorVersionError(
+                f"unregistered projector version: {projector_id}@{projector_version}"
+            )
+        return projector_id, projector_version, spec.retry
 
     def requeue_dead_letter(self, delivery_id, operator_id, reason, *, now=None) -> bool:
         if not operator_id.strip() or not reason.strip():

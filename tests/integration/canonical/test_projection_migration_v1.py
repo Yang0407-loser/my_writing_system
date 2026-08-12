@@ -409,7 +409,7 @@ def test_postgres_backfill_uses_state_chain_and_preserves_p2_delivery_evidence(
     try:
         with engine.connect() as connection:
             assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-                "0003_p3a_projection_backfill"
+                "0004_p3a_requeue_audit"
             )
             commits = connection.execute(
                 text(

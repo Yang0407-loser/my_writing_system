@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -9,7 +10,11 @@ from sqlalchemy import func, select
 
 from app.canonical.commit_service import CanonicalCommitService
 from app.canonical.database import build_engine, build_session_factory
-from app.canonical.errors import PermanentProjectionError, RetryableProjectionError
+from app.canonical.errors import (
+    PermanentProjectionError,
+    RetryableProjectionError,
+    UnknownProjectorVersionError,
+)
 from app.canonical.models import (
     OutboxEvent,
     ProjectionAttempt,
@@ -18,6 +23,11 @@ from app.canonical.models import (
     ProjectionRequeueAudit,
 )
 from app.canonical.projection_delivery import ProjectionDeliveryStore, ScanFilter
+from app.canonical.projection_registry import (
+    ProjectorRegistry,
+    ProjectorSpec,
+    RetryPolicy,
+)
 from tests.integration.canonical.helpers import build_prepared, seed_project
 
 
@@ -156,6 +166,38 @@ def test_later_position_is_blocked_by_every_unpublished_status(
         assert claim is None
 
 
+def test_missing_cursor_successor_does_not_expose_a_later_delivery(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=2)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        first = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+                ProjectionDelivery.stream_position == 1,
+            )
+        )
+        session.delete(first)
+        session.commit()
+    engine.dispose()
+
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        datetime.now(UTC),
+    )
+
+    assert claim is None
+
+
 def test_expired_lease_is_reclaimed_and_old_token_is_fenced(postgres_database_url):
     tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
     scan_filter = ScanFilter(
@@ -206,6 +248,192 @@ def test_publish_advances_cursor_and_exposes_next_position(postgres_database_url
 
     second = _claim(postgres_database_url, "worker", scan_filter, now)
     assert second is not None and second.stream_position == 2
+
+
+def test_publish_with_forged_attempt_id_rolls_back_every_outcome(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    now = datetime.now(UTC)
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        now,
+    )
+    forged = replace(claim, attempt_id=str(uuid4()))
+
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        assert not ProjectionDeliveryStore(session).mark_published(
+            forged, {"sink": "forged"}, now=now
+        )
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        partition = session.scalar(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == tenant_id,
+                ProjectionPartition.project_id == project_id,
+                ProjectionPartition.projector_id == "analytics",
+            )
+        )
+        assert delivery.status == "processing"
+        assert attempt.outcome == "claimed"
+        assert partition.last_published_position == 0
+        assert session.get(OutboxEvent, claim.outbox_event_id).status == "processing"
+    engine.dispose()
+
+
+def test_failure_with_forged_attempt_id_rolls_back_every_outcome(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    now = datetime.now(UTC)
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        now,
+    )
+    forged = replace(claim, attempt_id=str(uuid4()))
+
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        assert not ProjectionDeliveryStore(session).record_failure(
+            forged, RetryableProjectionError("forged"), now=now
+        )
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        assert delivery.status == "processing"
+        assert attempt.outcome == "claimed"
+        assert session.get(OutboxEvent, claim.outbox_event_id).status == "processing"
+    engine.dispose()
+
+
+def test_claim_binds_malicious_projector_id_as_data(postgres_database_url):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    projector_id = "evil' OR 1=1 --"
+    retry = RetryPolicy(3, 2, 30, 120, 30)
+    registry = ProjectorRegistry(
+        [ProjectorSpec(projector_id, "v-malicious", "non_blocking", retry)]
+    )
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        session.execute(
+            ProjectionDelivery.__table__.update()
+            .where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+            .values(projector_id=projector_id, projector_version="v-malicious")
+        )
+        session.execute(
+            ProjectionPartition.__table__.update()
+            .where(
+                ProjectionPartition.tenant_id == tenant_id,
+                ProjectionPartition.project_id == project_id,
+                ProjectionPartition.projector_id == "analytics",
+            )
+            .values(projector_id=projector_id, projector_version="v-malicious")
+        )
+        session.commit()
+        claim = ProjectionDeliveryStore(session, registry).claim_next(
+            "worker",
+            ScanFilter(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                projector_id=projector_id,
+            ),
+            now=datetime.now(UTC),
+        )
+        assert claim is not None and claim.projector_id == projector_id
+    engine.dispose()
+
+
+@pytest.mark.parametrize("invalid_registry_field", ["projector_id", "projector_version"])
+def test_unknown_projector_registration_is_dead_lettered_without_being_claimed(
+    postgres_database_url,
+    invalid_registry_field,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        partition = session.scalar(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == tenant_id,
+                ProjectionPartition.project_id == project_id,
+                ProjectionPartition.projector_id == "analytics",
+            )
+        )
+        if invalid_registry_field == "projector_id":
+            delivery.projector_id = "unknown-projector"
+            partition.projector_id = "unknown-projector"
+        else:
+            delivery.projector_version = "v-unknown"
+            partition.projector_version = "v-unknown"
+        session.commit()
+        claimed = ProjectionDeliveryStore(session).claim_next(
+            "worker",
+            ScanFilter(
+                tenant_id=tenant_id,
+                project_id=project_id,
+            ),
+            now=datetime.now(UTC),
+        )
+        assert claimed is None or claimed.delivery_id != delivery.id
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.attempt_count == 0
+        assert delivery.last_error_class == "UnknownProjectorVersionError"
+        mirror = session.get(OutboxEvent, delivery.outbox_event_id)
+        assert mirror.status == "failed"
+    engine.dispose()
+
+
+def test_invalid_processing_version_rejects_heartbeat_and_dead_letters_failure(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    now = datetime.now(UTC)
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        now,
+    )
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        delivery.projector_version = "v-unknown"
+        session.commit()
+        store = ProjectionDeliveryStore(session)
+        with pytest.raises(UnknownProjectorVersionError):
+            store.heartbeat(claim, now=now)
+        assert store.record_failure(claim, RuntimeError("worker error"), now=now)
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.last_error_class == "UnknownProjectorVersionError"
+    engine.dispose()
 
 
 def test_failure_policy_and_audited_requeue_preserve_attempts(postgres_database_url):
