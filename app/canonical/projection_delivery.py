@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 
 from .errors import (
     PermanentProjectionError,
+    ProjectionConflictError,
     RetryableProjectionError,
-    UnknownProjectorVersionError,
 )
 from .hashing import sha256_json
 from .models import (
@@ -24,7 +24,12 @@ from .models import (
     ProjectionPartition,
     ProjectionRequeueAudit,
 )
-from .projection_registry import DEFAULT_PROJECTOR_REGISTRY, ProjectorRegistry, RetryPolicy
+from .projection_registry import (
+    DEFAULT_PROJECTOR_REGISTRY,
+    ProjectorRegistry,
+    ProjectorSpec,
+    RetryPolicy,
+)
 
 
 @dataclass(frozen=True)
@@ -58,6 +63,51 @@ class FailureTransition:
     error_class: str
     error_message: str
     retry_delay_seconds: int | None
+
+
+@dataclass(frozen=True)
+class _ProcessingIdentity:
+    delivery: ProjectionDelivery
+    envelope: OutboxEvent
+    commit: CanonicalCommit
+    partition: ProjectionPartition | None
+    attempt: ProjectionAttempt | None
+    spec: ProjectorSpec | None
+
+    def agrees(self, *, require_exact_next: bool = True) -> bool:
+        return bool(
+            self.partition is not None
+            and self.attempt is not None
+            and self.spec is not None
+            and self.delivery.outbox_event_id == self.envelope.id
+            and self.envelope.commit_id == self.commit.id
+            and self.envelope.tenant_id == self.commit.tenant_id
+            and self.envelope.project_id == self.commit.project_id
+            and self.envelope.stream_position == self.commit.stream_position
+            and self.partition.tenant_id == self.envelope.tenant_id
+            and self.partition.project_id == self.envelope.project_id
+            and self.partition.projector_id == self.envelope.projection_name
+            and self.partition.enrollment_status == "active"
+            and self.partition.runtime_status == "active"
+            and self.spec.projector_id == self.envelope.projection_name
+            and self.partition.projector_version == self.spec.version
+            and (
+                not require_exact_next
+                or self.partition.last_published_position
+                == self.envelope.stream_position - 1
+            )
+            and self.envelope.barrier_kind == self.spec.barrier_kind
+            and self.delivery.tenant_id == self.envelope.tenant_id
+            and self.delivery.project_id == self.envelope.project_id
+            and self.delivery.projector_id == self.envelope.projection_name
+            and self.delivery.projector_version == self.partition.projector_version
+            and self.delivery.barrier_kind == self.envelope.barrier_kind
+            and self.delivery.stream_position == self.envelope.stream_position
+            and self.attempt.delivery_id == self.delivery.id
+            and self.attempt.lease_token == self.delivery.lease_token
+            and self.attempt.leased_by == self.delivery.leased_by
+            and self.attempt.outcome == "claimed"
+        )
 
 
 def failure_transition(
@@ -219,6 +269,7 @@ class ProjectionDeliveryStore:
             """
         )
         try:
+            self._dead_letter_expired_invalid_processing(scan_filter, now)
             self._dead_letter_unregistered(scan_filter, registry_sql, params, now)
             row = self.session.execute(statement, params).mappings().one_or_none()
             if row is None:
@@ -454,37 +505,47 @@ class ProjectionDeliveryStore:
 
     def heartbeat(self, claim: DeliveryClaim, *, now=None) -> bool:
         now = now or datetime.now(timezone.utc)
-        registered = self._processing_registration(claim)
-        if registered is None:
+        identity = self._lock_processing_identity(claim)
+        if identity is None:
             self.session.rollback()
             return False
-        projector_id, projector_version, policy = registered
-        if projector_id != claim.projector_id:
-            self.session.rollback()
-            raise UnknownProjectorVersionError(
-                f"delivery projector does not match claim: {projector_id}"
-            )
+        if not identity.agrees():
+            self._dead_letter_processing_conflict(identity, now)
+            self.session.commit()
+            return False
         result = self.session.execute(
             update(ProjectionDelivery)
             .where(
-                ProjectionDelivery.id == claim.delivery_id,
+                ProjectionDelivery.id == identity.delivery.id,
                 ProjectionDelivery.status == "processing",
                 ProjectionDelivery.lease_token == claim.lease_token,
-                ProjectionDelivery.projector_id == projector_id,
-                ProjectionDelivery.projector_version == projector_version,
             )
-            .values(leased_until=now + timedelta(seconds=policy.lease_seconds), updated_at=now)
+            .values(
+                leased_until=now + timedelta(seconds=identity.spec.retry.lease_seconds),
+                updated_at=now,
+            )
         )
+        if result.rowcount != 1:
+            self.session.rollback()
+            return False
         self.session.commit()
-        return result.rowcount == 1
+        return True
 
     def mark_published(self, claim: DeliveryClaim, receipt: dict[str, Any], *, now=None) -> bool:
         now = now or datetime.now(timezone.utc)
+        identity = self._lock_processing_identity(claim)
+        if identity is None:
+            self.session.rollback()
+            return False
+        if not identity.agrees():
+            self._dead_letter_processing_conflict(identity, now)
+            self.session.commit()
+            return False
         digest = sha256_json(receipt)
         result = self.session.execute(
             update(ProjectionDelivery)
             .where(
-                ProjectionDelivery.id == claim.delivery_id,
+                ProjectionDelivery.id == identity.delivery.id,
                 ProjectionDelivery.status == "processing",
                 ProjectionDelivery.lease_token == claim.lease_token,
             )
@@ -502,7 +563,7 @@ class ProjectionDeliveryStore:
             update(ProjectionAttempt)
             .where(
                 ProjectionAttempt.id == claim.attempt_id,
-                ProjectionAttempt.delivery_id == claim.delivery_id,
+                ProjectionAttempt.delivery_id == identity.delivery.id,
                 ProjectionAttempt.lease_token == claim.lease_token,
                 ProjectionAttempt.outcome == "claimed",
             )
@@ -514,18 +575,24 @@ class ProjectionDeliveryStore:
         cursor_result = self.session.execute(
             update(ProjectionPartition)
             .where(
-                ProjectionPartition.tenant_id == claim.tenant_id,
-                ProjectionPartition.project_id == claim.project_id,
-                ProjectionPartition.projector_id == claim.projector_id,
-                ProjectionPartition.last_published_position == claim.stream_position - 1,
+                ProjectionPartition.tenant_id == identity.envelope.tenant_id,
+                ProjectionPartition.project_id == identity.envelope.project_id,
+                ProjectionPartition.projector_id == identity.envelope.projection_name,
+                ProjectionPartition.projector_version == identity.partition.projector_version,
+                ProjectionPartition.last_published_position
+                == identity.envelope.stream_position - 1,
             )
-            .values(last_published_position=claim.stream_position, last_published_event_id=claim.outbox_event_id, updated_at=now)
+            .values(
+                last_published_position=identity.envelope.stream_position,
+                last_published_event_id=identity.envelope.id,
+                updated_at=now,
+            )
         )
         if cursor_result.rowcount != 1:
             self.session.rollback()
             return False
         self.session.execute(
-            update(OutboxEvent).where(OutboxEvent.id == claim.outbox_event_id).values(
+            update(OutboxEvent).where(OutboxEvent.id == identity.envelope.id).values(
                 status="published", published_at=now, last_error=None, updated_at=now
             )
         )
@@ -534,46 +601,21 @@ class ProjectionDeliveryStore:
 
     def record_failure(self, claim: DeliveryClaim, error: Exception, *, now=None) -> bool:
         now = now or datetime.now(timezone.utc)
-        delivery_state = self.session.execute(
-            select(
-                ProjectionDelivery.attempt_count,
-                ProjectionDelivery.projector_id,
-                ProjectionDelivery.projector_version,
-            ).where(
-                ProjectionDelivery.id == claim.delivery_id,
-                ProjectionDelivery.status == "processing",
-                ProjectionDelivery.lease_token == claim.lease_token,
-            )
-        ).one_or_none()
-        if delivery_state is None:
+        identity = self._lock_processing_identity(claim)
+        if identity is None:
             self.session.rollback()
             return False
-        attempt_count, projector_id, projector_version = delivery_state
-        try:
-            spec = self.registry.get(projector_id)
-        except KeyError:
-            error = UnknownProjectorVersionError(
-                f"unregistered projector: {projector_id}@{projector_version}"
-            )
-            spec = None
-        else:
-            if spec.version != projector_version:
-                error = UnknownProjectorVersionError(
-                    f"unregistered projector version: {projector_id}@{projector_version}"
-                )
-                spec = None
-        transition = (
-            FailureTransition(
-                "dead_letter", now, type(error).__name__, str(error), None
-            )
-            if spec is None
-            else failure_transition(error, attempt_count, spec.retry, now)
-        )
+        if not identity.agrees():
+            self._dead_letter_processing_conflict(identity, now)
+            self.session.commit()
+            return False
+        attempt_count = identity.delivery.attempt_count
+        transition = failure_transition(error, attempt_count, identity.spec.retry, now)
         attempt_result = self.session.execute(
             update(ProjectionAttempt)
             .where(
                 ProjectionAttempt.id == claim.attempt_id,
-                ProjectionAttempt.delivery_id == claim.delivery_id,
+                ProjectionAttempt.delivery_id == identity.delivery.id,
                 ProjectionAttempt.lease_token == claim.lease_token,
                 ProjectionAttempt.outcome == "claimed",
             )
@@ -595,7 +637,7 @@ class ProjectionDeliveryStore:
         result = self.session.execute(
             update(ProjectionDelivery)
             .where(
-                ProjectionDelivery.id == claim.delivery_id,
+                ProjectionDelivery.id == identity.delivery.id,
                 ProjectionDelivery.status == "processing",
                 ProjectionDelivery.lease_token == claim.lease_token,
             )
@@ -617,7 +659,7 @@ class ProjectionDeliveryStore:
             self.session.rollback()
             return False
         self.session.execute(
-            update(OutboxEvent).where(OutboxEvent.id == claim.outbox_event_id).values(
+            update(OutboxEvent).where(OutboxEvent.id == identity.envelope.id).values(
                 status="failed", attempts=attempt_count,
                 available_at=transition.available_at,
                 last_error=f"{transition.error_class}: {transition.error_message}"[:4000],
@@ -627,33 +669,167 @@ class ProjectionDeliveryStore:
         self.session.commit()
         return True
 
-    def _processing_registration(
-        self, claim: DeliveryClaim
-    ) -> tuple[str, str, RetryPolicy] | None:
-        delivery = self.session.execute(
-            select(
-                ProjectionDelivery.projector_id,
-                ProjectionDelivery.projector_version,
-            ).where(
-                ProjectionDelivery.id == claim.delivery_id,
-                ProjectionDelivery.status == "processing",
-                ProjectionDelivery.lease_token == claim.lease_token,
-            )
-        ).one_or_none()
+    def _lock_processing_identity(
+        self,
+        claim: DeliveryClaim,
+        *,
+        expired_before: datetime | None = None,
+    ) -> _ProcessingIdentity | None:
+        predicates = [
+            ProjectionDelivery.id == claim.delivery_id,
+            ProjectionDelivery.status == "processing",
+            ProjectionDelivery.lease_token == claim.lease_token,
+        ]
+        if expired_before is not None:
+            predicates.append(ProjectionDelivery.leased_until < expired_before)
+        delivery = self.session.scalar(
+            select(ProjectionDelivery).where(*predicates).with_for_update()
+        )
         if delivery is None:
             return None
-        projector_id, projector_version = delivery
-        try:
-            spec = self.registry.get(projector_id)
-        except KeyError as exc:
-            raise UnknownProjectorVersionError(
-                f"unregistered projector: {projector_id}@{projector_version}"
-            ) from exc
-        if spec.version != projector_version:
-            raise UnknownProjectorVersionError(
-                f"unregistered projector version: {projector_id}@{projector_version}"
+        envelope = self.session.scalar(
+            select(OutboxEvent)
+            .where(OutboxEvent.id == delivery.outbox_event_id)
+            .with_for_update()
+        )
+        if envelope is None:
+            return None
+        commit = self.session.scalar(
+            select(CanonicalCommit)
+            .where(CanonicalCommit.id == envelope.commit_id)
+            .with_for_update()
+        )
+        if commit is None:
+            return None
+        partition = self.session.scalar(
+            select(ProjectionPartition)
+            .where(
+                ProjectionPartition.tenant_id == envelope.tenant_id,
+                ProjectionPartition.project_id == envelope.project_id,
+                ProjectionPartition.projector_id == envelope.projection_name,
             )
-        return projector_id, projector_version, spec.retry
+            .with_for_update()
+        )
+        attempt = self.session.scalar(
+            select(ProjectionAttempt)
+            .where(
+                ProjectionAttempt.id == claim.attempt_id,
+                ProjectionAttempt.delivery_id == delivery.id,
+                ProjectionAttempt.lease_token == claim.lease_token,
+                ProjectionAttempt.outcome == "claimed",
+            )
+            .with_for_update()
+        )
+        if attempt is None:
+            return None
+        try:
+            spec = self.registry.get(envelope.projection_name)
+        except KeyError:
+            spec = None
+        return _ProcessingIdentity(delivery, envelope, commit, partition, attempt, spec)
+
+    def _dead_letter_processing_conflict(
+        self,
+        identity: _ProcessingIdentity,
+        now: datetime,
+    ) -> None:
+        message = "processing delivery identity no longer matches immutable envelope"
+        attempt_result = self.session.execute(
+            update(ProjectionAttempt)
+            .where(
+                ProjectionAttempt.id == identity.attempt.id,
+                ProjectionAttempt.delivery_id == identity.delivery.id,
+                ProjectionAttempt.lease_token == identity.delivery.lease_token,
+                ProjectionAttempt.outcome == "claimed",
+            )
+            .values(
+                outcome="dead_lettered",
+                finished_at=now,
+                error_class="ProjectionConflictError",
+                error_message=message,
+                retry_delay_seconds=None,
+            )
+        )
+        if attempt_result.rowcount != 1:
+            raise ProjectionConflictError("processing attempt changed during quarantine")
+        delivery_result = self.session.execute(
+            update(ProjectionDelivery)
+            .where(
+                ProjectionDelivery.id == identity.delivery.id,
+                ProjectionDelivery.status == "processing",
+                ProjectionDelivery.lease_token == identity.delivery.lease_token,
+            )
+            .values(
+                status="dead_letter",
+                available_at=now,
+                lease_token=None,
+                leased_by=None,
+                leased_until=None,
+                last_error_class="ProjectionConflictError",
+                last_error_message=message,
+                published_at=None,
+                receipt_json=None,
+                receipt_digest=None,
+                updated_at=now,
+            )
+        )
+        if delivery_result.rowcount != 1:
+            raise ProjectionConflictError("processing delivery changed during quarantine")
+        self.session.execute(
+            update(OutboxEvent)
+            .where(OutboxEvent.id == identity.envelope.id)
+            .values(
+                status="failed",
+                attempts=identity.delivery.attempt_count,
+                available_at=now,
+                last_error=f"ProjectionConflictError: {message}",
+                published_at=None,
+                updated_at=now,
+            )
+        )
+
+    def _dead_letter_expired_invalid_processing(
+        self,
+        scan_filter: ScanFilter,
+        now: datetime,
+    ) -> None:
+        delivery_ids = self.session.scalars(
+            select(ProjectionDelivery.id)
+            .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+            .where(
+                ProjectionDelivery.status == "processing",
+                ProjectionDelivery.leased_until < now,
+                *self._orm_filters(scan_filter),
+            )
+            .order_by(ProjectionDelivery.id)
+            .with_for_update(of=ProjectionDelivery, skip_locked=True)
+        ).all()
+        for delivery_id in delivery_ids:
+            delivery = self.session.get(ProjectionDelivery, delivery_id)
+            attempt = self.session.scalar(
+                select(ProjectionAttempt).where(
+                    ProjectionAttempt.delivery_id == delivery_id,
+                    ProjectionAttempt.lease_token == delivery.lease_token,
+                    ProjectionAttempt.outcome == "claimed",
+                )
+            )
+            if attempt is None:
+                continue
+            claim = DeliveryClaim(
+                delivery_id=delivery.id,
+                outbox_event_id=delivery.outbox_event_id,
+                attempt_id=attempt.id,
+                lease_token=delivery.lease_token,
+                leased_by=delivery.leased_by,
+                leased_until=delivery.leased_until,
+                tenant_id=delivery.tenant_id,
+                project_id=delivery.project_id,
+                projector_id=delivery.projector_id,
+                stream_position=delivery.stream_position,
+            )
+            identity = self._lock_processing_identity(claim, expired_before=now)
+            if identity is not None and not identity.agrees():
+                self._dead_letter_processing_conflict(identity, now)
 
     def requeue_dead_letter(self, delivery_id, operator_id, reason, *, now=None) -> bool:
         if not operator_id.strip() or not reason.strip():

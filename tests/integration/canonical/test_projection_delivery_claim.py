@@ -13,7 +13,6 @@ from app.canonical.database import build_engine, build_session_factory
 from app.canonical.errors import (
     PermanentProjectionError,
     RetryableProjectionError,
-    UnknownProjectorVersionError,
 )
 from app.canonical.models import (
     OutboxEvent,
@@ -808,7 +807,7 @@ def test_invalid_delivery_is_not_dead_lettered_outside_active_partition_context(
     engine.dispose()
 
 
-def test_invalid_processing_version_rejects_heartbeat_and_dead_letters_failure(
+def test_heartbeat_dead_letters_corrupted_processing_without_extending_lease(
     postgres_database_url,
 ):
     tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
@@ -826,15 +825,221 @@ def test_invalid_processing_version_rejects_heartbeat_and_dead_letters_failure(
     engine = build_engine(postgres_database_url)
     with build_session_factory(engine)() as session:
         delivery = session.get(ProjectionDelivery, claim.delivery_id)
-        delivery.projector_version = "v-unknown"
+        original_lease = delivery.leased_until
+        delivery.barrier_kind = "critical"
         session.commit()
         store = ProjectionDeliveryStore(session)
-        with pytest.raises(UnknownProjectorVersionError):
-            store.heartbeat(claim, now=now)
-        assert store.record_failure(claim, RuntimeError("worker error"), now=now)
+
+        assert store.heartbeat(claim, now=now) is False
+
         session.refresh(delivery)
         assert delivery.status == "dead_letter"
-        assert delivery.last_error_class == "UnknownProjectorVersionError"
+        assert delivery.leased_until is None
+        assert delivery.lease_token is None
+        assert delivery.last_error_class == "ProjectionConflictError"
+        assert original_lease is not None
+        attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        assert attempt.outcome == "dead_lettered"
+        assert attempt.finished_at == now
+        assert session.get(OutboxEvent, claim.outbox_event_id).status == "failed"
+    engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "corrupt_field",
+    [
+        "tenant_id",
+        "project_id",
+        "stream_position",
+        "barrier_kind",
+        "projector_id",
+        "projector_version",
+    ],
+)
+def test_publish_dead_letters_post_claim_identity_corruption_without_advancing_cursor(
+    postgres_database_url,
+    corrupt_field,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    now = datetime.now(UTC)
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        now,
+    )
+    target_project = None
+    if corrupt_field == "project_id":
+        target_project = f"project-{uuid4().hex[:10]}"
+        _seed_commits_in_scope(
+            postgres_database_url,
+            tenant_id,
+            target_project,
+            count=1,
+        )
+
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        if corrupt_field == "tenant_id":
+            delivery.tenant_id = f"tenant-corrupt-{uuid4().hex[:8]}"
+        elif corrupt_field == "project_id":
+            conflicting = session.scalar(
+                select(ProjectionDelivery).where(
+                    ProjectionDelivery.project_id == target_project,
+                    ProjectionDelivery.projector_id == "analytics",
+                    ProjectionDelivery.stream_position == 1,
+                )
+            )
+            session.delete(conflicting)
+            session.flush()
+            delivery.project_id = target_project
+        elif corrupt_field == "stream_position":
+            delivery.stream_position = 99
+        elif corrupt_field == "barrier_kind":
+            delivery.barrier_kind = "critical"
+        elif corrupt_field == "projector_id":
+            delivery.projector_id = f"projector-corrupt-{uuid4().hex[:8]}"
+        else:
+            delivery.projector_version = "v-corrupt"
+        session.commit()
+
+        assert ProjectionDeliveryStore(session).mark_published(
+            claim,
+            {"sink": "must-not-acknowledge"},
+            now=now,
+        ) is False
+
+        session.refresh(delivery)
+        partition = session.scalar(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == tenant_id,
+                ProjectionPartition.project_id == project_id,
+                ProjectionPartition.projector_id == "analytics",
+            )
+        )
+        attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        mirror = session.get(OutboxEvent, claim.outbox_event_id)
+        assert delivery.status == "dead_letter"
+        assert delivery.lease_token is None
+        assert delivery.leased_by is None
+        assert delivery.leased_until is None
+        assert delivery.published_at is None
+        assert delivery.receipt_json is None
+        assert delivery.receipt_digest is None
+        assert delivery.last_error_class == "ProjectionConflictError"
+        assert attempt.outcome == "dead_lettered"
+        assert attempt.finished_at == now
+        assert partition.last_published_position == 0
+        assert partition.last_published_event_id is None
+        assert mirror.status == "failed"
+        assert mirror.published_at is None
+    engine.dispose()
+
+
+def test_failure_dead_letters_corrupted_processing_and_finalizes_current_attempt(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    now = datetime.now(UTC)
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        now,
+    )
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        delivery.stream_position = 99
+        session.commit()
+
+        assert ProjectionDeliveryStore(session).record_failure(
+            claim,
+            RetryableProjectionError("transport failed"),
+            now=now,
+        ) is False
+
+        session.refresh(delivery)
+        attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        assert delivery.status == "dead_letter"
+        assert delivery.available_at == now
+        assert delivery.lease_token is None
+        assert delivery.last_error_class == "ProjectionConflictError"
+        assert attempt.outcome == "dead_lettered"
+        assert attempt.finished_at == now
+        assert attempt.retry_delay_seconds is None
+        assert session.get(OutboxEvent, claim.outbox_event_id).status == "failed"
+    engine.dispose()
+
+
+def test_scanner_dead_letters_expired_corrupted_processing_without_forged_authority(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    now = datetime.now(UTC)
+    scan_filter = ScanFilter(tenant_id=tenant_id, project_id=project_id)
+    claim = _claim(
+        postgres_database_url,
+        "old-worker",
+        replace(scan_filter, projector_id="analytics"),
+        now,
+    )
+    scan_at = claim.leased_until + timedelta(seconds=1)
+    forged = replace(claim, lease_token=uuid4().hex)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        delivery.stream_position = 99
+        session.commit()
+        store = ProjectionDeliveryStore(session)
+
+        assert store.heartbeat(forged, now=now) is False
+        assert store.mark_published(forged, {"sink": "forged"}, now=now) is False
+        assert store.record_failure(
+            forged,
+            PermanentProjectionError("forged"),
+            now=now,
+        ) is False
+        session.refresh(delivery)
+        assert delivery.status == "processing"
+        assert delivery.lease_token == claim.lease_token
+        assert session.get(ProjectionAttempt, claim.attempt_id).outcome == "claimed"
+
+        unrelated = store.claim_next("scanner", scan_filter, now=scan_at)
+
+        session.refresh(delivery)
+        attempts = session.scalars(
+            select(ProjectionAttempt).where(
+                ProjectionAttempt.delivery_id == claim.delivery_id
+            )
+        ).all()
+        assert delivery.status == "dead_letter"
+        assert delivery.lease_token is None
+        assert delivery.leased_by is None
+        assert delivery.leased_until is None
+        assert delivery.last_error_class == "ProjectionConflictError"
+        assert len(attempts) == 1
+        assert attempts[0].id == claim.attempt_id
+        assert attempts[0].outcome == "dead_lettered"
+        assert attempts[0].finished_at == scan_at
+        assert unrelated is not None
+        assert unrelated.delivery_id != claim.delivery_id
+        assert store.heartbeat(claim, now=scan_at) is False
+        assert store.mark_published(claim, {"sink": "late"}, now=scan_at) is False
+        assert store.record_failure(
+            claim,
+            RetryableProjectionError("late"),
+            now=scan_at,
+        ) is False
     engine.dispose()
 
 

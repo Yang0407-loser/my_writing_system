@@ -596,6 +596,15 @@ git add app\canonical\projection_delivery.py app\canonical\errors.py tests\unit\
 git commit -m "feat: add ordered projection leases and dead letters"
 ```
 
+#### Task 5 Fix Round 5 — Processing identity quarantine
+
+- Approved scope: token/Attempt-CAS lifecycle outcomes and scanner-confirmed expired leases only.
+- Centralized the locked identity check across immutable Envelope, Canon Commit, active ordered Partition, bound Registry spec and current claimed Attempt.
+- `heartbeat`, `mark_published` and `record_failure` now quarantine a valid-token processing Delivery whose identity was corrupted: finalize the existing Attempt as `dead_lettered`, clear the lease, mirror Outbox failure and leave the Projection cursor unchanged.
+- Expired processing cleanup applies the same quarantine only after locking an actually expired current lease; it creates no synthetic Attempt.
+- Forged tokens and forged Attempt IDs return `False` without mutation. Canon, Envelope and Attempt history remain intact.
+- Verification: focused corruption/fencing gate `9 passed`; expanded Task 5 + PostgreSQL schema/migration gate `50 passed`; Ruff and diff checks clean.
+
 ### Task 6: Add maintenance fencing and the shared Projection Worker
 
 **Files:**
