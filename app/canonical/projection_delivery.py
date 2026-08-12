@@ -104,6 +104,7 @@ class _ProcessingIdentity:
             and self.delivery.barrier_kind == self.envelope.barrier_kind
             and self.delivery.stream_position == self.envelope.stream_position
             and self.attempt.delivery_id == self.delivery.id
+            and self.attempt.attempt_number == self.delivery.attempt_count
             and self.attempt.lease_token == self.delivery.lease_token
             and self.attempt.leased_by == self.delivery.leased_by
             and self.attempt.outcome == "claimed"
@@ -715,6 +716,7 @@ class ProjectionDeliveryStore:
             .where(
                 ProjectionAttempt.id == claim.attempt_id,
                 ProjectionAttempt.delivery_id == delivery.id,
+                ProjectionAttempt.attempt_number == delivery.attempt_count,
                 ProjectionAttempt.lease_token == claim.lease_token,
                 ProjectionAttempt.outcome == "claimed",
             )
@@ -809,6 +811,7 @@ class ProjectionDeliveryStore:
             attempt = self.session.scalar(
                 select(ProjectionAttempt).where(
                     ProjectionAttempt.delivery_id == delivery_id,
+                    ProjectionAttempt.attempt_number == delivery.attempt_count,
                     ProjectionAttempt.lease_token == delivery.lease_token,
                     ProjectionAttempt.outcome == "claimed",
                 )

@@ -74,6 +74,23 @@ def _claim(database_url, worker, scan_filter, now):
         engine.dispose()
 
 
+def _add_noncurrent_claimed_attempt(session, claim, *, now):
+    delivery = session.get(ProjectionDelivery, claim.delivery_id)
+    attempt = ProjectionAttempt(
+        id=str(uuid4()),
+        delivery_id=claim.delivery_id,
+        attempt_number=delivery.attempt_count - 1,
+        lease_token=claim.lease_token,
+        leased_by=claim.leased_by,
+        trigger_source="scanner",
+        outcome="claimed",
+        started_at=now,
+    )
+    session.add(attempt)
+    session.commit()
+    return attempt.id
+
+
 def test_twenty_sessions_create_one_current_owner_and_token(postgres_database_url):
     tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
     now = datetime.now(UTC)
@@ -318,6 +335,100 @@ def test_failure_with_forged_attempt_id_rolls_back_every_outcome(
         assert delivery.status == "processing"
         assert attempt.outcome == "claimed"
         assert session.get(OutboxEvent, claim.outbox_event_id).status == "processing"
+    engine.dispose()
+
+
+@pytest.mark.parametrize("outcome", ["heartbeat", "publish", "failure"])
+def test_noncurrent_claimed_attempt_has_no_processing_authority(
+    postgres_database_url,
+    outcome,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    claimed_at = datetime.now(UTC)
+    action_at = claimed_at + timedelta(seconds=1)
+    claim = _claim(
+        postgres_database_url,
+        "worker",
+        ScanFilter(
+            tenant_id=tenant_id,
+            project_id=project_id,
+            projector_id="analytics",
+        ),
+        claimed_at,
+    )
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        forged_attempt_id = _add_noncurrent_claimed_attempt(
+            session, claim, now=claimed_at
+        )
+        forged = replace(claim, attempt_id=forged_attempt_id)
+        store = ProjectionDeliveryStore(session)
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        current_attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        mirror = session.get(OutboxEvent, claim.outbox_event_id)
+        partition = session.scalar(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == tenant_id,
+                ProjectionPartition.project_id == project_id,
+                ProjectionPartition.projector_id == "analytics",
+            )
+        )
+        original_lease = delivery.leased_until
+
+        if outcome == "heartbeat":
+            result = store.heartbeat(forged, now=action_at)
+        elif outcome == "publish":
+            result = store.mark_published(forged, {"sink": "forged"}, now=action_at)
+        else:
+            result = store.record_failure(
+                forged, RetryableProjectionError("forged"), now=action_at
+            )
+
+        assert result is False
+        session.refresh(delivery)
+        session.refresh(current_attempt)
+        session.refresh(mirror)
+        session.refresh(partition)
+        forged_attempt = session.get(ProjectionAttempt, forged_attempt_id)
+        assert delivery.status == "processing"
+        assert delivery.lease_token == claim.lease_token
+        assert delivery.leased_by == claim.leased_by
+        assert delivery.leased_until == original_lease
+        assert delivery.published_at is None
+        assert delivery.receipt_json is None
+        assert delivery.last_error_class is None
+        assert current_attempt.outcome == "claimed"
+        assert current_attempt.finished_at is None
+        assert forged_attempt.outcome == "claimed"
+        assert forged_attempt.finished_at is None
+        assert partition.last_published_position == 0
+        assert partition.last_published_event_id is None
+        assert mirror.status == "processing"
+        assert mirror.published_at is None
+        assert mirror.last_error is None
+
+        if outcome == "heartbeat":
+            assert store.heartbeat(claim, now=action_at) is True
+            session.refresh(delivery)
+            assert delivery.leased_until > original_lease
+        elif outcome == "publish":
+            assert store.mark_published(
+                claim, {"sink": "legitimate"}, now=action_at
+            ) is True
+            session.refresh(delivery)
+            session.refresh(current_attempt)
+            session.refresh(partition)
+            assert delivery.status == "published"
+            assert current_attempt.outcome == "succeeded"
+            assert partition.last_published_position == 1
+        else:
+            assert store.record_failure(
+                claim, RetryableProjectionError("legitimate"), now=action_at
+            ) is True
+            session.refresh(delivery)
+            session.refresh(current_attempt)
+            assert delivery.status == "pending"
+            assert current_attempt.outcome == "retry_scheduled"
     engine.dispose()
 
 
@@ -1040,6 +1151,63 @@ def test_scanner_dead_letters_expired_corrupted_processing_without_forged_author
             RetryableProjectionError("late"),
             now=scan_at,
         ) is False
+    engine.dispose()
+
+
+def test_expired_scanner_selects_exact_current_attempt_and_other_partition_progresses(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    claimed_at = datetime.now(UTC)
+    scan_filter = ScanFilter(tenant_id=tenant_id, project_id=project_id)
+    claim = _claim(
+        postgres_database_url,
+        "old-worker",
+        replace(scan_filter, projector_id="analytics"),
+        claimed_at,
+    )
+    scan_at = claim.leased_until + timedelta(seconds=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        forged_attempt_id = _add_noncurrent_claimed_attempt(
+            session, claim, now=claimed_at
+        )
+        delivery = session.get(ProjectionDelivery, claim.delivery_id)
+        delivery.stream_position = 99
+        session.commit()
+
+        unrelated = ProjectionDeliveryStore(session).claim_next(
+            "scanner", scan_filter, now=scan_at
+        )
+
+        session.refresh(delivery)
+        current_attempt = session.get(ProjectionAttempt, claim.attempt_id)
+        forged_attempt = session.get(ProjectionAttempt, forged_attempt_id)
+        partition = session.scalar(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == tenant_id,
+                ProjectionPartition.project_id == project_id,
+                ProjectionPartition.projector_id == "analytics",
+            )
+        )
+        mirror = session.get(OutboxEvent, claim.outbox_event_id)
+        assert delivery.status == "dead_letter"
+        assert delivery.lease_token is None
+        assert delivery.leased_by is None
+        assert delivery.leased_until is None
+        assert delivery.last_error_class == "ProjectionConflictError"
+        assert delivery.published_at is None
+        assert delivery.receipt_json is None
+        assert current_attempt.outcome == "dead_lettered"
+        assert current_attempt.finished_at == scan_at
+        assert forged_attempt.outcome == "claimed"
+        assert forged_attempt.finished_at is None
+        assert partition.last_published_position == 0
+        assert partition.last_published_event_id is None
+        assert mirror.status == "failed"
+        assert mirror.published_at is None
+        assert unrelated is not None
+        assert unrelated.delivery_id != claim.delivery_id
     engine.dispose()
 
 
