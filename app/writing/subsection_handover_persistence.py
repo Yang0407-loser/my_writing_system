@@ -67,6 +67,12 @@ def history_for_checkpoint(blackboard: Any, task_id: str) -> dict[str, Any] | No
         history = normalize_history(raw)
     except Exception:
         return None
+    records = {
+        record_id: record
+        for record_id, record in history.records.items()
+        if SubsectionHandoverHistoryRecorder._record_kind(record) == "legacy"
+    }
+    history = history.model_copy(update={"records": records})
     if not history.records and not history.pending and not history.errors:
         return None
     return history.model_dump(mode="json")
@@ -138,6 +144,10 @@ class SubsectionHandoverHistoryRecorder:
             SUBSECTION_HANDOVER_HISTORY_KEY,
             envelope.model_dump(mode="json"),
         )
+
+    def _canonical_namespace(self, tenant_id: str, project_id: str) -> str:
+        scope_hash = sha256_json({"tenant_id": tenant_id, "project_id": project_id})
+        return f"canonical:handover:{task_id_hash(self.task_id)}:{scope_hash}"
 
     @staticmethod
     def _physical_record_key(
@@ -213,7 +223,6 @@ class SubsectionHandoverHistoryRecorder:
                 f"writer-handover:{hashed_task}:"
                 f"S{section}.{subsection}:{output_sha256}"
             )
-            envelope = self._load()
             fields = ()
             if isinstance(handover_note, dict):
                 fields = tuple(
@@ -267,27 +276,27 @@ class SubsectionHandoverHistoryRecorder:
                 locally_rejected_claim_count=observation.locally_rejected_claim_count,
                 created_at=utc_now(),
             )
-            physical_key = self._physical_record_key(
-                record_id,
-                canonical_tenant_id=canonical_tenant_id,
-                canonical_project_id=canonical_project_id,
-            )
-            existing = envelope.records.get(physical_key)
+            if canonical_tenant_id is not None and canonical_project_id is not None:
+                result = self.blackboard.hash_upsert_by_position(
+                    self._canonical_namespace(
+                        canonical_tenant_id, canonical_project_id
+                    ),
+                    record_id,
+                    record.model_dump(mode="json"),
+                    stream_position,
+                )
+                if result == "conflict":
+                    raise ValueError(
+                        "handover semantic conflict at the same stream_position"
+                    )
+                return record_id
+
+            envelope = self._load()
+            existing = envelope.records.get(record_id)
             if existing is not None:
-                if canonical_tenant_id is None:
-                    return record_id
-                if stream_position < existing.stream_position:
-                    return record_id
-                if stream_position == existing.stream_position:
-                    old_semantic = existing.model_dump(mode="json", exclude={"created_at"})
-                    new_semantic = record.model_dump(mode="json", exclude={"created_at"})
-                    if old_semantic != new_semantic:
-                        raise ValueError(
-                            "handover semantic conflict at the same stream_position"
-                        )
-                    return record_id
+                return record_id
             records = dict(envelope.records)
-            records[physical_key] = record
+            records[record_id] = record
             self._save(envelope.model_copy(update={"records": records}))
             return record_id
         except ValueError:
@@ -308,35 +317,95 @@ class SubsectionHandoverHistoryRecorder:
     def list_canonical_records(
         self, *, tenant_id: str, project_id: str
     ) -> tuple[SubsectionHandoverRecord, ...]:
-        records = (
+        scoped = tuple(
+            SubsectionHandoverRecord.model_validate(record)
+            for record in self.blackboard.hash_get_all(
+                self._canonical_namespace(tenant_id, project_id)
+            ).values()
+        )
+        for record in scoped:
+            self._validate_canonical_record(record, tenant_id, project_id)
+        legacy_envelope = tuple(
             record
             for record in self._load().records.values()
-            if record.canonical_tenant_id == tenant_id
+            if self._record_kind(record) == "canonical"
+            and record.canonical_tenant_id == tenant_id
             and record.canonical_project_id == project_id
         )
+        records = (*scoped, *legacy_envelope)
         return tuple(sorted(records, key=lambda item: (item.stream_position or 0, item.record_id)))
 
     def clear_canonical_records(self, *, tenant_id: str, project_id: str) -> int:
+        namespace = self._canonical_namespace(tenant_id, project_id)
+        scoped = self.blackboard.hash_get_all(namespace)
+        for payload in scoped.values():
+            self._validate_canonical_record(
+                SubsectionHandoverRecord.model_validate(payload), tenant_id, project_id
+            )
+        record_ids = tuple(scoped)
+        removed = self.blackboard.hash_delete(namespace, *record_ids)
         envelope = self._load()
-        records = {
-            record_id: record
-            for record_id, record in envelope.records.items()
+        retained = {
+            storage_id: record
+            for storage_id, record in envelope.records.items()
             if not (
-                record.canonical_tenant_id == tenant_id
+                self._record_kind(record) == "canonical"
+                and record.canonical_tenant_id == tenant_id
                 and record.canonical_project_id == project_id
             )
         }
-        removed = len(envelope.records) - len(records)
-        if removed:
-            self._save(envelope.model_copy(update={"records": records}))
-        return removed
+        legacy_removed = len(envelope.records) - len(retained)
+        if legacy_removed:
+            self._save(envelope.model_copy(update={"records": retained}))
+        return removed + legacy_removed
+
+    @staticmethod
+    def _canonical_marker_values(
+        record: SubsectionHandoverRecord,
+    ) -> tuple[object, ...]:
+        return (
+            record.canonical_tenant_id,
+            record.canonical_project_id,
+            record.stream_position,
+            record.revision_id,
+        )
+
+    @classmethod
+    def _record_kind(cls, record: SubsectionHandoverRecord) -> str:
+        values = cls._canonical_marker_values(record)
+        if all(value is None for value in values):
+            return "legacy"
+        if all(value is not None for value in values):
+            return "canonical"
+        return "malformed"
+
+    @classmethod
+    def _validate_canonical_record(
+        cls,
+        record: SubsectionHandoverRecord,
+        tenant_id: str,
+        project_id: str,
+    ) -> None:
+        if cls._record_kind(record) != "canonical":
+            raise ValueError("malformed Handover canonical identity markers")
+        if (
+            record.canonical_tenant_id != tenant_id
+            or record.canonical_project_id != project_id
+        ):
+            raise ValueError("Handover canonical identity scope mismatch")
+
+    def malformed_projection_records(self) -> tuple[SubsectionHandoverRecord, ...]:
+        return tuple(
+            record
+            for record in self._load().records.values()
+            if self._record_kind(record) == "malformed"
+        )
 
     def unscoped_records(self) -> tuple[SubsectionHandoverRecord, ...]:
         return tuple(
             record
             for record in self._load().records.values()
-            if record.canonical_tenant_id is None
-            and record.canonical_project_id is None
+            if self._record_kind(record) == "legacy"
         )
 
     def clear_unscoped_records(self) -> int:
@@ -344,10 +413,7 @@ class SubsectionHandoverHistoryRecorder:
         records = {
             storage_id: record
             for storage_id, record in envelope.records.items()
-            if not (
-                record.canonical_tenant_id is None
-                and record.canonical_project_id is None
-            )
+            if self._record_kind(record) != "legacy"
         }
         removed = len(envelope.records) - len(records)
         if removed:

@@ -29,6 +29,13 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
         self.recorder = SubsectionHandoverHistoryRecorder(blackboard, task_id)
         self.bindings = LegacyScopeBindingStore(blackboard)
 
+    def _reject_malformed(self) -> None:
+        self.recorder.list_canonical_records(
+            tenant_id=self.scope.tenant_id, project_id=self.scope.project_id
+        )
+        if self.recorder.malformed_projection_records():
+            raise ValueError("malformed Handover canonical identity markers")
+
     def _record_identity(self, message: ProjectionMessage):
         revision = self._validate_message(message)
         metadata = revision["metadata"]
@@ -42,6 +49,7 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
         return revision, metadata, content_hash, section, subsection, record_id
 
     def apply(self, message: ProjectionMessage):
+        self._reject_malformed()
         if self.recorder.unscoped_records():
             self.bindings.require(task_id=self.task_id, scope=self.scope)
             raise ValueError(
@@ -179,6 +187,7 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
 
     def actual_records(self, scope: ProjectionScope) -> tuple[ProjectionRecord, ...]:
         self._validate_actual_scope(scope)
+        self._reject_malformed()
         if self.recorder.unscoped_records():
             self.bindings.require(task_id=self.task_id, scope=scope)
             raise ValueError(
@@ -193,6 +202,7 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
 
     def clear(self, scope: ProjectionScope) -> None:
         self._validate_actual_scope(scope)
+        self._reject_malformed()
         if self.recorder.unscoped_records():
             self.bindings.require(task_id=self.task_id, scope=scope)
             self.recorder.clear_unscoped_records()

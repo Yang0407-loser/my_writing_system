@@ -1,5 +1,6 @@
 import json
 import redis
+from redis.exceptions import WatchError
 from .config import settings
 from .checkpoint_sanitizer import is_credential_field, sanitize_checkpoint
 
@@ -55,6 +56,63 @@ class Blackboard:
             except (json.JSONDecodeError, TypeError):
                 result[key] = val
         return result
+
+    def set_if_absent(self, task_id: str, key: str, value: object) -> bool:
+        """Atomically create one task hash field without replacing a winner."""
+        serialized = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
+        return bool(self._redis.hsetnx(task_id, key, serialized))
+
+    @staticmethod
+    def _decode_json_value(value):
+        if value is None:
+            return None
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        return json.loads(value)
+
+    def hash_get(self, namespace: str, field: str):
+        return self._decode_json_value(self._redis.hget(namespace, field))
+
+    def hash_get_all(self, namespace: str) -> dict:
+        return {
+            (key.decode("utf-8") if isinstance(key, bytes) else key): self._decode_json_value(value)
+            for key, value in self._redis.hgetall(namespace).items()
+        }
+
+    def hash_set(self, namespace: str, field: str, value: object) -> None:
+        self._redis.hset(namespace, field, json.dumps(value, ensure_ascii=False))
+
+    def hash_delete(self, namespace: str, *fields: str) -> int:
+        return int(self._redis.hdel(namespace, *fields)) if fields else 0
+
+    def hash_upsert_by_position(
+        self,
+        namespace: str,
+        field: str,
+        value: dict,
+        position: int,
+    ) -> str:
+        """Atomically keep the highest stream position for one hash field."""
+        encoded = json.dumps(value, ensure_ascii=False)
+        while True:
+            with self._redis.pipeline() as pipe:
+                try:
+                    pipe.watch(namespace)
+                    existing = self._decode_json_value(pipe.hget(namespace, field))
+                    if existing is not None:
+                        old_position = existing.get("stream_position")
+                        if position < old_position:
+                            return "stale"
+                        if position == old_position:
+                            old_semantic = {k: v for k, v in existing.items() if k != "created_at"}
+                            new_semantic = {k: v for k, v in value.items() if k != "created_at"}
+                            return "identical" if old_semantic == new_semantic else "conflict"
+                    pipe.multi()
+                    pipe.hset(namespace, field, encoded)
+                    pipe.execute()
+                    return "inserted" if existing is None else "updated"
+                except WatchError:
+                    continue
 
     def delete(self, task_id: str) -> None:
         self._redis.delete(task_id)

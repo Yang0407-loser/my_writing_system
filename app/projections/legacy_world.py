@@ -25,6 +25,11 @@ class LegacyWorldProjectionAdapter(ProjectionAdapterBase):
         self.bindings = LegacyScopeBindingStore(blackboard)
 
     def _reject_unscoped(self) -> None:
+        self.manager.list_projected_facts(
+            tenant_id=self.scope.tenant_id, project_id=self.scope.project_id
+        )
+        if self.manager.list_malformed_projection_facts():
+            raise ValueError("malformed World canonical identity markers")
         if self.manager.list_unscoped_facts():
             self.bindings.require(task_id=self.task_id, scope=self.scope)
             raise ValueError(
@@ -123,6 +128,11 @@ class LegacyWorldProjectionAdapter(ProjectionAdapterBase):
 
     def clear(self, scope: ProjectionScope) -> None:
         self._validate_actual_scope(scope)
+        self.manager.list_projected_facts(
+            tenant_id=scope.tenant_id, project_id=scope.project_id
+        )
+        if self.manager.list_malformed_projection_facts():
+            raise ValueError("malformed World canonical identity markers")
         if self.manager.list_unscoped_facts():
             self.bindings.require(task_id=self.task_id, scope=scope)
             self.manager.clear_unscoped_facts()
