@@ -266,6 +266,53 @@ class VectorStore:
             logger.warning(f"ChromaDB 清理 task={task_id[:8]} 失败: {e}", exc_info=True)
             return 0
 
+    @staticmethod
+    def _canonical_where(*, tenant_id: str, project_id: str, task_id: str) -> dict:
+        if not tenant_id or not project_id or not task_id:
+            raise ValueError("tenant_id, project_id and task_id are required")
+        return {
+            "$and": [
+                {"tenant_id": tenant_id},
+                {"project_id": project_id},
+                {"task_id": task_id},
+            ]
+        }
+
+    def list_canonical_chunks(
+        self, *, tenant_id: str, project_id: str, task_id: str
+    ) -> tuple[dict, ...]:
+        """Enumerate only chunks carrying the complete Canon scope metadata."""
+        result = self._collection.get(
+            where=self._canonical_where(
+                tenant_id=tenant_id, project_id=project_id, task_id=task_id
+            ),
+            include=["documents", "metadatas"],
+        )
+        ids = result.get("ids", []) or []
+        documents = result.get("documents", []) or []
+        metadatas = result.get("metadatas", []) or []
+        return tuple(
+            {
+                "record_id": record_id,
+                "text": documents[index] if index < len(documents) else "",
+                "metadata": dict(metadatas[index] or {})
+                if index < len(metadatas)
+                else {},
+            }
+            for index, record_id in enumerate(ids)
+        )
+
+    def delete_canonical_chunks(
+        self, *, tenant_id: str, project_id: str, task_id: str
+    ) -> int:
+        rows = self.list_canonical_chunks(
+            tenant_id=tenant_id, project_id=project_id, task_id=task_id
+        )
+        ids = [row["record_id"] for row in rows]
+        if ids:
+            self._collection.delete(ids=ids)
+        return len(ids)
+
     def enforce_task_limit(self, task_id: str) -> int:
         """确保单个 task 的向量块不超过 MAX_CHUNKS_PER_TASK。
         超出时删除最旧的块。返回删除数量。

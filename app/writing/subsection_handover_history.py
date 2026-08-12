@@ -148,6 +148,10 @@ class SubsectionHandoverRecord(BaseModel):
 
     schema_version: str = SUBSECTION_HANDOVER_SCHEMA_VERSION
     record_id: str
+    canonical_tenant_id: str | None = None
+    canonical_project_id: str | None = None
+    stream_position: int | None = Field(default=None, ge=1)
+    revision_id: str | None = None
     task_id_hash: str
     section: int = Field(ge=1)
     subsection: int = Field(ge=1)

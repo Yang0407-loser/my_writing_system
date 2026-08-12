@@ -5,8 +5,6 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from .config import settings
-
 logger = logging.getLogger(__name__)
 
 
@@ -117,7 +115,9 @@ class WorldFact:
     __slots__ = (
         "fact_id", "category", "fact", "source_section",
         "source_subsection", "immutable", "verified",
-        "contradiction_of", "created_at",
+        "contradiction_of", "created_at", "canonical_tenant_id",
+        "canonical_project_id", "stream_position", "commit_id",
+        "revision_id", "projection_event_id",
     )
 
     def __init__(
@@ -130,6 +130,12 @@ class WorldFact:
         verified: bool = False,
         contradiction_of: Optional[str] = None,
         fact_id: Optional[str] = None,
+        canonical_tenant_id: Optional[str] = None,
+        canonical_project_id: Optional[str] = None,
+        stream_position: Optional[int] = None,
+        commit_id: Optional[str] = None,
+        revision_id: Optional[str] = None,
+        projection_event_id: Optional[str] = None,
     ):
         self.fact_id = fact_id or str(uuid.uuid4())
         self.category = category
@@ -140,9 +146,15 @@ class WorldFact:
         self.verified = verified
         self.contradiction_of = contradiction_of
         self.created_at = datetime.now().isoformat()
+        self.canonical_tenant_id = canonical_tenant_id
+        self.canonical_project_id = canonical_project_id
+        self.stream_position = stream_position
+        self.commit_id = commit_id
+        self.revision_id = revision_id
+        self.projection_event_id = projection_event_id
 
     def to_dict(self) -> dict:
-        return {
+        payload = {
             "fact_id": self.fact_id,
             "category": self.category,
             "fact": self.fact,
@@ -153,6 +165,16 @@ class WorldFact:
             "contradiction_of": self.contradiction_of,
             "created_at": self.created_at,
         }
+        canonical = {
+            "canonical_tenant_id": self.canonical_tenant_id,
+            "canonical_project_id": self.canonical_project_id,
+            "stream_position": self.stream_position,
+            "commit_id": self.commit_id,
+            "revision_id": self.revision_id,
+            "projection_event_id": self.projection_event_id,
+        }
+        payload.update({key: value for key, value in canonical.items() if value is not None})
+        return payload
 
     @classmethod
     def from_dict(cls, d: dict) -> "WorldFact":
@@ -165,6 +187,12 @@ class WorldFact:
             immutable=d.get("immutable", True),
             verified=d.get("verified", False),
             contradiction_of=d.get("contradiction_of"),
+            canonical_tenant_id=d.get("canonical_tenant_id"),
+            canonical_project_id=d.get("canonical_project_id"),
+            stream_position=d.get("stream_position"),
+            commit_id=d.get("commit_id"),
+            revision_id=d.get("revision_id"),
+            projection_event_id=d.get("projection_event_id"),
         )
 
 
@@ -279,6 +307,65 @@ class WorldStateManager:
         self._facts[fact_id] = wf
         self._save()
         return fact_id
+
+    def upsert_fact(
+        self,
+        *,
+        fact_id: str,
+        category: str,
+        fact: str,
+        source_section: int = 0,
+        source_subsection: int = 0,
+        immutable: bool = True,
+        verified: bool = False,
+        canonical_tenant_id: str,
+        canonical_project_id: str,
+        stream_position: int,
+        commit_id: str,
+        revision_id: str,
+        projection_event_id: str,
+    ) -> str:
+        """Replace one deterministically identified Canon-projected fact."""
+        if not fact_id or not fact.strip():
+            raise ValueError("fact_id and non-empty fact are required")
+        self._facts[fact_id] = WorldFact(
+            fact_id=fact_id,
+            category=category,
+            fact=fact,
+            source_section=source_section,
+            source_subsection=source_subsection,
+            immutable=immutable,
+            verified=verified,
+            canonical_tenant_id=canonical_tenant_id,
+            canonical_project_id=canonical_project_id,
+            stream_position=stream_position,
+            commit_id=commit_id,
+            revision_id=revision_id,
+            projection_event_id=projection_event_id,
+        )
+        self._save()
+        return fact_id
+
+    def list_projected_facts(self, *, tenant_id: str, project_id: str) -> list[dict]:
+        return [
+            fact.to_dict()
+            for fact in self._facts.values()
+            if fact.canonical_tenant_id == tenant_id
+            and fact.canonical_project_id == project_id
+        ]
+
+    def clear_projected_facts(self, *, tenant_id: str, project_id: str) -> int:
+        ids = [
+            fact_id
+            for fact_id, fact in self._facts.items()
+            if fact.canonical_tenant_id == tenant_id
+            and fact.canonical_project_id == project_id
+        ]
+        for fact_id in ids:
+            del self._facts[fact_id]
+        if ids:
+            self._save()
+        return len(ids)
 
     def verify_facts(
         self,

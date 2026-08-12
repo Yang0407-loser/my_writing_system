@@ -183,6 +183,10 @@ class SubsectionHandoverHistoryRecorder:
         commit_idempotency_key: str,
         handover_note: dict | None,
         observation: HandoverExtractionObservation,
+        canonical_tenant_id: str | None = None,
+        canonical_project_id: str | None = None,
+        stream_position: int | None = None,
+        revision_id: str | None = None,
     ) -> str | None:
         started = time.perf_counter()
         try:
@@ -197,6 +201,23 @@ class SubsectionHandoverHistoryRecorder:
             )
             envelope = self._load()
             if record_id in envelope.records:
+                existing = envelope.records[record_id]
+                if canonical_tenant_id is not None and (
+                    existing.canonical_tenant_id is None
+                    and existing.canonical_project_id is None
+                    and existing.stream_position is None
+                    and existing.revision_id is None
+                ):
+                    records = dict(envelope.records)
+                    records[record_id] = existing.model_copy(
+                        update={
+                            "canonical_tenant_id": canonical_tenant_id,
+                            "canonical_project_id": canonical_project_id,
+                            "stream_position": stream_position,
+                            "revision_id": revision_id,
+                        }
+                    )
+                    self._save(envelope.model_copy(update={"records": records}))
                 return record_id
             fields = ()
             if isinstance(handover_note, dict):
@@ -214,6 +235,10 @@ class SubsectionHandoverHistoryRecorder:
                 )
             record = SubsectionHandoverRecord(
                 record_id=record_id,
+                canonical_tenant_id=canonical_tenant_id,
+                canonical_project_id=canonical_project_id,
+                stream_position=stream_position,
+                revision_id=revision_id,
                 task_id_hash=hashed_task,
                 section=section,
                 subsection=subsection,
@@ -261,6 +286,32 @@ class SubsectionHandoverHistoryRecorder:
                 elapsed_ms=(time.perf_counter() - started) * 1000,
             )
             return None
+
+    def list_canonical_records(
+        self, *, tenant_id: str, project_id: str
+    ) -> tuple[SubsectionHandoverRecord, ...]:
+        records = (
+            record
+            for record in self._load().records.values()
+            if record.canonical_tenant_id == tenant_id
+            and record.canonical_project_id == project_id
+        )
+        return tuple(sorted(records, key=lambda item: (item.stream_position or 0, item.record_id)))
+
+    def clear_canonical_records(self, *, tenant_id: str, project_id: str) -> int:
+        envelope = self._load()
+        records = {
+            record_id: record
+            for record_id, record in envelope.records.items()
+            if not (
+                record.canonical_tenant_id == tenant_id
+                and record.canonical_project_id == project_id
+            )
+        }
+        removed = len(envelope.records) - len(records)
+        if removed:
+            self._save(envelope.model_copy(update={"records": records}))
+        return removed
 
     def capture_canonical_projection(self, envelope: Any) -> str | None:
         """Persist a handover only from an accepted Canonical revision."""
