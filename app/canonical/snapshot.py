@@ -10,7 +10,7 @@ from uuid import NAMESPACE_URL, uuid5
 from sqlalchemy import DateTime, inspect as sa_inspect, select, update
 from sqlalchemy.orm import Session
 
-from .hashing import sha256_json
+from .hashing import canonical_json_bytes, sha256_json
 from .models import (
     CanonicalCommit,
     CanonicalDocument,
@@ -126,7 +126,9 @@ def _deserialize_row(model, row: dict[str, Any], **overrides):
 
 
 def _stable_snapshot_id(kind: str, *identity: str) -> str:
-    name = ":".join(("canonical-snapshot-v0", kind, *identity))
+    name = canonical_json_bytes(
+        ["canonical-snapshot-v0", kind, *identity]
+    ).decode("utf-8")
     return str(uuid5(NAMESPACE_URL, name))
 
 

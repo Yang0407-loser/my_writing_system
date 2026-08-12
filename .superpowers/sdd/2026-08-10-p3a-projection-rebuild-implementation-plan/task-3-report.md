@@ -248,3 +248,82 @@ Fresh broader canonical unit verification:
 ```
 
 All five previously failing Dispatcher/Barrier tests now pass. The sole failure and three setup errors are confined to `test_schema_v0.py` and have the same out-of-scope root cause: SQLite executes PostgreSQL-only `DO $$` SQL in migration `0003_p3a_projection_backfill.py`.
+
+## Fix Round 2
+
+### Findings addressed
+
+1. `ProjectionBarrier.ensure_ready()` now enumerates the complete tenant/project/commit-scoped critical Envelope set and left-joins corresponding Delivery state. A required critical Envelope with no Delivery produces a missing state and fails closed instead of allowing the remaining published Deliveries to make the barrier falsely ready.
+2. `_stable_snapshot_id()` now encodes its namespace, kind, and identity components as a canonical JSON array using `canonical_json_bytes()` before UUIDv5 hashing. This preserves deterministic IDs while making component boundaries unambiguous even when arbitrary identity strings contain colons.
+
+### RED evidence
+
+Command:
+
+```powershell
+& .\.venv\Scripts\python.exe -m pytest tests\unit\canonical\test_projection_barrier.py::test_missing_critical_delivery_fails_closed tests\integration\canonical\test_snapshot_restore.py::test_stable_snapshot_ids_use_unambiguous_component_encoding -q
+```
+
+Result:
+
+```text
+FF                                                                       [100%]
+2 failed in 0.77s
+```
+
+Exact failures:
+
+- deleting one of three critical Deliveries after the remaining critical Deliveries were published returned `ready` instead of `failed`;
+- `_stable_snapshot_id("partition", "tenant:a", "project", "analytics")` equaled `_stable_snapshot_id("partition", "tenant", "a:project", "analytics")`.
+
+The first GREEN attempt exposed an import typo (`canonical_json` is not exported by the hashing module). The implementation was corrected to use the existing public `canonical_json_bytes()` serializer; no hashing API was changed.
+
+### GREEN evidence
+
+Targeted command:
+
+```powershell
+& .\.venv\Scripts\python.exe -m pytest tests\unit\canonical\test_projection_barrier.py::test_missing_critical_delivery_fails_closed tests\integration\canonical\test_snapshot_restore.py::test_stable_snapshot_ids_use_unambiguous_component_encoding -q
+```
+
+Result:
+
+```text
+..                                                                       [100%]
+2 passed in 0.65s
+```
+
+Complete requested Task 3 plus Dispatcher/Barrier gate:
+
+```powershell
+& .\.venv\Scripts\python.exe -m pytest tests\unit\canonical\test_commit_service.py tests\unit\canonical\test_repositories.py tests\integration\canonical\test_commit_concurrency.py tests\integration\canonical\test_snapshot_restore.py tests\unit\canonical\test_outbox_dispatcher.py tests\unit\canonical\test_projection_barrier.py -q
+```
+
+```text
+.....................sssss............                                   [100%]
+33 passed, 5 skipped in 9.92s
+```
+
+The five skips remain the unchanged PostgreSQL concurrency tests; Fix Round 2 changes neither allocation nor PostgreSQL-specific behavior.
+
+Ruff result for the complete Fix Round 2 gate file set:
+
+```text
+All checks passed!
+```
+
+`git diff --check` also passed.
+
+### Files changed in Fix Round 2
+
+- `app/canonical/projection_barrier.py`
+- `app/canonical/snapshot.py`
+- `tests/unit/canonical/test_projection_barrier.py`
+- `tests/integration/canonical/test_snapshot_restore.py`
+- `.superpowers/sdd/2026-08-10-p3a-projection-rebuild-implementation-plan/task-3-report.md`
+
+### Remaining concerns
+
+- The deferred replay Minor remains unchanged by instruction.
+- The Task 2 SQLite/PostgreSQL migration debt remains unchanged by instruction.
+- Task 5/6 continue to own lease/retry/dead-letter/worker behavior; this round changes only barrier completeness and deterministic snapshot identity encoding.

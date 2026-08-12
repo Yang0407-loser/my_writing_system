@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+from sqlalchemy import select
+
 from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
+from app.canonical.models import OutboxEvent, ProjectionDelivery
 from app.canonical.outbox import OutboxDispatcher
 from app.canonical.projection_barrier import ProjectionBarrier
 from tests.unit.canonical.test_commit_service import _prepared, canonical_session
@@ -39,6 +42,26 @@ def test_failed_critical_projection_is_not_ready(canonical_session):
     dispatcher, barrier = _components(canonical_session, projectors)
 
     dispatcher.dispatch_critical(result.commit_id)
+
+    assert barrier.ensure_ready(result.commit_id) == "failed"
+
+
+def test_missing_critical_delivery_fails_closed(canonical_session):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "missing-delivery-barrier")
+    dispatcher, barrier = _components(canonical_session)
+    dispatcher.dispatch_critical(result.commit_id)
+    missing = canonical_session.scalar(
+        select(ProjectionDelivery)
+        .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+        .where(
+            OutboxEvent.commit_id == result.commit_id,
+            ProjectionDelivery.barrier_kind == "critical",
+        )
+    )
+    canonical_session.delete(missing)
+    canonical_session.commit()
 
     assert barrier.ensure_ready(result.commit_id) == "failed"
 

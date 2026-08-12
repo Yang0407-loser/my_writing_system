@@ -17,10 +17,18 @@ from app.canonical.models import (
 )
 from app.canonical.repositories import CanonicalRepository
 from app.canonical.snapshot import (
+    _stable_snapshot_id,
     canonical_snapshot_bytes,
     export_project_snapshot,
     import_project_snapshot,
 )
+
+
+def test_stable_snapshot_ids_use_unambiguous_component_encoding():
+    left = _stable_snapshot_id("partition", "tenant:a", "project", "analytics")
+    right = _stable_snapshot_id("partition", "tenant", "a:project", "analytics")
+
+    assert left != right
 
 
 def _seed(session):

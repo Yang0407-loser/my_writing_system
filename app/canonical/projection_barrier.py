@@ -35,20 +35,21 @@ class ProjectionBarrier:
                     ProjectionDelivery.status,
                     ProjectionDelivery.last_error_message,
                 )
-                .join(
-                    OutboxEvent,
+                .select_from(OutboxEvent)
+                .outerjoin(
+                    ProjectionDelivery,
                     OutboxEvent.id == ProjectionDelivery.outbox_event_id,
                 )
                 .where(
                     OutboxEvent.commit_id == commit_id,
-                    ProjectionDelivery.tenant_id == self.tenant_id,
-                    ProjectionDelivery.project_id == self.project_id,
-                    ProjectionDelivery.barrier_kind == "critical",
+                    OutboxEvent.tenant_id == self.tenant_id,
+                    OutboxEvent.project_id == self.project_id,
+                    OutboxEvent.barrier_kind == "critical",
                 )
             ).all()
         )
         if not delivery_states or any(
-            status == "dead_letter" or last_error is not None
+            status is None or status == "dead_letter" or last_error is not None
             for status, last_error in delivery_states
         ):
             return "failed"
