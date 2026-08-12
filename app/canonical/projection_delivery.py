@@ -276,7 +276,9 @@ class ProjectionDeliveryStore:
             if row is None:
                 self.session.commit()
                 return None
-            self._expire_prior_attempt(row["id"], token, now)
+            self._expire_prior_attempt(
+                row["id"], row["attempt_count"] - 1, token, now
+            )
             attempt_id = self._add_claim_attempt(row, leased_by, token, now)
             self.session.execute(
                 update(OutboxEvent)
@@ -461,11 +463,14 @@ class ProjectionDeliveryStore:
                 result.append(column == value)
         return result
 
-    def _expire_prior_attempt(self, delivery_id, new_token, now):
+    def _expire_prior_attempt(
+        self, delivery_id, previous_attempt_number, new_token, now
+    ):
         self.session.execute(
             update(ProjectionAttempt)
             .where(
                 ProjectionAttempt.delivery_id == delivery_id,
+                ProjectionAttempt.attempt_number == previous_attempt_number,
                 ProjectionAttempt.outcome == "claimed",
                 ProjectionAttempt.lease_token != new_token,
             )

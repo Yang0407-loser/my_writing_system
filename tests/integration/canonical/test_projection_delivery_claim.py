@@ -242,6 +242,58 @@ def test_expired_lease_is_reclaimed_and_old_token_is_fenced(postgres_database_ur
     engine.dispose()
 
 
+def test_expired_reclaim_finalizes_only_previous_exact_current_attempt(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    scan_filter = ScanFilter(
+        tenant_id=tenant_id, project_id=project_id, projector_id="analytics"
+    )
+    claimed_at = datetime.now(UTC)
+    first = _claim(postgres_database_url, "old-worker", scan_filter, claimed_at)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        forged_attempt_id = _add_noncurrent_claimed_attempt(
+            session, first, now=claimed_at
+        )
+    engine.dispose()
+
+    reclaim_at = first.leased_until + timedelta(seconds=1)
+    second = _claim(postgres_database_url, "new-worker", scan_filter, reclaim_at)
+    unrelated = _claim(
+        postgres_database_url,
+        "other-worker",
+        replace(scan_filter, projector_id="task_preview"),
+        reclaim_at,
+    )
+
+    assert second is not None
+    assert second.delivery_id == first.delivery_id
+    assert second.attempt_id != first.attempt_id
+    assert second.lease_token != first.lease_token
+    assert unrelated is not None
+    assert unrelated.delivery_id != first.delivery_id
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.get(ProjectionDelivery, first.delivery_id)
+        first_attempt = session.get(ProjectionAttempt, first.attempt_id)
+        forged_attempt = session.get(ProjectionAttempt, forged_attempt_id)
+        second_attempt = session.get(ProjectionAttempt, second.attempt_id)
+        assert delivery.status == "processing"
+        assert delivery.attempt_count == 2
+        assert delivery.lease_token == second.lease_token
+        assert first_attempt.attempt_number == 1
+        assert first_attempt.outcome == "lease_expired"
+        assert first_attempt.finished_at == reclaim_at
+        assert forged_attempt.attempt_number == 0
+        assert forged_attempt.outcome == "claimed"
+        assert forged_attempt.finished_at is None
+        assert second_attempt.attempt_number == 2
+        assert second_attempt.outcome == "claimed"
+        assert second_attempt.finished_at is None
+    engine.dispose()
+
+
 def test_publish_advances_cursor_and_exposes_next_position(postgres_database_url):
     tenant_id, project_id = _seed_commits(postgres_database_url, count=2)
     scan_filter = ScanFilter(

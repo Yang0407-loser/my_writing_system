@@ -228,3 +228,29 @@ The existing `ProjectionAttempt` unique key `(delivery_id, attempt_number)` make
 ### Concerns
 
 - None for this remediation scope. Deferred `lag()` filter semantics remains intentionally outside Task 5 breaker remediation.
+
+## Breaker remediation follow-up: exact-current expired reclaim
+
+### RED and root cause
+
+- A real PostgreSQL fixture created legitimate Attempt `#1`, inserted forged noncurrent Attempt `#0` with the same Delivery and lease token, then performed a valid expired reclaim that created Attempt `#2` and also claimed an unrelated `task_preview` partition.
+- `_expire_prior_attempt()` filtered only by Delivery, `outcome='claimed'`, and old token. Because the reclaiming Delivery row had already incremented `attempt_count` before this helper ran, both `#1` and forged `#0` were changed to `lease_expired`.
+- Focused RED: `1 failed, 40 deselected`; reclaim and unrelated progress succeeded, `#1` and `#2` had the expected states, but forged `#0` was `lease_expired` instead of remaining `claimed`.
+
+### Minimal fix, mutation, and verification
+
+- The PostgreSQL claim path derives the previous exact-current number as the returned post-increment `attempt_count - 1` and passes it to `_expire_prior_attempt()`.
+- Reclaim finalization now additionally requires `ProjectionAttempt.attempt_number == previous_attempt_number`, so only `#1` is finalized before `#2` is appended.
+- Focused GREEN: `1 passed, 40 deselected in 0.68s`.
+- Controlled mutation removed only the previous-attempt-number predicate; the focused test returned to the targeted `1 failed, 40 deselected`, with forged `#0` incorrectly `lease_expired`. Restoring the predicate returned `1 passed, 40 deselected in 0.66s`.
+- Complete Task 5 plus PostgreSQL schema/migration gate: `61 passed in 15.22s`.
+- Ruff on the two changed Python files: `All checks passed!`; `git diff --check`: passed.
+
+### Lifecycle and self-review
+
+- Used only `writer-p3a-task5-reclaim-red-pg16-20260812`, exact container ID `7e4cf55ad97b256fdf94e191db556c842fdea55b53ac5858b674446b035aa781`, image `postgres:16-alpine`, database `writer_task5_reclaim_test`, loopback port `6488`. Identity/image/database were reverified immediately before stopping and permanently removing only this container.
+- Self-review confirmed the new predicate narrows only prior-Attempt finalization; claim scheduling, token fences, exact-current outcome authority, scanner cleanup, mirror/cursor semantics, deferred `lag()` filters, and Task 6 remain unchanged.
+
+### Concerns
+
+- None for this follow-up scope.
