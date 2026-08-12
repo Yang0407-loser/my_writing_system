@@ -111,6 +111,7 @@ Warnings are existing `pkg_resources` deprecation plus Chroma's future
 - `app/projections/legacy_world.py`
 - `app/projections/handover.py`
 - `app/projections/chroma_story.py`
+- `app/projections/legacy_scope.py`
 - `app/world_state.py`
 - `app/vector_store.py`
 - `app/writing/subsection_handover_history.py`
@@ -123,9 +124,10 @@ Warnings are existing `pkg_resources` deprecation plus Chroma's future
 - World intentionally projects `handover_candidate.new_facts`, matching the
   established legacy `StateCommitter.commit_handover_effects` behavior. It
   does not project arbitrary ledger payload fields as facts.
-- Old legacy World/Handover records without Canon markers are never removed by
-  scoped clear. Only an exact content-derived Handover duplicate can be
-  adopted when all Canon markers are absent.
+- Legacy World/Handover records without Canon markers fail closed until an
+  operator-approved durable binding proves the exact tenant/project/task
+  owner. An exact binding permits clear-then-replay; missing, mismatched, or
+  conflicting ownership never permits first-caller adoption or deletion.
 - Chroma provider-level deprecation warnings are non-functional and confined
   to third-party API evolution.
 
