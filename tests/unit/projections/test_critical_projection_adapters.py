@@ -702,6 +702,81 @@ def test_real_blackboard_binding_approval_uses_atomic_setnx():
     assert LegacyScopeBindingStore(board).get(task_id="task-atomic") == winners[0]
 
 
+def test_real_blackboard_concurrent_implicit_timestamp_returns_one_durable_binding(
+    monkeypatch,
+):
+    import fakeredis
+    import app.projections.legacy_scope as legacy_scope
+
+    class RacingBlackboard(Blackboard):
+        def __init__(self):
+            self._redis = fakeredis.FakeRedis()
+            self.empty_reads = Barrier(2)
+
+        def get(self, task_id, key):
+            value = super().get(task_id, key)
+            if key == "canonical_legacy_scope_binding_v1" and value is None:
+                self.empty_reads.wait(timeout=5)
+            return value
+
+    class SequencedDatetime(datetime):
+        counter = 0
+        counter_lock = Lock()
+
+        @classmethod
+        def now(cls, tz=None):
+            with cls.counter_lock:
+                cls.counter += 1
+                ordinal = cls.counter
+            return datetime(2026, 8, 12, 12, 0, 0, ordinal, tzinfo=timezone.utc)
+
+    monkeypatch.setattr(legacy_scope, "datetime", SequencedDatetime)
+    board = RacingBlackboard()
+    results, failures = [], []
+
+    def approve():
+        try:
+            results.append(
+                LegacyScopeBindingStore(board).approve(
+                    task_id="task-implicit-race",
+                    tenant_id="tenant-1",
+                    project_id="project-1",
+                    operator_id="operator",
+                    reason="migration",
+                    approved_at=None,
+                )
+            )
+        except Exception as error:
+            failures.append(error)
+
+    threads = [Thread(target=approve) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+
+    assert failures == []
+    assert len(results) == 2
+    assert results[0] == results[1]
+    assert LegacyScopeBindingStore(board).get(task_id="task-implicit-race") == results[0]
+
+
+def test_legacy_binding_explicit_timestamp_retry_remains_strict():
+    import pytest
+
+    board = FakeBlackboard()
+    bind(board)
+    with pytest.raises(ValueError, match="bound|conflict"):
+        LegacyScopeBindingStore(board).approve(
+            task_id="task-1",
+            tenant_id="tenant-1",
+            project_id="project-1",
+            operator_id="operator-1",
+            reason="Task 8 controlled migration",
+            approved_at="2026-08-12T12:00:01Z",
+        )
+
+
 def test_real_blackboard_scoped_world_and_handover_writes_survive_concurrency():
     import fakeredis
 

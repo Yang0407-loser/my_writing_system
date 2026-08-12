@@ -54,6 +54,7 @@ class LegacyScopeBindingStore:
         reason: str,
         approved_at: str | None,
     ) -> LegacyScopeBinding:
+        has_explicit_approval_time = approved_at is not None
         raw = self.blackboard.get(task_id, LEGACY_SCOPE_BINDING_KEY)
         if raw:
             existing = self._validate(raw)
@@ -65,7 +66,9 @@ class LegacyScopeBindingStore:
                 reason=reason,
                 approved_at=approved_at or existing.approved_at,
             )
-            if existing != requested:
+            if not self._same_authorization(
+                existing, requested, include_approved_at=has_explicit_approval_time
+            ):
                 raise ValueError("legacy task namespace is already bound; conflicting rebind")
             return existing
         proposed = LegacyScopeBinding(
@@ -81,9 +84,23 @@ class LegacyScopeBindingStore:
         ):
             return proposed
         winner = self.get(task_id=task_id)
-        if winner != proposed:
+        if not self._same_authorization(
+            winner, proposed, include_approved_at=has_explicit_approval_time
+        ):
             raise ValueError("legacy task namespace is already bound; conflicting rebind")
         return winner
+
+    @staticmethod
+    def _same_authorization(
+        existing: LegacyScopeBinding,
+        requested: LegacyScopeBinding,
+        *,
+        include_approved_at: bool,
+    ) -> bool:
+        excluded = set() if include_approved_at else {"approved_at"}
+        return existing.model_dump(exclude=excluded) == requested.model_dump(
+            exclude=excluded
+        )
 
     def get(self, *, task_id: str) -> LegacyScopeBinding | None:
         raw = self.blackboard.get(task_id, LEGACY_SCOPE_BINDING_KEY)

@@ -260,3 +260,29 @@ Expanded target + real persistent Chroma reopen + legacy/runtime/checkpoint: 91 
 Ruff: All checks passed
 git diff --check: exit 0
 ```
+
+## Fix Round 3 — implicit approval timestamp race
+
+Round 2 made a sequential `approved_at=None` retry idempotent, but two first
+callers could both observe an empty binding, generate distinct UTC timestamps,
+and race HSETNX. The loser then compared the entire proposed artifact to the
+durable winner and incorrectly reported a conflict despite identical scope,
+operator, and reason.
+
+A controlled production-`Blackboard`/`fakeredis` test synchronizes both empty
+reads and supplies distinct generated timestamps. RED produced one success and
+one conflicting-rebind error. The store now remembers whether the caller
+explicitly supplied `approved_at`: implicit-time comparisons exclude only that
+field and return the durable winner, while explicit timestamps remain part of
+strict equality. Scope, operator, reason, task, tenant, project, and schema
+remain fail-closed in both paths.
+
+Round 3 evidence:
+
+```text
+Controlled implicit-time concurrent first approval: RED 1 failed / 1 passed
+Focused binding race/strictness/conflict gate: 5 passed
+Fresh expanded Task 8 gate: 93 passed
+Ruff: All checks passed
+git diff --check: exit 0
+```
