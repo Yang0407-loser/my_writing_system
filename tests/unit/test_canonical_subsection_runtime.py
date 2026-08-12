@@ -10,7 +10,9 @@ from app.canonical.contracts import CanonicalStateSnapshot
 from app.canonical.errors import RevisionConflict
 from app.canonical.hashing import sha256_json
 from app.canonical.projection_ports import ProjectionReceipt
-from app.canonical.models import ProjectionDelivery
+from app.canonical.models import ProjectionAttempt, ProjectionDelivery
+from app.canonical.outbox import OutboxDispatcher
+from app.canonical.projection_worker import ProjectionWorker
 from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
     CanonicalSubsectionRuntime,
@@ -117,6 +119,40 @@ def test_runtime_fixed_order_commits_before_critical_and_nonblocking(canonical_s
     assert checkpoints[-1]["critical_projection_status"] == "ready"
     assert checkpoints[-1]["current_revision_id"] == result.commit.revision_id
     assert checkpoints[-1]["current_state_version_id"] == result.commit.state_version_id
+
+
+def test_runtime_scans_leased_deliveries_with_worker_before_nonblocking(
+    canonical_session, monkeypatch
+):
+    scan_filters = []
+    original_scan_once = ProjectionWorker.scan_once
+
+    def observe_scan(worker, scan_filter):
+        scan_filters.append(scan_filter)
+        return original_scan_once(worker, scan_filter)
+
+    def forbid_outbox_facade(*_args, **_kwargs):
+        raise AssertionError("canonical runtime must not use OutboxDispatcher")
+
+    monkeypatch.setattr(ProjectionWorker, "scan_once", observe_scan)
+    monkeypatch.setattr(OutboxDispatcher, "_dispatch", forbid_outbox_facade)
+
+    result = _runtime(canonical_session).execute(_command())
+
+    assert [scan_filter.barrier_kind for scan_filter in scan_filters] == [
+        "critical",
+        "non_blocking",
+    ]
+    assert all(scan_filter.commit_id == result.commit.commit_id for scan_filter in scan_filters)
+    attempts = canonical_session.scalars(
+        select(ProjectionAttempt).order_by(ProjectionAttempt.delivery_id)
+    ).all()
+    deliveries = canonical_session.scalars(
+        select(ProjectionDelivery).order_by(ProjectionDelivery.id)
+    ).all()
+    assert len(attempts) == len(PROJECTION_MANIFEST)
+    assert {attempt.outcome for attempt in attempts} == {"succeeded"}
+    assert {delivery.status for delivery in deliveries} == {"published"}
 
 
 def test_retry_preflight_skips_generation_and_returns_original_commit(canonical_session):

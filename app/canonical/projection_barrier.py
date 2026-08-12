@@ -34,11 +34,11 @@ class ProjectionBarrier:
         )
         if commit is None:
             return "failed"
-        critical_specs = tuple(
-            spec
+        critical_specs = {
+            spec.projector_id: spec
             for spec in DEFAULT_PROJECTOR_REGISTRY.all()
             if spec.barrier_kind == "critical"
-        )
+        }
         deliveries = {
             delivery.projector_id: delivery
             for delivery in self.session.scalars(
@@ -59,19 +59,25 @@ class ProjectionBarrier:
                 )
             )
         }
-        if set(deliveries) != {spec.projector_id for spec in critical_specs}:
+        expected = {
+            partition.projector_id: partition
+            for partition in partitions.values()
+            if partition.projector_id in critical_specs
+            and partition.enrollment_status == "active"
+            and partition.activation_after_position is not None
+            and commit.stream_position > partition.activation_after_position
+        }
+        if set(deliveries) != set(expected):
             return "failed"
         if any(delivery.status == "dead_letter" for delivery in deliveries.values()):
             return "failed"
-        for spec in critical_specs:
-            delivery = deliveries[spec.projector_id]
-            partition = partitions.get(spec.projector_id)
+        for projector_id, partition in expected.items():
+            spec = critical_specs[projector_id]
+            delivery = deliveries[projector_id]
             if (
                 delivery.projector_version != spec.version
                 or delivery.barrier_kind != spec.barrier_kind
-                or partition is None
                 or partition.projector_version != spec.version
-                or partition.enrollment_status != "active"
                 or partition.runtime_status != "active"
             ):
                 return "pending"

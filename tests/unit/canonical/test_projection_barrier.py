@@ -218,3 +218,75 @@ def test_barrier_is_pending_while_critical_partition_is_not_active(
     canonical_session.commit()
 
     assert barrier.ensure_ready(result.commit_id) == "pending"
+
+
+@pytest.mark.parametrize(
+    ("partition_update", "idempotency_key"),
+    [
+        ({"enrollment_status": "disabled"}, "disabled-critical-barrier"),
+        ({"activation_after_position": 1}, "not-yet-active-critical-barrier"),
+    ],
+)
+def test_unenrolled_or_not_yet_activated_critical_partition_is_not_expected(
+    canonical_session, partition_update, idempotency_key
+):
+    partition = canonical_session.scalar(
+        select(ProjectionPartition).where(
+            ProjectionPartition.projector_id == "handover_context",
+        )
+    )
+    for field, value in partition_update.items():
+        setattr(partition, field, value)
+    canonical_session.commit()
+
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), idempotency_key)
+    dispatcher, barrier = _components(canonical_session)
+
+    dispatcher.dispatch_critical(result.commit_id)
+
+    assert canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "handover_context",
+            ProjectionDelivery.stream_position == 1,
+        )
+    ) is None
+    assert barrier.ensure_ready(result.commit_id) == "ready"
+
+
+def test_exact_version_mismatch_keeps_expected_critical_partition_pending(
+    canonical_session,
+):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "version-mismatch-barrier")
+    dispatcher, barrier = _components(canonical_session)
+    dispatcher.dispatch_critical(result.commit_id)
+    partition = canonical_session.scalar(
+        select(ProjectionPartition).where(
+            ProjectionPartition.projector_id == "handover_context",
+        )
+    )
+    partition.projector_version = "v999"
+    canonical_session.commit()
+
+    assert barrier.ensure_ready(result.commit_id) == "pending"
+
+
+def test_extra_critical_delivery_fails_closed(canonical_session):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "extra-critical-barrier")
+    dispatcher, barrier = _components(canonical_session)
+    dispatcher.dispatch_critical(result.commit_id)
+    extra = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "analytics",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    extra.barrier_kind = "critical"
+    canonical_session.commit()
+
+    assert barrier.ensure_ready(result.commit_id) == "failed"
