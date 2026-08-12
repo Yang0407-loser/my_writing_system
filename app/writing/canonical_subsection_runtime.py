@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import Field
@@ -18,9 +19,11 @@ from ..canonical.contracts import (
     SubsectionCandidate,
 )
 from ..canonical.errors import RevisionConflict, StateVersionConflict
-from ..canonical.outbox import OutboxDispatcher
+from ..canonical.projection_delivery import ScanFilter
 from ..canonical.projection_barrier import ProjectionBarrier
-from ..canonical.projection_ports import ProjectionPort
+from ..canonical.projection_ports import ProjectionPort, ProjectionReceipt
+from ..canonical.projection_registry import DEFAULT_PROJECTOR_REGISTRY, ProjectorSpec
+from ..canonical.projection_worker import ProjectionWorker
 from ..canonical.repositories import CanonicalRepository
 from ..canonical.state_transition import LegacyStateTransitionAdapter
 
@@ -42,6 +45,20 @@ class CanonicalSubsectionRuntimeResult(FrozenArtifact):
     critical_summary: dict[str, int] = Field(default_factory=dict)
     non_blocking_summary: dict[str, int] = Field(default_factory=dict)
     generated: bool
+
+
+@dataclass(frozen=True)
+class _RuntimeProjectionExecutor:
+    """Adapt legacy ports while preserving ProjectionWorker as the only caller."""
+
+    spec: ProjectorSpec
+    projector: ProjectionPort
+
+    def apply(self, message) -> ProjectionReceipt:
+        receipt = self.projector(message)
+        if not isinstance(receipt, ProjectionReceipt):
+            raise TypeError("runtime projector must return ProjectionReceipt")
+        return receipt
 
 
 def canonical_idempotency_key(command: CanonicalSubsectionCommand) -> str:
@@ -179,13 +196,7 @@ class CanonicalSubsectionRuntime:
         *,
         generated: bool,
     ) -> CanonicalSubsectionRuntimeResult:
-        dispatcher = OutboxDispatcher(
-            lambda: self.session,
-            self.tenant_id,
-            self.project_id,
-            self.projectors,
-        )
-        critical_summary = dispatcher.dispatch_critical(commit.commit_id)
+        critical_summary = self._scan_critical(commit.commit_id)
         barrier_status = ProjectionBarrier(
             self.session, self.tenant_id, self.project_id
         ).ensure_ready(commit.commit_id)
@@ -201,7 +212,7 @@ class CanonicalSubsectionRuntime:
                 generated=generated,
             )
 
-        non_blocking_summary = dispatcher.dispatch_non_blocking(commit.commit_id)
+        non_blocking_summary = self._scan_non_blocking(commit.commit_id)
         non_blocking_status = (
             "lagging" if non_blocking_summary["failed"] else "ready"
         )
@@ -214,6 +225,52 @@ class CanonicalSubsectionRuntime:
             critical_summary=critical_summary,
             non_blocking_summary=non_blocking_summary,
             generated=generated,
+        )
+
+    def _scan_critical(self, commit_id: str) -> dict[str, int]:
+        """Bounded synchronous scan retaining the fenced Delivery lease path."""
+        summary = self._projection_worker().scan_once(
+            ScanFilter(
+                tenant_id=self.tenant_id,
+                project_id=self.project_id,
+                commit_id=commit_id,
+                barrier_kind="critical",
+                limit=100,
+            )
+        )
+        return {
+            "published": summary.published,
+            "failed": summary.retried + summary.dead_lettered,
+        }
+
+    def _scan_non_blocking(self, commit_id: str) -> dict[str, int]:
+        summary = self._projection_worker().scan_once(
+            ScanFilter(
+                tenant_id=self.tenant_id,
+                project_id=self.project_id,
+                commit_id=commit_id,
+                barrier_kind="non_blocking",
+                limit=100,
+            )
+        )
+        return {
+            "published": summary.published,
+            "failed": summary.retried + summary.dead_lettered,
+        }
+
+    def _projection_worker(self) -> ProjectionWorker:
+        executors = {
+            projector_id: _RuntimeProjectionExecutor(
+                DEFAULT_PROJECTOR_REGISTRY.get(projector_id), projector
+            )
+            for projector_id, projector in self.projectors.items()
+            if projector_id
+            in {spec.projector_id for spec in DEFAULT_PROJECTOR_REGISTRY.all()}
+        }
+        return ProjectionWorker(
+            lambda: self.session,
+            executors,
+            worker_id=f"canonical-runtime:{self.tenant_id}:{self.project_id}",
         )
 
     def _checkpoint(

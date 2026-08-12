@@ -4,11 +4,18 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
 from sqlalchemy import delete, select
 
 from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
 from app.canonical.hashing import sha256_json
-from app.canonical.models import OutboxEvent, ProjectionAttempt, ProjectionDelivery
+from app.canonical.models import (
+    OutboxEvent,
+    CanonicalCommit,
+    ProjectionAttempt,
+    ProjectionDelivery,
+    ProjectionPartition,
+)
 from app.canonical.outbox import OutboxDispatcher
 from app.canonical.projection_barrier import ProjectionBarrier
 from app.canonical.projection_ports import ProjectionReceipt
@@ -54,7 +61,7 @@ def test_barrier_is_pending_until_all_critical_events_publish(canonical_session)
     assert barrier.ensure_ready(result.commit_id) == "ready"
 
 
-def test_failed_critical_projection_is_not_ready(canonical_session):
+def test_retryable_critical_projection_is_pending(canonical_session):
     result = CanonicalCommitService(
         canonical_session, "tenant-1", "project-1"
     ).commit(_prepared(canonical_session), "failed-barrier")
@@ -65,7 +72,32 @@ def test_failed_critical_projection_is_not_ready(canonical_session):
 
     dispatcher.dispatch_critical(result.commit_id)
 
-    assert barrier.ensure_ready(result.commit_id) == "failed"
+    assert barrier.ensure_ready(result.commit_id) == "pending"
+
+
+def test_dead_lettered_critical_delivery_fails_without_rolling_back_canon(
+    canonical_session,
+):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "dead-letter-barrier")
+    delivery = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.project_id == "project-1",
+            ProjectionDelivery.projector_id == "handover_context",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    delivery.status = "dead_letter"
+    delivery.last_error_message = "projection exhausted retries"
+    canonical_session.commit()
+    canonical_session.refresh(delivery)
+    assert delivery.status == "dead_letter"
+    assert canonical_session.get(CanonicalCommit, result.commit_id).status == "committed"
+
+    assert ProjectionBarrier(
+        canonical_session, "tenant-1", "project-1"
+    ).ensure_ready(result.commit_id) == "failed"
 
 
 def test_missing_critical_delivery_fails_closed(canonical_session):
@@ -112,3 +144,77 @@ def test_non_blocking_failures_do_not_change_ready_barrier(canonical_session):
         "failed": 4,
     }
     assert barrier.ensure_ready(result.commit_id) == "ready"
+
+
+def test_barrier_requires_delivery_cursor_coverage_not_legacy_outbox_status(
+    canonical_session,
+):
+    """A published envelope cannot cover a Delivery whose Cursor is behind."""
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "barrier-cursor-truth")
+    dispatcher, barrier = _components(canonical_session)
+    dispatcher.dispatch_critical(result.commit_id)
+    critical_delivery = canonical_session.scalar(
+        select(ProjectionDelivery)
+        .where(
+            ProjectionDelivery.project_id == "project-1",
+            ProjectionDelivery.barrier_kind == "critical",
+        )
+        .order_by(ProjectionDelivery.projector_id)
+    )
+    partition = canonical_session.scalar(
+        select(ProjectionPartition).where(
+            ProjectionPartition.tenant_id == "tenant-1",
+            ProjectionPartition.project_id == "project-1",
+            ProjectionPartition.projector_id == critical_delivery.projector_id,
+        )
+    )
+    partition.last_published_position = 0
+    canonical_session.commit()
+
+    assert barrier.ensure_ready(result.commit_id) == "pending"
+
+
+def test_barrier_ignores_deprecated_outbox_status_without_delivery_cursor_coverage(
+    canonical_session,
+):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "barrier-outbox-mirror")
+    envelopes = canonical_session.scalars(
+        select(OutboxEvent).where(
+            OutboxEvent.commit_id == result.commit_id,
+            OutboxEvent.barrier_kind == "critical",
+        )
+    ).all()
+    for envelope in envelopes:
+        envelope.status = "published"
+    canonical_session.commit()
+
+    assert ProjectionBarrier(
+        canonical_session, "tenant-1", "project-1"
+    ).ensure_ready(result.commit_id) == "pending"
+
+
+@pytest.mark.parametrize("runtime_status", ["maintenance", "catching_up"])
+def test_barrier_is_pending_while_critical_partition_is_not_active(
+    canonical_session, runtime_status
+):
+    """Historical Delivery receipts must not bypass an inactive runtime partition."""
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "barrier-maintenance")
+    dispatcher, barrier = _components(canonical_session)
+    dispatcher.dispatch_critical(result.commit_id)
+    partition = canonical_session.scalar(
+        select(ProjectionPartition).where(
+            ProjectionPartition.tenant_id == "tenant-1",
+            ProjectionPartition.project_id == "project-1",
+            ProjectionPartition.projector_id == "handover_context",
+        )
+    )
+    partition.runtime_status = runtime_status
+    canonical_session.commit()
+
+    assert barrier.ensure_ready(result.commit_id) == "pending"

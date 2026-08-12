@@ -5,7 +5,12 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import CanonicalCommit, OutboxEvent, ProjectionDelivery
+from .models import (
+    CanonicalCommit,
+    ProjectionDelivery,
+    ProjectionPartition,
+)
+from .projection_registry import DEFAULT_PROJECTOR_REGISTRY
 
 
 class ProjectionBarrier:
@@ -29,31 +34,52 @@ class ProjectionBarrier:
         )
         if commit is None:
             return "failed"
-        delivery_states = tuple(
-            self.session.execute(
-                select(
-                    ProjectionDelivery.status,
-                    ProjectionDelivery.last_error_message,
-                )
-                .select_from(OutboxEvent)
-                .outerjoin(
-                    ProjectionDelivery,
-                    OutboxEvent.id == ProjectionDelivery.outbox_event_id,
-                )
-                .where(
-                    OutboxEvent.commit_id == commit_id,
-                    OutboxEvent.tenant_id == self.tenant_id,
-                    OutboxEvent.project_id == self.project_id,
-                    OutboxEvent.barrier_kind == "critical",
-                )
-            ).all()
+        critical_specs = tuple(
+            spec
+            for spec in DEFAULT_PROJECTOR_REGISTRY.all()
+            if spec.barrier_kind == "critical"
         )
-        if not delivery_states or any(
-            status is None or status == "dead_letter" or last_error is not None
-            for status, last_error in delivery_states
-        ):
+        deliveries = {
+            delivery.projector_id: delivery
+            for delivery in self.session.scalars(
+                select(ProjectionDelivery).where(
+                    ProjectionDelivery.tenant_id == self.tenant_id,
+                    ProjectionDelivery.project_id == self.project_id,
+                    ProjectionDelivery.stream_position == commit.stream_position,
+                    ProjectionDelivery.barrier_kind == "critical",
+                )
+            )
+        }
+        partitions = {
+            partition.projector_id: partition
+            for partition in self.session.scalars(
+                select(ProjectionPartition).where(
+                    ProjectionPartition.tenant_id == self.tenant_id,
+                    ProjectionPartition.project_id == self.project_id,
+                )
+            )
+        }
+        if set(deliveries) != {spec.projector_id for spec in critical_specs}:
             return "failed"
-        if all(status == "published" for status, _ in delivery_states):
-            return "ready"
-        return "pending"
+        if any(delivery.status == "dead_letter" for delivery in deliveries.values()):
+            return "failed"
+        for spec in critical_specs:
+            delivery = deliveries[spec.projector_id]
+            partition = partitions.get(spec.projector_id)
+            if (
+                delivery.projector_version != spec.version
+                or delivery.barrier_kind != spec.barrier_kind
+                or partition is None
+                or partition.projector_version != spec.version
+                or partition.enrollment_status != "active"
+                or partition.runtime_status != "active"
+            ):
+                return "pending"
+            if (
+                delivery.status != "published"
+                or delivery.last_error_message is not None
+                or partition.last_published_position < commit.stream_position
+            ):
+                return "pending"
+        return "ready"
 

@@ -3,10 +3,14 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import select
 
 from app.canonical.commit_service import PROJECTION_MANIFEST
 from app.canonical.contracts import CanonicalStateSnapshot
 from app.canonical.errors import RevisionConflict
+from app.canonical.hashing import sha256_json
+from app.canonical.projection_ports import ProjectionReceipt
+from app.canonical.models import ProjectionDelivery
 from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
     CanonicalSubsectionRuntime,
@@ -34,7 +38,18 @@ def _projectors(**overrides):
     events = []
 
     def projector(name):
-        mock = MagicMock(side_effect=lambda _message: events.append(name))
+        def apply(message):
+            events.append(name)
+            return ProjectionReceipt(
+                projection_event_id=message.projection_event_id,
+                projector_id=message.projector_id,
+                projector_version=message.projector_version,
+                stream_position=message.stream_position,
+                record_count=1,
+                content_digest=sha256_json({"event": message.projection_event_id}),
+            )
+
+        mock = MagicMock(side_effect=apply)
         return mock
 
     result = {name: projector(name) for name, _ in PROJECTION_MANIFEST}
@@ -89,7 +104,13 @@ def test_runtime_fixed_order_commits_before_critical_and_nonblocking(canonical_s
 
     assert result.phase == "ready"
     assert result.critical_projection_status == "ready"
-    assert events == [name for name, _ in PROJECTION_MANIFEST]
+    critical = {
+        name for name, barrier_kind in PROJECTION_MANIFEST if barrier_kind == "critical"
+    }
+    assert set(events[:3]) == critical
+    assert set(events[3:]) == {
+        name for name, barrier_kind in PROJECTION_MANIFEST if barrier_kind == "non_blocking"
+    }
     assert generated.call_count == 1
     assert checkpoints[0]["last_commit_id"] == result.commit.commit_id
     assert checkpoints[0]["critical_projection_status"] == "pending"
@@ -107,6 +128,14 @@ def test_retry_preflight_skips_generation_and_returns_original_commit(canonical_
         canonical_session, projectors=first_projectors, generator=generator
     ).execute(command)
     assert first.phase == "awaiting_critical_projection"
+    retryable = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "handover_context",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    retryable.available_at = retryable.created_at
+    canonical_session.commit()
 
     retry_generator = MagicMock(side_effect=AssertionError("LLM must not run"))
     retry_projectors, _ = _projectors()

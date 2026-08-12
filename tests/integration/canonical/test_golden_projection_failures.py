@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
+from app.canonical.hashing import sha256_json
 from app.canonical.models import (
     CanonicalCommit,
     DocumentRevision,
@@ -15,6 +16,7 @@ from app.canonical.models import (
 )
 from app.canonical.outbox import OutboxDispatcher
 from app.canonical.projection_barrier import ProjectionBarrier
+from app.canonical.projection_ports import ProjectionReceipt
 from app.canonical.projection_replay import CanonicalProjectionReplay
 from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
@@ -27,7 +29,17 @@ pytest_plugins = ("tests.unit.canonical.test_commit_service",)
 
 
 def _projectors(**overrides):
-    values = {name: MagicMock() for name, _ in PROJECTION_MANIFEST}
+    def apply(message):
+        return ProjectionReceipt(
+            projection_event_id=message.projection_event_id,
+            projector_id=message.projector_id,
+            projector_version=message.projector_version,
+            stream_position=message.stream_position,
+            record_count=1,
+            content_digest=sha256_json({"event": message.projection_event_id}),
+        )
+
+    values = {name: MagicMock(side_effect=apply) for name, _ in PROJECTION_MANIFEST}
     values.update(overrides)
     return values
 
@@ -103,6 +115,14 @@ def test_critical_outage_keeps_canon_and_retry_preflight_skips_llm(canonical_ses
     assert first.phase == "awaiting_critical_projection"
     assert canonical_session.scalar(select(func.count()).select_from(CanonicalCommit)) == 1
     assert canonical_session.scalar(select(func.count()).select_from(DocumentRevision)) == 1
+    retryable = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "chroma_story_chunks",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    retryable.available_at = retryable.created_at
+    canonical_session.commit()
 
     retry_llm = MagicMock(side_effect=AssertionError("retry LLM is forbidden"))
     retried = _runtime(
@@ -139,6 +159,14 @@ def test_dispatcher_restart_continues_failed_rows_without_republishing_successes
     OutboxDispatcher(
         lambda: canonical_session, "tenant-1", "project-1", first
     ).dispatch_critical(result.commit_id)
+    retryable = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "handover_context",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    retryable.available_at = retryable.created_at
+    canonical_session.commit()
 
     restarted = _projectors()
     summary = OutboxDispatcher(
