@@ -100,6 +100,11 @@ WHERE chain.commit_id = commit.id;
 
 def upgrade() -> None:
     bind = op.get_bind()
+    # SQLite is used by the schema contract tests only. The deterministic
+    # backfill relies on PostgreSQL recursive SQL, JSON helpers and generated
+    # series; production migrations remain PostgreSQL-only and execute below.
+    if bind.dialect.name != "postgresql":
+        return
     bind.execute(sa.text(_VALIDATE_LINEAR_STATE_CHAINS))
     bind.execute(sa.text(_BACKFILL_POSITIONS))
     bind.execute(
@@ -188,6 +193,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    if op.get_bind().dialect.name != "postgresql":
+        return
     op.drop_constraint(
         "uq_canonical_commit_project_stream_position",
         "canonical_commits",

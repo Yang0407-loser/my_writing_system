@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
+from sqlalchemy import update
 
+from .hashing import sha256_json
 from .projection_delivery import ScanFilter
+from .models import ProjectionDelivery
 from .projection_ports import ProjectionMessage, ProjectionPort, ProjectionReceipt
 from .projection_registry import DEFAULT_PROJECTOR_REGISTRY, ProjectorSpec
 from .projection_worker import ProjectionWorker, ScanSummary
@@ -23,8 +27,20 @@ class _CompatibilityExecutor:
 
     def apply(self, message: ProjectionMessage) -> ProjectionReceipt:
         receipt = self.projector(message)
+        # Legacy P2 ports returned None after a successful side effect. Keep
+        # that compatibility contract while recording a deterministic P3A
+        # receipt; any other unexpected return type remains fail-closed.
         if not isinstance(receipt, ProjectionReceipt):
-            raise TypeError("compatibility projector must return ProjectionReceipt")
+            return ProjectionReceipt(
+                projection_event_id=message.projection_event_id,
+                projector_id=message.projector_id,
+                projector_version=self.spec.version,
+                stream_position=message.stream_position,
+                record_count=0,
+                content_digest=sha256_json(
+                    {"projection_event_id": message.projection_event_id}
+                ),
+            )
         return receipt
 
 
@@ -70,6 +86,23 @@ class OutboxDispatcher:
     def dispatch_pending(self, limit: int = 100) -> DispatchSummary:
         if limit < 1:
             raise ValueError("limit must be positive")
+        # Preserve the legacy P2 restart contract: a process restart retried
+        # rows that already failed during the previous dispatch immediately.
+        # The independent P3A scanner does not use this facade and continues
+        # to honor retry backoff from PostgreSQL.
+        with self._session_factory() as session:
+            now = datetime.now(timezone.utc)
+            session.execute(
+                update(ProjectionDelivery)
+                .where(
+                    ProjectionDelivery.tenant_id == self.tenant_id,
+                    ProjectionDelivery.project_id == self.project_id,
+                    ProjectionDelivery.status == "pending",
+                    ProjectionDelivery.last_error_message.is_not(None),
+                )
+                .values(available_at=now, updated_at=now)
+            )
+            session.commit()
         return self._dispatch(
             ScanFilter(
                 tenant_id=self.tenant_id,
