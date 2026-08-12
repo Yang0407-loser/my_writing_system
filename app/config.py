@@ -133,6 +133,12 @@ class Settings:
     PROJECTION_MARKDOWN_ROOT: str = os.getenv(
         "PROJECTION_MARKDOWN_ROOT", "./projection_markdown"
     )
+    PROJECTION_SCAN_INTERVAL_MS: int = int(
+        os.getenv("PROJECTION_SCAN_INTERVAL_MS", "1000")
+    )
+    PROJECTION_SCAN_BATCH_SIZE: int = int(
+        os.getenv("PROJECTION_SCAN_BATCH_SIZE", "100")
+    )
 
     # --- Long-form writing ---
     DEFAULT_TARGET_WORDS_PER_SECTION: int = int(os.getenv("DEFAULT_TARGET_WORDS", "10000"))
@@ -326,6 +332,10 @@ class Settings:
             warnings.append("DEFAULT_TARGET_WORDS 过低 (<500)")
         if self.CHUNK_SIZE < 100:
             warnings.append("CHUNK_SIZE 过低 (<100)")
+        if self.PROJECTION_SCAN_INTERVAL_MS < 50:
+            warnings.append("PROJECTION_SCAN_INTERVAL_MS 过低 (<50)")
+        if self.PROJECTION_SCAN_BATCH_SIZE < 1:
+            warnings.append("PROJECTION_SCAN_BATCH_SIZE 必须 >= 1")
         if self.RAG_TOP_K < 1:
             warnings.append("RAG_TOP_K 必须 >= 1")
         if self.RAG_TRACE_CANDIDATE_K < 0:

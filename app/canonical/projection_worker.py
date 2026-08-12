@@ -168,3 +168,25 @@ class ProjectionWorker:
             or receipt.stream_position != message.stream_position
         ):
             raise ValueError("projection receipt does not match claimed message")
+
+
+def build_production_projection_worker(
+    worker_id: str,
+    *,
+    database_url: str | None = None,
+) -> ProjectionWorker:
+    """Construct the shared PostgreSQL scanner with all production adapters."""
+    from ..config import settings
+    from ..projections.factory import build_projection_adapters
+    from .database import build_engine, build_session_factory
+
+    engine = build_engine(database_url or settings.CANONICAL_DATABASE_URL)
+    session_factory = build_session_factory(engine)
+    return ProjectionWorker(
+        session_factory,
+        build_projection_adapters(
+            session_factory,
+            markdown_root=settings.PROJECTION_MARKDOWN_ROOT,
+        ),
+        worker_id=worker_id,
+    )

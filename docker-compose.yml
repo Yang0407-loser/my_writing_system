@@ -144,11 +144,44 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-    command: python -m celery -A app.celery_app worker --loglevel=info -Q celery -P prefork -c 4
+    command: python -m celery -A app.celery_app worker --loglevel=info -Q celery,projection -P prefork -c 4
     deploy:
       resources:
         limits:
           memory: 1G
+
+  projection-scanner:
+    build: .
+    container_name: writer-projection-scanner
+    environment:
+      - REDIS_BROKER_URL=redis://redis:6379/0
+      - REDIS_BACKEND_URL=redis://redis:6379/1
+      - CANONICAL_DATABASE_URL=${CANONICAL_DATABASE_URL}
+      - CANONICAL_COMMIT_MODE=${CANONICAL_COMMIT_MODE:-legacy}
+      - PROJECTION_SCAN_INTERVAL_MS=${PROJECTION_SCAN_INTERVAL_MS:-1000}
+      - PROJECTION_SCAN_BATCH_SIZE=${PROJECTION_SCAN_BATCH_SIZE:-100}
+      - PROJECTION_MARKDOWN_ROOT=/output/projections
+      - TASK_DB_PATH=/data/tasks.db
+      - CHARACTER_DB_PATH=/data/characters.db
+      - CHROMA_DATA_PATH=/chroma
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-ollama}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-bge-m3:latest}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - app_data:/data
+      - chroma_data:/chroma
+      - ./output:/output
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    command: python -m app.canonical.projection_cli scan --continuous
+    deploy:
+      resources:
+        limits:
+          memory: 768M
 
 volumes:
   postgres_data:

@@ -29,9 +29,11 @@ celery_app.conf.update(
     task_routes={
         'writing_task': {'queue': 'writing'},
         'writing_task_resume': {'queue': 'writing'},
+        'wake_projection_scanner': {'queue': 'projection'},
     },
     task_create_missing_queues=True,
 )
 
 # 注册任务模块 — worker 启动时必须加载
 from . import coordinator  # noqa: E402, F401
+from . import projection_tasks  # noqa: E402, F401

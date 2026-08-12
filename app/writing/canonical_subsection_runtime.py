@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -82,6 +83,7 @@ class CanonicalSubsectionRuntime:
         projectors: Mapping[str, ProjectionPort],
         checkpoint_writer: Callable[[dict[str, Any]], None],
         state_transition_compiler: Any | None = None,
+        projection_wakeup_sender: Callable[..., bool] | None = None,
     ) -> None:
         if not tenant_id or not project_id:
             raise ValueError("canonical scope is required")
@@ -95,6 +97,7 @@ class CanonicalSubsectionRuntime:
         self.state_transition_compiler = (
             state_transition_compiler or LegacyStateTransitionAdapter()
         )
+        self.projection_wakeup_sender = projection_wakeup_sender
 
     def execute(self, command: CanonicalSubsectionCommand) -> CanonicalSubsectionRuntimeResult:
         self._validate_command(command)
@@ -153,6 +156,7 @@ class CanonicalSubsectionRuntime:
             ),
             idempotency_key,
         )
+        self._wake_projection_scanner()
         self._checkpoint(command, commit, "pending")
         return self._resume_projection(command, commit, generated=True)
 
@@ -271,6 +275,20 @@ class CanonicalSubsectionRuntime:
             lambda: self.session,
             executors,
             worker_id=f"canonical-runtime:{self.tenant_id}:{self.project_id}",
+        )
+
+    def _wake_projection_scanner(self) -> None:
+        sender = self.projection_wakeup_sender
+        if sender is None:
+            if os.getenv("WRITER_TESTING") == "1":
+                return
+            from ..projection_tasks import try_wake_projection_scanner
+
+            sender = try_wake_projection_scanner
+
+        sender(
+            tenant_id=self.tenant_id,
+            project_id=self.project_id,
         )
 
     def _checkpoint(
