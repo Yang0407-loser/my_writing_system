@@ -8,6 +8,7 @@ from app.canonical.models import (
     OutboxEvent,
     ProjectionAnalyticsEvent,
     ProjectionAttempt,
+    ProjectionRequeueAudit,
     ProjectionDelivery,
     ProjectionPartition,
     ProjectionRebuildRun,
@@ -106,6 +107,28 @@ def test_every_p3a_state_table_has_its_scoped_index():
     assert "ix_projection_rebuild_runs_scope" in _index_names(ProjectionRebuildRun)
     assert "ix_projection_reconciliations_scope" in _index_names(
         ProjectionReconciliation
+    )
+
+
+def test_requeue_audit_is_append_only_evidence_not_scheduler_state():
+    columns = set(ProjectionRequeueAudit.__table__.columns.keys())
+    assert {
+        "id",
+        "delivery_id",
+        "tenant_id",
+        "project_id",
+        "projector_id",
+        "prior_attempt_count",
+        "operator_id",
+        "reason",
+        "created_at",
+    } <= columns
+    assert not {"status", "lease_token", "available_at"} & columns
+    assert "ix_projection_requeue_audits_delivery" in _index_names(
+        ProjectionRequeueAudit
+    )
+    assert "ix_projection_requeue_audits_scope" in _index_names(
+        ProjectionRequeueAudit
     )
 
 

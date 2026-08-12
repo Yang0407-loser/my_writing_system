@@ -396,6 +396,35 @@ class ProjectionAttempt(Base):
     rebuild_run_id: Mapped[str | None] = mapped_column(String(36))
 
 
+class ProjectionRequeueAudit(Base):
+    """Append-only operator evidence; never scheduling authority."""
+
+    __tablename__ = "projection_requeue_audits"
+    __table_args__ = (
+        Index("ix_projection_requeue_audits_delivery", "delivery_id", "created_at"),
+        Index(
+            "ix_projection_requeue_audits_scope",
+            "tenant_id",
+            "project_id",
+            "projector_id",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    delivery_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("projection_deliveries.id"), nullable=False
+    )
+    tenant_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    projector_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    prior_attempt_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    operator_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+
+
 class ProjectionPartition(TimestampMixin, Base):
     """The ordered cursor and enrollment state of one projector/project scope."""
 

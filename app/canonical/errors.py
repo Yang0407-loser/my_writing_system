@@ -23,3 +23,31 @@ class ProjectionBarrierPending(CanonicalError):
 
 class ScopeRequired(CanonicalError):
     """A canonical operation omitted mandatory tenant or project scope."""
+
+
+class ProjectionError(CanonicalError):
+    """Base class for explicitly classified projection failures."""
+
+
+class RetryableProjectionError(ProjectionError):
+    """A transient sink or transport failure that may be retried."""
+
+
+class PermanentProjectionError(ProjectionError):
+    """A deterministic failure that must be dead-lettered."""
+
+
+class ProjectionConflictError(PermanentProjectionError):
+    """A deterministic sink conflict that retrying cannot resolve."""
+
+
+class InvalidCanonPayloadError(PermanentProjectionError):
+    """Canon payload validation failed deterministically."""
+
+
+class UnknownProjectorVersionError(PermanentProjectionError):
+    """No implementation exists for the delivery's projector version."""
+
+
+class RateLimitProjectionError(RetryableProjectionError):
+    """A sink rate limit delayed projection delivery."""
