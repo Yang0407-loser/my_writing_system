@@ -23,6 +23,7 @@ from .projection_manifest import build_manifest, reconcile_projection
 from .projection_ports import ProjectionAdapter, ProjectionScope, RebuildStatus
 from .projection_registry import DEFAULT_PROJECTOR_REGISTRY, ProjectorRegistry
 from .projection_replay import CanonicalProjectionReplay
+from .repositories import CanonicalRepository
 
 
 _TRANSITIONS = {
@@ -125,6 +126,67 @@ class ProjectionRebuildService:
             session.commit()
             return run_id
 
+    def start_bootstrap(
+        self,
+        scope: ProjectionScope,
+        projector_id: str,
+        *,
+        operator_id: str,
+        reason: str,
+    ) -> str:
+        if not operator_id.strip() or not reason.strip():
+            raise ValueError("operator_id and reason are required")
+        spec = self.registry.get(projector_id)
+        if projector_id not in self.adapters:
+            raise ValueError(f"adapter is not registered: {projector_id}")
+        with self.session_factory() as session:
+            partition = session.scalar(
+                select(ProjectionPartition)
+                .where(
+                    ProjectionPartition.tenant_id == scope.tenant_id,
+                    ProjectionPartition.project_id == scope.project_id,
+                    ProjectionPartition.projector_id == projector_id,
+                )
+                .with_for_update()
+            )
+            if partition is None:
+                raise ValueError("projection partition is missing")
+            if partition.projector_version != spec.version:
+                raise ValueError("projection partition version does not match registry")
+            if partition.enrollment_status != "disabled":
+                raise ValueError("bootstrap requires a disabled projection partition")
+            if partition.active_rebuild_run_id is not None:
+                raise ValueError("projection partition already has an active rebuild")
+            watermark = session.scalar(
+                select(func.max(CanonicalCommit.stream_position)).where(
+                    CanonicalCommit.tenant_id == scope.tenant_id,
+                    CanonicalCommit.project_id == scope.project_id,
+                    CanonicalCommit.status == "committed",
+                )
+            ) or 0
+            run_id = str(uuid4())
+            session.add(
+                ProjectionRebuildRun(
+                    id=run_id,
+                    tenant_id=scope.tenant_id,
+                    project_id=scope.project_id,
+                    projector_id=projector_id,
+                    projector_version=spec.version,
+                    run_kind="projector_bootstrap",
+                    status="requested",
+                    watermark_position=watermark,
+                    checkpoint_position=0,
+                    operator_id=operator_id,
+                    operator_reason=reason,
+                )
+            )
+            partition.enrollment_status = "bootstrapping"
+            partition.runtime_status = "maintenance"
+            partition.maintenance_requested_at = datetime.now(timezone.utc)
+            partition.active_rebuild_run_id = run_id
+            session.commit()
+            return run_id
+
     def resume(self, run_id: str, *, worker_id: str) -> RebuildStatus:
         if not worker_id.strip():
             raise ValueError("worker_id is required")
@@ -141,6 +203,15 @@ class ProjectionRebuildService:
                 self._acquire_run_lease(run, worker_id)
                 lease_token = run.lease_token
                 session.commit()
+                if (
+                    run.status == "reconciliation_failed"
+                    and run.run_kind == "projector_bootstrap"
+                    and run.activation_after_position is not None
+                ):
+                    run.status = "catching_up"
+                    run.error_code = None
+                    run.error_message = None
+                    session.commit()
                 while run.status != "completed":
                     if run.status == "reconciliation_failed":
                         break
@@ -264,9 +335,27 @@ class ProjectionRebuildService:
                 self._stage("after_reconciliation_failure")
                 return True
         elif current == "reconciling":
+            if run.run_kind == "projector_bootstrap":
+                self._activate_bootstrap(session, run)
+                run.status = "catching_up"
+                session.flush()
+                session.commit()
+                self._stage("after_activation_commit")
+                return True
             self._catch_up_partition(session, run)
             self._stage("after_catch_up")
         elif current == "catching_up":
+            if run.run_kind == "projector_bootstrap":
+                partition = self._partition(session, run)
+                if partition.runtime_status == "catching_up":
+                    if not self._reconcile_bootstrap_gap(
+                        session, run, scope, adapter
+                    ):
+                        return True
+                elif partition.runtime_status != "active":
+                    raise ValueError(
+                        "bootstrap catch-up requires catching_up or active runtime"
+                    )
             head = session.scalar(
                 select(func.max(CanonicalCommit.stream_position)).where(
                     CanonicalCommit.tenant_id == run.tenant_id,
@@ -280,6 +369,110 @@ class ProjectionRebuildService:
         run.status = next_status
         session.flush()
         self._stage(f"after_{next_status}")
+        return True
+
+    def _activate_bootstrap(
+        self, session: Session, run: ProjectionRebuildRun
+    ) -> None:
+        repo = CanonicalRepository(session, run.tenant_id, run.project_id)
+        project = repo.get_project_for_update()
+        if project is None:
+            raise ValueError("canonical project is missing")
+        partition = session.scalar(
+            select(ProjectionPartition)
+            .where(
+                ProjectionPartition.tenant_id == run.tenant_id,
+                ProjectionPartition.project_id == run.project_id,
+                ProjectionPartition.projector_id == run.projector_id,
+            )
+            .with_for_update()
+        )
+        if partition is None:
+            raise ValueError("projection partition is missing")
+        if partition.enrollment_status != "bootstrapping":
+            raise ValueError("bootstrap activation requires bootstrapping enrollment")
+        activation_head = project.next_stream_position
+        partition.enrollment_status = "active"
+        partition.runtime_status = "catching_up"
+        partition.activation_after_position = activation_head
+        run.activation_after_position = activation_head
+        run.watermark_position = activation_head
+
+    def _reconcile_bootstrap_gap(
+        self,
+        session: Session,
+        run: ProjectionRebuildRun,
+        scope: ProjectionScope,
+        adapter: ProjectionAdapter,
+    ) -> bool:
+        activation_head = run.activation_after_position
+        if activation_head is None:
+            raise ValueError("bootstrap activation threshold is missing")
+        messages = tuple(
+            CanonicalProjectionReplay(session, registry=self.registry).iter_messages(
+                scope,
+                run.projector_id,
+                run.checkpoint_position,
+                activation_head,
+            )
+        )
+        for message in messages:
+            if message.stream_position <= run.checkpoint_position:
+                continue
+            adapter.apply(message)
+            self._stage("after_bootstrap_gap_apply_before_checkpoint")
+            run.checkpoint_position = message.stream_position
+            run.processed_record_count += 1
+            session.flush()
+            session.commit()
+        all_messages = tuple(
+            CanonicalProjectionReplay(session, registry=self.registry).iter_messages(
+                scope, run.projector_id, 0, activation_head
+            )
+        )
+        expected_records = adapter.expected_records(all_messages)
+        actual_records = adapter.actual_records(scope)
+        ledger = [message.payload.get("ledger_events", []) for message in all_messages]
+        expected = build_manifest(
+            scope,
+            self.registry.get(run.projector_id),
+            activation_head,
+            expected_records,
+            ledger=ledger,
+        )
+        actual = build_manifest(
+            scope,
+            self.registry.get(run.projector_id),
+            activation_head,
+            actual_records,
+            ledger=ledger,
+        )
+        result = reconcile_projection(
+            expected,
+            actual,
+            expected_records=expected_records,
+            actual_records=actual_records,
+            session=session,
+            rebuild_run_id=run.id,
+        )
+        run.expected_record_count = len(expected_records)
+        run.expected_manifest_json = expected.model_dump(mode="json")
+        run.expected_manifest_digest = sha256_json(run.expected_manifest_json)
+        run.actual_manifest_json = actual.model_dump(mode="json")
+        run.actual_manifest_digest = sha256_json(run.actual_manifest_json)
+        if result.status == "mismatch":
+            run.status = "reconciliation_failed"
+            run.error_code = "bootstrap_gap_reconciliation_mismatch"
+            run.error_message = "bootstrap activation gap does not match Canon"
+            session.flush()
+            return False
+        partition = self._partition(session, run)
+        partition.last_published_position = activation_head
+        partition.last_published_event_id = None
+        partition.runtime_status = "active"
+        partition.active_rebuild_run_id = None
+        partition.resumed_at = datetime.now(timezone.utc)
+        run.checkpoint_position = activation_head
         return True
 
     @staticmethod

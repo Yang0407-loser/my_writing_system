@@ -182,9 +182,7 @@ class CanonicalCommitService:
                 spec
                 for spec in self.projector_registry.all()
                 if (partition := partitions.get(spec.projector_id)) is not None
-                and partition.enrollment_status == "active"
-                and partition.activation_after_position is not None
-                and stream_position > partition.activation_after_position
+                and self._partition_receives_position(partition, stream_position)
             ]
 
             commit_id = str(uuid4())
@@ -351,3 +349,12 @@ class CanonicalCommitService:
         except Exception:
             self.session.rollback()
             raise
+
+    @staticmethod
+    def _partition_receives_position(partition, stream_position: int) -> bool:
+        """Fan out only after the atomically frozen activation Head."""
+        return bool(
+            partition.enrollment_status == "active"
+            and partition.activation_after_position is not None
+            and stream_position > partition.activation_after_position
+        )
