@@ -142,10 +142,11 @@ class ProjectionDeliveryStore:
             params[f"registry_id_{index}"] = spec.projector_id
             params[f"registry_version_{index}"] = spec.version
             params[f"lease_{index}"] = spec.retry.lease_seconds
-        if not registry_rows:
-            self.session.commit()
-            return None
-        registry_sql = ", ".join(registry_rows)
+        registry_sql = (
+            ", ".join(registry_rows)
+            if registry_rows
+            else "(NULL::varchar, NULL::varchar, NULL::integer)"
+        )
         token = uuid4().hex
         params["lease_token"] = token
         predicate = " AND ".join(filters)
@@ -258,8 +259,7 @@ class ProjectionDeliveryStore:
                   JOIN projection_partitions partition
                     ON partition.tenant_id = candidate.tenant_id
                    AND partition.project_id = candidate.project_id
-                   AND partition.projector_id = candidate.projector_id
-                   AND partition.projector_version = candidate.projector_version
+                   AND partition.projector_id = envelope.projection_name
                   LEFT JOIN registered
                     ON registered.projector_id = candidate.projector_id
                    AND registered.projector_version = candidate.projector_version
