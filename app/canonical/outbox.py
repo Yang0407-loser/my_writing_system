@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from .hashing import sha256_json
 from .models import CanonicalCommit, OutboxEvent, ProjectionDelivery
-from .projection_ports import ProjectionMessage, ProjectionPort
-from .projection_registry import projection_event_id
+from .projection_ports import ProjectionPort
+from .projection_replay import CanonicalProjectionReplay
 
 
 DispatchSummary = dict[str, int]
@@ -133,22 +133,8 @@ class OutboxDispatcher:
                         f"no projector registered for {delivery.projector_id}"
                     )
                 projector(
-                    ProjectionMessage(
-                        projection_event_id=projection_event_id(
-                            delivery.projector_id, event.commit_id
-                        ),
-                        outbox_event_id=event.id,
-                        delivery_id=delivery.id,
-                        tenant_id=event.tenant_id,
-                        project_id=event.project_id,
-                        commit_id=event.commit_id,
-                        revision_id=event.payload_json["revision_id"],
-                        state_version_id=event.payload_json["state_version_id"],
-                        projector_id=delivery.projector_id,
-                        barrier_kind=delivery.barrier_kind,
-                        event_type=event.event_type,
-                        stream_position=delivery.stream_position,
-                        payload=event.payload_json,
+                    CanonicalProjectionReplay(session).message_for_delivery(
+                        delivery.id
                     )
                 )
             except Exception as exc:  # projection failures are durable state

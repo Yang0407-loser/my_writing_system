@@ -5,14 +5,20 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from pydantic import Field
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..canonical.contracts import FrozenArtifact
-from ..canonical.hashing import sha256_text
-from ..canonical.models import CanonicalCommit, DocumentRevision, OutboxEvent
-from ..canonical.projection_ports import ProjectionMessage, ProjectionPort
+from ..canonical.hashing import sha256_json, sha256_text
+from ..canonical.projection_ports import (
+    ProjectionMessage,
+    ProjectionPort,
+    ProjectionReceipt,
+    ProjectionScope,
+)
+from ..canonical.projection_registry import DEFAULT_PROJECTOR_REGISTRY
+from ..canonical.projection_replay import (
+    CanonicalProjectionReplay,
+    LegacyProjectionEnvelope,
+)
 from ..config import settings
 from ..utils.text_chunker import chunk_text
 
@@ -24,33 +30,6 @@ class LegacyProjectionError(RuntimeError):
         self.projection_name = projection_name
         self.cause = cause
         super().__init__(f"{projection_name}: {cause}")
-
-
-class LegacyProjectionEnvelope(FrozenArtifact):
-    event_id: str
-    tenant_id: str
-    project_id: str
-    commit_id: str
-    revision_id: str
-    content_hash: str
-    task_id: str
-    section: int = Field(ge=1)
-    subsection: int = Field(ge=1)
-    ordinal: int = Field(ge=1)
-    title: str
-    topic: str
-    draft: str
-    prompt_hash: str
-    handover_candidate: dict[str, Any] | None = None
-    generation_metadata: dict[str, Any] = Field(default_factory=dict)
-
-    @property
-    def provenance(self) -> dict[str, str]:
-        return {
-            "commit_id": self.commit_id,
-            "revision_id": self.revision_id,
-            "content_hash": self.content_hash,
-        }
 
 
 class LegacySubsectionProjection:
@@ -78,6 +57,8 @@ class LegacySubsectionProjection:
         self.handover_recorder = handover_recorder
         self.vector_store = vector_store
         self.non_blocking_sinks = dict(non_blocking_sinks or {})
+        self.scope = ProjectionScope(tenant_id, project_id)
+        self.replay = CanonicalProjectionReplay(session)
 
     def as_projectors(self) -> dict[str, ProjectionPort]:
         return {
@@ -93,31 +74,51 @@ class LegacySubsectionProjection:
             )
         }
 
-    def project(self, message: ProjectionMessage) -> None:
+    def project(self, message: ProjectionMessage) -> ProjectionReceipt:
         if not isinstance(message, ProjectionMessage):
             raise TypeError("projection input must be a committed ProjectionMessage")
         try:
-            envelope = self._load_committed(message)
-            if message.projection_name == "legacy_world_event":
-                self._require(self.world_event_sink, message.projection_name)(envelope)
-            elif message.projection_name == "handover_context":
+            if message.tenant_id != self.tenant_id or message.project_id != self.project_id:
+                raise ValueError("projection message is outside projector scope")
+            envelope = self.replay.legacy_envelope(message)
+            record_count = 1
+            if message.projector_id == "legacy_world_event":
+                self._require(self.world_event_sink, message.projector_id)(envelope)
+            elif message.projector_id == "handover_context":
                 if self.handover_sink is not None:
                     self.handover_sink(envelope)
                 elif self.handover_recorder is not None:
                     self.handover_recorder.capture_canonical_projection(envelope)
                 else:
                     raise LookupError("handover sink is unavailable")
-            elif message.projection_name == "chroma_story_chunks":
-                self._project_chroma(envelope)
+            elif message.projector_id == "chroma_story_chunks":
+                record_count = self._project_chroma(envelope)
             else:
                 self._require(
-                    self.non_blocking_sinks.get(message.projection_name),
-                    message.projection_name,
+                    self.non_blocking_sinks.get(message.projector_id),
+                    message.projector_id,
                 )(envelope)
         except LegacyProjectionError:
             raise
         except Exception as exc:
-            raise LegacyProjectionError(message.projection_name, exc) from exc
+            raise LegacyProjectionError(message.projector_id, exc) from exc
+        spec = DEFAULT_PROJECTOR_REGISTRY.get(message.projector_id)
+        return ProjectionReceipt(
+            projection_event_id=message.projection_event_id,
+            projector_id=message.projector_id,
+            projector_version=spec.version,
+            stream_position=message.stream_position,
+            record_count=record_count,
+            content_digest=sha256_json(
+                {
+                    "projection_event_id": message.projection_event_id,
+                    "projector_id": message.projector_id,
+                    "stream_position": message.stream_position,
+                    "record_count": record_count,
+                    "envelope": envelope,
+                }
+            ),
+        )
 
     @staticmethod
     def _require(value: Any, projection_name: str) -> Any:
@@ -125,65 +126,14 @@ class LegacySubsectionProjection:
             raise LookupError(f"{projection_name} sink is unavailable")
         return value
 
-    def _load_committed(self, message: ProjectionMessage) -> LegacyProjectionEnvelope:
-        outbox = self.session.scalar(
-            select(OutboxEvent)
-            .join(CanonicalCommit, CanonicalCommit.id == OutboxEvent.commit_id)
-            .where(
-                OutboxEvent.id == message.event_id,
-                OutboxEvent.commit_id == message.commit_id,
-                OutboxEvent.projection_name == message.projection_name,
-                OutboxEvent.tenant_id == self.tenant_id,
-                OutboxEvent.project_id == self.project_id,
-                CanonicalCommit.tenant_id == self.tenant_id,
-                CanonicalCommit.project_id == self.project_id,
-                CanonicalCommit.status == "committed",
-            )
-        )
-        if outbox is None:
-            raise LegacyProjectionError(
-                message.projection_name, "committed outbox row not found in scope"
-            )
-        revision_id = str(outbox.payload_json.get("revision_id") or "")
-        revision = self.session.scalar(
-            select(DocumentRevision).where(
-                DocumentRevision.id == revision_id,
-                DocumentRevision.commit_id == message.commit_id,
-                DocumentRevision.tenant_id == self.tenant_id,
-                DocumentRevision.project_id == self.project_id,
-                DocumentRevision.status == "accepted",
-            )
-        )
-        if revision is None or sha256_text(revision.content) != revision.content_hash:
-            raise LegacyProjectionError(
-                message.projection_name, "accepted revision cannot be recomputed"
-            )
-        metadata = dict(revision.metadata_json or {})
-        return LegacyProjectionEnvelope(
-            event_id=message.event_id,
-            tenant_id=self.tenant_id,
-            project_id=self.project_id,
-            commit_id=message.commit_id,
-            revision_id=revision.id,
-            content_hash=revision.content_hash,
-            task_id=str(metadata.get("task_id") or ""),
-            section=int(metadata.get("section") or 1),
-            subsection=int(metadata.get("subsection") or 1),
-            ordinal=int(metadata.get("ordinal") or 1),
-            title=str(metadata.get("title") or ""),
-            topic=str(metadata.get("topic") or ""),
-            draft=revision.content,
-            prompt_hash=str(metadata.get("prompt_hash") or "unknown"),
-            handover_candidate=metadata.get("handover_candidate"),
-            generation_metadata=dict(metadata.get("generation_metadata") or {}),
-        )
-
-    def _project_chroma(self, envelope: LegacyProjectionEnvelope) -> None:
+    def _project_chroma(self, envelope: LegacyProjectionEnvelope) -> int:
         vector_store = self._require(self.vector_store, "chroma_story_chunks")
+        record_count = 0
         for ordinal, text in enumerate(
             chunk_text(envelope.draft, settings.CHUNK_SIZE, settings.CHUNK_OVERLAP),
             start=1,
         ):
+            record_count = ordinal
             chunk_id = "canonical-chunk-" + sha256_text(
                 f"{envelope.commit_id}:{ordinal}:{envelope.content_hash}"
             )
@@ -203,4 +153,5 @@ class LegacySubsectionProjection:
                 document_id=chunk_id,
             )
         vector_store.enforce_task_limit(envelope.task_id)
+        return record_count
 

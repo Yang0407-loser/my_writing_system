@@ -6,10 +6,16 @@ import pytest
 from sqlalchemy import func, select
 
 from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
-from app.canonical.models import CanonicalCommit, DocumentRevision, EventLedger, OutboxEvent
+from app.canonical.models import (
+    CanonicalCommit,
+    DocumentRevision,
+    EventLedger,
+    OutboxEvent,
+    ProjectionDelivery,
+)
 from app.canonical.outbox import OutboxDispatcher
 from app.canonical.projection_barrier import ProjectionBarrier
-from app.canonical.projection_ports import ProjectionMessage
+from app.canonical.projection_replay import CanonicalProjectionReplay
 from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
     CanonicalSubsectionRuntime,
@@ -174,21 +180,16 @@ def test_deleted_derived_chunks_rebuild_identically_from_canon(canonical_session
     result = CanonicalCommitService(
         canonical_session, "tenant-1", "project-1"
     ).commit(_prepared(canonical_session), "rebuild-projection")
-    row = canonical_session.scalar(
-        select(OutboxEvent).where(
+    delivery = canonical_session.scalar(
+        select(ProjectionDelivery)
+        .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+        .where(
             OutboxEvent.commit_id == result.commit_id,
-            OutboxEvent.projection_name == "chroma_story_chunks",
+            ProjectionDelivery.projector_id == "chroma_story_chunks",
         )
     )
-    message = ProjectionMessage(
-        event_id=row.id,
-        tenant_id=row.tenant_id,
-        project_id=row.project_id,
-        commit_id=row.commit_id,
-        projection_name=row.projection_name,
-        barrier_kind=row.barrier_kind,
-        event_type=row.event_type,
-        payload=row.payload_json,
+    message = CanonicalProjectionReplay(canonical_session).message_for_delivery(
+        delivery.id
     )
     vector = _ReplaceVector()
     projection = LegacySubsectionProjection(

@@ -14,6 +14,8 @@ from app.canonical.models import (
     ProjectionDelivery,
 )
 from app.canonical.outbox import OutboxDispatcher
+from app.canonical.projection_ports import ProjectionScope
+from app.canonical.projection_replay import CanonicalProjectionReplay
 from tests.unit.canonical.test_commit_service import _prepared, canonical_session
 
 
@@ -76,6 +78,35 @@ def test_commit_manifest_is_pending_and_dispatches_critical_only(canonical_sessi
     assert message.stream_position == 1
     assert message.revision_id == result.revision_id
     assert message.state_version_id == result.state_version_id
+
+
+def test_dispatcher_message_matches_pure_canon_replay_except_delivery_ids(
+    canonical_session,
+):
+    _commit(canonical_session)
+    projectors = _projectors()
+    rebuilt = tuple(
+        CanonicalProjectionReplay(canonical_session).iter_messages(
+            ProjectionScope("tenant-1", "project-1"),
+            "chroma_story_chunks",
+            0,
+            1,
+        )
+    )[0]
+
+    OutboxDispatcher(
+        lambda: canonical_session,
+        "tenant-1",
+        "project-1",
+        projectors,
+    ).dispatch_critical(rebuilt.commit_id)
+
+    incremental = projectors["chroma_story_chunks"].call_args.args[0]
+    assert incremental.model_dump(
+        exclude={"outbox_event_id", "delivery_id"}
+    ) == rebuilt.model_dump(exclude={"outbox_event_id", "delivery_id"})
+    assert incremental.outbox_event_id is not None
+    assert incremental.delivery_id is not None
 
 
 def test_projection_failure_preserves_canon_and_retries(canonical_session):

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+# ruff: noqa: F401, F811 -- pytest registers the imported sibling fixture by name.
+
 from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.canonical.commit_service import CanonicalCommitService
-from app.canonical.models import CanonicalProject, OutboxEvent
-from app.canonical.projection_ports import ProjectionMessage
+from app.canonical.models import CanonicalProject, OutboxEvent, ProjectionDelivery
+from app.canonical.projection_replay import CanonicalProjectionReplay
 from app.writing.legacy_subsection_projection import (
     LegacyProjectionError,
     LegacySubsectionProjection,
@@ -28,22 +30,15 @@ class RecordingVectorStore:
 
 
 def _message(session, commit_id, projection_name):
-    event = session.scalar(
-        select(OutboxEvent).where(
+    delivery = session.scalar(
+        select(ProjectionDelivery)
+        .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+        .where(
             OutboxEvent.commit_id == commit_id,
-            OutboxEvent.projection_name == projection_name,
+            ProjectionDelivery.projector_id == projection_name,
         )
     )
-    return ProjectionMessage(
-        event_id=event.id,
-        tenant_id=event.tenant_id,
-        project_id=event.project_id,
-        commit_id=event.commit_id,
-        projection_name=event.projection_name,
-        barrier_kind=event.barrier_kind,
-        event_type=event.event_type,
-        payload=event.payload_json,
-    )
+    return CanonicalProjectionReplay(session).message_for_delivery(delivery.id)
 
 
 def _committed(session):
@@ -61,7 +56,7 @@ def test_candidate_without_committed_outbox_cannot_be_projected(canonical_sessio
         projection.project(_prepared(canonical_session).candidate)
 
 
-def test_each_critical_projector_consumes_only_its_own_outbox(canonical_session):
+def test_each_critical_projector_consumes_only_its_own_message(canonical_session):
     result = _committed(canonical_session)
     world_sink = MagicMock()
     handover_sink = MagicMock()
@@ -75,17 +70,24 @@ def test_each_critical_projector_consumes_only_its_own_outbox(canonical_session)
         vector_store=vector,
     )
 
-    projection.project(_message(canonical_session, result.commit_id, "legacy_world_event"))
+    world_receipt = projection.project(
+        _message(canonical_session, result.commit_id, "legacy_world_event")
+    )
     assert world_sink.call_count == 1
     assert handover_sink.call_count == 0
     assert vector.calls == []
 
-    projection.project(_message(canonical_session, result.commit_id, "handover_context"))
+    handover_receipt = projection.project(
+        _message(canonical_session, result.commit_id, "handover_context")
+    )
     assert world_sink.call_count == 1
     assert handover_sink.call_count == 1
     assert vector.calls == []
 
-    projection.project(_message(canonical_session, result.commit_id, "chroma_story_chunks"))
+    chroma_message = _message(
+        canonical_session, result.commit_id, "chroma_story_chunks"
+    )
+    chroma_receipt = projection.project(chroma_message)
     assert vector.calls
     assert world_sink.call_count == handover_sink.call_count == 1
 
@@ -98,6 +100,67 @@ def test_each_critical_projector_consumes_only_its_own_outbox(canonical_session)
         assert metadata["commit_id"] == result.commit_id
         assert metadata["revision_id"] == result.revision_id
         assert metadata["content_hash"] == result.content_hash
+    assert world_receipt.projector_id == "legacy_world_event"
+    assert handover_receipt.projector_id == "handover_context"
+    assert chroma_receipt.projection_event_id == chroma_message.projection_event_id
+    assert chroma_receipt.record_count == len(vector.calls)
+
+
+def test_canon_replay_message_projects_without_historical_outbox(canonical_session):
+    _committed(canonical_session)
+    canonical_session.execute(
+        delete(ProjectionDelivery).where(ProjectionDelivery.projector_id == "analytics")
+    )
+    canonical_session.execute(
+        delete(OutboxEvent).where(OutboxEvent.projection_name == "analytics")
+    )
+    canonical_session.commit()
+    sink = MagicMock()
+    projection = LegacySubsectionProjection(
+        canonical_session,
+        "tenant-1",
+        "project-1",
+        non_blocking_sinks={"analytics": sink},
+    )
+    message = tuple(
+        CanonicalProjectionReplay(canonical_session).iter_messages(
+            projection.scope, "analytics", 0, 1
+        )
+    )[0]
+
+    first = projection.project(message)
+    second = projection.project(message)
+
+    assert sink.call_count == 2
+    assert first == second
+    assert first.projection_event_id == message.projection_event_id
+
+
+def test_compatibility_message_payload_is_reconstructed_from_canon(canonical_session):
+    result = _committed(canonical_session)
+    sink = MagicMock()
+    projection = LegacySubsectionProjection(
+        canonical_session,
+        "tenant-1",
+        "project-1",
+        non_blocking_sinks={"analytics": sink},
+    )
+    canonical = _message(canonical_session, result.commit_id, "analytics")
+    compatibility = canonical.model_copy(
+        update={
+            "payload": {
+                "commit_id": result.commit_id,
+                "revision_id": result.revision_id,
+                "state_version_id": result.state_version_id,
+                "candidate_hash": result.candidate_hash,
+            }
+        }
+    )
+
+    receipt = projection.project(compatibility)
+
+    assert sink.call_count == 1
+    assert receipt.projection_event_id == canonical.projection_event_id
 
 
 def test_chroma_projection_uses_stable_chunk_ids_on_replay(canonical_session):
