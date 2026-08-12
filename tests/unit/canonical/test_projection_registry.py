@@ -84,6 +84,7 @@ def test_projection_message_accepts_delivery_or_canon_replay_identity():
         revision_id="revision-42",
         state_version_id="state-42",
         projector_id="analytics",
+        projector_version="v1",
         barrier_kind="non_blocking",
         event_type="commit.created",
         stream_position=42,

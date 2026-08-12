@@ -81,8 +81,9 @@ class ProjectionWorker:
                         message = CanonicalProjectionReplay(
                             session, registry=self.registry
                         ).message_for_delivery(claim.delivery_id)
+                        self._validate_executor(executor, message)
                         receipt = executor.apply(message)
-                        self._validate_receipt(receipt, message, executor)
+                        self._validate_receipt(receipt, message)
                         self._stage("after_receipt")
                     except Exception as exc:
                         if not store.record_failure(claim, exc):
@@ -148,13 +149,22 @@ class ProjectionWorker:
         )
 
     @staticmethod
-    def _validate_receipt(receipt, message, executor) -> None:
+    def _validate_executor(executor, message) -> None:
+        if (
+            executor.spec.projector_id != message.projector_id
+            or executor.spec.version != message.projector_version
+            or executor.spec.barrier_kind != message.barrier_kind
+        ):
+            raise ValueError("projection executor does not match claimed message")
+
+    @staticmethod
+    def _validate_receipt(receipt, message) -> None:
         if not isinstance(receipt, ProjectionReceipt):
             raise TypeError("projection executor must return ProjectionReceipt")
         if (
             receipt.projection_event_id != message.projection_event_id
             or receipt.projector_id != message.projector_id
-            or receipt.projector_version != executor.spec.version
+            or receipt.projector_version != message.projector_version
             or receipt.stream_position != message.stream_position
         ):
             raise ValueError("projection receipt does not match claimed message")

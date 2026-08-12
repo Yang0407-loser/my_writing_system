@@ -17,6 +17,7 @@ from app.canonical.projection_delivery import ScanFilter
 from app.canonical.projection_locks import (
     ProjectionLockScope,
     ProjectionMaintenanceLocks,
+    advisory_keys,
 )
 from app.canonical.projection_ports import ProjectionMessage, ProjectionReceipt
 from app.canonical.projection_registry import DEFAULT_PROJECTOR_REGISTRY
@@ -57,6 +58,58 @@ class SinkExecutor:
             record_count=1,
             content_digest=sha256_json({"event": message.projection_event_id}),
         )
+
+
+@pytest.mark.parametrize(
+    ("scope", "expected"),
+    [
+        (
+            ProjectionLockScope("tenant-1", "project-1", "analytics"),
+            (-459063789, 1092501600),
+        ),
+        (
+            ProjectionLockScope("tenant-a", "project-b", "projector-c"),
+            (1919488280, 456322974),
+        ),
+        (
+            ProjectionLockScope("t", "p", "x"),
+            (1817854640, -89171997),
+        ),
+    ],
+)
+def test_advisory_keys_are_sha256_signed_big_endian_int32(scope, expected):
+    assert advisory_keys(scope) == expected
+
+
+def test_different_scopes_do_not_share_a_global_lock(postgres_database_url):
+    engine = build_engine(postgres_database_url)
+    locks = ProjectionMaintenanceLocks(engine)
+    first = ProjectionLockScope("tenant-isolation", "project-a", "analytics")
+    second = ProjectionLockScope("tenant-isolation", "project-b", "analytics")
+    first_entered = Event()
+    release_first = Event()
+    second_entered = Event()
+
+    def hold_first():
+        with locks.shared(first):
+            first_entered.set()
+            assert release_first.wait(timeout=5)
+
+    def acquire_second():
+        assert first_entered.wait(timeout=5)
+        with locks.exclusive(second):
+            second_entered.set()
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first_future = pool.submit(hold_first)
+        second_future = pool.submit(acquire_second)
+        assert first_entered.wait(timeout=5)
+        assert second_entered.wait(timeout=1)
+        release_first.set()
+        first_future.result(timeout=5)
+        second_future.result(timeout=5)
+
+    engine.dispose()
 
 
 def test_exclusive_maintenance_waits_until_shared_worker_exits(postgres_database_url):

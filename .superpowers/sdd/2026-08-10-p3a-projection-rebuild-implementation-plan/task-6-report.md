@@ -111,3 +111,45 @@ published Delivery. The post-publish stale wake-up claims nothing.
   explicitly requires compatibility projectors to return `ProjectionReceipt`
   and preserves Task 5 retry authority, so those deprecated fixture assumptions
   were not restored through production compatibility hacks.
+
+## Fix Round 1 / 5: reviewer Important findings
+
+Both Important findings were reproduced before production changes.
+
+### Authoritative executor and receipt identity
+
+- RED: executors whose spec had the wrong projector id, version, or barrier kind
+  were each called and their self-consistent receipt was published.
+- GREEN: `ProjectionMessage` now carries the authoritative registry-derived
+  `projector_version`. Before apply, Worker validates executor spec id/version/
+  barrier directly against that message. A mismatch records a retry and the
+  external executor receives no call.
+- Receipt version is compared directly with `message.projector_version`, not
+  with executor-owned metadata.
+- Mutation RED was demonstrated separately for a complete duck-typed non-
+  `ProjectionReceipt` impostor and for deleting each receipt comparison:
+  event id, projector id, projector version, and stream position. Each mutation
+  caused the corresponding invalid receipt test to observe an erroneous publish.
+- Existing Task 5 claim/heartbeat/outcome fences were unchanged.
+
+### Advisory key derivation and scope isolation
+
+- Added three independently calculated literal vectors for SHA-256 first eight
+  bytes interpreted as two signed big-endian int32 values. Expected literals do
+  not call the production key helper.
+- RED: changing production decoding to little-endian failed all three vectors.
+- Added a real PostgreSQL concurrency test holding a shared lock in one project
+  scope while acquiring an exclusive lock in a different project scope.
+- RED: replacing production keys with the constant `(7, 7)` made the unrelated
+  exclusive acquisition time out behind the shared lock.
+- GREEN: restored deterministic SHA-256 derivation lets unrelated scopes proceed
+  concurrently while same-scope shared/exclusive exclusion remains covered.
+
+### Compatibility regression
+
+- Updated the existing Barrier test fixture to return the now-required
+  `ProjectionReceipt`; its destructive missing-Delivery setup deletes the new
+  authoritative Attempt history before deleting its Delivery.
+- Fresh focused Task 6 + facade/barrier + message/replay suite: `45 passed`.
+- Reviewer Minor items (unlock behavior under failure combinations and a real
+  sink process boundary) remain explicitly outside this fix round.

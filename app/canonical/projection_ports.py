@@ -21,6 +21,7 @@ class ProjectionMessage(FrozenArtifact):
     revision_id: str
     state_version_id: str
     projector_id: str
+    projector_version: str
     barrier_kind: Literal["critical", "non_blocking"]
     event_type: str
     stream_position: int = Field(ge=1)

@@ -377,6 +377,7 @@ class CanonicalProjectionReplay:
             revision_id=revision.id,
             state_version_id=state.id,
             projector_id=projector_id,
+            projector_version=self.registry.get(projector_id).version,
             barrier_kind=barrier_kind,
             event_type="canonical.subsection.committed",
             stream_position=commit.stream_position,
