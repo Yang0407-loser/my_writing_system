@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from typing import Any
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy import DateTime, inspect as sa_inspect, select, update
 from sqlalchemy.orm import Session
@@ -125,6 +125,11 @@ def _deserialize_row(model, row: dict[str, Any], **overrides):
     return model(**values)
 
 
+def _stable_snapshot_id(kind: str, *identity: str) -> str:
+    name = ":".join(("canonical-snapshot-v0", kind, *identity))
+    return str(uuid5(NAMESPACE_URL, name))
+
+
 def _legacy_delivery(envelope: OutboxEvent) -> ProjectionDelivery:
     published = envelope.status == "published"
     published_at = envelope.published_at or envelope.updated_at if published else None
@@ -139,7 +144,13 @@ def _legacy_delivery(envelope: OutboxEvent) -> ProjectionDelivery:
         }
         digest = sha256_json(receipt)
     return ProjectionDelivery(
-        id=str(uuid4()),
+        id=_stable_snapshot_id(
+            "delivery",
+            envelope.tenant_id,
+            envelope.project_id,
+            envelope.id,
+            envelope.projection_name,
+        ),
         outbox_event_id=envelope.id,
         tenant_id=envelope.tenant_id,
         project_id=envelope.project_id,
@@ -155,6 +166,8 @@ def _legacy_delivery(envelope: OutboxEvent) -> ProjectionDelivery:
         published_at=published_at,
         receipt_json=receipt,
         receipt_digest=digest,
+        created_at=envelope.created_at,
+        updated_at=envelope.updated_at,
     )
 
 
@@ -252,11 +265,10 @@ def import_project_snapshot(session: Session, snapshot: dict[str, Any]) -> None:
     project_row = tables[CanonicalProject.__tablename__][0]
     project_head = project_row["current_state_version_id"]
     project_updated_at = project_row["updated_at"]
-    session.add(
-        _deserialize_row(
-            CanonicalProject, project_row, current_state_version_id=None
-        )
+    project = _deserialize_row(
+        CanonicalProject, project_row, current_state_version_id=None
     )
+    session.add(project)
     session.flush()
 
     for model in (CanonicalDocument,):
@@ -341,7 +353,9 @@ def import_project_snapshot(session: Session, snapshot: dict[str, Any]) -> None:
             cursor = _continuous_published_cursor(projector_deliveries)
             partitions.append(
                 ProjectionPartition(
-                    id=str(uuid4()),
+                    id=_stable_snapshot_id(
+                        "partition", tenant_id, project_id, spec.projector_id
+                    ),
                     tenant_id=tenant_id,
                     project_id=project_id,
                     projector_id=spec.projector_id,
@@ -353,6 +367,8 @@ def import_project_snapshot(session: Session, snapshot: dict[str, Any]) -> None:
                         projector_deliveries, cursor
                     ),
                     activation_after_position=0,
+                    created_at=project.created_at,
+                    updated_at=project.updated_at,
                 )
             )
     else:

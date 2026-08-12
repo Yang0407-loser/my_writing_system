@@ -130,6 +130,9 @@ class CanonicalCommitService:
         transition = prepared.state_transition
         try:
             self._begin_unit_of_work()
+            project = self.repo.get_project_for_update()
+            if project is None or not project.current_state_version_id:
+                raise StateVersionConflict("project is missing an explicit State Head")
             reservation, duplicate = self._reserve(
                 idempotency_key, candidate.candidate_hash
             )
@@ -138,10 +141,6 @@ class CanonicalCommitService:
                 return duplicate
             assert reservation is not None
             self._stage("after_reservation")
-
-            project = self.repo.get_project_for_update()
-            if project is None or not project.current_state_version_id:
-                raise StateVersionConflict("project is missing an explicit State Head")
             base_state = self.session.get(
                 CanonicalStateVersion, transition.base_state_version_id
             )

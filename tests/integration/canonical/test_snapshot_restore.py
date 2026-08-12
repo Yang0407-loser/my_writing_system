@@ -194,3 +194,51 @@ def test_v0_restore_creates_deliveries_only_for_imported_envelopes(tmp_path):
 
     source_engine.dispose()
     target_engine.dispose()
+
+
+def test_v0_restore_synthesizes_stable_projection_identity_and_reexport(tmp_path):
+    source_url = f"sqlite+pysqlite:///{(tmp_path / 'stable-source.db').as_posix()}"
+    first_url = f"sqlite+pysqlite:///{(tmp_path / 'stable-first.db').as_posix()}"
+    second_url = f"sqlite+pysqlite:///{(tmp_path / 'stable-second.db').as_posix()}"
+    source_engine = build_engine(source_url)
+    first_engine = build_engine(first_url)
+    second_engine = build_engine(second_url)
+    for engine in (source_engine, first_engine, second_engine):
+        Base.metadata.create_all(engine)
+
+    with build_session_factory(source_engine)() as source_session:
+        _seed(source_session)
+        old_snapshot = export_project_snapshot(
+            source_session,
+            tenant_id="tenant-golden",
+            project_id="project-golden",
+        )
+        old_snapshot["tables"].pop(ProjectionDelivery.__tablename__)
+        old_snapshot["tables"].pop(ProjectionPartition.__tablename__)
+
+    restored_snapshots = []
+    synthesized_identity = []
+    for engine in (first_engine, second_engine):
+        with build_session_factory(engine)() as session:
+            import_project_snapshot(session, old_snapshot)
+            session.commit()
+            synthesized_identity.append(
+                (
+                    tuple(sorted(session.scalars(select(ProjectionDelivery.id)).all())),
+                    tuple(sorted(session.scalars(select(ProjectionPartition.id)).all())),
+                )
+            )
+            restored_snapshots.append(
+                export_project_snapshot(
+                    session,
+                    tenant_id="tenant-golden",
+                    project_id="project-golden",
+                )
+            )
+
+    assert synthesized_identity[0] == synthesized_identity[1]
+    assert canonical_snapshot_bytes(restored_snapshots[0]) == canonical_snapshot_bytes(
+        restored_snapshots[1]
+    )
+    for engine in (source_engine, first_engine, second_engine):
+        engine.dispose()

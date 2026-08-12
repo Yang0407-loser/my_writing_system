@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import CanonicalCommit, OutboxEvent
+from .models import CanonicalCommit, OutboxEvent, ProjectionDelivery
 
 
 class ProjectionBarrier:
@@ -29,19 +29,30 @@ class ProjectionBarrier:
         )
         if commit is None:
             return "failed"
-        statuses = tuple(
-            self.session.scalars(
-                select(OutboxEvent.status).where(
+        delivery_states = tuple(
+            self.session.execute(
+                select(
+                    ProjectionDelivery.status,
+                    ProjectionDelivery.last_error_message,
+                )
+                .join(
+                    OutboxEvent,
+                    OutboxEvent.id == ProjectionDelivery.outbox_event_id,
+                )
+                .where(
                     OutboxEvent.commit_id == commit_id,
-                    OutboxEvent.tenant_id == self.tenant_id,
-                    OutboxEvent.project_id == self.project_id,
-                    OutboxEvent.barrier_kind == "critical",
+                    ProjectionDelivery.tenant_id == self.tenant_id,
+                    ProjectionDelivery.project_id == self.project_id,
+                    ProjectionDelivery.barrier_kind == "critical",
                 )
             ).all()
         )
-        if not statuses or "failed" in statuses:
+        if not delivery_states or any(
+            status == "dead_letter" or last_error is not None
+            for status, last_error in delivery_states
+        ):
             return "failed"
-        if all(status == "published" for status in statuses):
+        if all(status == "published" for status, _ in delivery_states):
             return "ready"
         return "pending"
 

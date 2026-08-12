@@ -8,8 +8,10 @@ from datetime import datetime, timezone
 from sqlalchemy import Select, case, select
 from sqlalchemy.orm import Session
 
-from .models import CanonicalCommit, OutboxEvent
+from .hashing import sha256_json
+from .models import CanonicalCommit, OutboxEvent, ProjectionDelivery
 from .projection_ports import ProjectionMessage, ProjectionPort
+from .projection_registry import projection_event_id
 
 
 DispatchSummary = dict[str, int]
@@ -40,7 +42,7 @@ class OutboxDispatcher:
         return self._dispatch(
             self._eligible().where(
                 OutboxEvent.commit_id == commit_id,
-                OutboxEvent.barrier_kind == "critical",
+                ProjectionDelivery.barrier_kind == "critical",
             )
         )
 
@@ -48,7 +50,7 @@ class OutboxDispatcher:
         return self._dispatch(
             self._eligible().where(
                 OutboxEvent.commit_id == commit_id,
-                OutboxEvent.barrier_kind == "non_blocking",
+                ProjectionDelivery.barrier_kind == "non_blocking",
             )
         )
 
@@ -57,21 +59,25 @@ class OutboxDispatcher:
             raise ValueError("limit must be positive")
         return self._dispatch(self._eligible().limit(limit))
 
-    def _eligible(self) -> Select[tuple[OutboxEvent]]:
+    def _eligible(self) -> Select[tuple[ProjectionDelivery]]:
         return (
-            select(OutboxEvent)
+            select(ProjectionDelivery)
+            .join(
+                OutboxEvent,
+                OutboxEvent.id == ProjectionDelivery.outbox_event_id,
+            )
             .join(CanonicalCommit, CanonicalCommit.id == OutboxEvent.commit_id)
             .where(
-                OutboxEvent.tenant_id == self.tenant_id,
-                OutboxEvent.project_id == self.project_id,
+                ProjectionDelivery.tenant_id == self.tenant_id,
+                ProjectionDelivery.project_id == self.project_id,
                 CanonicalCommit.tenant_id == self.tenant_id,
                 CanonicalCommit.project_id == self.project_id,
                 CanonicalCommit.status == "committed",
-                OutboxEvent.status.in_(("pending", "failed")),
-                OutboxEvent.available_at <= datetime.now(timezone.utc),
+                ProjectionDelivery.status == "pending",
+                ProjectionDelivery.available_at <= datetime.now(timezone.utc),
             )
             .order_by(
-                OutboxEvent.available_at,
+                ProjectionDelivery.available_at,
                 case(
                     {
                         "legacy_world_event": 1,
@@ -82,63 +88,91 @@ class OutboxDispatcher:
                         "markdown_export": 6,
                         "analytics": 7,
                     },
-                    value=OutboxEvent.projection_name,
+                    value=ProjectionDelivery.projector_id,
                     else_=99,
                 ),
-                OutboxEvent.id,
+                ProjectionDelivery.id,
             )
         )
 
-    def _dispatch(self, statement: Select[tuple[OutboxEvent]]) -> DispatchSummary:
+    def _dispatch(
+        self, statement: Select[tuple[ProjectionDelivery]]
+    ) -> DispatchSummary:
         session = self._session_factory()
         summary = {"published": 0, "failed": 0}
-        event_ids = tuple(session.scalars(statement).all())
+        delivery_ids = tuple(row.id for row in session.scalars(statement).all())
         # Snapshot IDs before commits expire ORM instances in default sessions.
-        for event_or_id in event_ids:
-            event_id = event_or_id.id
-            event = session.scalar(
-                select(OutboxEvent)
+        for delivery_id in delivery_ids:
+            row = session.execute(
+                select(ProjectionDelivery, OutboxEvent)
+                .join(
+                    OutboxEvent,
+                    OutboxEvent.id == ProjectionDelivery.outbox_event_id,
+                )
                 .join(CanonicalCommit, CanonicalCommit.id == OutboxEvent.commit_id)
                 .where(
-                    OutboxEvent.id == event_id,
-                    OutboxEvent.tenant_id == self.tenant_id,
-                    OutboxEvent.project_id == self.project_id,
+                    ProjectionDelivery.id == delivery_id,
+                    ProjectionDelivery.tenant_id == self.tenant_id,
+                    ProjectionDelivery.project_id == self.project_id,
                     CanonicalCommit.tenant_id == self.tenant_id,
                     CanonicalCommit.project_id == self.project_id,
                     CanonicalCommit.status == "committed",
-                    OutboxEvent.status.in_(("pending", "failed")),
+                    ProjectionDelivery.status == "pending",
                 )
-            )
-            if event is None:
+            ).one_or_none()
+            if row is None:
                 continue
-            event.attempts += 1
-            projector = self.projectors.get(event.projection_name)
+            delivery, event = row
+            now = datetime.now(timezone.utc)
+            delivery.attempt_count += 1
+            delivery.last_attempt_at = now
+            projector = self.projectors.get(delivery.projector_id)
             try:
                 if projector is None:
                     raise LookupError(
-                        f"no projector registered for {event.projection_name}"
+                        f"no projector registered for {delivery.projector_id}"
                     )
                 projector(
                     ProjectionMessage(
-                        event_id=event.id,
+                        projection_event_id=projection_event_id(
+                            delivery.projector_id, event.commit_id
+                        ),
+                        outbox_event_id=event.id,
+                        delivery_id=delivery.id,
                         tenant_id=event.tenant_id,
                         project_id=event.project_id,
                         commit_id=event.commit_id,
-                        projection_name=event.projection_name,
-                        barrier_kind=event.barrier_kind,
+                        revision_id=event.payload_json["revision_id"],
+                        state_version_id=event.payload_json["state_version_id"],
+                        projector_id=delivery.projector_id,
+                        barrier_kind=delivery.barrier_kind,
                         event_type=event.event_type,
+                        stream_position=delivery.stream_position,
                         payload=event.payload_json,
                     )
                 )
             except Exception as exc:  # projection failures are durable state
-                event.status = "failed"
-                event.published_at = None
-                event.last_error = f"{type(exc).__name__}: {exc}"[:4000]
+                delivery.status = "pending"
+                delivery.published_at = None
+                delivery.last_error_class = type(exc).__name__[:255]
+                delivery.last_error_message = f"{type(exc).__name__}: {exc}"[:4000]
+                delivery.receipt_json = None
+                delivery.receipt_digest = None
                 summary["failed"] += 1
             else:
-                event.status = "published"
-                event.published_at = datetime.now(timezone.utc)
-                event.last_error = None
+                receipt = {
+                    "kind": "synchronous_dispatch_compatibility_receipt",
+                    "outbox_event_id": event.id,
+                    "projector_id": delivery.projector_id,
+                    "stream_position": delivery.stream_position,
+                }
+                delivery.status = "published"
+                delivery.published_at = now
+                delivery.last_error_code = None
+                delivery.last_error_class = None
+                delivery.last_error_message = None
+                delivery.receipt_json = receipt
+                delivery.receipt_digest = sha256_json(receipt)
                 summary["published"] += 1
             session.commit()
         return summary

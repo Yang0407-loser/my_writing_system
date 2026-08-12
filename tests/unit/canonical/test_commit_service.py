@@ -166,6 +166,27 @@ def test_first_commit_writes_all_canon_moves_both_heads_and_manifest(canonical_s
     assert project.next_stream_position == 1
 
 
+def test_project_is_locked_before_idempotency_reservation(canonical_session):
+    service = CanonicalCommitService(canonical_session, "tenant-1", "project-1")
+    locked = False
+    original_get_project_for_update = service.repo.get_project_for_update
+
+    def observe_project_lock():
+        nonlocal locked
+        project = original_get_project_for_update()
+        locked = True
+        return project
+
+    def assert_reservation_is_under_lock(stage):
+        if stage == "after_reservation":
+            assert locked is True
+
+    service.repo.get_project_for_update = observe_project_lock
+    service.failure_hook = assert_reservation_is_under_lock
+
+    service.commit(_prepared(canonical_session), "locked-reservation")
+
+
 def test_disabled_registered_projector_gets_only_post_activation_envelope(
     canonical_session,
 ):
