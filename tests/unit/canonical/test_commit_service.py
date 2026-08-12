@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import func, select
 
 from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
@@ -23,6 +19,7 @@ from app.canonical.errors import (
 )
 from app.canonical.hashing import sha256_text
 from app.canonical.models import (
+    Base,
     CanonicalCommit,
     CanonicalProject,
     CanonicalStateVersion,
@@ -31,24 +28,24 @@ from app.canonical.models import (
     EventLedger,
     IdempotencyRecord,
     OutboxEvent,
+    ProjectionDelivery,
+    ProjectionPartition,
+)
+from app.canonical.projection_registry import (
+    DEFAULT_PROJECTOR_REGISTRY,
+    NON_BLOCKING_RETRY,
+    ProjectorRegistry,
+    ProjectorSpec,
 )
 from app.canonical.repositories import CanonicalRepository
 from app.canonical.state_transition import LegacyStateTransitionAdapter
 
 
-def _migrate(url: str) -> None:
-    root = Path(__file__).resolve().parents[3]
-    config = Config(str(root / "alembic.ini"))
-    config.set_main_option("script_location", str(root / "migrations"))
-    config.set_main_option("sqlalchemy.url", url)
-    command.upgrade(config, "head")
-
-
 @pytest.fixture
 def canonical_session(tmp_path):
     url = f"sqlite+pysqlite:///{(tmp_path / 'commit.db').as_posix()}"
-    _migrate(url)
     engine = build_engine(url)
+    Base.metadata.create_all(engine)
     factory = build_session_factory(engine)
     with factory() as session:
         repo = CanonicalRepository(session, "tenant-1", "project-1")
@@ -141,6 +138,7 @@ def test_first_commit_writes_all_canon_moves_both_heads_and_manifest(canonical_s
     assert _count(canonical_session, EventLedger) == 1
     assert _count(canonical_session, IdempotencyRecord) == 1
     assert _count(canonical_session, OutboxEvent) == len(PROJECTION_MANIFEST)
+    assert _count(canonical_session, ProjectionDelivery) == len(PROJECTION_MANIFEST)
     project = canonical_session.get(CanonicalProject, "project-1")
     subsection = canonical_session.get(CanonicalSubsection, "subsection-1")
     assert project.current_state_version_id == result.state_version_id
@@ -150,6 +148,129 @@ def test_first_commit_writes_all_canon_moves_both_heads_and_manifest(canonical_s
             select(OutboxEvent.id).where(OutboxEvent.commit_id == result.commit_id)
         ).all()
     )
+    envelopes = canonical_session.scalars(
+        select(OutboxEvent).where(OutboxEvent.commit_id == result.commit_id)
+    ).all()
+    deliveries = canonical_session.scalars(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.project_id == "project-1"
+        )
+    ).all()
+    commit = canonical_session.get(CanonicalCommit, result.commit_id)
+    assert {envelope.id for envelope in envelopes} == {
+        delivery.outbox_event_id for delivery in deliveries
+    }
+    assert {envelope.stream_position for envelope in envelopes} == {1}
+    assert {delivery.stream_position for delivery in deliveries} == {1}
+    assert commit.stream_position == 1
+    assert project.next_stream_position == 1
+
+
+def test_disabled_registered_projector_gets_only_post_activation_envelope(
+    canonical_session,
+):
+    search = ProjectorSpec(
+        "search_index", "v1", "non_blocking", NON_BLOCKING_RETRY
+    )
+    registry = ProjectorRegistry((*DEFAULT_PROJECTOR_REGISTRY.all(), search))
+    canonical_session.add(
+        ProjectionPartition(
+            id="partition-search",
+            tenant_id="tenant-1",
+            project_id="project-1",
+            projector_id=search.projector_id,
+            projector_version=search.version,
+            enrollment_status="disabled",
+            runtime_status="active",
+            last_published_position=0,
+            activation_after_position=None,
+        )
+    )
+    canonical_session.commit()
+    service = CanonicalCommitService(
+        canonical_session,
+        "tenant-1",
+        "project-1",
+        projector_registry=registry,
+    )
+
+    first = service.commit(_prepared(canonical_session), "before-search")
+    assert canonical_session.scalar(
+        select(func.count()).select_from(OutboxEvent).where(
+            OutboxEvent.project_id == "project-1",
+            OutboxEvent.projection_name == "search_index",
+        )
+    ) == 0
+
+    partition = canonical_session.get(ProjectionPartition, "partition-search")
+    partition.enrollment_status = "active"
+    partition.activation_after_position = 1
+    canonical_session.commit()
+    second = service.commit(
+        _prepared(
+            canonical_session,
+            draft="Accepted after activation",
+            base_revision_number=1,
+            base_state_version_id=first.state_version_id,
+        ),
+        "after-search",
+    )
+
+    search_envelopes = canonical_session.scalars(
+        select(OutboxEvent).where(
+            OutboxEvent.project_id == "project-1",
+            OutboxEvent.projection_name == "search_index",
+        )
+    ).all()
+    assert len(search_envelopes) == 1
+    assert search_envelopes[0].commit_id == second.commit_id
+    assert search_envelopes[0].stream_position == 2
+
+
+@pytest.mark.parametrize(
+    "failure_stage",
+    ["after_stream_position", "after_outbox", "after_projection_deliveries"],
+)
+def test_projection_write_failures_roll_back_counter_canon_envelopes_and_deliveries(
+    canonical_session, failure_stage
+):
+    tracked = (
+        CanonicalCommit,
+        DocumentRevision,
+        CanonicalStateVersion,
+        EventLedger,
+        IdempotencyRecord,
+        OutboxEvent,
+        ProjectionDelivery,
+    )
+    before_counts = {model: _count(canonical_session, model) for model in tracked}
+    before_project = canonical_session.get(CanonicalProject, "project-1")
+    before_counter = before_project.next_stream_position
+    before_state_head = before_project.current_state_version_id
+    before_revision_head = canonical_session.get(
+        CanonicalSubsection, "subsection-1"
+    ).current_revision_id
+
+    def fail(stage):
+        if stage == failure_stage:
+            raise RuntimeError(f"injected failure: {stage}")
+
+    with pytest.raises(RuntimeError, match=failure_stage):
+        CanonicalCommitService(
+            canonical_session,
+            "tenant-1",
+            "project-1",
+            failure_hook=fail,
+        ).commit(_prepared(canonical_session), f"failure-{failure_stage}")
+
+    canonical_session.expire_all()
+    assert {model: _count(canonical_session, model) for model in tracked} == before_counts
+    project = canonical_session.get(CanonicalProject, "project-1")
+    assert project.next_stream_position == before_counter
+    assert project.current_state_version_id == before_state_head
+    assert canonical_session.get(
+        CanonicalSubsection, "subsection-1"
+    ).current_revision_id == before_revision_head
 
 
 def test_same_key_and_hash_replays_original_result_without_new_rows(canonical_session):

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,7 +19,9 @@ from .models import (
     DocumentRevision,
     EventLedger,
     IdempotencyRecord,
+    ProjectionPartition,
 )
+from .projection_registry import DEFAULT_PROJECTOR_REGISTRY
 
 
 class CanonicalRepository:
@@ -65,6 +68,7 @@ class CanonicalRepository:
             owner_id=owner_id,
             name=name,
             current_state_version_id=None,
+            next_stream_position=0,
         )
         self.session.add(project)
         self.session.flush()
@@ -83,8 +87,43 @@ class CanonicalRepository:
         self.session.add(genesis)
         self.session.flush()
         project.current_state_version_id = genesis.id
+        self.session.add_all(
+            ProjectionPartition(
+                id=str(uuid4()),
+                tenant_id=self.tenant_id,
+                project_id=self.project_id,
+                projector_id=spec.projector_id,
+                projector_version=spec.version,
+                enrollment_status="active",
+                runtime_status="active",
+                last_published_position=0,
+                last_published_event_id=None,
+                activation_after_position=0,
+            )
+            for spec in DEFAULT_PROJECTOR_REGISTRY.all()
+        )
         self.session.flush()
         return project
+
+    def next_stream_position(self, project: CanonicalProject) -> int:
+        """Allocate the next position on an already project-row-locked instance."""
+        if project.id != self.project_id or project.tenant_id != self.tenant_id:
+            raise ValueError("project is outside repository scope")
+        project.next_stream_position += 1
+        self.session.flush()
+        return project.next_stream_position
+
+    def get_projection_partitions_for_update(self) -> list[ProjectionPartition]:
+        return list(
+            self.session.scalars(
+                select(ProjectionPartition)
+                .where(
+                    ProjectionPartition.tenant_id == self.tenant_id,
+                    ProjectionPartition.project_id == self.project_id,
+                )
+                .with_for_update()
+            ).all()
+        )
 
     def get_current_state(self) -> CanonicalStateVersion | None:
         project = self.get_project()
@@ -185,6 +224,7 @@ class CanonicalRepository:
         candidate_hash: str,
         base_revision_number: int,
         base_state_version_id: str,
+        stream_position: int,
     ) -> CanonicalCommit:
         commit = CanonicalCommit(
             id=commit_id,
@@ -193,6 +233,7 @@ class CanonicalRepository:
             candidate_hash=candidate_hash,
             base_revision_number=base_revision_number,
             base_state_version_id=base_state_version_id,
+            stream_position=stream_position,
             status="committed",
         )
         self.session.add(commit)

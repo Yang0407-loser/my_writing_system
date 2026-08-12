@@ -1,31 +1,22 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
-from alembic import command
-from alembic.config import Config
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.canonical.database import build_engine, build_session_factory
 from app.canonical.errors import ScopeRequired
 from app.canonical.hashing import sha256_text
+from app.canonical.models import Base, ProjectionPartition
+from app.canonical.projection_registry import DEFAULT_PROJECTOR_REGISTRY
 from app.canonical.repositories import CanonicalRepository
-
-
-def _migrate(url: str) -> None:
-    root = Path(__file__).resolve().parents[3]
-    config = Config(str(root / "alembic.ini"))
-    config.set_main_option("script_location", str(root / "migrations"))
-    config.set_main_option("sqlalchemy.url", url)
-    command.upgrade(config, "head")
 
 
 @pytest.fixture
 def session(tmp_path):
     url = f"sqlite+pysqlite:///{(tmp_path / 'repo.db').as_posix()}"
-    _migrate(url)
     engine = build_engine(url)
+    Base.metadata.create_all(engine)
     with build_session_factory(engine)() as db_session:
         yield db_session
     engine.dispose()
@@ -70,6 +61,38 @@ def test_create_project_atomically_creates_explicit_genesis_state_head(session):
     assert repo.get_project().current_state_version_id == state.id
 
 
+def test_create_project_enrolls_exactly_the_seven_baseline_partitions(session):
+    repo = _repository(session)
+
+    project = _create_project(repo)
+
+    partitions = session.scalars(
+        select(ProjectionPartition).where(
+            ProjectionPartition.tenant_id == "tenant-1",
+            ProjectionPartition.project_id == "project-1",
+        )
+    ).all()
+    assert project.next_stream_position == 0
+    assert {row.projector_id for row in partitions} == {
+        spec.projector_id for spec in DEFAULT_PROJECTOR_REGISTRY.all()
+    }
+    assert len(partitions) == 7
+    assert {row.enrollment_status for row in partitions} == {"active"}
+    assert {row.last_published_position for row in partitions} == {0}
+    assert {row.activation_after_position for row in partitions} == {0}
+
+
+def test_next_stream_position_increments_locked_project_without_committing(session):
+    repo = _repository(session)
+    project = _create_project(repo)
+
+    assert repo.next_stream_position(project) == 1
+    assert repo.next_stream_position(project) == 2
+    session.rollback()
+
+    assert repo.get_project() is None
+
+
 def test_repository_never_commits_callers_transaction(session, tmp_path):
     repo = _repository(session)
     _create_project(repo)
@@ -93,6 +116,7 @@ def test_revision_chain_heads_and_full_document_materialization(session):
         candidate_hash="a" * 64,
         base_revision_number=0,
         base_state_version_id="state-genesis",
+        stream_position=repo.next_stream_position(repo.get_project_for_update()),
     )
     first = repo.append_revision(
         revision_id="revision-1",
@@ -113,6 +137,7 @@ def test_revision_chain_heads_and_full_document_materialization(session):
         candidate_hash="b" * 64,
         base_revision_number=1,
         base_state_version_id="state-genesis",
+        stream_position=repo.next_stream_position(repo.get_project_for_update()),
     )
     revised = repo.append_revision(
         revision_id="revision-3",

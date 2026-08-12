@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import DateTime, inspect as sa_inspect, select, update
 from sqlalchemy.orm import Session
@@ -20,7 +21,10 @@ from .models import (
     EventLedger,
     IdempotencyRecord,
     OutboxEvent,
+    ProjectionDelivery,
+    ProjectionPartition,
 )
+from .projection_registry import DEFAULT_PROJECTOR_REGISTRY
 from .repositories import CanonicalRepository
 
 
@@ -34,6 +38,8 @@ SNAPSHOT_MODELS = (
     EventLedger,
     IdempotencyRecord,
     OutboxEvent,
+    ProjectionDelivery,
+    ProjectionPartition,
 )
 
 
@@ -119,6 +125,115 @@ def _deserialize_row(model, row: dict[str, Any], **overrides):
     return model(**values)
 
 
+def _legacy_delivery(envelope: OutboxEvent) -> ProjectionDelivery:
+    published = envelope.status == "published"
+    published_at = envelope.published_at or envelope.updated_at if published else None
+    receipt = None
+    digest = None
+    if published:
+        receipt = {
+            "kind": "snapshot_v0_restore_receipt",
+            "outbox_event_id": envelope.id,
+            "projector_id": envelope.projection_name,
+            "stream_position": envelope.stream_position,
+        }
+        digest = sha256_json(receipt)
+    return ProjectionDelivery(
+        id=str(uuid4()),
+        outbox_event_id=envelope.id,
+        tenant_id=envelope.tenant_id,
+        project_id=envelope.project_id,
+        projector_id=envelope.projection_name,
+        projector_version="v1",
+        barrier_kind=envelope.barrier_kind,
+        stream_position=envelope.stream_position,
+        status="published" if published else "pending",
+        available_at=envelope.available_at,
+        attempt_count=envelope.attempts,
+        last_attempt_at=envelope.updated_at if envelope.attempts else None,
+        last_error_message=envelope.last_error,
+        published_at=published_at,
+        receipt_json=receipt,
+        receipt_digest=digest,
+    )
+
+
+def _continuous_published_cursor(deliveries: list[ProjectionDelivery]) -> int:
+    published = {
+        delivery.stream_position
+        for delivery in deliveries
+        if delivery.status == "published"
+    }
+    cursor = 0
+    while cursor + 1 in published:
+        cursor += 1
+    return cursor
+
+
+def _published_event_id_at_cursor(
+    deliveries: list[ProjectionDelivery], cursor: int
+) -> str | None:
+    if cursor == 0:
+        return None
+    return next(
+        delivery.outbox_event_id
+        for delivery in deliveries
+        if delivery.status == "published" and delivery.stream_position == cursor
+    )
+
+
+def _normalize_v0_stream_positions(tables: dict[str, list[dict[str, Any]]]) -> None:
+    state_positions = {
+        row["id"]: 0
+        for row in tables[CanonicalStateVersion.__tablename__]
+        if row["origin"] == "genesis"
+    }
+    commit_positions: dict[str, int] = {}
+    pending = [
+        row
+        for row in tables[CanonicalStateVersion.__tablename__]
+        if row["origin"] != "genesis"
+    ]
+    while pending:
+        progressed = False
+        for row in list(pending):
+            parent_position = state_positions.get(row["parent_state_version_id"])
+            if parent_position is None:
+                continue
+            position = parent_position + 1
+            state_positions[row["id"]] = position
+            commit_positions[row["commit_id"]] = position
+            pending.remove(row)
+            progressed = True
+        if not progressed:
+            raise ValueError("snapshot contains an unresolved state position chain")
+
+    for row in tables[CanonicalCommit.__tablename__]:
+        if row.get("stream_position") is None:
+            try:
+                row["stream_position"] = commit_positions[row["id"]]
+            except KeyError as exc:
+                raise ValueError(
+                    "snapshot commit is outside its canonical state chain"
+                ) from exc
+    positions_by_commit = {
+        row["id"]: row["stream_position"]
+        for row in tables[CanonicalCommit.__tablename__]
+    }
+    for row in tables[OutboxEvent.__tablename__]:
+        if row.get("stream_position") is None:
+            try:
+                row["stream_position"] = positions_by_commit[row["commit_id"]]
+            except KeyError as exc:
+                raise ValueError("snapshot envelope references a missing commit") from exc
+
+    project_row = tables[CanonicalProject.__tablename__][0]
+    if project_row.get("next_stream_position") is None:
+        project_row["next_stream_position"] = max(
+            positions_by_commit.values(), default=0
+        )
+
+
 def import_project_snapshot(session: Session, snapshot: dict[str, Any]) -> None:
     if snapshot.get("schema_version") != "canonical-project-snapshot-v0":
         raise ValueError("unsupported canonical snapshot version")
@@ -128,7 +243,11 @@ def import_project_snapshot(session: Session, snapshot: dict[str, Any]) -> None:
     repo = CanonicalRepository(session, tenant_id, project_id)
     if repo.get_project() is not None:
         raise ValueError("snapshot target project already exists")
-    tables = snapshot["tables"]
+    tables = {
+        table_name: [dict(row) for row in rows]
+        for table_name, rows in snapshot["tables"].items()
+    }
+    _normalize_v0_stream_positions(tables)
 
     project_row = tables[CanonicalProject.__tablename__][0]
     project_head = project_row["current_state_version_id"]
@@ -189,6 +308,59 @@ def import_project_snapshot(session: Session, snapshot: dict[str, Any]) -> None:
             _deserialize_row(model, row) for row in tables[model.__tablename__]
         )
         session.flush()
+
+    delivery_rows = tables.get(ProjectionDelivery.__tablename__)
+    if delivery_rows is None:
+        envelopes = session.scalars(
+            select(OutboxEvent).where(
+                OutboxEvent.tenant_id == tenant_id,
+                OutboxEvent.project_id == project_id,
+            )
+        ).all()
+        deliveries = [_legacy_delivery(envelope) for envelope in envelopes]
+    else:
+        deliveries = [
+            _deserialize_row(ProjectionDelivery, row) for row in delivery_rows
+        ]
+    session.add_all(deliveries)
+    session.flush()
+
+    partition_rows = tables.get(ProjectionPartition.__tablename__)
+    if partition_rows is None:
+        deliveries_by_projector = {
+            spec.projector_id: [
+                delivery
+                for delivery in deliveries
+                if delivery.projector_id == spec.projector_id
+            ]
+            for spec in DEFAULT_PROJECTOR_REGISTRY.all()
+        }
+        partitions = []
+        for spec in DEFAULT_PROJECTOR_REGISTRY.all():
+            projector_deliveries = deliveries_by_projector[spec.projector_id]
+            cursor = _continuous_published_cursor(projector_deliveries)
+            partitions.append(
+                ProjectionPartition(
+                    id=str(uuid4()),
+                    tenant_id=tenant_id,
+                    project_id=project_id,
+                    projector_id=spec.projector_id,
+                    projector_version=spec.version,
+                    enrollment_status="active",
+                    runtime_status="active",
+                    last_published_position=cursor,
+                    last_published_event_id=_published_event_id_at_cursor(
+                        projector_deliveries, cursor
+                    ),
+                    activation_after_position=0,
+                )
+            )
+    else:
+        partitions = [
+            _deserialize_row(ProjectionPartition, row) for row in partition_rows
+        ]
+    session.add_all(partitions)
+    session.flush()
 
     project_dt = datetime.fromisoformat(project_updated_at)
     session.execute(

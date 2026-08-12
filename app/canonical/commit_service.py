@@ -19,18 +19,15 @@ from .models import (
     EventLedger,
     IdempotencyRecord,
     OutboxEvent,
+    ProjectionDelivery,
 )
+from .projection_registry import DEFAULT_PROJECTOR_REGISTRY, ProjectorRegistry
 from .repositories import CanonicalRepository
 
 
-PROJECTION_MANIFEST = (
-    ("legacy_world_event", "critical"),
-    ("handover_context", "critical"),
-    ("chroma_story_chunks", "critical"),
-    ("redis_stream", "non_blocking"),
-    ("task_preview", "non_blocking"),
-    ("markdown_export", "non_blocking"),
-    ("analytics", "non_blocking"),
+PROJECTION_MANIFEST = tuple(
+    (spec.projector_id, spec.barrier_kind)
+    for spec in DEFAULT_PROJECTOR_REGISTRY.all()
 )
 
 
@@ -47,12 +44,14 @@ class CanonicalCommitService:
         tenant_id: str,
         project_id: str,
         *,
+        projector_registry: ProjectorRegistry = DEFAULT_PROJECTOR_REGISTRY,
         failure_hook: Callable[[str], None] | None = None,
     ):
         self.session = session
         self.repo = CanonicalRepository(session, tenant_id, project_id)
         self.tenant_id = tenant_id
         self.project_id = project_id
+        self.projector_registry = projector_registry
         self.failure_hook = failure_hook
 
     def _stage(self, name: str) -> None:
@@ -174,6 +173,21 @@ class CanonicalCommitService:
             if project.current_state_version_id != transition.base_state_version_id:
                 raise StateVersionConflict("Project State Head is stale")
 
+            stream_position = self.repo.next_stream_position(project)
+            self._stage("after_stream_position")
+            partitions = {
+                partition.projector_id: partition
+                for partition in self.repo.get_projection_partitions_for_update()
+            }
+            enrolled_specs = [
+                spec
+                for spec in self.projector_registry.all()
+                if (partition := partitions.get(spec.projector_id)) is not None
+                and partition.enrollment_status == "active"
+                and partition.activation_after_position is not None
+                and stream_position > partition.activation_after_position
+            ]
+
             commit_id = str(uuid4())
             revision_id = str(uuid4())
             state_version_id = str(uuid4())
@@ -184,6 +198,7 @@ class CanonicalCommitService:
                 candidate_hash=candidate.candidate_hash,
                 base_revision_number=candidate.base_revision_number,
                 base_state_version_id=transition.base_state_version_id,
+                stream_position=stream_position,
                 status="committed",
             )
             self.session.add(commit)
@@ -255,7 +270,7 @@ class CanonicalCommitService:
 
             outbox_ids = []
             now = datetime.now(timezone.utc)
-            for projection_name, barrier_kind in PROJECTION_MANIFEST:
+            for spec in enrolled_specs:
                 outbox_id = str(uuid4())
                 outbox_ids.append(outbox_id)
                 self.session.add(
@@ -264,8 +279,8 @@ class CanonicalCommitService:
                         tenant_id=self.tenant_id,
                         project_id=self.project_id,
                         commit_id=commit_id,
-                        projection_name=projection_name,
-                        barrier_kind=barrier_kind,
+                        projection_name=spec.projector_id,
+                        barrier_kind=spec.barrier_kind,
                         event_type="canonical.subsection.committed",
                         payload_json={
                             "commit_id": commit_id,
@@ -273,6 +288,7 @@ class CanonicalCommitService:
                             "state_version_id": state_version_id,
                             "candidate_hash": candidate.candidate_hash,
                         },
+                        stream_position=stream_position,
                         status="pending",
                         attempts=0,
                         available_at=now,
@@ -282,6 +298,35 @@ class CanonicalCommitService:
                 )
             self.session.flush()
             self._stage("after_outbox")
+
+            for outbox_id, spec in zip(outbox_ids, enrolled_specs, strict=True):
+                self.session.add(
+                    ProjectionDelivery(
+                        id=str(uuid4()),
+                        outbox_event_id=outbox_id,
+                        tenant_id=self.tenant_id,
+                        project_id=self.project_id,
+                        projector_id=spec.projector_id,
+                        projector_version=spec.version,
+                        barrier_kind=spec.barrier_kind,
+                        stream_position=stream_position,
+                        status="pending",
+                        available_at=now,
+                        lease_token=None,
+                        leased_by=None,
+                        leased_until=None,
+                        attempt_count=0,
+                        last_attempt_at=None,
+                        last_error_code=None,
+                        last_error_class=None,
+                        last_error_message=None,
+                        published_at=None,
+                        receipt_json=None,
+                        receipt_digest=None,
+                    )
+                )
+            self.session.flush()
+            self._stage("after_projection_deliveries")
 
             subsection.current_revision_id = revision_id
             project.current_state_version_id = state_version_id
