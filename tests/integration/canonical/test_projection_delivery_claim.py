@@ -42,6 +42,11 @@ def _scope():
 
 def _seed_commits(database_url: str, count: int = 2):
     tenant_id, project_id = _scope()
+    _seed_commits_in_scope(database_url, tenant_id, project_id, count=count)
+    return tenant_id, project_id
+
+
+def _seed_commits_in_scope(database_url, tenant_id, project_id, *, count=1):
     seed_project(database_url, tenant_id, project_id, subsection_count=count)
     for position in range(1, count + 1):
         prepared = build_prepared(
@@ -57,7 +62,6 @@ def _seed_commits(database_url: str, count: int = 2):
                 prepared, f"delivery-{position}"
             )
         engine.dispose()
-    return tenant_id, project_id
 
 
 def _claim(database_url, worker, scan_filter, now):
@@ -616,6 +620,106 @@ def test_barrier_kind_mismatch_is_dead_lettered_without_claim(
         session.refresh(delivery)
         assert delivery.status == "dead_letter"
         assert delivery.attempt_count == 0
+    engine.dispose()
+
+
+@pytest.mark.parametrize("spoof_tenant", [False, True], ids=["project", "tenant"])
+def test_delivery_scope_spoof_is_routed_and_filtered_by_envelope(
+    postgres_database_url,
+    spoof_tenant,
+):
+    original_tenant, original_project = _seed_commits(
+        postgres_database_url, count=1
+    )
+    target_tenant = f"tenant-{uuid4().hex[:10]}" if spoof_tenant else original_tenant
+    target_project = f"project-{uuid4().hex[:10]}"
+    _seed_commits_in_scope(
+        postgres_database_url,
+        target_tenant,
+        target_project,
+        count=1,
+    )
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == original_tenant,
+                ProjectionDelivery.project_id == original_project,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        target_delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == target_tenant,
+                ProjectionDelivery.project_id == target_project,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        session.delete(target_delivery)
+        session.flush()
+        delivery.tenant_id = target_tenant
+        delivery.project_id = target_project
+        session.commit()
+        store = ProjectionDeliveryStore(session)
+
+        assert store.claim_next(
+            "spoof-scope-worker",
+            ScanFilter(
+                tenant_id=target_tenant,
+                project_id=target_project,
+                projector_id="analytics",
+            ),
+            now=datetime.now(UTC),
+        ) is None
+        session.refresh(delivery)
+        assert delivery.status == "pending"
+
+        claim = store.claim_next(
+            "original-scope-worker",
+            ScanFilter(
+                tenant_id=original_tenant,
+                project_id=original_project,
+            ),
+            now=datetime.now(UTC),
+        )
+
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.attempt_count == 0
+        assert claim is not None
+        assert claim.delivery_id != delivery.id
+    engine.dispose()
+
+
+def test_registry_barrier_mismatch_is_dead_lettered_and_other_partition_progresses(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        envelope = session.get(OutboxEvent, delivery.outbox_event_id)
+        delivery.barrier_kind = "critical"
+        envelope.barrier_kind = "critical"
+        session.commit()
+
+        claim = ProjectionDeliveryStore(session).claim_next(
+            "worker",
+            ScanFilter(tenant_id=tenant_id, project_id=project_id),
+            now=datetime.now(UTC),
+        )
+
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.attempt_count == 0
+        assert claim is not None
+        assert claim.delivery_id != delivery.id
     engine.dispose()
 
 

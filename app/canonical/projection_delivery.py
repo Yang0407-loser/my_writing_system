@@ -122,8 +122,8 @@ class ProjectionDeliveryStore:
         filters = []
         params: dict[str, Any] = {"now": now, "leased_by": leased_by}
         for column, value in (
-            ("candidate.tenant_id", scan_filter.tenant_id),
-            ("candidate.project_id", scan_filter.project_id),
+            ("envelope.tenant_id", scan_filter.tenant_id),
+            ("envelope.project_id", scan_filter.project_id),
             ("envelope.projection_name", scan_filter.projector_id),
             ("envelope.barrier_kind", scan_filter.barrier_kind),
         ):
@@ -140,15 +140,17 @@ class ProjectionDeliveryStore:
         registry_rows = []
         for index, spec in enumerate(self.registry.all()):
             registry_rows.append(
-                f"(:registry_id_{index}, :registry_version_{index}, :lease_{index})"
+                f"(:registry_id_{index}, :registry_version_{index}, "
+                f":registry_barrier_{index}, :lease_{index})"
             )
             params[f"registry_id_{index}"] = spec.projector_id
             params[f"registry_version_{index}"] = spec.version
+            params[f"registry_barrier_{index}"] = spec.barrier_kind
             params[f"lease_{index}"] = spec.retry.lease_seconds
         registry_sql = (
             ", ".join(registry_rows)
             if registry_rows
-            else "(NULL::varchar, NULL::varchar, NULL::integer)"
+            else "(NULL::varchar, NULL::varchar, NULL::varchar, NULL::integer)"
         )
         token = uuid4().hex
         params["lease_token"] = token
@@ -157,24 +159,31 @@ class ProjectionDeliveryStore:
             predicate = " AND " + predicate
         statement = text(
             f"""
-            WITH registered(projector_id, projector_version, lease_seconds) AS (
+            WITH registered(
+              projector_id, projector_version, barrier_kind, lease_seconds
+            ) AS (
               VALUES {registry_sql}
             ), eligible AS (
               SELECT candidate.id, registered.lease_seconds
-              FROM projection_deliveries candidate
-              JOIN outbox_events envelope ON envelope.id = candidate.outbox_event_id
+              FROM outbox_events envelope
+              JOIN projection_deliveries candidate
+                ON candidate.outbox_event_id = envelope.id
               JOIN projection_partitions partition
-                ON partition.tenant_id = candidate.tenant_id
-               AND partition.project_id = candidate.project_id
+                ON partition.tenant_id = envelope.tenant_id
+               AND partition.project_id = envelope.project_id
                AND partition.projector_id = envelope.projection_name
               JOIN registered
                 ON registered.projector_id = envelope.projection_name
                AND registered.projector_version = partition.projector_version
+               AND registered.barrier_kind = envelope.barrier_kind
               WHERE partition.enrollment_status = 'active'
                 AND partition.runtime_status = 'active'
+                AND candidate.tenant_id = envelope.tenant_id
+                AND candidate.project_id = envelope.project_id
                 AND candidate.projector_id = envelope.projection_name
                 AND candidate.projector_version = partition.projector_version
                 AND candidate.barrier_kind = envelope.barrier_kind
+                AND candidate.stream_position = envelope.stream_position
                 AND candidate.stream_position = partition.last_published_position + 1
                 AND (
                   (candidate.status = 'pending' AND candidate.available_at <= :now)
@@ -182,11 +191,14 @@ class ProjectionDeliveryStore:
                 )
                 {predicate}
                 AND NOT EXISTS (
-                  SELECT 1 FROM projection_deliveries prior
-                  WHERE prior.tenant_id = candidate.tenant_id
-                    AND prior.project_id = candidate.project_id
-                    AND prior.projector_id = candidate.projector_id
-                    AND prior.stream_position < candidate.stream_position
+                  SELECT 1
+                  FROM outbox_events prior_envelope
+                  JOIN projection_deliveries prior
+                    ON prior.outbox_event_id = prior_envelope.id
+                  WHERE prior_envelope.tenant_id = envelope.tenant_id
+                    AND prior_envelope.project_id = envelope.project_id
+                    AND prior_envelope.projection_name = envelope.projection_name
+                    AND prior_envelope.stream_position < envelope.stream_position
                     AND prior.status <> 'published'
                 )
               ORDER BY candidate.available_at, candidate.stream_position, candidate.id
@@ -238,9 +250,9 @@ class ProjectionDeliveryStore:
     ) -> None:
         filters = []
         if scan_filter.tenant_id is not None:
-            filters.append("candidate.tenant_id = :tenant_id")
+            filters.append("envelope.tenant_id = :tenant_id")
         if scan_filter.project_id is not None:
-            filters.append("candidate.project_id = :project_id")
+            filters.append("envelope.project_id = :project_id")
         if scan_filter.projector_id is not None:
             filters.append("envelope.projection_name = :projector_id")
         if scan_filter.barrier_kind is not None:
@@ -254,16 +266,18 @@ class ProjectionDeliveryStore:
         invalid_rows = self.session.execute(
             text(
                 f"""
-                WITH registered(projector_id, projector_version, lease_seconds) AS (
+                WITH registered(
+                  projector_id, projector_version, barrier_kind, lease_seconds
+                ) AS (
                   VALUES {registry_sql}
                 ), invalid AS (
                   SELECT candidate.id, candidate.outbox_event_id
-                  FROM projection_deliveries candidate
-                  JOIN outbox_events envelope
-                    ON envelope.id = candidate.outbox_event_id
+                  FROM outbox_events envelope
+                  JOIN projection_deliveries candidate
+                    ON candidate.outbox_event_id = envelope.id
                   JOIN projection_partitions partition
-                    ON partition.tenant_id = candidate.tenant_id
-                   AND partition.project_id = candidate.project_id
+                    ON partition.tenant_id = envelope.tenant_id
+                   AND partition.project_id = envelope.project_id
                    AND partition.projector_id = envelope.projection_name
                   LEFT JOIN registered
                     ON registered.projector_id = envelope.projection_name
@@ -273,9 +287,13 @@ class ProjectionDeliveryStore:
                     AND partition.runtime_status = 'active'
                     AND (
                       registered.projector_id IS NULL
+                      OR registered.barrier_kind <> envelope.barrier_kind
+                      OR candidate.tenant_id <> envelope.tenant_id
+                      OR candidate.project_id <> envelope.project_id
                       OR candidate.projector_id <> envelope.projection_name
                       OR candidate.projector_version <> partition.projector_version
                       OR candidate.barrier_kind <> envelope.barrier_kind
+                      OR candidate.stream_position <> envelope.stream_position
                     )
                     {predicate}
                   FOR UPDATE OF candidate SKIP LOCKED
@@ -318,12 +336,16 @@ class ProjectionDeliveryStore:
         if candidate is None:
             self.session.commit()
             return None
+        envelope = self.session.get(OutboxEvent, candidate.outbox_event_id)
         prior = self.session.scalar(
-            select(func.count()).select_from(ProjectionDelivery).where(
-                ProjectionDelivery.tenant_id == candidate.tenant_id,
-                ProjectionDelivery.project_id == candidate.project_id,
-                ProjectionDelivery.projector_id == candidate.projector_id,
-                ProjectionDelivery.stream_position < candidate.stream_position,
+            select(func.count())
+            .select_from(ProjectionDelivery)
+            .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+            .where(
+                OutboxEvent.tenant_id == envelope.tenant_id,
+                OutboxEvent.project_id == envelope.project_id,
+                OutboxEvent.projection_name == envelope.projection_name,
+                OutboxEvent.stream_position < envelope.stream_position,
                 ProjectionDelivery.status != "published",
             )
         )
@@ -332,9 +354,9 @@ class ProjectionDeliveryStore:
             return None
         partition = self.session.scalar(
             select(ProjectionPartition).where(
-                ProjectionPartition.tenant_id == candidate.tenant_id,
-                ProjectionPartition.project_id == candidate.project_id,
-                ProjectionPartition.projector_id == candidate.projector_id,
+                ProjectionPartition.tenant_id == envelope.tenant_id,
+                ProjectionPartition.project_id == envelope.project_id,
+                ProjectionPartition.projector_id == envelope.projection_name,
                 ProjectionPartition.projector_version == candidate.projector_version,
                 ProjectionPartition.enrollment_status == "active",
                 ProjectionPartition.runtime_status == "active",
@@ -346,11 +368,19 @@ class ProjectionDeliveryStore:
             self.session.commit()
             return None
         try:
-            spec = self.registry.get(candidate.projector_id)
+            spec = self.registry.get(envelope.projection_name)
         except KeyError:
             self.session.commit()
             return None
-        if spec.version != candidate.projector_version:
+        if (
+            candidate.tenant_id != envelope.tenant_id
+            or candidate.project_id != envelope.project_id
+            or candidate.projector_id != envelope.projection_name
+            or candidate.barrier_kind != envelope.barrier_kind
+            or candidate.stream_position != envelope.stream_position
+            or spec.version != candidate.projector_version
+            or spec.barrier_kind != envelope.barrier_kind
+        ):
             self.session.commit()
             return None
         policy = spec.retry
@@ -369,10 +399,10 @@ class ProjectionDeliveryStore:
     def _orm_filters(self, scan_filter):
         result = []
         for column, value in (
-            (ProjectionDelivery.tenant_id, scan_filter.tenant_id),
-            (ProjectionDelivery.project_id, scan_filter.project_id),
-            (ProjectionDelivery.projector_id, scan_filter.projector_id),
-            (ProjectionDelivery.barrier_kind, scan_filter.barrier_kind),
+            (OutboxEvent.tenant_id, scan_filter.tenant_id),
+            (OutboxEvent.project_id, scan_filter.project_id),
+            (OutboxEvent.projection_name, scan_filter.projector_id),
+            (OutboxEvent.barrier_kind, scan_filter.barrier_kind),
             (OutboxEvent.commit_id, scan_filter.commit_id),
         ):
             if value is not None:
