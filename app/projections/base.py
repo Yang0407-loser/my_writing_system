@@ -50,6 +50,12 @@ class ProjectionAdapterBase:
             or message.project_id != self.scope.project_id
         ):
             raise ValueError("projection message is outside adapter scope")
+        if (
+            message.projector_id != self.spec.projector_id
+            or message.projector_version != self.spec.version
+            or message.barrier_kind != self.spec.barrier_kind
+        ):
+            raise ValueError("projection message does not match adapter spec")
         revision = message.payload.get("revision")
         if not isinstance(revision, dict):
             raise ValueError("projection revision payload is required")

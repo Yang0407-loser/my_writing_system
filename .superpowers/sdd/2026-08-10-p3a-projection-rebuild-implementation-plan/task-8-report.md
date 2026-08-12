@@ -128,3 +128,68 @@ Warnings are existing `pkg_resources` deprecation plus Chroma's future
   adopted when all Canon markers are absent.
 - Chroma provider-level deprecation warnings are non-functional and confined
   to third-party API evolution.
+
+## Fix Round 1 design — operator-approved legacy ownership
+
+Review found that a legacy Redis task namespace proves only `task_id`; legacy
+World facts and Handover records do not contain tenant/project ownership, and
+`task_history` has no tenant/project columns. Adapter constructor arguments
+therefore cannot authorize adoption or deletion.
+
+The remediation uses a durable `LegacyScopeBinding` stored explicitly in the
+legacy task namespace. It binds exactly one legacy `task_id` to one Canon
+`tenant_id/project_id/task_id` and carries operator approval evidence
+(`operator_id`, `reason`, `approved_at`). Binding creation is an operator API,
+never an adapter side effect. Repeating the exact binding is idempotent;
+conflicting rebinding fails closed.
+
+New Canon World and Handover records use deterministic scope-specific Redis
+field names. The existing logical Handover `record_id` remains unchanged. An
+adapter that sees legacy unmarked data may enumerate/migrate/clear it only
+when the durable binding exactly matches its full scope. Missing or mismatched
+binding raises an ownership error, so reconciliation cannot report a false
+empty/green sink. Exact binding authorizes target migration/clear while
+unrelated task namespaces and already-scoped neighboring records remain
+untouched.
+
+Handover semantic upsert collapses one logical content-derived ID to the
+highest `stream_position`. Older out-of-order writes are no-ops; the same
+position with different Canon identity/payload fails closed. Expected records
+use the identical collapse rule.
+
+### Fix Round 1 RED/GREEN evidence
+
+- RED collection initially failed because the binding module did not exist.
+  After the minimal binding primitive, seven behavioral failures reproduced
+  all review findings: spoofed adapter spec accepted; canonical Chroma ID
+  swallowed by legacy hash dedupe; wrong returned Chroma ID signed; Handover
+  first-write-wins on out-of-order delivery; same-position conflict not
+  classified; unmarked Handover/World reconciled without binding.
+- A production `VectorStore` path now proves explicit `document_id` always
+  exact-upserts, while callers without `document_id` retain legacy content
+  dedupe. The real persistent Chroma test covers two equal-content commits and
+  two equal-text chunks in one commit, each retaining its deterministic ID
+  across clear/replay/reopen.
+- Every adapter independently rejects projector ID, version or barrier-kind
+  mismatch before touching its sink.
+- World and Handover canonical physical identities include tenant/project
+  scope. Tests use the same logical ID in neighboring projects and prove both
+  coexist and scoped clear preserves the neighbor.
+- Bound legacy migration is intentionally clear-then-replay: actual/apply
+  remain fail closed while unmarked records exist, even after approval. Exact
+  binding authorizes clear of unmarked records; replay then writes only scoped
+  canonical records. This prevents a mixed legacy/canonical consumer view.
+- Independent Fix Round 1 review found that World initially reconstructed
+  scope-safe facts under the logical ID after Redis reload. A focused reopen
+  test failed with two live project records collapsing to one; `_load()` now
+  recomputes the same scope-qualified physical key and the reopen test passes.
+
+Fresh Fix Round 1 gates:
+
+```text
+Task 8 unit + real persistent Chroma reopen: 16 passed
+Scoped legacy regressions: 46 passed
+Ruff: All checks passed
+git diff --check: exit 0
+Independent self-review: one Important found, fixed and regression-covered
+```

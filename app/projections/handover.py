@@ -18,6 +18,7 @@ from ..writing.subsection_handover_history import (
 )
 from ..writing.subsection_handover_persistence import SubsectionHandoverHistoryRecorder
 from .base import ProjectionAdapterBase, normalized_records
+from .legacy_scope import LegacyScopeBindingStore
 
 
 class HandoverProjectionAdapter(ProjectionAdapterBase):
@@ -26,6 +27,7 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
     def __init__(self, blackboard, scope: ProjectionScope, task_id: str) -> None:
         super().__init__(scope, task_id)
         self.recorder = SubsectionHandoverHistoryRecorder(blackboard, task_id)
+        self.bindings = LegacyScopeBindingStore(blackboard)
 
     def _record_identity(self, message: ProjectionMessage):
         revision = self._validate_message(message)
@@ -40,10 +42,15 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
         return revision, metadata, content_hash, section, subsection, record_id
 
     def apply(self, message: ProjectionMessage):
+        if self.recorder.unscoped_records():
+            self.bindings.require(task_id=self.task_id, scope=self.scope)
+            raise ValueError(
+                "legacy Handover ownership is approved but migration clear is required"
+            )
         revision, metadata, content_hash, section, subsection, _ = self._record_identity(message)
         note = metadata.get("handover_candidate")
         observation = observation_from_note(note)
-        self.recorder.capture_committed(
+        stored_id = self.recorder.capture_committed(
             section=section,
             subsection=subsection,
             output_sha256=content_hash,
@@ -56,11 +63,19 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
             stream_position=message.stream_position,
             revision_id=message.revision_id,
         )
-        records = self._actual_for_message(message)
-        expected = self.expected_records((message,))
-        if records != expected:
+        if stored_id is None:
+            raise RuntimeError("handover sink rejected canonical record")
+        records = self.actual_records(self.scope)
+        expected_record = self.expected_records((message,))[0]
+        actual = next(
+            (record for record in records if record.record_id == expected_record.record_id),
+            None,
+        )
+        if actual is None or (
+            actual.stream_position <= message.stream_position and actual != expected_record
+        ):
             raise RuntimeError("handover sink did not converge to the canonical record")
-        return self._receipt(message, records)
+        return self._receipt(message, (actual,))
 
     def _actual_for_message(self, message: ProjectionMessage):
         return tuple(
@@ -73,7 +88,7 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
     def expected_records(
         self, messages: Iterable[ProjectionMessage]
     ) -> tuple[ProjectionRecord, ...]:
-        expected = []
+        expected_by_id = {}
         for message in messages:
             revision, metadata, content_hash, section, subsection, record_id = (
                 self._record_identity(message)
@@ -135,8 +150,13 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
                 locally_rejected_claim_count=observation.locally_rejected_claim_count,
                 created_at="ignored-by-projection-record",
             )
-            expected.append(self._projection_record(record))
-        return normalized_records(expected)
+            projected = self._projection_record(record)
+            existing = expected_by_id.get(projected.record_id)
+            if existing is None or projected.stream_position > existing.stream_position:
+                expected_by_id[projected.record_id] = projected
+            elif projected.stream_position == existing.stream_position and projected != existing:
+                raise ValueError("handover expected-record conflict at same stream_position")
+        return normalized_records(expected_by_id.values())
 
     @staticmethod
     def _projection_record(record: SubsectionHandoverRecord) -> ProjectionRecord:
@@ -159,6 +179,11 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
 
     def actual_records(self, scope: ProjectionScope) -> tuple[ProjectionRecord, ...]:
         self._validate_actual_scope(scope)
+        if self.recorder.unscoped_records():
+            self.bindings.require(task_id=self.task_id, scope=scope)
+            raise ValueError(
+                "legacy Handover ownership is approved but migration clear is required"
+            )
         return normalized_records(
             self._projection_record(record)
             for record in self.recorder.list_canonical_records(
@@ -168,6 +193,9 @@ class HandoverProjectionAdapter(ProjectionAdapterBase):
 
     def clear(self, scope: ProjectionScope) -> None:
         self._validate_actual_scope(scope)
+        if self.recorder.unscoped_records():
+            self.bindings.require(task_id=self.task_id, scope=scope)
+            self.recorder.clear_unscoped_records()
         self.recorder.clear_canonical_records(
             tenant_id=scope.tenant_id, project_id=scope.project_id
         )

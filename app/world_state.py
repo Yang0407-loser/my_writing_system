@@ -2,6 +2,7 @@ import re
 import json
 import uuid
 import logging
+import hashlib
 from datetime import datetime
 from typing import Optional
 
@@ -328,7 +329,10 @@ class WorldStateManager:
         """Replace one deterministically identified Canon-projected fact."""
         if not fact_id or not fact.strip():
             raise ValueError("fact_id and non-empty fact are required")
-        self._facts[fact_id] = WorldFact(
+        physical_id = self._canonical_physical_id(
+            fact_id, canonical_tenant_id, canonical_project_id
+        )
+        self._facts[physical_id] = WorldFact(
             fact_id=fact_id,
             category=category,
             fact=fact,
@@ -360,6 +364,36 @@ class WorldStateManager:
             for fact_id, fact in self._facts.items()
             if fact.canonical_tenant_id == tenant_id
             and fact.canonical_project_id == project_id
+        ]
+        for fact_id in ids:
+            del self._facts[fact_id]
+        if ids:
+            self._save()
+        return len(ids)
+
+    @staticmethod
+    def _canonical_physical_id(
+        fact_id: str, tenant_id: str, project_id: str
+    ) -> str:
+        scope_hash = hashlib.sha256(
+            f"{tenant_id}\0{project_id}".encode("utf-8")
+        ).hexdigest()
+        return f"canonical:{scope_hash}:{fact_id}"
+
+    def list_unscoped_facts(self) -> list[dict]:
+        return [
+            fact.to_dict()
+            for fact in self._facts.values()
+            if fact.canonical_tenant_id is None
+            and fact.canonical_project_id is None
+        ]
+
+    def clear_unscoped_facts(self) -> int:
+        ids = [
+            fact_id
+            for fact_id, fact in self._facts.items()
+            if fact.canonical_tenant_id is None
+            and fact.canonical_project_id is None
         ]
         for fact_id in ids:
             del self._facts[fact_id]
@@ -658,7 +692,17 @@ class WorldStateManager:
             data = raw if isinstance(raw, dict) else {}
             for fd in data.get("facts", []):
                 wf = WorldFact.from_dict(fd)
-                self._facts[wf.fact_id] = wf
+                physical_id = (
+                    self._canonical_physical_id(
+                        wf.fact_id,
+                        wf.canonical_tenant_id,
+                        wf.canonical_project_id,
+                    )
+                    if wf.canonical_tenant_id is not None
+                    and wf.canonical_project_id is not None
+                    else wf.fact_id
+                )
+                self._facts[physical_id] = wf
             self._contradictions = data.get("contradictions", [])
             self._active_warnings = data.get("active_warnings", [])
         except (json.JSONDecodeError, TypeError, KeyError):

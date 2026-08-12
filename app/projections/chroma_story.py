@@ -86,11 +86,23 @@ class ChromaStoryProjectionAdapter(ProjectionAdapterBase):
     def apply(self, message: ProjectionMessage):
         records = self._records_for(message)
         for record in records:
-            self.vector_store.add_text(
+            stored_id = self.vector_store.add_text(
                 record.payload["text"],
                 record.payload["metadata"],
                 document_id=record.record_id,
             )
+            if stored_id != record.record_id:
+                raise RuntimeError("Chroma sink returned a different canonical identity")
+        actual_by_id = {
+            record.record_id: record for record in self.actual_records(self.scope)
+        }
+        converged = normalized_records(
+            actual_by_id[record.record_id]
+            for record in records
+            if record.record_id in actual_by_id
+        )
+        if converged != records:
+            raise RuntimeError("Chroma sink did not converge to canonical records")
         return self._receipt(message, records)
 
     def expected_records(

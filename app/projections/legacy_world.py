@@ -9,6 +9,7 @@ from ..canonical.projection_ports import ProjectionMessage, ProjectionRecord, Pr
 from ..canonical.projection_registry import DEFAULT_PROJECTOR_REGISTRY
 from ..world_state import WorldStateManager
 from .base import ProjectionAdapterBase, normalized_records
+from .legacy_scope import LegacyScopeBindingStore
 
 
 def _normalized_fact(value: object) -> str:
@@ -21,6 +22,14 @@ class LegacyWorldProjectionAdapter(ProjectionAdapterBase):
     def __init__(self, blackboard, scope: ProjectionScope, task_id: str) -> None:
         super().__init__(scope, task_id)
         self.manager = WorldStateManager(blackboard, task_id)
+        self.bindings = LegacyScopeBindingStore(blackboard)
+
+    def _reject_unscoped(self) -> None:
+        if self.manager.list_unscoped_facts():
+            self.bindings.require(task_id=self.task_id, scope=self.scope)
+            raise ValueError(
+                "legacy World ownership is approved but migration clear is required"
+            )
 
     def _records_for(self, message: ProjectionMessage) -> tuple[ProjectionRecord, ...]:
         revision = self._validate_message(message)
@@ -57,6 +66,7 @@ class LegacyWorldProjectionAdapter(ProjectionAdapterBase):
         return normalized_records(records)
 
     def apply(self, message: ProjectionMessage):
+        self._reject_unscoped()
         records = self._records_for(message)
         for record in records:
             payload = record.payload
@@ -86,6 +96,7 @@ class LegacyWorldProjectionAdapter(ProjectionAdapterBase):
 
     def actual_records(self, scope: ProjectionScope) -> tuple[ProjectionRecord, ...]:
         self._validate_actual_scope(scope)
+        self._reject_unscoped()
         return normalized_records(
             ProjectionRecord(
                 record_id=item["fact_id"],
@@ -112,6 +123,9 @@ class LegacyWorldProjectionAdapter(ProjectionAdapterBase):
 
     def clear(self, scope: ProjectionScope) -> None:
         self._validate_actual_scope(scope)
+        if self.manager.list_unscoped_facts():
+            self.bindings.require(task_id=self.task_id, scope=scope)
+            self.manager.clear_unscoped_facts()
         self.manager.clear_projected_facts(
             tenant_id=scope.tenant_id, project_id=scope.project_id
         )

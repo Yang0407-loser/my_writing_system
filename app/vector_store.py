@@ -97,17 +97,15 @@ class VectorStore:
                 ]
             }
         if document_id:
-            existing_by_id = self._collection.get(ids=[document_id])
-            existing_ids = existing_by_id.get("ids", []) if existing_by_id else []
-            if existing_ids:
-                # Canonical projection IDs are deterministic. Replace semantics
-                # make a replay converge even if projection metadata evolves.
-                self._collection.upsert(
-                    ids=[document_id],
-                    documents=[normalized_text],
-                    metadatas=[safe_metadata],
-                )
-                return document_id
+            # Canonical projection IDs are semantic identities, not suggestions.
+            # Always exact-upsert this ID; legacy content-hash dedupe below is
+            # intentionally reserved for callers that did not provide one.
+            self._collection.upsert(
+                ids=[document_id],
+                documents=[normalized_text],
+                metadatas=[safe_metadata],
+            )
+            return document_id
 
         existing = self._collection.get(where=hash_filter, limit=1)
         existing_ids = existing.get("ids", []) if existing else []

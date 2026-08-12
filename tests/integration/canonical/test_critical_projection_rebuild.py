@@ -66,7 +66,13 @@ def test_chroma_reopen_clear_and_replay_converges_without_cross_scope_delete(
     scope = ProjectionScope("tenant-reopen", "project-reopen")
     other_scope = ProjectionScope("tenant-reopen", "project-other")
     target = _message(scope, "task-reopen", "commit-target", 3, "One.\n\nTwo.")
+    same_content_new_commit = _message(
+        scope, "task-reopen", "commit-target-2", 5, "One.\n\nTwo."
+    )
     other = _message(other_scope, "task-other", "commit-other", 4, "Keep this.")
+    repeated_chunks = _message(
+        scope, "task-reopen", "commit-repeated", 6, "same\n\nsame"
+    )
 
     store = _open_store(monkeypatch, path)
     adapter = ChromaStoryProjectionAdapter(store, scope, "task-reopen", chunk_size=8, overlap=0)
@@ -74,6 +80,15 @@ def test_chroma_reopen_clear_and_replay_converges_without_cross_scope_delete(
         store, other_scope, "task-other", chunk_size=8, overlap=0
     )
     adapter.apply(target)
+    adapter.apply(same_content_new_commit)
+    repeated_adapter = ChromaStoryProjectionAdapter(
+        store, scope, "task-reopen", chunk_size=4, overlap=0
+    )
+    repeated_adapter.apply(repeated_chunks)
+    repeated = repeated_adapter.expected_records((repeated_chunks,))
+    assert len(repeated) == 2
+    assert repeated[0].payload["text"] == repeated[1].payload["text"] == "same"
+    assert repeated[0].record_id != repeated[1].record_id
     other_adapter.apply(other)
     before = adapter.actual_records(scope)
     other_before = other_adapter.actual_records(other_scope)
@@ -91,6 +106,10 @@ def test_chroma_reopen_clear_and_replay_converges_without_cross_scope_delete(
     assert adapter.actual_records(scope) == ()
     assert other_adapter.actual_records(other_scope) == other_before
     adapter.apply(target)
+    adapter.apply(same_content_new_commit)
+    ChromaStoryProjectionAdapter(
+        reopened, scope, "task-reopen", chunk_size=4, overlap=0
+    ).apply(repeated_chunks)
     del adapter, other_adapter, reopened
 
     replay_reopened = _open_store(monkeypatch, path)

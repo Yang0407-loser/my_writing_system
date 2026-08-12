@@ -139,6 +139,20 @@ class SubsectionHandoverHistoryRecorder:
             envelope.model_dump(mode="json"),
         )
 
+    @staticmethod
+    def _physical_record_key(
+        record_id: str,
+        *,
+        canonical_tenant_id: str | None,
+        canonical_project_id: str | None,
+    ) -> str:
+        if canonical_tenant_id is None or canonical_project_id is None:
+            return record_id
+        scope_hash = sha256_json(
+            {"tenant_id": canonical_tenant_id, "project_id": canonical_project_id}
+        )
+        return f"canonical:{scope_hash}:{record_id}"
+
     def _record_error(
         self,
         *,
@@ -200,25 +214,6 @@ class SubsectionHandoverHistoryRecorder:
                 f"S{section}.{subsection}:{output_sha256}"
             )
             envelope = self._load()
-            if record_id in envelope.records:
-                existing = envelope.records[record_id]
-                if canonical_tenant_id is not None and (
-                    existing.canonical_tenant_id is None
-                    and existing.canonical_project_id is None
-                    and existing.stream_position is None
-                    and existing.revision_id is None
-                ):
-                    records = dict(envelope.records)
-                    records[record_id] = existing.model_copy(
-                        update={
-                            "canonical_tenant_id": canonical_tenant_id,
-                            "canonical_project_id": canonical_project_id,
-                            "stream_position": stream_position,
-                            "revision_id": revision_id,
-                        }
-                    )
-                    self._save(envelope.model_copy(update={"records": records}))
-                return record_id
             fields = ()
             if isinstance(handover_note, dict):
                 fields = tuple(
@@ -272,10 +267,33 @@ class SubsectionHandoverHistoryRecorder:
                 locally_rejected_claim_count=observation.locally_rejected_claim_count,
                 created_at=utc_now(),
             )
+            physical_key = self._physical_record_key(
+                record_id,
+                canonical_tenant_id=canonical_tenant_id,
+                canonical_project_id=canonical_project_id,
+            )
+            existing = envelope.records.get(physical_key)
+            if existing is not None:
+                if canonical_tenant_id is None:
+                    return record_id
+                if stream_position < existing.stream_position:
+                    return record_id
+                if stream_position == existing.stream_position:
+                    old_semantic = existing.model_dump(mode="json", exclude={"created_at"})
+                    new_semantic = record.model_dump(mode="json", exclude={"created_at"})
+                    if old_semantic != new_semantic:
+                        raise ValueError(
+                            "handover semantic conflict at the same stream_position"
+                        )
+                    return record_id
             records = dict(envelope.records)
-            records[record_id] = record
+            records[physical_key] = record
             self._save(envelope.model_copy(update={"records": records}))
             return record_id
+        except ValueError:
+            if canonical_tenant_id is not None:
+                raise
+            return None
         except Exception as error:
             self._record_error(
                 section=section,
@@ -306,6 +324,29 @@ class SubsectionHandoverHistoryRecorder:
             if not (
                 record.canonical_tenant_id == tenant_id
                 and record.canonical_project_id == project_id
+            )
+        }
+        removed = len(envelope.records) - len(records)
+        if removed:
+            self._save(envelope.model_copy(update={"records": records}))
+        return removed
+
+    def unscoped_records(self) -> tuple[SubsectionHandoverRecord, ...]:
+        return tuple(
+            record
+            for record in self._load().records.values()
+            if record.canonical_tenant_id is None
+            and record.canonical_project_id is None
+        )
+
+    def clear_unscoped_records(self) -> int:
+        envelope = self._load()
+        records = {
+            storage_id: record
+            for storage_id, record in envelope.records.items()
+            if not (
+                record.canonical_tenant_id is None
+                and record.canonical_project_id is None
             )
         }
         removed = len(envelope.records) - len(records)
