@@ -1,28 +1,35 @@
-"""Minimal single-process dispatcher for durable canonical outbox rows."""
+"""Compatibility facade over the shared fenced projection Delivery worker."""
 
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from datetime import datetime, timezone
+from dataclasses import dataclass
 
-from sqlalchemy import Select, case, select
 from sqlalchemy.orm import Session
 
-from .hashing import sha256_json
-from .models import CanonicalCommit, OutboxEvent, ProjectionDelivery
-from .projection_ports import ProjectionPort
-from .projection_replay import CanonicalProjectionReplay
+from .projection_delivery import ScanFilter
+from .projection_ports import ProjectionMessage, ProjectionPort, ProjectionReceipt
+from .projection_registry import DEFAULT_PROJECTOR_REGISTRY, ProjectorSpec
+from .projection_worker import ProjectionWorker, ScanSummary
 
 
 DispatchSummary = dict[str, int]
 
 
-class OutboxDispatcher:
-    """Retry visible pending/failed events without changing canonical facts.
+@dataclass(frozen=True)
+class _CompatibilityExecutor:
+    spec: ProjectorSpec
+    projector: ProjectionPort
 
-    P2 intentionally provides a synchronous, single-process dispatcher. Worker
-    leases, sharding, dead-letter policy and rebuild orchestration remain P3A.
-    """
+    def apply(self, message: ProjectionMessage) -> ProjectionReceipt:
+        receipt = self.projector(message)
+        if not isinstance(receipt, ProjectionReceipt):
+            raise TypeError("compatibility projector must return ProjectionReceipt")
+        return receipt
+
+
+class OutboxDispatcher:
+    """Temporary P2 signatures backed solely by authoritative Deliveries."""
 
     def __init__(
         self,
@@ -40,125 +47,58 @@ class OutboxDispatcher:
 
     def dispatch_critical(self, commit_id: str) -> DispatchSummary:
         return self._dispatch(
-            self._eligible().where(
-                OutboxEvent.commit_id == commit_id,
-                ProjectionDelivery.barrier_kind == "critical",
+            ScanFilter(
+                tenant_id=self.tenant_id,
+                project_id=self.project_id,
+                commit_id=commit_id,
+                barrier_kind="critical",
+                limit=100,
             )
         )
 
     def dispatch_non_blocking(self, commit_id: str) -> DispatchSummary:
         return self._dispatch(
-            self._eligible().where(
-                OutboxEvent.commit_id == commit_id,
-                ProjectionDelivery.barrier_kind == "non_blocking",
+            ScanFilter(
+                tenant_id=self.tenant_id,
+                project_id=self.project_id,
+                commit_id=commit_id,
+                barrier_kind="non_blocking",
+                limit=100,
             )
         )
 
     def dispatch_pending(self, limit: int = 100) -> DispatchSummary:
         if limit < 1:
             raise ValueError("limit must be positive")
-        return self._dispatch(self._eligible().limit(limit))
-
-    def _eligible(self) -> Select[tuple[ProjectionDelivery]]:
-        return (
-            select(ProjectionDelivery)
-            .join(
-                OutboxEvent,
-                OutboxEvent.id == ProjectionDelivery.outbox_event_id,
-            )
-            .join(CanonicalCommit, CanonicalCommit.id == OutboxEvent.commit_id)
-            .where(
-                ProjectionDelivery.tenant_id == self.tenant_id,
-                ProjectionDelivery.project_id == self.project_id,
-                CanonicalCommit.tenant_id == self.tenant_id,
-                CanonicalCommit.project_id == self.project_id,
-                CanonicalCommit.status == "committed",
-                ProjectionDelivery.status == "pending",
-                ProjectionDelivery.available_at <= datetime.now(timezone.utc),
-            )
-            .order_by(
-                ProjectionDelivery.available_at,
-                case(
-                    {
-                        "legacy_world_event": 1,
-                        "handover_context": 2,
-                        "chroma_story_chunks": 3,
-                        "redis_stream": 4,
-                        "task_preview": 5,
-                        "markdown_export": 6,
-                        "analytics": 7,
-                    },
-                    value=ProjectionDelivery.projector_id,
-                    else_=99,
-                ),
-                ProjectionDelivery.id,
+        return self._dispatch(
+            ScanFilter(
+                tenant_id=self.tenant_id,
+                project_id=self.project_id,
+                limit=limit,
             )
         )
 
-    def _dispatch(
-        self, statement: Select[tuple[ProjectionDelivery]]
-    ) -> DispatchSummary:
-        session = self._session_factory()
-        summary = {"published": 0, "failed": 0}
-        delivery_ids = tuple(row.id for row in session.scalars(statement).all())
-        # Snapshot IDs before commits expire ORM instances in default sessions.
-        for delivery_id in delivery_ids:
-            row = session.execute(
-                select(ProjectionDelivery, OutboxEvent)
-                .join(
-                    OutboxEvent,
-                    OutboxEvent.id == ProjectionDelivery.outbox_event_id,
-                )
-                .join(CanonicalCommit, CanonicalCommit.id == OutboxEvent.commit_id)
-                .where(
-                    ProjectionDelivery.id == delivery_id,
-                    ProjectionDelivery.tenant_id == self.tenant_id,
-                    ProjectionDelivery.project_id == self.project_id,
-                    CanonicalCommit.tenant_id == self.tenant_id,
-                    CanonicalCommit.project_id == self.project_id,
-                    CanonicalCommit.status == "committed",
-                    ProjectionDelivery.status == "pending",
-                )
-            ).one_or_none()
-            if row is None:
-                continue
-            delivery, event = row
-            now = datetime.now(timezone.utc)
-            delivery.attempt_count += 1
-            delivery.last_attempt_at = now
-            projector = self.projectors.get(delivery.projector_id)
-            try:
-                if projector is None:
-                    raise LookupError(
-                        f"no projector registered for {delivery.projector_id}"
-                    )
-                projector(
-                    CanonicalProjectionReplay(session).message_for_delivery(
-                        delivery.id
-                    )
-                )
-            except Exception as exc:  # projection failures are durable state
-                delivery.status = "pending"
-                delivery.published_at = None
-                delivery.last_error_class = type(exc).__name__[:255]
-                delivery.last_error_message = f"{type(exc).__name__}: {exc}"[:4000]
-                delivery.receipt_json = None
-                delivery.receipt_digest = None
-                summary["failed"] += 1
-            else:
-                receipt = {
-                    "kind": "synchronous_dispatch_compatibility_receipt",
-                    "outbox_event_id": event.id,
-                    "projector_id": delivery.projector_id,
-                    "stream_position": delivery.stream_position,
-                }
-                delivery.status = "published"
-                delivery.published_at = now
-                delivery.last_error_code = None
-                delivery.last_error_class = None
-                delivery.last_error_message = None
-                delivery.receipt_json = receipt
-                delivery.receipt_digest = sha256_json(receipt)
-                summary["published"] += 1
-            session.commit()
-        return summary
+    def _dispatch(self, scan_filter: ScanFilter) -> DispatchSummary:
+        executors = {
+            projector_id: _CompatibilityExecutor(
+                DEFAULT_PROJECTOR_REGISTRY.get(projector_id), projector
+            )
+            for projector_id, projector in self.projectors.items()
+            if projector_id
+            in {spec.projector_id for spec in DEFAULT_PROJECTOR_REGISTRY.all()}
+        }
+        summary = ProjectionWorker(
+            self._session_factory,
+            executors,
+            worker_id=(
+                f"outbox-compat:{self.tenant_id}:{self.project_id}"
+            ),
+        ).scan_once(scan_filter)
+        return self._compatibility_summary(summary)
+
+    @staticmethod
+    def _compatibility_summary(summary: ScanSummary) -> DispatchSummary:
+        return {
+            "published": summary.published,
+            "failed": summary.retried + summary.dead_lettered,
+        }

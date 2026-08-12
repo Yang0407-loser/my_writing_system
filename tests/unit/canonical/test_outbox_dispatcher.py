@@ -11,10 +11,13 @@ from app.canonical.models import (
     CanonicalProject,
     DocumentRevision,
     OutboxEvent,
+    ProjectionAttempt,
     ProjectionDelivery,
 )
 from app.canonical.outbox import OutboxDispatcher
-from app.canonical.projection_ports import ProjectionScope
+from app.canonical.hashing import sha256_json
+from app.canonical.projection_ports import ProjectionReceipt, ProjectionScope
+from app.canonical.projection_registry import DEFAULT_PROJECTOR_REGISTRY
 from app.canonical.projection_replay import CanonicalProjectionReplay
 from tests.unit.canonical.test_commit_service import _prepared, canonical_session
 
@@ -26,7 +29,22 @@ def _commit(session, key="outbox-key"):
 
 
 def _projectors(**overrides):
-    projectors = {name: MagicMock() for name, _ in PROJECTION_MANIFEST}
+    def projector(name):
+        spec = DEFAULT_PROJECTOR_REGISTRY.get(name)
+
+        def receipt(message):
+            return ProjectionReceipt(
+                projection_event_id=message.projection_event_id,
+                projector_id=message.projector_id,
+                projector_version=spec.version,
+                stream_position=message.stream_position,
+                record_count=1,
+                content_digest=sha256_json({"event": message.projection_event_id}),
+            )
+
+        return MagicMock(side_effect=receipt)
+
+    projectors = {name: projector(name) for name, _ in PROJECTION_MANIFEST}
     projectors.update(overrides)
     return projectors
 
@@ -54,9 +72,8 @@ def test_commit_manifest_is_pending_and_dispatches_critical_only(canonical_sessi
     ).all()
     assert len(events) == len(PROJECTION_MANIFEST)
     assert all(
-        event.status == "pending"
-        and event.attempts == 0
-        and event.published_at is None
+        event.status
+        == ("published" if event.barrier_kind == "critical" else "pending")
         and event.last_error is None
         for event in events
     )
@@ -137,9 +154,9 @@ def test_projection_failure_preserves_canon_and_retries(canonical_session):
         )
     )
     assert first == {"published": 2, "failed": 1}
-    assert event.status == "pending"
-    assert event.attempts == 0
-    assert event.last_error is None
+    assert event.status == "failed"
+    assert event.attempts == 1
+    assert "projection unavailable" in event.last_error
     assert delivery.status == "pending"
     assert delivery.attempt_count == 1
     assert "projection unavailable" in delivery.last_error_message
@@ -148,16 +165,18 @@ def test_projection_failure_preserves_canon_and_retries(canonical_session):
         canonical_session.get(DocumentRevision, result.revision_id).content_hash,
     ) == canon_before
 
-    projectors["chroma_story_chunks"] = MagicMock()
+    delivery.available_at = delivery.last_attempt_at
+    canonical_session.commit()
+    projectors["chroma_story_chunks"] = _projectors()["chroma_story_chunks"]
     dispatcher = OutboxDispatcher(
         lambda: canonical_session, "tenant-1", "project-1", projectors
     )
     second = dispatcher.dispatch_critical(result.commit_id)
-    canonical_session.refresh(event)
-    canonical_session.refresh(delivery)
+    event = canonical_session.get(OutboxEvent, event.id)
+    delivery = canonical_session.get(ProjectionDelivery, delivery.id)
     assert second == {"published": 1, "failed": 0}
-    assert event.status == "pending"
-    assert event.attempts == 0
+    assert event.status == "published"
+    assert event.attempts == 1  # compatibility mirror is never eligibility authority
     assert event.last_error is None
     assert delivery.status == "published"
     assert delivery.attempt_count == 2
@@ -172,6 +191,17 @@ def test_restart_scans_durable_pending_and_failed_rows(canonical_session):
         lambda: canonical_session, "tenant-1", "project-1", projectors
     ).dispatch_critical(result.commit_id)
 
+    failed_delivery = canonical_session.scalar(
+        select(ProjectionDelivery)
+        .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+        .where(
+            OutboxEvent.commit_id == result.commit_id,
+            ProjectionDelivery.projector_id == "legacy_world_event",
+        )
+    )
+    failed_delivery.available_at = failed_delivery.last_attempt_at
+    canonical_session.commit()
+
     restarted_projectors = _projectors()
     summary = OutboxDispatcher(
         lambda: canonical_session,
@@ -182,7 +212,7 @@ def test_restart_scans_durable_pending_and_failed_rows(canonical_session):
 
     assert summary == {"published": 5, "failed": 0}
     assert all(
-        event.status == "pending"
+        event.status == "published"
         for event in canonical_session.scalars(
             select(OutboxEvent).where(OutboxEvent.commit_id == result.commit_id)
         ).all()
@@ -195,6 +225,38 @@ def test_restart_scans_durable_pending_and_failed_rows(canonical_session):
             .where(OutboxEvent.commit_id == result.commit_id)
         ).all()
     )
+
+
+def test_facade_eligibility_comes_from_delivery_and_records_attempt(canonical_session):
+    result = _commit(canonical_session)
+    event = canonical_session.scalar(
+        select(OutboxEvent).where(
+            OutboxEvent.commit_id == result.commit_id,
+            OutboxEvent.projection_name == "analytics",
+        )
+    )
+    event.status = "failed"  # deliberately stale compatibility mirror
+    canonical_session.commit()
+    projectors = _projectors()
+
+    summary = OutboxDispatcher(
+        lambda: canonical_session, "tenant-1", "project-1", projectors
+    ).dispatch_non_blocking(result.commit_id)
+
+    assert summary == {"published": 4, "failed": 0}
+    analytics = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.outbox_event_id == event.id
+        )
+    )
+    attempt = canonical_session.scalar(
+        select(ProjectionAttempt).where(
+            ProjectionAttempt.delivery_id == analytics.id
+        )
+    )
+    assert analytics.status == "published"
+    assert attempt.attempt_number == 1
+    assert attempt.outcome == "succeeded"
 
 
 def test_duplicate_commit_does_not_create_more_outbox(canonical_session):
