@@ -1,5 +1,12 @@
 # 开发进度
 
+## P3A projection recovery (2026-08-12)
+
+- 状态：DONE，真实 PostgreSQL Gate 16 passed / 0 skipped。
+- 证据：`reports/p3a/p3a-gate-evidence.json`；摘要：`reports/p3a/p3a-gate-summary.md`。
+- 运行手册：`docs/runbooks/p3a-projection-operations.md`。
+- P3B 仍是外部 Alpha 的身份、租户隔离、凭据、备份与运维安全门槛。
+
 > 最后更新: 2026-08-10
 
 ## P0 + P1/P2 Foundation

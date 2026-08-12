@@ -3,12 +3,12 @@
     "commit_status": "committed",
     "critical_projection_status": "ready",
     "document_ref": {
-      "commit_id": "783abc23-3f5c-439b-8f83-61a91603d95d",
+      "commit_id": "6978bb0b-8e18-4e58-8c18-329d108f59cc",
       "document_id": "document-foundation-golden",
-      "revision_id": "b319f98c-cb5c-48af-925a-e31211392a98"
+      "revision_id": "490b9835-5b22-4215-b968-406550a49e53"
     },
     "non_blocking_projection_status": "ready",
-    "state_version_id": "824f2e8d-03a9-4152-905e-a17207211e7c"
+    "state_version_id": "4749e3ae-bc00-488d-a483-eb9379c281f5"
   },
   "backend": "postgresql",
   "counts": {
@@ -18,7 +18,44 @@
     "non_blocking_projection": 4,
     "outbox": 7
   },
-  "duration_ms": 276.35,
+  "delivery": {
+    "analytics": {
+      "barrier_kind": "non_blocking",
+      "status": "published",
+      "stream_position": 1
+    },
+    "chroma_story_chunks": {
+      "barrier_kind": "critical",
+      "status": "published",
+      "stream_position": 1
+    },
+    "handover_context": {
+      "barrier_kind": "critical",
+      "status": "published",
+      "stream_position": 1
+    },
+    "legacy_world_event": {
+      "barrier_kind": "critical",
+      "status": "published",
+      "stream_position": 1
+    },
+    "markdown_export": {
+      "barrier_kind": "non_blocking",
+      "status": "published",
+      "stream_position": 1
+    },
+    "redis_stream": {
+      "barrier_kind": "non_blocking",
+      "status": "published",
+      "stream_position": 1
+    },
+    "task_preview": {
+      "barrier_kind": "non_blocking",
+      "status": "published",
+      "stream_position": 1
+    }
+  },
+  "duration_ms": 856.615,
   "fixture_schema_version": "foundation-golden-slice-v1",
   "gate_eligible": true,
   "hashes": {
@@ -28,11 +65,11 @@
     "revision_content": "3999516e6727d1548889478f0c666b1c31fb63870155cc5e19e6d8c0e100f9c5"
   },
   "ids": {
-    "commit_id": "783abc23-3f5c-439b-8f83-61a91603d95d",
+    "commit_id": "6978bb0b-8e18-4e58-8c18-329d108f59cc",
     "document_id": "document-foundation-golden",
     "project_id": "project-foundation-golden",
-    "revision_id": "b319f98c-cb5c-48af-925a-e31211392a98",
-    "state_version_id": "824f2e8d-03a9-4152-905e-a17207211e7c",
+    "revision_id": "490b9835-5b22-4215-b968-406550a49e53",
+    "state_version_id": "4749e3ae-bc00-488d-a483-eb9379c281f5",
     "subsection_id": "subsection-foundation-golden-0001",
     "tenant_id": "tenant-foundation-golden"
   },
@@ -71,6 +108,36 @@
       "attempts": 1,
       "barrier_kind": "non_blocking",
       "status": "published"
+    }
+  },
+  "partition_cursors": {
+    "analytics": {
+      "last_published_position": 1,
+      "runtime_status": "active"
+    },
+    "chroma_story_chunks": {
+      "last_published_position": 1,
+      "runtime_status": "active"
+    },
+    "handover_context": {
+      "last_published_position": 1,
+      "runtime_status": "active"
+    },
+    "legacy_world_event": {
+      "last_published_position": 1,
+      "runtime_status": "active"
+    },
+    "markdown_export": {
+      "last_published_position": 1,
+      "runtime_status": "active"
+    },
+    "redis_stream": {
+      "last_published_position": 1,
+      "runtime_status": "active"
+    },
+    "task_preview": {
+      "last_published_position": 1,
+      "runtime_status": "active"
     }
   },
   "runtime": {

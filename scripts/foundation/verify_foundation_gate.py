@@ -37,6 +37,24 @@ def verify_evidence(evidence: dict) -> list[str]:
         errors.append("outbox manifest is incomplete")
     elif any(row.get("status") != "published" for row in outbox.values()):
         errors.append("not every outbox row is published")
+    delivery = evidence.get("delivery")
+    if delivery is not None:
+        if set(delivery) != REQUIRED_PROJECTIONS:
+            errors.append("projection delivery manifest is incomplete")
+        elif any(
+            row.get("status") != "published"
+            or not isinstance(row.get("stream_position"), int)
+            or row.get("stream_position") < 1
+            for row in delivery.values()
+        ):
+            errors.append("projection delivery authority is not fully published")
+        cursors = evidence.get("partition_cursors", {})
+        if set(cursors) != REQUIRED_PROJECTIONS or any(
+            row.get("runtime_status") != "active"
+            or row.get("last_published_position", 0) < 1
+            for row in cursors.values()
+        ):
+            errors.append("projection partition cursors do not cover the commit")
     if evidence.get("counts", {}).get("ledger", 0) < 1:
         errors.append("event ledger is empty")
     return errors

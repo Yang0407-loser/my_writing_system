@@ -23,7 +23,13 @@ from app.canonical.contracts import CandidateValidation, SubsectionCandidate
 from app.canonical.database import build_engine, build_session_factory
 from app.canonical.hashing import sha256_text
 from app.canonical.legacy_candidate_adapter import adapt_legacy_handover
-from app.canonical.models import EventLedger, OutboxEvent
+from app.canonical.models import (
+    CanonicalCommit,
+    EventLedger,
+    OutboxEvent,
+    ProjectionDelivery,
+    ProjectionPartition,
+)
 from app.canonical.repositories import CanonicalRepository
 from app.writing.canonical_subsection_runtime import (
     CanonicalSubsectionCommand,
@@ -183,6 +189,24 @@ def run_golden_slice(
         outbox = session.scalars(
             select(OutboxEvent).where(OutboxEvent.commit_id == result.commit.commit_id)
         ).all()
+        stream_position = session.scalar(
+            select(CanonicalCommit.stream_position).where(
+                CanonicalCommit.id == result.commit.commit_id
+            )
+        )
+        deliveries = session.scalars(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == ids["tenant_id"],
+                ProjectionDelivery.project_id == ids["project_id"],
+                ProjectionDelivery.stream_position == stream_position,
+            )
+        ).all()
+        partitions = session.scalars(
+            select(ProjectionPartition).where(
+                ProjectionPartition.tenant_id == ids["tenant_id"],
+                ProjectionPartition.project_id == ids["project_id"],
+            )
+        ).all()
         ledger_count = session.scalar(
             select(func.count()).select_from(EventLedger).where(
                 EventLedger.commit_id == result.commit.commit_id
@@ -222,6 +246,21 @@ def run_golden_slice(
                     "barrier_kind": row.barrier_kind,
                 }
                 for row in outbox
+            },
+            "delivery": {
+                row.projector_id: {
+                    "status": row.status,
+                    "stream_position": row.stream_position,
+                    "barrier_kind": row.barrier_kind,
+                }
+                for row in deliveries
+            },
+            "partition_cursors": {
+                row.projector_id: {
+                    "runtime_status": row.runtime_status,
+                    "last_published_position": row.last_published_position,
+                }
+                for row in partitions
             },
             "runtime": {
                 "phase": result.phase,

@@ -21,9 +21,9 @@ effects. It is the recovery point for later P3A, P3B and P4 work.
 | P0 | DONE | Reproducible contracts, isolated tests and secret-safe evidence | Continue enforcing hygiene in later phases |
 | P1 | DONE | Versioned PostgreSQL Canonical schema, repositories and snapshot restore | Schema expansion remains migration-controlled |
 | P2 | DONE | Candidate, dual-Head atomic commit, idempotency, ledger, outbox and critical Barrier | `internal_required` is internal dogfood only |
-| P3A | NEXT | Production projection consumption, deletion/rebuild and reconciliation | Blocks authoritative World Runtime migration |
+| P3A | DONE | PostgreSQL-authoritative projection consumption, deletion/rebuild, reconciliation and scanner recovery | P3B remains the external production safety gate |
 | P3B | READY | Auth, tenant isolation, credentials, CI, observability and backup gates | Blocks external Alpha |
-| P4 | BLOCKED BY P3A | World Runtime may interpret facts into the existing commit boundary | Must not redefine Canonical Commit |
+| P4 | UNBLOCKED BY P3A | World Runtime may interpret facts into the existing commit boundary | Must not redefine Canonical Commit |
 | Client | DEFERRED | Writing Blocks and editing UX consume server contracts | Begins after server/runtime boundaries stabilize |
 
 ## Implemented write authority
@@ -62,8 +62,10 @@ limits, CI gates, observability, backup/restore and operational runbooks.
 
 ## Deferred work
 
-- P3A: leases, multiple workers, projector idempotency, dead-letter handling,
-  projection cursors, lag metrics, full rebuild and hash/ledger reconciliation.
+- P3A: complete. Evidence is recorded in `reports/p3a/p3a-gate-summary.md` and
+  operations are documented in `docs/runbooks/p3a-projection-operations.md`.
+- Deferred after P3A: online shadow rebuild, same-stream unordered parallelism,
+  and Outbox fan-out normalization.
 - P3B: identity and authorization boundaries, tenant enforcement, credential
   custody, distributed limits, deployment gates, telemetry and disaster recovery.
 - P4: authoritative World Runtime and Context Broker migration only after P3A.

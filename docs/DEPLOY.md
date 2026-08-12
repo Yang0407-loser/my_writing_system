@@ -198,6 +198,18 @@ systemctl enable writer-api writer-worker
 systemctl start writer-api writer-worker
 ```
 
+### P3A projection scanner
+
+Run the scanner independently from application and Celery processes:
+
+```bash
+python -m app.canonical.projection_cli scan --continuous
+```
+
+It depends on PostgreSQL, not Redis/Celery liveness. Use the P3A operations
+runbook for status, bounded drain, rebuild, bootstrap and audited requeue.
+Stop the scanner before application rollback.
+
 ### 常用命令
 
 ```bash

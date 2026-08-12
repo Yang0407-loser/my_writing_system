@@ -78,4 +78,8 @@ revision or state from `created_at`; they follow the two explicit Head pointers.
 
 The implemented P2 path is `loaded Revision/State Heads → immutable Candidate → pure complete State Transition → one Canonical SQL transaction → fixed Outbox manifest → critical Barrier → next subsection`. Retry preflight reads the completed SQL idempotency result before any LLM call. TaskStore and HTTP responses carry Canonical references additively; `draft_preview` remains compatibility-only.
 
-P2 projectors are synchronous, single-process adapters. Deterministic Chroma IDs provide replay convergence for the Golden path, but distributed claims, leases, dead letters, full projector rebuild/reconciliation and cross-sink crash-window guarantees remain P3A. Authentication, complete tenant isolation, credential references, backup/restore and external production admission remain P3B.
+P3A now provides distributed claims, leases, dead letters, full projector
+rebuild/reconciliation, cross-sink crash-window evidence, optional Celery
+wake-up and an independent PostgreSQL scanner. Authentication, complete tenant
+isolation, credential references, backup/restore and external production
+admission remain P3B.
