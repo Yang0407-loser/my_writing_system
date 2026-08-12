@@ -327,6 +327,14 @@ def test_claim_binds_malicious_projector_id_as_data(postgres_database_url):
     )
     engine = build_engine(postgres_database_url)
     with build_session_factory(engine)() as session:
+        envelope = session.get(OutboxEvent, session.scalar(
+            select(ProjectionDelivery.outbox_event_id).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        ))
+        envelope.projection_name = projector_id
         session.execute(
             ProjectionDelivery.__table__.update()
             .where(
@@ -450,6 +458,164 @@ def test_delivery_only_unknown_registration_is_dead_lettered_in_envelope_partiti
         )
         assert partition.enrollment_status == "active"
         assert partition.runtime_status == "active"
+    engine.dispose()
+
+
+def test_projector_filter_routes_by_envelope_not_corrupted_delivery_id(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        delivery.projector_id = "spoof-projector"
+        session.commit()
+        store = ProjectionDeliveryStore(session)
+
+        assert store.claim_next(
+            "spoof-worker",
+            ScanFilter(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                projector_id="spoof-projector",
+            ),
+            now=datetime.now(UTC),
+        ) is None
+        session.refresh(delivery)
+        assert delivery.status == "pending"
+
+        assert store.claim_next(
+            "analytics-worker",
+            ScanFilter(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                projector_id="analytics",
+            ),
+            now=datetime.now(UTC),
+        ) is None
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.attempt_count == 0
+    engine.dispose()
+
+
+def test_registered_projector_id_cannot_spoof_another_envelope_partition(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        conflicting = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "task_preview",
+            )
+        )
+        session.delete(conflicting)
+        session.flush()
+        delivery.projector_id = "task_preview"
+        session.commit()
+
+        claim = ProjectionDeliveryStore(session).claim_next(
+            "worker",
+            ScanFilter(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                projector_id="analytics",
+            ),
+            now=datetime.now(UTC),
+        )
+
+        assert claim is None
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.attempt_count == 0
+    engine.dispose()
+
+
+def test_original_scope_cleanup_does_not_block_unrelated_valid_claim(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        conflicting = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "task_preview",
+            )
+        )
+        session.delete(conflicting)
+        session.flush()
+        delivery.projector_id = "task_preview"
+        session.commit()
+
+        claim = ProjectionDeliveryStore(session).claim_next(
+            "worker",
+            ScanFilter(tenant_id=tenant_id, project_id=project_id),
+            now=datetime.now(UTC),
+        )
+
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert claim is not None
+        assert claim.delivery_id != delivery.id
+        assert claim.projector_id != "analytics"
+    engine.dispose()
+
+
+def test_barrier_kind_mismatch_is_dead_lettered_without_claim(
+    postgres_database_url,
+):
+    tenant_id, project_id = _seed_commits(postgres_database_url, count=1)
+    engine = build_engine(postgres_database_url)
+    with build_session_factory(engine)() as session:
+        delivery = session.scalar(
+            select(ProjectionDelivery).where(
+                ProjectionDelivery.tenant_id == tenant_id,
+                ProjectionDelivery.project_id == project_id,
+                ProjectionDelivery.projector_id == "analytics",
+            )
+        )
+        delivery.barrier_kind = "critical"
+        session.commit()
+
+        claim = ProjectionDeliveryStore(session).claim_next(
+            "worker",
+            ScanFilter(
+                tenant_id=tenant_id,
+                project_id=project_id,
+                projector_id="analytics",
+            ),
+            now=datetime.now(UTC),
+        )
+
+        assert claim is None
+        session.refresh(delivery)
+        assert delivery.status == "dead_letter"
+        assert delivery.attempt_count == 0
     engine.dispose()
 
 

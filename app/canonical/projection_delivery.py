@@ -122,14 +122,17 @@ class ProjectionDeliveryStore:
         filters = []
         params: dict[str, Any] = {"now": now, "leased_by": leased_by}
         for column, value in (
-            ("tenant_id", scan_filter.tenant_id),
-            ("project_id", scan_filter.project_id),
-            ("projector_id", scan_filter.projector_id),
-            ("barrier_kind", scan_filter.barrier_kind),
+            ("candidate.tenant_id", scan_filter.tenant_id),
+            ("candidate.project_id", scan_filter.project_id),
+            ("envelope.projection_name", scan_filter.projector_id),
+            ("envelope.barrier_kind", scan_filter.barrier_kind),
         ):
             if value is not None:
-                filters.append(f"candidate.{column} = :{column}")
-                params[column] = value
+                parameter = column.rsplit(".", 1)[-1]
+                if parameter == "projection_name":
+                    parameter = "projector_id"
+                filters.append(f"{column} = :{parameter}")
+                params[parameter] = value
         if scan_filter.commit_id is not None:
             filters.append("envelope.commit_id = :commit_id")
             params["commit_id"] = scan_filter.commit_id
@@ -163,13 +166,15 @@ class ProjectionDeliveryStore:
               JOIN projection_partitions partition
                 ON partition.tenant_id = candidate.tenant_id
                AND partition.project_id = candidate.project_id
-               AND partition.projector_id = candidate.projector_id
-               AND partition.projector_version = candidate.projector_version
+               AND partition.projector_id = envelope.projection_name
               JOIN registered
-                ON registered.projector_id = candidate.projector_id
-               AND registered.projector_version = candidate.projector_version
+                ON registered.projector_id = envelope.projection_name
+               AND registered.projector_version = partition.projector_version
               WHERE partition.enrollment_status = 'active'
                 AND partition.runtime_status = 'active'
+                AND candidate.projector_id = envelope.projection_name
+                AND candidate.projector_version = partition.projector_version
+                AND candidate.barrier_kind = envelope.barrier_kind
                 AND candidate.stream_position = partition.last_published_position + 1
                 AND (
                   (candidate.status = 'pending' AND candidate.available_at <= :now)
@@ -237,9 +242,9 @@ class ProjectionDeliveryStore:
         if scan_filter.project_id is not None:
             filters.append("candidate.project_id = :project_id")
         if scan_filter.projector_id is not None:
-            filters.append("candidate.projector_id = :projector_id")
+            filters.append("envelope.projection_name = :projector_id")
         if scan_filter.barrier_kind is not None:
-            filters.append("candidate.barrier_kind = :barrier_kind")
+            filters.append("envelope.barrier_kind = :barrier_kind")
         if scan_filter.commit_id is not None:
             filters.append("envelope.commit_id = :commit_id")
         predicate = ""
@@ -261,12 +266,17 @@ class ProjectionDeliveryStore:
                    AND partition.project_id = candidate.project_id
                    AND partition.projector_id = envelope.projection_name
                   LEFT JOIN registered
-                    ON registered.projector_id = candidate.projector_id
-                   AND registered.projector_version = candidate.projector_version
+                    ON registered.projector_id = envelope.projection_name
+                   AND registered.projector_version = partition.projector_version
                   WHERE candidate.status = 'pending'
                     AND partition.enrollment_status = 'active'
                     AND partition.runtime_status = 'active'
-                    AND registered.projector_id IS NULL
+                    AND (
+                      registered.projector_id IS NULL
+                      OR candidate.projector_id <> envelope.projection_name
+                      OR candidate.projector_version <> partition.projector_version
+                      OR candidate.barrier_kind <> envelope.barrier_kind
+                    )
                     {predicate}
                   FOR UPDATE OF candidate SKIP LOCKED
                 )
