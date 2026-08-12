@@ -1,6 +1,7 @@
 import json
+import hashlib
 import redis
-from redis.exceptions import WatchError
+from redis.exceptions import ResponseError, WatchError
 from .config import settings
 from .checkpoint_sanitizer import is_credential_field, sanitize_checkpoint
 
@@ -162,6 +163,69 @@ class Blackboard:
 
     def stream_delete(self, task_id: str) -> None:
         self._redis.delete(self.stream_key(task_id))
+
+    @staticmethod
+    def canonical_scope_hash(tenant_id: str, project_id: str) -> str:
+        return hashlib.sha256(f"{tenant_id}\0{project_id}".encode("utf-8")).hexdigest()
+
+    def canonical_stream_key(self, tenant_id: str, project_id: str) -> str:
+        return f"canonical:stream:{self.canonical_scope_hash(tenant_id, project_id)}"
+
+    def xadd_canonical_event(
+        self, tenant_id: str, project_id: str, stream_position: int, event: dict
+    ) -> str:
+        """Write one deterministic canonical event, rejecting same-ID conflicts."""
+        if stream_position < 1:
+            raise ValueError("stream_position must be positive")
+        key = self.canonical_stream_key(tenant_id, project_id)
+        event = dict(event)
+        event["tenant_id"] = tenant_id
+        event["project_id"] = project_id
+        event["stream_position"] = stream_position
+        event_id = f"{stream_position}-0"
+        existing = self._redis.xrange(key, min=event_id, max=event_id)
+        encoded = json.dumps(event, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        if existing:
+            _, fields = existing[0]
+            raw = fields.get(b"payload", fields.get("payload"))
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            if raw != encoded:
+                raise ValueError("canonical Redis Stream conflict at stream_position")
+            return event_id
+        try:
+            self._redis.xadd(key, {"payload": encoded}, id=event_id)
+        except ResponseError:
+            existing = self._redis.xrange(key, min=event_id, max=event_id)
+            if not existing:
+                raise
+            _, fields = existing[0]
+            raw = fields.get(b"payload", fields.get("payload"))
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            if raw != encoded:
+                raise ValueError(
+                    "canonical Redis Stream conflict at stream_position"
+                )
+        return event_id
+
+    def list_canonical_events(self, tenant_id: str, project_id: str) -> list[dict]:
+        key = self.canonical_stream_key(tenant_id, project_id)
+        rows = []
+        for msg_id, fields in self._redis.xrange(key):
+            raw = fields.get(b"payload", fields.get("payload"))
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            payload = json.loads(raw)
+            payload["_redis_id"] = msg_id.decode() if isinstance(msg_id, bytes) else msg_id
+            rows.append(payload)
+        return rows
+
+    def clear_canonical_events(self, tenant_id: str, project_id: str) -> None:
+        self._redis.delete(self.canonical_stream_key(tenant_id, project_id))
+
+    def canonical_preview_namespace(self, tenant_id: str, project_id: str) -> str:
+        return f"canonical:preview:{self.canonical_scope_hash(tenant_id, project_id)}"
 
     # ── 控制队列 ───────────────────────────────────────────────
 

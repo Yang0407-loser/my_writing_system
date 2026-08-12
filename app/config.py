@@ -130,6 +130,9 @@ class Settings:
     CHROMA_DATA_PATH: str = os.getenv("CHROMA_DATA_PATH", "./chroma_data")
     CHARACTER_DB_PATH: str = os.getenv("CHARACTER_DB_PATH", "./characters.db")
     TASK_DB_PATH: str = os.getenv("TASK_DB_PATH", "./tasks.db")
+    PROJECTION_MARKDOWN_ROOT: str = os.getenv(
+        "PROJECTION_MARKDOWN_ROOT", "./projection_markdown"
+    )
 
     # --- Long-form writing ---
     DEFAULT_TARGET_WORDS_PER_SECTION: int = int(os.getenv("DEFAULT_TARGET_WORDS", "10000"))
