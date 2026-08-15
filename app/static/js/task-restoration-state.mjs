@@ -1,12 +1,13 @@
 const owns = (value, key) => value != null && Object.prototype.hasOwnProperty.call(value, key);
+const hasStatusValue = (value, key) => owns(value, key) && value[key] !== null && value[key] !== undefined;
 
 export function resolveRestorationSnapshot({requestedTaskId='', workspaceStatus=null, activeStatus=null}={}) {
   const workspace = workspaceStatus || {};
   const active = activeStatus || workspace;
   const workspaceTaskId = active.workspace_task_id || workspace.workspace_task_id || requestedTaskId;
   const activeTaskId = active.active_task_id || workspace.active_task_id || requestedTaskId;
-  const outlineSource = owns(active, 'outline') ? active : workspace;
-  const draftSource = owns(active, 'draft') ? active : workspace;
+  const outlineSource = hasStatusValue(active, 'outline') ? active : workspace;
+  const draftSource = hasStatusValue(active, 'draft') ? active : workspace;
   return {
     workspaceTaskId,
     activeTaskId,

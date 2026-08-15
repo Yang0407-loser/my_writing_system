@@ -16,10 +16,24 @@ test('active task snapshot wins when workspace and active identities differ', ()
   });
 });
 
-test('an explicit empty draft is authoritative while a missing field falls back', () => {
-  const workspaceStatus = {workspace_task_id: 'workspace-1', active_task_id: 'active-2', draft: 'old'};
-  assert.equal(restoration.resolveRestorationSnapshot({workspaceStatus, activeStatus: {workspace_task_id: 'workspace-1', active_task_id: 'active-2', draft: ''}}).draft, '');
+test('explicit empty outline and draft are authoritative while missing fields fall back', () => {
+  const workspaceStatus = {workspace_task_id: 'workspace-1', active_task_id: 'active-2', outline: [{title: 'old'}], draft: 'old'};
+  const explicitEmpty = restoration.resolveRestorationSnapshot({workspaceStatus, activeStatus: {workspace_task_id: 'workspace-1', active_task_id: 'active-2', outline: [], draft: ''}});
+  assert.deepEqual(explicitEmpty.outline, []);
+  assert.equal(explicitEmpty.draft, '');
   assert.equal(restoration.resolveRestorationSnapshot({workspaceStatus, activeStatus: {workspace_task_id: 'workspace-1', active_task_id: 'active-2'}}).draft, 'old');
+});
+
+test('null active outline and draft fall back to the workspace snapshot', () => {
+  const workspaceOutline = [{title: 'workspace outline'}];
+  const result = restoration.resolveRestorationSnapshot({
+    workspaceStatus: {outline: workspaceOutline, draft: 'workspace draft'},
+    activeStatus: {outline: null, draft: null},
+  });
+  assert.deepEqual(result.outline, workspaceOutline);
+  assert.equal(result.draft, 'workspace draft');
+  assert.equal(result.outlinePresent, true);
+  assert.equal(result.draftPresent, true);
 });
 
 test('plain short completed draft hydrates exactly into the first subsection', () => {

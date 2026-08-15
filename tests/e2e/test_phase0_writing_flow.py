@@ -168,7 +168,6 @@ def test_interactive_approval_replaces_task_and_preserves_workspace(e2e_client):
         {"event": "awaiting_decision", "phase": "outline"}
     ]
     old_last_id = old_stream["last_id"]
-    old_event_ids = {event[0] for event in old_stream["events"]}
     assert old_last_id != "0-0"
 
     decision = client.post(
@@ -190,11 +189,15 @@ def test_interactive_approval_replaces_task_and_preserves_workspace(e2e_client):
     assert replacement_checkpoint.config_reference_text == "冷静、克制的叙述参考"
     assert replacement_checkpoint.config_target_words == 500
     replacement = client.get(f"/stream/{new_task_id}?last_id=0-0&count=50").json()
-    assert replacement["events"][0][1]["event"] == "section_start"
-    assert replacement["events"][-1][1]["event"] == "done"
+    assert [event[1]["event"] for event in replacement["events"]] == [
+        "section_start",
+        "token",
+        "token",
+        "section_end",
+        "done",
+    ]
     assert replacement["last_id"] != "0-0"
-    replacement_event_ids = {event[0] for event in replacement["events"]}
-    assert replacement_event_ids.isdisjoint(old_event_ids)
-    assert replacement["events"][0][0] != old_last_id
-    assert replacement["last_id"] != old_last_id
+    assert client.get(
+        f"/stream/{old_task_id}?last_id={old_last_id}&count=50"
+    ).json()["events"] == []
     assert client.get(f"/status/{new_task_id}").json()["status"] == "completed"
