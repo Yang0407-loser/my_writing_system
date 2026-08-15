@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.blackboard import Blackboard
-from app.models import TaskState, TaskStatus
+from app.models import TaskState, TaskStatus, WriteRequest, WriteResponse
 from app.task_store import TaskStore
 
 
@@ -60,14 +60,30 @@ class DeterministicWriter:
         with self._lock:
             self._runs[task_id] = _Run(task_id=task_id, kwargs=kwargs)
 
+    @staticmethod
+    def _validated_kwargs(kwargs: dict) -> dict:
+        request = WriteRequest.model_validate(kwargs)
+        return {**kwargs, **request.model_dump(mode="json")}
+
+    @staticmethod
+    def _submission_result(task_id: str, kwargs: dict) -> SimpleNamespace:
+        response = WriteResponse(
+            task_id=task_id,
+            status="pending",
+            workspace_task_id=str(kwargs.get("workspace_task_id") or task_id),
+        ).model_dump(mode="json")
+        return SimpleNamespace(id=task_id, **response)
+
     def apply_async(self, kwargs: dict, task_id: str):
-        self._register(task_id, dict(kwargs))
-        return SimpleNamespace(id=task_id)
+        kwargs = self._validated_kwargs(dict(kwargs))
+        self._register(task_id, kwargs)
+        return self._submission_result(task_id, kwargs)
 
     def delay(self, **kwargs):
         task_id = str(uuid4())
-        self._register(task_id, dict(kwargs))
-        return SimpleNamespace(id=task_id)
+        kwargs = self._validated_kwargs(dict(kwargs))
+        self._register(task_id, kwargs)
+        return self._submission_result(task_id, kwargs)
 
     def AsyncResult(self, task_id: str):
         with self._lock:

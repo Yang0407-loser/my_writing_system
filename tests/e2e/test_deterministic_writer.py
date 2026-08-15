@@ -5,7 +5,7 @@ import pytest
 
 from app.blackboard import Blackboard
 from app.config import settings
-from app.models import TaskState, TaskStatus
+from app.models import TaskState, TaskStatus, WriteRequest, WriteResponse
 from app.task_store import TaskStore
 from tests.e2e.support.deterministic_writer import DeterministicWriter
 
@@ -24,9 +24,20 @@ def make_board():
 def test_submission_does_not_advance_and_public_state_uses_production_models():
     board = make_board()
     writer = DeterministicWriter(board)
-    writer.apply_async(
-        kwargs={"topic": "雨夜", "reference_text": "参考", "interactive": False},
+    request = WriteRequest(topic="雨夜", reference_text="参考")
+    submitted = writer.apply_async(
+        kwargs={**request.model_dump(mode="json"), "interactive": False},
         task_id="task-1",
+    )
+    response = WriteResponse.model_validate(
+        {
+            "task_id": submitted.id,
+            "status": submitted.status,
+            "workspace_task_id": submitted.workspace_task_id,
+        }
+    )
+    assert response == WriteResponse(
+        task_id="task-1", status="pending", workspace_task_id="task-1"
     )
     assert board._redis.xlen(board.stream_key("task-1")) == 0
     assert writer.advance("task-1") == "section_start"
@@ -41,8 +52,12 @@ def test_automatic_done_is_a_separate_advance_before_completed():
     labels = [writer.advance("task-1") for _ in range(5)]
     assert labels == ["section_start", "token_1", "token_2", "section_end", "done"]
     events = [event for _, event in board.xread_events("task-1", "0-0")]
-    assert [event["event"] for event in events] == [
-        "section_start", "token", "token", "section_end", "done"
+    assert events == [
+        {"event": "section_start", "section": 1, "subsection": 1},
+        {"event": "token", "section": 1, "subsection": 1, "token": "雨落在旧站台。"},
+        {"event": "token", "section": 1, "subsection": 1, "token": "她终于等到回信。"},
+        {"event": "section_end", "section": 1, "subsection": 1, "text": "雨落在旧站台。她终于等到回信。"},
+        {"event": "done", "draft": "雨落在旧站台。她终于等到回信。", "review": {"global_score": 8}},
     ]
     assert board.get("task-1", "status") == "running"
     assert writer.advance("task-1") == "completed"
