@@ -1657,9 +1657,9 @@ def _phase_complete(bb, task_id, state):
     section_texts = state.get("section_texts", {})
     assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
 
+    bb.xadd_event(task_id, {"event": "done", "draft": assembled, "review": state.get("review_result")})
     bb.set(task_id, "status", "completed")
     bb.set(task_id, "progress", f"完成 — 共 {count_chinese_chars(assembled)} 字")
-    bb.xadd_event(task_id, {"event": "done", "draft": assembled, "review": state.get("review_result")})
 
     output_path = _export_draft(task_id, state.get("config_topic", ""), assembled,
                                 state.get("handover_chain", []),
