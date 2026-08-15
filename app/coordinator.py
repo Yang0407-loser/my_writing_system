@@ -347,6 +347,7 @@ def writing_task(
 
     style_profile: dict | None = None,
     outline: list[dict] | None = None,
+    workspace_task_id: str = "",
     api_key: str = "",
 ):
     """写作流水线入口。resume=True 时从检查点恢复继续。"""
@@ -382,6 +383,12 @@ def writing_task(
             bb.set(task_id, "error", "检查点不存在，无法恢复")
             return {"task_id": task_id, "status": "failed", "error": "checkpoint not found"}
         state = sanitize_checkpoint(loaded_state)
+        state["task_id"] = task_id
+        state["workspace_task_id"] = (
+            workspace_task_id
+            or state.get("workspace_task_id")
+            or checkpoint_src
+        )
         # 将检查点转移到当前 task_id，后续 save_checkpoint 使用当前 ID
         bb.save_checkpoint(task_id, state)
         phase = state.get("phase", "init")
@@ -389,6 +396,7 @@ def writing_task(
     else:
         state = {
             "task_id": task_id, "phase": "characters",
+            "workspace_task_id": workspace_task_id or task_id,
             "config_topic": topic, "config_reference_text": reference_text,
             "config_target_words": target_words_per_section,
             "config_character_text": character_text,
@@ -435,6 +443,15 @@ def writing_task(
 
         bb.set(task_id, "status", "running")
         phase = state.get("phase", "characters")
+
+    workspace_task_id = str(
+        state.get("workspace_task_id") or workspace_task_id or task_id
+    )
+    state["workspace_task_id"] = workspace_task_id
+    bb.set(task_id, "workspace_task_id", workspace_task_id)
+    bb.set(task_id, "active_task_id", task_id)
+    bb.set(workspace_task_id, "workspace_task_id", workspace_task_id)
+    bb.set(workspace_task_id, "active_task_id", task_id)
 
     try:
         # ── 基础设施前置检查 ──
@@ -1751,6 +1768,28 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
                 "non_blocking_projection_status", ""
             ),
             })
+            workspace_task_id = str(state.get("workspace_task_id") or task_id)
+            existing_workspace = ts.get_workspace(workspace_task_id) or {}
+            ts.save_workspace(
+                workspace_task_id,
+                {
+                    **existing_workspace,
+                    "active_task_id": task_id,
+                    "topic": state.get("config_topic", ""),
+                    "world_setting": state.get("config_world_setting", ""),
+                    "story_synopsis": state.get("config_story_synopsis", ""),
+                    "reference_text": state.get("config_reference_text", ""),
+                    "style_profile": state.get("config_style_profile")
+                    or state.get("style_profile")
+                    or {},
+                    "target_words_per_section": state.get(
+                        "config_target_words", 3000
+                    ),
+                    "outline": outline_data or existing_workspace.get("outline") or [],
+                    "draft_backup": existing_workspace.get("draft_backup") or "",
+                    "status": status,
+                },
+            )
     except Exception:
         logger.warning("任务历史写入失败", exc_info=True)
 
