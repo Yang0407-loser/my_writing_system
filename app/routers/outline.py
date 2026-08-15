@@ -1,4 +1,4 @@
-"""大纲管理 API —— 按 task_id 隔离，Redis 为唯一数据源。"""
+"""大纲管理 API —— 按 task_id 隔离，并持久化项目工作区。"""
 
 import json
 import time
@@ -28,6 +28,12 @@ class DeleteNodeBody(BaseModel):
 
 class DraftBody(BaseModel):
     draft: str = ""
+
+
+class OutlineEvaluationBody(BaseModel):
+    nodes: list[dict] = Field(default_factory=list)
+    from_section: int = Field(default=1, ge=1)
+    to_section: int | None = Field(default=None, ge=1)
 
 
 class OutlineBudgetAdviceBody(BaseModel):
@@ -308,6 +314,108 @@ def get_outline_budget_advice(task_id: str, body: OutlineBudgetAdviceBody):
     return result.model_dump(mode="json")
 
 
+@router.post("/{task_id}/outline/evaluate")
+def evaluate_outline(task_id: str, body: OutlineEvaluationBody):
+    """Run a deterministic, zero-LLM structural review of submitted nodes."""
+    del task_id
+    tree = _build_tree_from_nodes([dict(node) for node in body.nodes])
+    selected = []
+    to_section = body.to_section or len(tree)
+    for section_index, section in enumerate(tree, 1):
+        if body.from_section <= section_index <= to_section:
+            selected.append((section_index, section))
+    if not selected:
+        raise HTTPException(status_code=422, detail="评估范围内没有大纲章节")
+
+    issues = []
+    titles = {}
+    leaf_count = 0
+    described_count = 0
+    causal_count = 0
+    dense_count = 0
+    for section_index, section in selected:
+        leaves = section.get("children") or []
+        if not leaves:
+            issues.append({
+                "code": "empty_section",
+                "severity": "high",
+                "section": section_index,
+                "message": "章节没有可写作的小节。",
+            })
+        for subsection_index, leaf in enumerate(leaves, 1):
+            leaf_count += 1
+            title = str(leaf.get("title") or "").strip()
+            if not title:
+                issues.append({
+                    "code": "missing_title",
+                    "severity": "high",
+                    "section": section_index,
+                    "subsection": subsection_index,
+                    "message": "小节缺少标题。",
+                })
+            elif title in titles:
+                issues.append({
+                    "code": "duplicate_title",
+                    "severity": "medium",
+                    "section": section_index,
+                    "subsection": subsection_index,
+                    "message": f"小节标题“{title}”重复。",
+                })
+            else:
+                titles[title] = (section_index, subsection_index)
+            description = str(leaf.get("description") or "").strip()
+            key_points = [
+                str(item).strip()
+                for item in leaf.get("key_points") or []
+                if str(item).strip()
+            ]
+            if description or key_points:
+                described_count += 1
+            else:
+                issues.append({
+                    "code": "missing_story_action",
+                    "severity": "medium",
+                    "section": section_index,
+                    "subsection": subsection_index,
+                    "message": "小节缺少梗概和关键事件，生成目标不明确。",
+                })
+            event_text = " ".join([description, *key_points])
+            causal_tokens = ("因为", "导致", "因此", "为了", "于是", "结果", "决定")
+            if any(token in event_text for token in causal_tokens):
+                causal_count += 1
+            event_units = len(key_points) + (1 if description else 0)
+            target_words = int(leaf.get("target_words") or 0)
+            if event_units >= 4 and target_words and target_words < 1200:
+                dense_count += 1
+                issues.append({
+                    "code": "event_density_high",
+                    "severity": "medium",
+                    "section": section_index,
+                    "subsection": subsection_index,
+                    "message": "事件数量相对目标字数过密，建议拆分或增加篇幅。",
+                })
+
+    denominator = max(1, leaf_count)
+    high_count = sum(item["severity"] == "high" for item in issues)
+    medium_count = sum(item["severity"] == "medium" for item in issues)
+    logic_score = max(1, 10 - high_count * 3 - medium_count)
+    fluency_score = max(1, round(4 + 6 * described_count / denominator))
+    causality_score = max(1, round(3 + 7 * causal_count / denominator))
+    density_score = max(1, round(10 - 7 * dense_count / denominator))
+    return {
+        "schema_version": "outline-structural-evaluation-v1",
+        "analysis_mode": "deterministic_zero_llm",
+        "range": {"from": body.from_section, "to": to_section},
+        "section_count": len(selected),
+        "leaf_count": leaf_count,
+        "fluency_score": fluency_score,
+        "causality_score": causality_score,
+        "logic_score": logic_score,
+        "density_score": density_score,
+        "issues": issues,
+    }
+
+
 def _compile_arc_projection_preview(
     *,
     nodes: list[dict],
@@ -451,12 +559,22 @@ def get_outline(task_id: str):
     from ..dependencies import bb
 
     # 优先读 Redis outline_tree
-    tree_data = bb.get(task_id, "outline_tree")
+    try:
+        tree_data = bb.get(task_id, "outline_tree")
+    except redis.exceptions.RedisError:
+        logger.warning(
+            "Redis unavailable while loading outline tree for task %s",
+            task_id,
+        )
+        tree_data = None
     if tree_data and isinstance(tree_data, list) and len(tree_data) > 0:
         return {"nodes": _flatten_tree(tree_data), "tree": tree_data}
 
     # Fallback 1: 从 flat outline 反向重建树
-    outline_data = bb.get(task_id, "outline")
+    try:
+        outline_data = bb.get(task_id, "outline")
+    except redis.exceptions.RedisError:
+        outline_data = None
     if outline_data and isinstance(outline_data, list) and len(outline_data) > 0:
         tree = _outline_v2_to_tree(outline_data)
         return {"nodes": _flatten_tree(tree), "tree": tree}
@@ -466,7 +584,12 @@ def get_outline(task_id: str):
         from ..task_store import TaskStore
         from ..config import settings as _settings
         with TaskStore(_settings.TASK_DB_PATH) as ts:
+            workspace = ts.find_workspace_for_task(task_id)
             record = ts.get(task_id)
+        if workspace:
+            saved_tree = workspace.get("outline") or []
+            if saved_tree:
+                return {"nodes": _flatten_tree(saved_tree), "tree": saved_tree}
         if record:
             saved_outline = record.get("outline_json") or []
             if saved_outline and isinstance(saved_outline, list) and len(saved_outline) > 0:
@@ -496,9 +619,29 @@ def save_outline(task_id: str, body: OutlineNodesBody):
     tree = canonicalise_confirmed_tree(tree)
     flat = _tree_to_outline_v2(tree)
 
-    # 写 Redis
-    bb.set(task_id, "outline_tree", tree)
-    bb.set(task_id, "outline", flat)
+    # 先写 durable workspace；Redis 中断时项目仍可恢复。
+    try:
+        from ..task_store import TaskStore
+        with TaskStore() as ts:
+            workspace = ts.find_workspace_for_task(task_id) or {
+                "workspace_task_id": task_id,
+                "active_task_id": task_id,
+                "status": "draft",
+            }
+            workspace["outline"] = tree
+            ts.save_workspace(workspace["workspace_task_id"], workspace)
+    except Exception:
+        logger.warning(f"项目大纲持久化失败 for task {task_id}", exc_info=True)
+
+    # Live runtime mirror is best effort.
+    try:
+        bb.set(task_id, "outline_tree", tree)
+        bb.set(task_id, "outline", flat)
+    except redis.exceptions.RedisError:
+        logger.warning(
+            "Redis unavailable while saving outline for task %s; durable copy saved",
+            task_id,
+        )
 
     # 版本快照
     try:
@@ -552,6 +695,23 @@ def restore_outline(task_id: str, version_id: int):
         checkpoint["outline_tree"] = tree
         bb.save_checkpoint(task_id, checkpoint)
 
+    try:
+        from ..task_store import TaskStore
+
+        with TaskStore() as ts:
+            workspace = ts.find_workspace_for_task(task_id) or {
+                "workspace_task_id": task_id,
+                "active_task_id": task_id,
+                "status": "draft",
+            }
+            workspace["outline"] = tree
+            ts.save_workspace(workspace["workspace_task_id"], workspace)
+    except Exception:
+        logger.warning(
+            f"Project outline restore persistence failed for task {task_id}",
+            exc_info=True,
+        )
+
     return {"nodes": _flatten_tree(tree)}
 
 
@@ -560,11 +720,77 @@ def restore_outline(task_id: str, version_id: int):
 @router.put("/{task_id}/draft")
 def save_task_draft(task_id: str, body: DraftBody):
     from ..dependencies import bb
-    bb.set(task_id, "draft_backup", body.draft)
+    try:
+        data = bb.get_all(task_id)
+    except redis.exceptions.RedisError:
+        logger.warning(
+            "Redis unavailable while resolving draft workspace for task %s",
+            task_id,
+        )
+        data = {}
+    try:
+        from ..task_store import TaskStore
+        with TaskStore() as ts:
+            workspace = ts.find_workspace_for_task(task_id)
+            workspace_task_id = str(
+                data.get("workspace_task_id")
+                or (workspace or {}).get("workspace_task_id")
+                or task_id
+            )
+            workspace = workspace or {
+                "active_task_id": task_id,
+                "status": str(data.get("status") or "draft"),
+            }
+            workspace["active_task_id"] = task_id
+            workspace["draft_backup"] = body.draft
+            ts.save_workspace(workspace_task_id, workspace)
+    except Exception:
+        logger.warning(f"项目草稿持久化失败 for task {task_id}", exc_info=True)
+    try:
+        bb.set(task_id, "draft_backup", body.draft)
+    except redis.exceptions.RedisError:
+        logger.warning(
+            "Redis unavailable while saving draft for task %s; durable copy saved",
+            task_id,
+        )
     return {"status": "saved"}
+
+
+@router.post("/{task_id}/draft/beacon")
+def save_task_draft_beacon(task_id: str, body: DraftBody):
+    """POST-compatible unload fallback; normal autosave should keep using PUT."""
+    return save_task_draft(task_id, body)
 
 
 @router.get("/{task_id}/draft")
 def get_task_draft(task_id: str):
     from ..dependencies import bb
-    return {"draft": bb.get(task_id, "draft_backup") or ""}
+    try:
+        draft = bb.get(task_id, "draft_backup") or ""
+    except redis.exceptions.RedisError:
+        logger.warning(
+            "Redis unavailable while loading draft for task %s",
+            task_id,
+        )
+        draft = ""
+    if draft:
+        return {"draft": draft}
+    try:
+        try:
+            data = bb.get_all(task_id)
+        except redis.exceptions.RedisError:
+            data = {}
+        from ..task_store import TaskStore
+        with TaskStore() as ts:
+            workspace = ts.find_workspace_for_task(task_id)
+            workspace_task_id = str(
+                data.get("workspace_task_id")
+                or (workspace or {}).get("workspace_task_id")
+                or task_id
+            )
+            workspace = workspace or ts.get_workspace(workspace_task_id)
+        if workspace:
+            return {"draft": workspace.get("draft_backup") or ""}
+    except Exception:
+        logger.warning(f"项目草稿恢复失败 for task {task_id}", exc_info=True)
+    return {"draft": ""}

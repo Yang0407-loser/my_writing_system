@@ -177,6 +177,7 @@ class WriteRequest(BaseModel):
 class WriteResponse(BaseModel):
     task_id: str
     status: str = "pending"
+    workspace_task_id: str | None = None
 
 
 class ReviseRequest(BaseModel):
@@ -335,6 +336,8 @@ class ReviewResult(BaseModel):
 class TaskStatus(BaseModel):
     task_id: str
     status: str
+    workspace_task_id: str | None = None
+    active_task_id: str | None = None
     progress: str | None = None
     style: dict | None = None
     outline: list[dict] | None = None
@@ -366,10 +369,13 @@ class TaskStatus(BaseModel):
     state_version_id: str | None = None
     critical_projection_status: str | None = None
     non_blocking_projection_status: str | None = None
+    runtime_available: bool = True
+    data_source: str | None = None
 
 
 class FinalResult(BaseModel):
     task_id: str
+    workspace_task_id: str | None = None
     topic: str
     style: dict
     outline: list[dict]

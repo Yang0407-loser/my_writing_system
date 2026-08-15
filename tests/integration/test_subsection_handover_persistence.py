@@ -165,7 +165,11 @@ def test_task_store_analysis_merge_read_only_restart_and_additive_schema(
     }
     connection.close()
     assert SUBSECTION_HANDOVER_HISTORY_KEY not in columns
-    assert tables == {"task_history", "task_store_schema_migrations"}
+    assert tables == {
+        "project_workspaces",
+        "task_history",
+        "task_store_schema_migrations",
+    }
     assert schema_after_read == schema_before_read
 
 

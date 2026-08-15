@@ -7,6 +7,8 @@ import sqlite3
 
 LEGACY_COLUMNS_MIGRATION = "0001-task-history-legacy-columns"
 CANONICAL_REFS_MIGRATION = "0002-task-history-canonical-refs"
+PROJECT_WORKSPACE_CONTENT_MIGRATION = "0003-project-workspace-content"
+PROJECT_WORKSPACE_EXPORTS_MIGRATION = "0004-project-workspace-exports"
 
 LEGACY_COLUMNS = {
     "topic": "TEXT DEFAULT ''",
@@ -41,17 +43,29 @@ CANONICAL_COLUMNS = {
     "non_blocking_projection_status": "TEXT DEFAULT ''",
 }
 
+PROJECT_WORKSPACE_COLUMNS = {
+    "outline_json": "TEXT DEFAULT '[]'",
+    "draft_backup": "TEXT DEFAULT ''",
+}
+
+PROJECT_WORKSPACE_EXPORT_COLUMNS = {
+    "exports_json": "TEXT DEFAULT '[]'",
+}
+
 
 def _add_missing_columns(
-    connection: sqlite3.Connection, columns: dict[str, str]
+    connection: sqlite3.Connection,
+    columns: dict[str, str],
+    *,
+    table: str = "task_history",
 ) -> None:
     existing = {
-        row[1] for row in connection.execute("PRAGMA table_info(task_history)")
+        row[1] for row in connection.execute(f'PRAGMA table_info("{table}")')
     }
     for name, declaration in columns.items():
         if name not in existing:
             connection.execute(
-                f'ALTER TABLE task_history ADD COLUMN "{name}" {declaration}'
+                f'ALTER TABLE "{table}" ADD COLUMN "{name}" {declaration}'
             )
 
 
@@ -80,5 +94,27 @@ def apply_task_store_migrations(connection: sqlite3.Connection) -> None:
         connection.execute(
             "INSERT INTO task_store_schema_migrations(version) VALUES (?)",
             (version,),
+        )
+    workspace_applied = PROJECT_WORKSPACE_CONTENT_MIGRATION in applied
+    if not workspace_applied:
+        _add_missing_columns(
+            connection,
+            PROJECT_WORKSPACE_COLUMNS,
+            table="project_workspaces",
+        )
+        connection.execute(
+            "INSERT INTO task_store_schema_migrations(version) VALUES (?)",
+            (PROJECT_WORKSPACE_CONTENT_MIGRATION,),
+        )
+    exports_applied = PROJECT_WORKSPACE_EXPORTS_MIGRATION in applied
+    if not exports_applied:
+        _add_missing_columns(
+            connection,
+            PROJECT_WORKSPACE_EXPORT_COLUMNS,
+            table="project_workspaces",
+        )
+        connection.execute(
+            "INSERT INTO task_store_schema_migrations(version) VALUES (?)",
+            (PROJECT_WORKSPACE_EXPORTS_MIGRATION,),
         )
     connection.commit()

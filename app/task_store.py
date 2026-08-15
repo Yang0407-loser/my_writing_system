@@ -89,6 +89,25 @@ class TaskStore:
                 updated_at TEXT DEFAULT (datetime('now'))
             )
         """)
+        self._conn.execute("""
+            CREATE TABLE IF NOT EXISTS project_workspaces (
+                workspace_task_id TEXT PRIMARY KEY,
+                active_task_id TEXT DEFAULT '',
+                topic TEXT DEFAULT '',
+                world_setting TEXT DEFAULT '',
+                story_synopsis TEXT DEFAULT '',
+                reference_text TEXT DEFAULT '',
+                style_json TEXT DEFAULT '{}',
+                target_words INTEGER DEFAULT 3000,
+                outline_json TEXT DEFAULT '[]',
+                draft_backup TEXT DEFAULT '',
+                exports_json TEXT DEFAULT '[]',
+                status TEXT DEFAULT 'draft',
+                archived INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
         self._conn.commit()
 
     def save(self, task_id: str, data: dict) -> None:
@@ -165,6 +184,94 @@ class TaskStore:
             "SELECT * FROM task_history ORDER BY updated_at DESC LIMIT ?", (limit,)
         ).fetchall()
         return [self._row_to_dict(r) for r in rows]
+
+    def save_workspace(self, workspace_task_id: str, data: dict) -> None:
+        existing = self.get_workspace(workspace_task_id)
+        merged = {**(existing or {}), **data}
+        values = (
+            workspace_task_id,
+            merged.get("active_task_id", workspace_task_id),
+            merged.get("topic", ""),
+            merged.get("world_setting", ""),
+            merged.get("story_synopsis", ""),
+            merged.get("reference_text", ""),
+            json.dumps(merged.get("style_profile", {}), ensure_ascii=False),
+            merged.get("target_words_per_section", 3000),
+            json.dumps(merged.get("outline", []), ensure_ascii=False),
+            merged.get("draft_backup", ""),
+            json.dumps(merged.get("exports", []), ensure_ascii=False),
+            merged.get("status", "draft"),
+            int(bool(merged.get("archived", False))),
+        )
+        self._conn.execute(
+            """
+            INSERT INTO project_workspaces (
+                workspace_task_id, active_task_id, topic, world_setting,
+                story_synopsis, reference_text, style_json, target_words,
+                outline_json, draft_backup, exports_json, status, archived
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(workspace_task_id) DO UPDATE SET
+                active_task_id=excluded.active_task_id,
+                topic=excluded.topic,
+                world_setting=excluded.world_setting,
+                story_synopsis=excluded.story_synopsis,
+                reference_text=excluded.reference_text,
+                style_json=excluded.style_json,
+                target_words=excluded.target_words,
+                outline_json=excluded.outline_json,
+                draft_backup=excluded.draft_backup,
+                exports_json=excluded.exports_json,
+                status=excluded.status,
+                archived=excluded.archived,
+                updated_at=datetime('now')
+            """,
+            values,
+        )
+        self._conn.commit()
+
+    def get_workspace(self, workspace_task_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM project_workspaces WHERE workspace_task_id = ?",
+            (workspace_task_id,),
+        ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        try:
+            data["style_profile"] = json.loads(data.pop("style_json") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            data["style_profile"] = {}
+        data["target_words_per_section"] = data.pop("target_words", 3000)
+        try:
+            data["outline"] = json.loads(data.pop("outline_json") or "[]")
+        except (json.JSONDecodeError, TypeError):
+            data["outline"] = []
+        try:
+            data["exports"] = json.loads(data.pop("exports_json") or "[]")
+        except (json.JSONDecodeError, TypeError):
+            data["exports"] = []
+        data["archived"] = bool(data.get("archived"))
+        return data
+
+    def list_workspaces(self, limit: int = 100, include_archived: bool = False) -> list[dict]:
+        where = "" if include_archived else "WHERE archived = 0"
+        rows = self._conn.execute(
+            f"SELECT workspace_task_id FROM project_workspaces {where} "
+            "ORDER BY updated_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [self.get_workspace(row[0]) for row in rows]
+
+    def find_workspace_for_task(self, task_id: str) -> dict | None:
+        row = self._conn.execute(
+            """
+            SELECT workspace_task_id FROM project_workspaces
+            WHERE workspace_task_id = ? OR active_task_id = ?
+            ORDER BY updated_at DESC LIMIT 1
+            """,
+            (task_id, task_id),
+        ).fetchone()
+        return self.get_workspace(row[0]) if row else None
 
     def delete(self, task_id: str) -> bool:
         cur = self._conn.execute("DELETE FROM task_history WHERE task_id = ?", (task_id,))
