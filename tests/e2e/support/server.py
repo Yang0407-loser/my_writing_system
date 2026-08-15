@@ -36,7 +36,6 @@ def create_support_app():
     import app.routers.tasks as task_routes
     from tests.e2e.support.deterministic_writer import DeterministicWriter
 
-    settings.TASK_DB_PATH = str(database)
     board = Blackboard()
     board._redis = fakeredis.FakeRedis(decode_responses=False)
     writer = DeterministicWriter(
@@ -50,19 +49,41 @@ def create_support_app():
         export_root.mkdir(parents=True, exist_ok=True)
         return export_root
 
-    dependencies.bb = board
-    task_routes.bb = board
-    task_routes.writing_task = writer
-    task_routes._export_root = isolated_export_root
-    outline_routes._get_redis = lambda: board._redis
+    original_bindings = {
+        "task_db_path": settings.TASK_DB_PATH,
+        "dependencies_bb": dependencies.bb,
+        "task_routes_bb": task_routes.bb,
+        "writing_task": task_routes.writing_task,
+        "export_root": task_routes._export_root,
+        "get_redis": outline_routes._get_redis,
+    }
+
+    def install_test_bindings() -> None:
+        settings.TASK_DB_PATH = str(database)
+        dependencies.bb = board
+        task_routes.bb = board
+        task_routes.writing_task = writer
+        task_routes._export_root = isolated_export_root
+        outline_routes._get_redis = lambda: board._redis
+
+    def restore_production_bindings() -> None:
+        settings.TASK_DB_PATH = original_bindings["task_db_path"]
+        dependencies.bb = original_bindings["dependencies_bb"]
+        task_routes.bb = original_bindings["task_routes_bb"]
+        task_routes.writing_task = original_bindings["writing_task"]
+        task_routes._export_root = original_bindings["export_root"]
+        outline_routes._get_redis = original_bindings["get_redis"]
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        writer.start()
-        try:
-            yield
-        finally:
-            writer.shutdown()
+        async with production_app.router.lifespan_context(production_app):
+            try:
+                install_test_bindings()
+                writer.start()
+                yield
+            finally:
+                writer.shutdown()
+                restore_production_bindings()
 
     support = FastAPI(title="Writer browser E2E support", lifespan=lifespan)
     support.state.writer = writer
