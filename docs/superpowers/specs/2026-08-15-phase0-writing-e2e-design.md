@@ -31,6 +31,8 @@ The work is complete when all of the following are true:
 
 The writer will write state and stream events through the real `Blackboard` API backed by one `fakeredis.FakeRedis` instance. It will not call coordinator or agent code. The purpose is to make task transitions deterministic while keeping route, persistence, response-model, stream cursor, and frontend API contracts real.
 
+The test double will reuse production request/response models, status literals, event field names, and existing enums wherever they already exist. Test-only dictionaries may contain scenario-control metadata, but public task state and stream payloads must be constructed from production schema fields rather than copied parallel contracts. Contract tests will import the production model or enum and fail if the deterministic writer emits an unsupported public value.
+
 The adapter will separate **task submission** from **task execution**. Route handlers set their own initial `pending` fields after `apply_async()` or `delay()` returns, so the adapter must not complete a task inside those submission calls. In pytest, the scenario explicitly invokes the adapter's `advance(task_id)` or `complete(task_id)` method after the HTTP submission response. This models an external worker without timing sleeps. In the browser support server, a tracked background runner performs the same ordered advances using `WRITER_E2E_STEP_DELAY_MS` (default 250 ms) so the page can visibly observe running, streaming, confirmation, and completion states. The runner exposes a shutdown method and every timer/thread is joined before cleanup.
 
 Automatic mode will produce a minimal one-section/one-subsection event sequence:
@@ -43,6 +45,8 @@ Automatic mode will produce a minimal one-section/one-subsection event sequence:
 6. task and workspace status `completed`
 
 The pytest scenario advances these steps explicitly. The browser server advances one step per configured delay and keeps the task `running` until after the final stream event, preventing a completed status from stopping frontend polling before the deterministic text is consumed.
+
+The ordering is normative: the writer must append the `done` event first and only then persist task/workspace status `completed`. The E2E test will observe the state between these two advances, assert that `done` is readable while status is still nonterminal, then advance once more and assert `completed`.
 
 Interactive mode will first persist a resumable checkpoint and expose an awaiting-confirmation status. When `/tasks/{task_id}/decide` creates a replacement task, the same deterministic writer will complete that replacement task and preserve the original `workspace_task_id`.
 
@@ -68,6 +72,8 @@ The server will support deterministic scenario selection through test-only envir
 
 `WRITER_TESTING=1` and an explicit temporary `TASK_DB_PATH` remain mandatory. The support server will refuse to start without these isolation settings.
 
+For the storage-reset acceptance, the support server will expose a same-origin test-only page at `/__e2e__/clear-storage`. Its visible button will call `localStorage.clear()` and `sessionStorage.clear()` and then navigate to `/write-ui-v2`. This route exists only in the support server wrapper, is unavailable from the production application, and lets browser acceptance clear storage through an explicit UI action without inspecting stored values.
+
 ## Scenario Contracts
 
 ### Automatic writing flow
@@ -79,11 +85,13 @@ The test will:
 3. Save a one-subsection outline using the public outline route.
 4. `POST /write?mode=celery` with the existing workspace task ID.
 5. Assert the response task ID equals the draft task ID and the workspace ID is unchanged.
-6. Poll `/status/{task_id}` and assert `completed`, stable workspace/active task IDs, and runtime availability.
-7. Read `/stream/{task_id}` from `0-0`, assert ordered start/token/end/done events, and save `last_id`.
-8. Read the stream again from that `last_id` and assert no duplicate events.
-9. Read `/tasks/{task_id}/workspace` and `/projects` to prove server-side recovery.
-10. Create Markdown, TXT, and JSON exports and verify each download contains the deterministic draft or its structured equivalent.
+6. Advance through `section_start` and the first token, poll `/status/{task_id}`, and assert the task is still nonterminal with stable workspace/active task IDs.
+7. Read `/stream/{task_id}` from `0-0`, save the first-token cursor, and assert the observed prefix is ordered and contains no later event.
+8. Append the remaining token, `section_end`, and `done` events; resume from the saved cursor and assert every remaining event appears once with no replay of earlier text.
+9. Before the final state advance, assert `done` is readable while `/status/{task_id}` is still nonterminal. Then advance once more and assert task/workspace status `completed`.
+10. Read the stream again from the final `last_id` and assert no duplicate events.
+11. Read `/tasks/{task_id}/workspace` and `/projects` to prove server-side recovery.
+12. Create Markdown, TXT, and JSON exports and verify each download contains the deterministic draft or its structured equivalent.
 
 ### Interactive writing flow
 
@@ -111,13 +119,14 @@ The route E2E layer will use deterministic failure modes from the test writer ra
 
 ## Browser Acceptance
 
-The in-app browser will open `/write-ui-v2` against the support server. The browser run will use visible controls and public endpoints only.
+The in-app browser will open `/write-ui-v2` against the support server. The browser run will use visible application controls and public application endpoints; the only test-control surface is the visible same-origin storage-reset page defined above.
 
 Automatic smoke acceptance:
 
 - create or open the isolated test project;
 - select automatic mode and start writing;
 - observe stable project identity, streamed deterministic text, saved state, completion, and export access.
+- after server state exists, clear both `localStorage` and `sessionStorage`, reload through a normal page navigation, and recover the project from the server-side project list with the same workspace/task identity and draft content.
 
 Interactive smoke acceptance:
 
@@ -125,6 +134,7 @@ Interactive smoke acceptance:
 - observe the confirmation state;
 - approve through the page;
 - verify the page follows the replacement task ID and receives its stream without losing the workspace anchor.
+- clear both browser storage areas, reload, reopen the same server project, and confirm the replacement task remains the active task.
 
 Browser observations will be recorded in an SDD report. The deterministic HTTP tests are the CI gate; the browser run is the release-wiring gate until a Playwright dependency is introduced in Phase 5.
 
