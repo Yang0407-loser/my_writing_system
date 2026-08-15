@@ -25,6 +25,7 @@ for (const sample of [
     await assert.rejects(
       API.req('/contract', { timeoutMs: 0 }),
       error => {
+        assert.ok(error instanceof API.ApiError);
         assert.equal(error.status, sample.status);
         assert.deepEqual(error.detail, sample.detail);
         assert.equal(error.retryable, sample.retryable);
@@ -39,6 +40,14 @@ test('AbortError remains retryable and actionable', async () => {
   globalThis.fetch = async () => { throw new DOMException('aborted', 'AbortError'); };
   await assert.rejects(
     API.req('/contract', { timeoutMs: 0 }),
-    error => error.message === '请求超时或已取消' && error.retryable === true,
+    error => {
+      assert.ok(error instanceof API.ApiError);
+      assert.equal(error.message, '请求超时或已取消');
+      assert.equal(error.retryable, true);
+      assert.equal(error.status, 0);
+      assert.equal(error.detail, null);
+      assert.equal(error.url, '/contract');
+      return true;
+    },
   );
 });
