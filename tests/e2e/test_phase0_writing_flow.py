@@ -2,7 +2,7 @@ from tests.e2e.support.deterministic_writer import DRAFT
 
 
 def test_automatic_writing_cursor_order_recovery_and_exports(e2e_client):
-    client, writer, _board = e2e_client
+    client, writer, board = e2e_client
 
     created = client.post("/tasks").json()
     workspace_id = created["workspace_task_id"]
@@ -83,7 +83,11 @@ def test_automatic_writing_cursor_order_recovery_and_exports(e2e_client):
         f"/stream/{workspace_id}?last_id={final_cursor}&count=50"
     ).json()["events"] == []
 
+    board.delete(workspace_id)
+    board.delete_checkpoint(workspace_id)
+    board.stream_delete(workspace_id)
     workspace = client.get(f"/tasks/{workspace_id}/workspace").json()
+    assert workspace["data_source"] == "durable_workspace"
     assert workspace["workspace_task_id"] == workspace_id
     assert workspace["active_task_id"] == workspace_id
     assert workspace["draft_backup"] == DRAFT
@@ -95,9 +99,11 @@ def test_automatic_writing_cursor_order_recovery_and_exports(e2e_client):
     )
 
     for export_format in ("md", "txt", "json"):
-        record = client.post(
+        export_response = client.post(
             f"/tasks/{workspace_id}/exports", json={"format": export_format}
-        ).json()
+        )
+        assert export_response.status_code == 200, export_response.text
+        record = export_response.json()
         download = client.get(
             f"/tasks/{workspace_id}/exports/{record['export_id']}/download"
         )
