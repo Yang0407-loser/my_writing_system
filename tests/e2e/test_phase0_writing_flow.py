@@ -1,3 +1,4 @@
+from app.models import TaskState
 from tests.e2e.support.deterministic_writer import DRAFT
 
 
@@ -112,3 +113,77 @@ def test_automatic_writing_cursor_order_recovery_and_exports(e2e_client):
             assert download.json()["draft"] == DRAFT
         else:
             assert DRAFT in download.text
+
+
+def test_interactive_approval_replaces_task_and_preserves_workspace(e2e_client):
+    client, writer, board = e2e_client
+
+    created = client.post("/tasks").json()
+    workspace_id = created["workspace_task_id"]
+    client.patch(
+        f"/tasks/{workspace_id}/workspace",
+        json={
+            "topic": "雨夜来信",
+            "world_setting": "近未来海港城",
+            "story_synopsis": "失联记者寄回最后一封信",
+            "reference_text": "冷静、克制的叙述参考",
+            "target_words_per_section": 500,
+        },
+    ).raise_for_status()
+    client.post(
+        f"/tasks/{workspace_id}/outline",
+        json={
+            "nodes": [
+                {
+                    "id": "root-1",
+                    "parentId": None,
+                    "title": "第一章",
+                    "description": "雨夜开场",
+                },
+                {
+                    "id": "leaf-1",
+                    "parentId": "root-1",
+                    "title": "旧站台",
+                    "description": "收到回信",
+                },
+            ]
+        },
+    ).raise_for_status()
+    started = client.post(
+        "/write?mode=interactive",
+        json={
+            "task_id": workspace_id,
+            "topic": "雨夜来信",
+            "reference_text": "冷静、克制的叙述参考",
+            "target_words_per_section": 500,
+        },
+    ).json()
+    old_task_id = started["task_id"]
+    assert writer.advance(old_task_id) == "awaiting_outline_approval"
+    old_status = client.get(f"/status/{old_task_id}").json()
+    assert old_status["status"] == "awaiting_outline_approval"
+    assert TaskState.model_validate(board.load_checkpoint(old_task_id))
+
+    decision = client.post(
+        f"/tasks/{old_task_id}/decide?phase=outline&action=approve"
+    ).json()
+    new_task_id = decision["new_task_id"]
+    assert new_task_id != old_task_id
+    assert decision["workspace_task_id"] == workspace_id
+    assert client.get(f"/status/{old_task_id}").json()["active_task_id"] == new_task_id
+    workspace = client.get(f"/tasks/{workspace_id}/workspace").json()
+    assert workspace["active_task_id"] == new_task_id
+
+    writer.complete(new_task_id)
+    replacement_checkpoint = TaskState.model_validate(
+        board.load_checkpoint(new_task_id)
+    )
+    assert replacement_checkpoint.task_id == new_task_id
+    assert replacement_checkpoint.config_topic == "雨夜来信"
+    assert replacement_checkpoint.config_reference_text == "冷静、克制的叙述参考"
+    assert replacement_checkpoint.config_target_words == 500
+    replacement = client.get(f"/stream/{new_task_id}?last_id=0-0&count=50").json()
+    assert replacement["events"][0][1]["event"] == "section_start"
+    assert replacement["events"][-1][1]["event"] == "done"
+    assert replacement["last_id"] != "0-0"
+    assert client.get(f"/status/{new_task_id}").json()["status"] == "completed"

@@ -18,6 +18,7 @@ DRAFT = "".join(TOKENS)
 class _Run:
     task_id: str
     kwargs: dict
+    resume_state: dict | None = None
     step: int = 0
     result: dict | None = None
     error: Exception | None = None
@@ -57,8 +58,16 @@ class DeterministicWriter:
             self.start()
 
     def _register(self, task_id: str, kwargs: dict) -> None:
+        resume_state = None
+        if kwargs.get("resume") and kwargs.get("resume_from_task_id"):
+            checkpoint = self.board.load_checkpoint(kwargs["resume_from_task_id"])
+            resume_state = TaskState.model_validate(checkpoint).model_dump(mode="json")
         with self._lock:
-            self._runs[task_id] = _Run(task_id=task_id, kwargs=kwargs)
+            self._runs[task_id] = _Run(
+                task_id=task_id,
+                kwargs=kwargs,
+                resume_state=resume_state,
+            )
 
     @staticmethod
     def _validated_kwargs(kwargs: dict) -> dict:
@@ -162,6 +171,20 @@ class DeterministicWriter:
         run.step = 6
         return "completed"
 
+    def _initialize_replacement(self, run: _Run) -> None:
+        if run.resume_state is None:
+            return
+        self.board.save_checkpoint(
+            run.task_id,
+            {**run.resume_state, "task_id": run.task_id},
+        )
+        original_task_id = run.kwargs.get("resume_from_task_id")
+        workspace_task_id = self._workspace_task_id(run)
+        if original_task_id:
+            self.board.set(original_task_id, "active_task_id", run.task_id)
+        self.board.set(workspace_task_id, "workspace_task_id", workspace_task_id)
+        self.board.set(workspace_task_id, "active_task_id", run.task_id)
+
     def advance(self, task_id: str) -> str:
         with self._lock:
             run = self._runs[task_id]
@@ -174,6 +197,7 @@ class DeterministicWriter:
             if run.step == 0 and run.kwargs.get("interactive") and not run.kwargs.get("resume"):
                 return self._await_outline_approval(run)
             if run.step == 0:
+                self._initialize_replacement(run)
                 self._set_runtime_status(run, "running")
                 self.board.xadd_event(run.task_id, {"event": "section_start", "section": 1, "subsection": 1})
                 run.step = 1
@@ -209,10 +233,19 @@ class DeterministicWriter:
             return self._complete(run)
 
     def complete(self, task_id: str) -> None:
-        while True:
+        for _ in range(8):
+            with self._lock:
+                run = self._runs[task_id]
+                if run.error:
+                    raise run.error
             label = self.advance(task_id)
-            if label in {"completed", "awaiting_outline_approval"}:
+            if label == "completed":
                 return
+        with self._lock:
+            run = self._runs[task_id]
+            if run.error:
+                raise run.error
+        raise RuntimeError(f"deterministic writer did not complete within eight transitions: {task_id}")
 
     def _run_automatically(self) -> None:
         while not self._stop_event.wait(self.step_delay_ms / 1000):
