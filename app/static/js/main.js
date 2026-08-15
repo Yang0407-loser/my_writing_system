@@ -1,7 +1,15 @@
-import { createApp, ref, reactive, computed, watch, nextTick, onMounted } from 'vue';
-import * as API from './api.js?v=20260725a';
+import { createApp, ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import * as API from './api.js?v=20260815b';
 import * as OT from './outline-tree.js';
 import { countCjk, genId, subtreeWords, flatTree, treeToFlat, flatToTree, findParentAndIndex } from './utils.js';
+import { connectionStateFromStatus } from './runtime-status.mjs?v=20260815a';
+import { createTaskConnectionController } from './task-connection.mjs?v=20260815b';
+import { createTaskPollingSession } from './task-polling-session.mjs?v=20260815b';
+import {
+  createTaskRestorationStreamGate,
+  runDurableHydration,
+} from './task-restoration-stream.mjs?v=20260815c';
+import { buildRestoredDraftBlocks, resolveRestorationSnapshot } from './task-restoration-state.mjs?v=20260815a';
 
 const FLOW_NODES = [
   { id:'style', label:'风格分析', icon:'🎨' }, { id:'outline', label:'大纲生成', icon:'📋' },
@@ -23,7 +31,12 @@ export function createWriterApp() {
     setup() {
       // ── Common ──
       const refineMode = ref(false);
-      const taskId = ref(''); const statusText = ref('就绪'); const statusColor = ref('#888');
+      const taskId = ref(''); const workspaceTaskId = ref('');
+      const statusText = ref('就绪'); const statusColor = ref('#888');
+      const saveStatus = ref('local'); const connectionState = ref('online');
+      const connectionRetryAvailable = ref(false);
+      const connectionRetryBusy = ref(false);
+      const projectionStatus = ref('idle'); const commitStatus = ref('');
       const tokenUsage = ref(0); const tokenCost = ref(null);
       const awaitingConfirm = ref(false); const confirmPhase = ref('outline');
       const flowchartCollapsed = ref(false); const selectedNodeId = ref(null); const rawStatus = ref('');
@@ -67,6 +80,7 @@ export function createWriterApp() {
       // ── Draft ──
       const isGenerating = ref(false); const generatingBlockIdx = ref(-1);
       const completedSections = ref(0); const draftBlocks = ref([]); const taskDone = ref(false);
+      const revisionInstructions = reactive({}); const revisionLoading = ref('');
 
       // ── Characters ──
       const showCharModal = ref(false); const charTab = ref('library'); const editingChar = ref(null);
@@ -98,8 +112,13 @@ export function createWriterApp() {
       const sideCollapsed = ref({left:false, right:false});
       const leftPanelWidth = ref(280); const rightPanelWidth = ref(280); const resizing = ref(null);
       const showTimeline = ref(false); const showAIDetect = ref(false); const showOutlineEval = ref(false); const showHistory = ref(false);
+      const activeWorkspace = ref('write');
       const showOutlineVersions = ref(false); const outlineVersions = ref([]);
-      const mapNodes = ref([]); const subplots = ref([]); const itemsList = ref([]); const timelineEvents = ref([]);
+      const mapNodes = ref([]); const mapEdges = ref([]); const mapRoute = ref(null);
+      const mapEdgeForm = ref({source_id:'',target_id:'',type:'road',name:'',travel_time:'',distance:''});
+      const mapRouteForm = ref({chapter_start:1,chapter_end:100,path_nodes:[]});
+      const subplots = ref([]); const subplotHeatMap = ref([]); const itemsList = ref([]); const timelineEvents = ref([]);
+      const itemTransactionForm = ref({item_id:'',from_owner:'',to_owner:'',chapter:1,description:''});
       const showSubplotForm = ref(false); const editingSubplot = ref(null); const selectedSubplot = ref(null);
       const showMapForm = ref(false); const mapForm = ref({name:'',type:'区域',description:'',atmosphere:''});
       const showItemForm = ref(false); const itemForm = ref({name:'',type:'weapon',rarity:'普通',description:'',plannedChapter:''});
@@ -107,6 +126,10 @@ export function createWriterApp() {
       const detectText = ref(''); const detecting = ref(false); const detectResult = ref(null); const detectChapter = ref(0);
       const evalRange = ref({from:1,to:3}); const evalLoading = ref(false); const evalResult = ref(null);
       const historyList = ref([]); const historyLoading = ref(false); const selectedHistory = ref(null); const taskContent = ref(''); const taskContentLoading = ref(false);
+      const projects = ref([]); const projectsLoading = ref(false); const exportHistory = ref([]);
+      const analysisTab = ref('overview'); const analysisLoading = ref('');
+      const continuityResult = ref(null); const eventGraphResult = ref(null); const postWriteAnalysis = ref(null);
+      const stateFrameResult = ref(null); const stateFrameSection = ref(1); const stateFrameSubsection = ref(1);
       const editingRule = ref(undefined); const ruleForm = ref({name:'',content:'',type:'global',priority:5});
       const inspirations = ref([]); const inspCat = ref('world_setting');
       const inspCategories = [
@@ -121,6 +144,16 @@ export function createWriterApp() {
 
       // ═══ Computed ═══
       const totalDraftWords = computed(() => draftBlocks.value.reduce((s,b) => s + (b.wordCount||0), 0));
+      const projectTaskId = computed(() => workspaceTaskId.value || taskId.value);
+      const saveStatusText = computed(() => ({local:'本地草稿',saving:'保存中',saved:'已保存',error:'保存失败'})[saveStatus.value] || '本地草稿');
+      const connectionStatusText = computed(() => ({online:'已连接',reconnecting:'重连中',offline:'连接中断'})[connectionState.value] || '已连接');
+      const projectionStatusText = computed(() => {
+        if (projectionStatus.value === 'critical') return '关键同步中';
+        if (projectionStatus.value === 'non_blocking') return '辅助同步中';
+        if (projectionStatus.value === 'complete') return commitStatus.value ? '版本已提交' : '同步完成';
+        if (projectionStatus.value === 'failed') return '同步异常';
+        return '';
+      });
       const totalSubsections = computed(() => { let c = 0; function w(ns) { for (let n of ns) { if (!n.children?.length) c++; else w(n.children); } } w(outline.value); return c; });
       const filteredChars = computed(() => { const q = charSearch.value.toLowerCase(); return libraryChars.value.filter(c => !q || c.name.toLowerCase().includes(q) || (c.personality||[]).some(p=>p.toLowerCase().includes(q))); });
       const selectedChars = computed(() => selectedCharIds.value.map(id => libraryChars.value.find(c => c.id===id)).filter(Boolean));
@@ -239,6 +272,131 @@ export function createWriterApp() {
         setTimeout(() => { const i = toasts.value.findIndex(t=>t.id===id); if(i>=0) toasts.value.splice(i,1); }, ms);
       }
 
+      function errorText(error, fallback) {
+        return error?.message ? fallback + '：' + error.message : fallback;
+      }
+      function flattenOutlineNodes() {
+        const nodes = [];
+        function flatten(items, parentId='') {
+          for (let i = 0; i < (items || []).length; i++) {
+            const node = items[i];
+            nodes.push({
+              id:node.id, parent_id:parentId, title:node.title || '',
+              description:node.description || '', key_points:node.key_points || [],
+              target_words:node.target_words || 2000, locked:node.locked || false,
+              status:node.status || 'draft', injections:node.injections || {},
+              event_contract:node.event_contract || null, sort_order:i,
+            });
+            if (node.children?.length) flatten(node.children, node.id);
+          }
+        }
+        flatten(outline.value);
+        return nodes;
+      }
+      async function ensureWorkspace() {
+        if (!workspaceTaskId.value) await createDraftTask();
+        return projectTaskId.value;
+      }
+      async function persistWorkspace({notify=false}={}) {
+        const id = await ensureWorkspace();
+        if (!id) throw new Error('工作区尚未创建');
+        saveStatus.value = 'saving';
+        try {
+          const saved = await API.patchWorkspace(id, {
+            topic:topic.value,
+            world_setting:worldSetting.value,
+            story_synopsis:storySynopsis.value,
+            reference_text:referenceText.value,
+            style_profile:styleProfile.value,
+            target_words_per_section:globalWordLimit.value,
+          });
+          workspaceTaskId.value = saved.workspace_task_id || workspaceTaskId.value || id;
+          if (saved.active_task_id) taskId.value = saved.active_task_id;
+          saveStatus.value = 'saved';
+          if (notify) toast('工作区已保存', 'success', 1600);
+          return saved;
+        } catch (error) {
+          saveStatus.value = 'error';
+          if (notify) toast(errorText(error, '工作区保存失败'), 'error');
+          throw error;
+        }
+      }
+      let workspaceSaveTimer = null;
+      function scheduleWorkspaceSave() {
+        saveState();
+        if (!workspaceTaskId.value) {
+          saveStatus.value = 'local';
+          return;
+        }
+        saveStatus.value = 'saving';
+        clearTimeout(workspaceSaveTimer);
+        workspaceSaveTimer = setTimeout(() => persistWorkspace().catch(() => {}), 900);
+      }
+      let draftEditSaveTimer = null;
+      function draftSnapshots() {
+        return draftBlocks.value
+          .filter(block => block.type === 'subsection' && block.text)
+          .map(block => ({
+            section:block.section,
+            subsection:block.subsection,
+            title:block.title || '',
+            text:block.text,
+          }));
+      }
+      function scheduleDraftEditSave() {
+        saveState();
+        if (!taskId.value) return;
+        saveStatus.value = 'saving';
+        clearTimeout(draftEditSaveTimer);
+        draftEditSaveTimer = setTimeout(async () => {
+          try {
+            await API.saveDraft(taskId.value, JSON.stringify(draftSnapshots()));
+            saveStatus.value = 'saved';
+          } catch (error) {
+            saveStatus.value = 'error';
+            toast(errorText(error, '正文自动保存失败'), 'error');
+          }
+        }, 700);
+      }
+      function beginDraftEdit(block) {
+        if (block._editBaseline == null) block._editBaseline = block.text || '';
+      }
+      function onDraftInput(block) {
+        block.wordCount = countCjk(block.text || '');
+        scheduleDraftEditSave();
+      }
+      function revertDraftEdit(block) {
+        if (block._editBaseline == null) return;
+        block.text = block._editBaseline;
+        block.wordCount = countCjk(block.text || '');
+        scheduleDraftEditSave();
+        toast('已回退本次正文编辑', 'info');
+      }
+      async function reviseDraftBlock(block) {
+        const key = block.section + '-' + block.subsection;
+        const instruction = String(revisionInstructions[key] || '').trim();
+        if (!instruction) { toast('请输入修订要求', 'error'); return; }
+        if (!taskId.value || !taskDone.value) { toast('任务完成后才能发起定向修订', 'error'); return; }
+        revisionLoading.value = key;
+        try {
+          beginDraftEdit(block);
+          const result = await API.reviseSubsection(taskId.value, {
+            section:block.section,
+            subsection:block.subsection,
+            instruction,
+          });
+          block.text = result.revised || block.text;
+          block.wordCount = countCjk(block.text || '');
+          revisionInstructions[key] = '';
+          scheduleDraftEditSave();
+          toast('小节修订完成', 'success');
+        } catch (error) {
+          toast(errorText(error, '小节修订失败'), 'error');
+        } finally {
+          revisionLoading.value = '';
+        }
+      }
+
       // ═══ Style ═══
       async function applyStylePreset(name) { try{const d=await API.applyPreset(name);const p=d.style_profile||d;Object.keys(styleProfile.value).forEach(k=>{if(k in p)styleProfile.value[k]=p[k]});styleProfile.value.preset_name=name;toast('已应用风格: '+name,'success')}catch(e){toast('加载失败','error')} }
       async function analyzeStyle() { if(!referenceText.value.trim()){toast('请先填入参考文本','error');return} analyzingStyle.value=true; agentStatus.value='正在分析参考文本风格...'; try{const d=await API.analyzeStyle(referenceText.value);const p=d.style_profile||d;Object.keys(styleProfile.value).forEach(k=>{if(k in p)styleProfile.value[k]=p[k]});analyzedStyleBrief.value=p.style_brief||'';toast('风格提取完成','success')}catch(e){toast('提取失败','error')}finally{analyzingStyle.value=false;agentStatus.value=''} }
@@ -282,9 +440,9 @@ export function createWriterApp() {
         const info = findParentAndIndex(outline.value, node.id);
         if (!info) return;
         let stagedCount = 1;
-        if (taskId.value) {
+        if (projectTaskId.value) {
           try {
-            const d = await API.stageDeleteNode(taskId.value, {
+            const d = await API.stageDeleteNode(projectTaskId.value, {
               node: JSON.parse(JSON.stringify(node)),
               parent_id: info.parentNode?.id || '',
               index: info.index
@@ -313,26 +471,9 @@ export function createWriterApp() {
         }
       }
       async function saveOutlineFn() {
-        if (!taskId.value) { await createDraftTask(); }
+        if (!projectTaskId.value) { await createDraftTask(); }
         try {
-          // 转换为 DB 格式: [{id, parent_id, title, ...}]，保留 id 和父子关系
-          const flatNodes = [];
-          function flatten(ns, parentId) {
-            for (let i = 0; i < ns.length; i++) {
-              const n = ns[i];
-              flatNodes.push({
-                id: n.id, parent_id: parentId, title: n.title || '',
-                description: n.description || '', key_points: n.key_points || [],
-                target_words: n.target_words || 2000, locked: n.locked || false,
-                status: n.status || 'draft', injections: n.injections || {},
-                event_contract: n.event_contract || null,
-                sort_order: i,
-              });
-              if (n.children && n.children.length) flatten(n.children, n.id);
-            }
-          }
-          flatten(outline.value, '');
-          const saved = await API.saveOutlineNodes(taskId.value, flatNodes);
+          const saved = await API.saveOutlineNodes(projectTaskId.value, flattenOutlineNodes());
           const localById = new Map();
           function indexLocal(ns) {
             for (const n of ns) {
@@ -371,7 +512,7 @@ export function createWriterApp() {
           }
           flatten(outline.value, '');
           const singleChapterBudget = outline.value.length === 1 ? Number(globalWordLimit.value || 0) : null;
-          const result = await API.getOutlineBudgetAdvice(taskId.value || 'preview', {
+          const result = await API.getOutlineBudgetAdvice(projectTaskId.value || 'preview', {
             nodes,
             style_profile: {
               sentence_preference:styleProfile.value.sentence_preference,
@@ -514,13 +655,13 @@ export function createWriterApp() {
           toast('请先在角色管理中选中参与写作的角色', 'info');
           return;
         }
-        if (!taskId.value) await createDraftTask();
+        if (!projectTaskId.value) await createDraftTask();
         showArcProjection.value = true;
         arcProjectionLoading.value = true;
         arcProjectionError.value = '';
         try {
           const result = await API.previewArcProjection(
-            taskId.value, buildArcProjectionPayload()
+            projectTaskId.value, buildArcProjectionPayload()
           );
           arcProjectionChapters.value = prepareArcProjectionDrafts(
             result.chapters || []
@@ -541,7 +682,7 @@ export function createWriterApp() {
         arcProjectionSavingId.value = candidate.projection_id;
         arcProjectionError.value = '';
         try {
-          const result = await API.confirmArcProjection(taskId.value, {
+          const result = await API.confirmArcProjection(projectTaskId.value, {
             ...buildArcProjectionPayload(),
             projection_id:candidate.projection_id,
             event_text_hash:candidate.event_text_hash,
@@ -564,9 +705,9 @@ export function createWriterApp() {
         return ({proposed:'待确认',confirmed:'已确认',stale:'来源已变化'})[status] || status;
       }
       async function undoDeleteFn() {
-        if (!taskId.value) return;
+        if (!projectTaskId.value) return;
         try {
-          const d = await API.undoDeleteNode(taskId.value);
+          const d = await API.undoDeleteNode(projectTaskId.value);
           const entry = d.entry;
           if (!entry) return;
           const node = entry.node;
@@ -588,26 +729,29 @@ export function createWriterApp() {
           toast('已撤销删除', 'success');
         } catch(e) { toast('没有可撤销的删除', 'error'); }
       }
-      async function loadOutlineFromProject() {
-        if (!taskId.value) return;
+      async function loadOutlineFromProject(isCurrent=()=>true, sourceTaskId=projectTaskId.value, initializeDefault=true) {
+        if (!sourceTaskId) return false;
+        const projectId = sourceTaskId;
         try {
-          const d = await API.getOutlineNodes(taskId.value);
+          const d = await API.getOutlineNodes(projectId);
+          if (!isCurrent() || (sourceTaskId===taskId.value ? taskId.value !== projectId : projectTaskId.value !== projectId)) return false;
           if (d.tree && d.tree.length) {
             function initTree(ns) { for (const n of ns) { n.collapsed = false; if (n.children) initTree(n.children); } }
             initTree(d.tree);
             outline.value = d.tree;
-            return;
+            return true;
           }
           if (d.nodes && d.nodes.length) {
             const tree = rebuildTreeFromNodes(d.nodes);
-            if (tree.length) { outline.value = tree; return; }
+            if (tree.length) { outline.value = tree; return true; }
           }
           // 无数据：当前 outline 已空则初始化默认
-          if (!outline.value || !outline.value.length) {
+          if (initializeDefault && (!outline.value || !outline.value.length)) {
             outline.value = OT.initOutlineDefaults();
             saveState();
           }
-        } catch(e) { console.error('loadOutlineFromProject failed:', e); }
+          return Boolean(outline.value?.length);
+        } catch(e) { console.error('loadOutlineFromProject failed:', e); return false; }
       }
       function rebuildTreeFromNodes(flatNodes) {
         const map = {};
@@ -765,7 +909,7 @@ export function createWriterApp() {
         if (!node._plotCards) node._plotCards = [];
         node._plotCards.push({type:subType, title:c.title, summary:c.summary});
         // 写入对应元素库
-        const pid = taskId.value || taskId.value;
+        const pid = projectTaskId.value;
         try {
           if (subType === 'meet_character' && c.content?.character) {
             await API.createCharacter({...c.content.character, task_id: pid});
@@ -836,7 +980,7 @@ export function createWriterApp() {
       function expandAll() { OT.expandAll(outline.value); }
       function queueAll() { function w(ns){for(const n of ns){if(!n.children?.length)n.status='queued';else w(n.children)}} w(outline.value); toast('全部章节已加入队列','success'); }
       function dequeueAll() { function w(ns){for(const n of ns){if(!n.children?.length)n.status='draft';else w(n.children)}} w(outline.value); toast('全部章节已移出队列','info'); }
-      function toggleLeafStatus(node) { if(node.status==='done')node.status='queued';else if(node.status==='queued')node.status='draft';else node.status='queued';if(taskId.value&&taskId.value){const flatNodes=[];function f(ns,p){for(let i=0;i<ns.length;i++){const n=ns[i];flatNodes.push({id:n.id,parent_id:p,title:n.title||'',description:n.description||'',key_points:n.key_points||[],target_words:n.target_words||2000,locked:n.locked||false,status:n.status||'draft',injections:n.injections||{},event_contract:n.event_contract||null,sort_order:i});if(n.children)f(n.children,n.id)}}f(outline.value,'');API.saveOutlineNodes(taskId.value,flatNodes).catch(()=>{})}}
+      function toggleLeafStatus(node) { if(node.status==='done')node.status='queued';else if(node.status==='queued')node.status='draft';else node.status='queued';if(projectTaskId.value){API.saveOutlineNodes(projectTaskId.value,flattenOutlineNodes()).catch(error=>toast(errorText(error,'大纲状态保存失败'),'error'))}}
       function leafStatusIcon(s) { return s==='done'?'✅':(s==='draft'?'⚪':'🟡'); }
       function leafStatusColor(s) { return s==='done'?'var(--green)':(s==='draft'?'var(--muted)':'var(--gold)'); }
       function leafStatusTitle(s) { return s==='done'?'已完成(点击重新入队)':(s==='draft'?'点击加入写作队列':'点击移出写作队列'); }
@@ -849,40 +993,96 @@ export function createWriterApp() {
       async function doImportOutline() { importing.value=true;importError.value='';importReport.value=null; try{const d=await API.importOutline(importText.value,topic.value,worldSetting.value,storySynopsis.value,importMaxDepth.value);const p=d.outline||d||[];if(p.length){function initTree(ns){for(const n of ns){n.collapsed=false;if(n.children)initTree(n.children)}}initTree(p);if(importReplace.value||!outline.value.length){outline.value=p}else{const lastVol=outline.value[outline.value.length-1];if(lastVol&&lastVol.children){for(const n of p){if(n.children?.length){lastVol.children.push(...n.children)}else{lastVol.children.push(n)}}}else{outline.value.push(...p)}}const r=d.report||null;importReport.value=r;const hasDrops=r?.dropped_lines?.length;const parts=[r?.parsed_volumes&&r.parsed_volumes+'卷',r?.parsed_chapters&&r.parsed_chapters+'章',r?.parsed_leaves&&r.parsed_leaves+'节'].filter(Boolean);if(!hasDrops){showImportModal.value=false;importText.value=''}toast((parts.length?parts.join(' '):'导入完成')+(hasDrops?'，丢弃'+hasDrops+'行（详见弹窗）':''),hasDrops?'warn':'success')}else importError.value='未能解析大纲结构'}catch(e){importError.value='导入失败: '+e.message}finally{importing.value=false} }
 
       // ═══ Writing ═══
-      function resetWriting() { taskId.value='';statusText.value='就绪';statusColor.value='#888';tokenUsage.value=0;tokenCost.value=null;draftBlocks.value=[];isGenerating.value=false;generatingBlockIdx.value=-1;completedSections.value=0;taskDone.value=false;rawStatus.value=''; }
+      function resetWriting() { statusText.value='就绪';statusColor.value='#888';tokenUsage.value=0;tokenCost.value=null;draftBlocks.value=[];isGenerating.value=false;generatingBlockIdx.value=-1;completedSections.value=0;taskDone.value=false;rawStatus.value='';projectionStatus.value='idle';commitStatus.value=''; }
       let pollTimers = { status:null, stream:null };
-      function stopPolling() { isGenerating.value=false; clearTimeout(pollTimers.status); clearTimeout(pollTimers.stream); }
+      let activePollingSession = null;
+      let lastRuntimeAvailable = true;
+      let taskRestorationGeneration = 0;
+      const RESTORE_POLLING_INACTIVE_STATUSES = new Set(['completed','failed','error','stopped','draft']);
+      function stopPolling() {
+        isGenerating.value=false;
+        clearTimeout(pollTimers.status);
+        clearTimeout(pollTimers.stream);
+        if(activePollingSession){
+          clearTimeout(activePollingSession.healthTimer);
+          activePollingSession.resolveStatusReady?.(false);
+          activePollingSession.retire();
+          activePollingSession=null;
+        }
+        connectionRetryAvailable.value=false;
+      }
+      function beginTaskRestoration(){
+        stopPolling();
+        taskRestorationGeneration += 1;
+        return taskRestorationGeneration;
+      }
+      function isCurrentTaskRestoration(generation){return generation===taskRestorationGeneration}
+      function applyRestoredTaskState(restoredSession, options={deferStream:false}){
+        if(!taskId.value||restoredSession.stale)return;
+        const snapshot=restoredSession.snapshot;
+        if(snapshot?.outlinePresent&&Array.isArray(snapshot.outline)) outline.value=flatToTree(snapshot.outline);
+        if(snapshot?.draftPresent&&snapshot.draft!==undefined&&snapshot.draft!==null&&outline.value.length){
+          const restored=buildRestoredDraftBlocks({flatOutline:treeToFlat(outline.value,{}),draft:snapshot.draft,countWords:countCjk,defaultTargetWords:globalWordLimit.value});
+          if(restored.ready)draftBlocks.value=restored.blocks;
+        }
+        if(restoredSession.loadFailed||!RESTORE_POLLING_INACTIVE_STATUSES.has(restoredSession.status?.status)){
+          statusText.value='恢复连接中...';
+          return beginPolling(null,true,{deferStream:options.deferStream});
+        }else if(restoredSession.status?.status==='completed'){
+          rawStatus.value='completed';statusText.value='完成';statusColor.value='#4caf50';taskDone.value=true;
+        }
+      }
+      function releaseRestoredTaskStream(generation){
+        if(!isCurrentTaskRestoration(generation))return;
+        activePollingSession?.releaseStreamAfterHydration?.();
+      }
+      async function waitForRestoredStatus(generation){
+        while(isCurrentTaskRestoration(generation)){
+          const session=activePollingSession;
+          if(!session?.statusReady)return false;
+          if(await session.statusReady)return isCurrentTaskRestoration(generation);
+        }
+        return false;
+      }
 
       async function startWriting() {
         if(!topic.value.trim()&&!referenceText.value.trim()){toast('请输入主题或参考文本','error');return}
-        // 检测续写场景: 有旧 taskId, 未完成, 有排队章节
+        // 已有正文时走续写；工作区 ID 始终保持稳定。
         const hasContent = draftBlocks.value.some(b=>b.type==='subsection'&&b.wordCount>0);
-        const isResuming = taskId.value && !taskDone.value && hasContent && queuedCount.value > 0;
+        const isResuming = taskId.value && hasContent && queuedCount.value > 0;
         stopPolling();
         if(!isResuming){ resetWriting(); }
-        if(!taskId.value){ await createDraftTask(); }
+        await ensureWorkspace();
         statusText.value='提交中...';
         try{
+          await persistWorkspace();
+          await saveOutlineFn();
           if(isResuming){
             const flat=treeToFlat(outline.value, {});
             const d=await API.continueWriting(taskId.value, {additional_outline:flat, target_words_per_section:globalWordLimit.value, mode:mode.value});
-            taskId.value=d.task_id; statusText.value='续写中...';
+            taskId.value=d.task_id; workspaceTaskId.value=d.workspace_task_id||workspaceTaskId.value; statusText.value='续写中...';
             beginPolling(flat, true); // keepExisting=true: 保留已写正文
           } else {
-            // 非续写但 draftBlocks 有内容：不清除，直接复用
-            if(!draftBlocks.value.length||!draftBlocks.value.some(b=>b.type==='subsection'&&b.text)){
-              resetWriting();
-            }
             const flat=treeToFlat(outline.value, {});
             const chars=selectedCharIds.value.map(id=>libraryChars.value.find(c=>c.id===id)).filter(Boolean);
-            const d=await API.startWriting({task_id:taskId.value,topic:topic.value,reference_text:referenceText.value||topic.value,target_words_per_section:globalWordLimit.value,characters:chars,world_setting:worldSetting.value,story_synopsis:storySynopsis.value,style_profile:styleProfile.value,outline:flat},mode.value);
-            taskId.value=d.task_id; statusText.value='生成中...'; beginPolling(flat);
+            const d=await API.startWriting({task_id:workspaceTaskId.value,topic:topic.value,reference_text:referenceText.value||topic.value,target_words_per_section:globalWordLimit.value,characters:chars,world_setting:worldSetting.value,story_synopsis:storySynopsis.value,style_profile:styleProfile.value,outline:flat},mode.value);
+            taskId.value=d.task_id; workspaceTaskId.value=d.workspace_task_id||workspaceTaskId.value||d.task_id; statusText.value='生成中...'; beginPolling(flat);
           }
-        }catch(e){statusText.value='提交失败';statusColor.value='#f44336';toast('提交失败','error')}
+        }catch(e){statusText.value='提交失败';statusColor.value='#f44336';toast(errorText(e,'提交失败'),'error')}
       }
 
-      function beginPolling(flatOutline, keepExisting=false) {
+      function beginPolling(flatOutline, keepExisting=false, options={manualRetry:false,deferStream:false}) {
         stopPolling(); isGenerating.value=true;
+        const pollingTaskId = taskId.value;
+        const controller = createTaskConnectionController({initialRuntimeAvailable:lastRuntimeAvailable});
+        const session = createTaskPollingSession(pollingTaskId, controller);
+        const streamGate = createTaskRestorationStreamGate({deferred:options.deferStream});
+        session.restorationStreamGate = streamGate;
+        let resolveStatusReady;
+        session.statusReady = new Promise(resolve=>{resolveStatusReady=resolve});
+        session.resolveStatusReady=value=>{if(!resolveStatusReady)return;const resolve=resolveStatusReady;resolveStatusReady=null;resolve(value)};
+        activePollingSession = session;
+        if(options.manualRetry) controller.beginManualRetry();
         if (!keepExisting) {
           draftBlocks.value=[];
           if(flatOutline&&flatOutline.length){for(const sec of flatOutline){draftBlocks.value.push({type:'section',title:'第'+sec.section+'节：'+(sec.title||''),text:'',wordCount:0,targetWords:0});for(const sub of(sec.subsections||[])){draftBlocks.value.push({type:'subsection',title:sub.title||'',text:'',wordCount:0,targetWords:sub.target_words||2000,section:sec.section,subsection:sub.subsection})}}}
@@ -893,23 +1093,38 @@ export function createWriterApp() {
           function findLeaf(ns,targetIdx){let idx=0;for(const n of ns){if(!n.children?.length){idx++;if(idx===targetIdx){n.status=status;return true}}else if(n.children&&findLeaf(n.children,targetIdx))return true}return false}
           findLeaf(vols[section-1].children||[],subsection);
         }
-        let lastId='0-0'; let stopped=false;
+        let stopped=false;
         function stop(){stopped=true;stopPolling()}
         function findBlock(sec,sub){return draftBlocks.value.findIndex(b=>b.section==sec&&b.subsection==sub)}
+        function retryDelay(failures, base){return Math.min(15000,base*Math.pow(2,Math.min(5,failures)))}
+        function syncConnectionState(){if(!session.isActive()||activePollingSession!==session)return;const snapshot=controller.snapshot();connectionState.value=snapshot.state;connectionRetryAvailable.value=snapshot.canManualRetry;clearTimeout(session.healthTimer);if(snapshot.nextTransitionAt!==null){session.healthTimer=setTimeout(syncConnectionState,Math.max(0,snapshot.nextTransitionAt-Date.now()))}}
+        function noteSuccess(kind){const wasReconnecting=connectionState.value!=='online';controller.recordSuccess(kind);if(kind==='status')session.resolveStatusReady(true);syncConnectionState();if(wasReconnecting&&connectionState.value==='online')toast('连接已恢复','success',1600)}
+        function noteFailure(kind,error){if(!session.isActive()||activePollingSession!==session)return;controller.recordFailure(kind);syncConnectionState();if(controller.failureCount(kind)===3)toast(errorText(error,'连接中断，正在自动重连'),'error',4000)}
+        function updateProjectionState(d){commitStatus.value=d.commit_status||'';const critical=d.critical_projection_status||'';const nonBlocking=d.non_blocking_projection_status||'';if(d.status==='awaiting_critical_projection'||(critical&&!['completed','complete','succeeded','committed'].includes(critical))){projectionStatus.value='critical'}else if(nonBlocking&&!['completed','complete','succeeded'].includes(nonBlocking)){projectionStatus.value='non_blocking'}else if(commitStatus.value||critical||nonBlocking){projectionStatus.value='complete'}else{projectionStatus.value='idle'}}
+        async function saveDraftSnapshot(){const snaps=draftBlocks.value.filter(b=>b.type==='subsection'&&b.text).map(b=>({section:b.section,subsection:b.subsection,text:b.text.slice(0,3000)}));if(!snaps.length)return;saveStatus.value='saving';try{await API.saveDraft(pollingTaskId,JSON.stringify(snaps));saveStatus.value='saved'}catch(error){saveStatus.value='error';throw error}}
         let _pollCnt=0;
-        async function ps(){if(stopped||!taskId.value)return;try{const d=await API.getStatus(taskId.value);rawStatus.value=d.status;statusText.value=d.progress||d.status;if(d.token_usage!=null)tokenUsage.value=d.token_usage;if(d.token_cost!=null)tokenCost.value=d.token_cost;if(d.outline?.length&&!outline.value.length)outline.value=flatToTree(d.outline);if(d.topic&&!topic.value)topic.value=d.topic;if(d.world_setting&&!worldSetting.value)worldSetting.value=d.world_setting;if(d.story_synopsis&&!storySynopsis.value)storySynopsis.value=d.story_synopsis;if(d.reference_text&&!referenceText.value)referenceText.value=d.reference_text;if(d.style_profile&&!styleProfile.value)styleProfile.value=d.style_profile;// 每10轮刷新世界元素
-        _pollCnt++;if(_pollCnt%5===0){loadCharacters();loadFactions();loadMap();loadItems();loadTimeline();loadForeshadowings();loadSubplots();loadRelations()}if(_pollCnt%10===0&&taskId.value){try{const snaps=draftBlocks.value.filter(b=>b.type==='subsection'&&b.text).map(b=>({section:b.section,subsection:b.subsection,text:b.text.slice(0,3000)}));if(snaps.length)API.saveDraft(taskId.value,JSON.stringify(snaps)).catch(()=>{})}catch(e){}}// 每10轮保存草稿(结构化)
+        async function ps(){if(stopped||!pollingTaskId||!session.isActive()||activePollingSession!==session)return;try{const d=await API.getStatus(pollingTaskId,{signal:session.signal});if(!session.isActive()||activePollingSession!==session)return;const runtimeWasAvailable=lastRuntimeAvailable;lastRuntimeAvailable = d.runtime_available !== false;controller.setRuntimeAvailable(lastRuntimeAvailable);if(!runtimeWasAvailable&&lastRuntimeAvailable){clearTimeout(pollTimers.stream);pollTimers.stream=setTimeout(pstr,0)}noteSuccess('status');rawStatus.value=d.status;statusText.value=d.progress||d.status;if(d.workspace_task_id)workspaceTaskId.value=d.workspace_task_id;if(d.active_task_id&&d.active_task_id!==pollingTaskId){const deferStream=!streamGate.isReady();taskId.value=d.active_task_id;stop();statusText.value='切换到最新任务...';beginPolling(null,true,{deferStream});return}updateProjectionState(d);if(d.token_usage!=null)tokenUsage.value=d.token_usage;if(d.token_cost!=null)tokenCost.value=d.token_cost;if(Object.prototype.hasOwnProperty.call(d,'outline')&&Array.isArray(d.outline))outline.value=flatToTree(d.outline);if(d.topic&&!topic.value)topic.value=d.topic;if(d.world_setting&&!worldSetting.value)worldSetting.value=d.world_setting;if(d.story_synopsis&&!storySynopsis.value)storySynopsis.value=d.story_synopsis;if(d.reference_text&&!referenceText.value)referenceText.value=d.reference_text;if(d.style_profile&&!styleProfile.value)styleProfile.value=d.style_profile;
+        _pollCnt++;if(_pollCnt%20===0){loadFactions();loadMap();loadItems();loadTimeline();loadForeshadowings();loadSubplots();loadRelations()}if(_pollCnt%10===0){saveDraftSnapshot().catch(()=>{})}
         // 刷新恢复：draftBlocks 空时从后端拉取已写正文
-        if(!draftBlocks.value.length&&d.draft&&d.draft.length>100){draftBlocks.value=[{type:'section',title:'已写内容',text:'',wordCount:0,targetWords:0},{type:'subsection',title:'',text:d.draft,wordCount:countCjk(d.draft),targetWords:globalWordLimit.value,section:0,subsection:0}];statusText.value='已恢复 '+countCjk(d.draft)+' 字';saveState()}if(d.constraints){}if(d.status==='completed'){stop();statusText.value='完成';statusColor.value='#4caf50';taskDone.value=true;saveState();loadForeshadowings();loadCharacters();loadFactions();loadMap();loadItems();loadSubplots();loadRelations();showCompleteModal.value=true;loadReviewResults();return}
+        if(!draftBlocks.value.length&&Object.prototype.hasOwnProperty.call(d,'draft')&&d.draft!==undefined&&d.draft!==null){const restored=buildRestoredDraftBlocks({flatOutline:treeToFlat(outline.value,{}),draft:d.draft,countWords:countCjk,defaultTargetWords:globalWordLimit.value});draftBlocks.value=restored.ready?restored.blocks:[{type:'section',title:'已写内容',text:'',wordCount:0,targetWords:0},{type:'subsection',title:'',text:String(d.draft),wordCount:countCjk(String(d.draft)),targetWords:globalWordLimit.value,section:0,subsection:0}];statusText.value='已恢复 '+countCjk(String(d.draft))+' 字';saveState()}if(d.constraints){}if(d.status==='completed'){stop();statusText.value='完成';statusColor.value='#4caf50';taskDone.value=true;saveState();loadForeshadowings();loadCharacters();loadFactions();loadMap();loadItems();loadSubplots();loadRelations();showCompleteModal.value=true;loadReviewResults();return}
         if(d.ai_detect_log?.length)aiDetectLog.value=d.ai_detect_log;
         if(d.section_reviews?.length)sectionReviewStatus.value=d.section_reviews;
-        if(d.status==='failed'||d.status==='error'){stop();statusText.value='失败';statusColor.value='#f44336';return}if(d.status==='stopped'){stop();return}if(d.status==='awaiting_queue'){stop();statusText.value='等待排队 - 勾选大纲节点后继续';statusColor.value='var(--gold)';isGenerating.value=false;taskDone.value=false;return}awaitingConfirm.value=d.status?.includes('awaiting')||false;if(awaitingConfirm.value)confirmPhase.value=d.status?.includes('outline')?'outline':'section'}catch(e){}if(!stopped)pollTimers.status=setTimeout(ps,1000)}
-        async function pstr(){if(stopped||!taskId.value)return;try{const d=await API.getStream(taskId.value,lastId);lastId=d.last_id;for(const[,evt]of(d.events||[])){if(stopped)break;if(evt.event==='section_start'||evt==='section_start'){const i=findBlock(evt.section,evt.subsection);if(i>=0){generatingBlockIdx.value=i;draftBlocks.value[i].text=''}}else if(evt.event==='token'||evt==='token'){const i=findBlock(evt.section,evt.subsection);if(i>=0){draftBlocks.value[i].text+=(evt.token||evt.data||'');draftBlocks.value[i].wordCount=countCjk(draftBlocks.value[i].text)}}else if(evt.event==='section_end'||evt==='section_end'){const i=findBlock(evt.section,evt.subsection);if(i>=0){draftBlocks.value[i].text=evt.text||evt.data||draftBlocks.value[i].text;draftBlocks.value[i].wordCount=countCjk(draftBlocks.value[i].text)}markLeafStatus(evt.section,evt.subsection,'done');generatingBlockIdx.value=-1;completedSections.value=Math.max(completedSections.value,evt.section||0)}else if(evt.event==='done'||evt==='done'){stop();taskDone.value=true;saveState();loadForeshadowings();loadCharacters();loadFactions();loadMap();loadItems();loadSubplots();loadRelations();showCompleteModal.value=true;loadReviewResults();return}}if(d.status==='completed'||d.status==='failed'){stop();return}}catch(e){}if(!stopped)pollTimers.stream=setTimeout(pstr,300)}
+        if(d.status==='failed'||d.status==='error'){stop();projectionStatus.value='failed';statusText.value=d.error||'失败';statusColor.value='#f44336';return}if(d.status==='stopped'){stop();return}if(d.status==='awaiting_queue'){stop();statusText.value='等待排队 - 勾选大纲节点后继续';statusColor.value='var(--gold)';isGenerating.value=false;taskDone.value=false;return}if(d.status==='awaiting_critical_projection'){statusText.value='内容已保存，关键同步待恢复';statusColor.value='var(--gold)'}awaitingConfirm.value=d.status?.includes('awaiting')&&!d.status?.includes('projection')||false;if(awaitingConfirm.value)confirmPhase.value=d.status?.includes('outline')?'outline':'section'}catch(e){if(!session.isActive()||activePollingSession!==session)return;noteFailure('status',e)}if(!stopped&&session.isActive()&&activePollingSession===session)pollTimers.status=setTimeout(ps,controller.failureCount('status')?retryDelay(controller.failureCount('status'),1000):1000)}
+        async function pstr(){if(stopped||!pollingTaskId||!session.isActive()||activePollingSession!==session)return;if(!streamGate.isReady()||!controller.snapshot().shouldPollStream){pollTimers.stream=setTimeout(pstr,15000);return}try{const d=await API.getStream(pollingTaskId,streamGate.cursor(),{signal:session.signal});if(!session.isActive()||activePollingSession!==session)return;noteSuccess('stream');streamGate.recordCursor(d.last_id);for(const[,evt]of(d.events||[])){if(stopped||!session.isActive()||activePollingSession!==session)break;if(evt.event==='section_start'||evt==='section_start'){const i=findBlock(evt.section,evt.subsection);if(i>=0){generatingBlockIdx.value=i;draftBlocks.value[i].text=''}}else if(evt.event==='token'||evt==='token'){const i=findBlock(evt.section,evt.subsection);if(i>=0){draftBlocks.value[i].text+=(evt.token||evt.data||'');draftBlocks.value[i].wordCount=countCjk(draftBlocks.value[i].text)}}else if(evt.event==='section_end'||evt==='section_end'||evt.event==='canonical_subsection_committed'){const i=findBlock(evt.section,evt.subsection);if(i>=0){draftBlocks.value[i].text=evt.text||evt.data||draftBlocks.value[i].text;draftBlocks.value[i].wordCount=countCjk(draftBlocks.value[i].text)}markLeafStatus(evt.section,evt.subsection,'done');generatingBlockIdx.value=-1;completedSections.value=Math.max(completedSections.value,evt.section||0);if(evt.event==='canonical_subsection_committed'){commitStatus.value='committed';projectionStatus.value='non_blocking'}}else if(evt.event==='done'||evt==='done'){stop();taskDone.value=true;saveState();loadForeshadowings();loadCharacters();loadFactions();loadMap();loadItems();loadSubplots();loadRelations();showCompleteModal.value=true;loadReviewResults();return}}if(d.status==='completed'||d.status==='failed'){stop();return}}catch(e){if(!session.isActive()||activePollingSession!==session)return;noteFailure('stream',e)}if(!stopped&&session.isActive()&&activePollingSession===session)pollTimers.stream=setTimeout(pstr,controller.failureCount('stream')?retryDelay(controller.failureCount('stream'),300):300)}
+        session.releaseStreamAfterHydration=()=>{if(!session.isActive()||activePollingSession!==session||!streamGate.releaseAfterHydration())return;clearTimeout(pollTimers.stream);pollTimers.stream=setTimeout(pstr,0)};
+        syncConnectionState();
         ps(); pstr();
       }
 
-      async function sendDecisionFn(action,feedback=''){try{await API.sendDecision(taskId.value,confirmPhase.value,action,feedback);awaitingConfirm.value=false}catch(e){toast('操作失败','error')}}
+      async function sendDecisionFn(action,feedback=''){try{const d=await API.sendDecision(taskId.value,confirmPhase.value,action,feedback);awaitingConfirm.value=false;if(d.workspace_task_id)workspaceTaskId.value=d.workspace_task_id;if(d.new_task_id){stopPolling();taskId.value=d.new_task_id;statusText.value='继续执行中...';statusColor.value='var(--accent)';beginPolling(null,true)}return d}catch(e){toast(errorText(e,'操作失败'),'error');throw e}}
       async function stopWriting(){if(taskId.value){try{await sendDecisionFn('stop')}catch(e){}}stopPolling();isGenerating.value=false;taskDone.value=false;statusText.value='已停止';statusColor.value='#888'}
+      function retryConnection(){
+        if(!taskId.value || connectionRetryBusy.value) return;
+        connectionRetryBusy.value = true;
+        const deferStream=activePollingSession?.restorationStreamGate?.isReady()===false;
+        beginPolling(null,true,{manualRetry:true,deferStream});
+        connectionRetryBusy.value = false;
+      }
 
       // ═══ Cards + Chain-constrained Wizard (P8: 题材+全覆盖) ═══
       const selectedGenre = ref('');
@@ -990,10 +1205,10 @@ export function createWriterApp() {
       }
 
       async function adoptToProject(step, c){
-        const pid = taskId.value;
+        const pid = await ensureWorkspace();
         if(step==='world_setting'&&c.content){
           worldSetting.value = c.content.world_setting||'';
-          if(pid) { try{await API.saveWorldSetting(pid, c.content.world_setting||'')}catch(e){} }
+          try{await persistWorkspace()}catch(e){}
           toast('世界观已应用: '+c.title,'success');
         } else if(step==='protagonist'&&c.content){
           const name = c.content.name||'主角';
@@ -1044,7 +1259,7 @@ export function createWriterApp() {
             dir.character_interaction ? '角色互动: '+dir.character_interaction : '',
           ].filter(Boolean).join('; ');
           worldSetting.value = (worldSetting.value||'') + '\n\n【正文方向】\n' + (c.title||'') + '\n' + summary;
-          if(pid) { try{await API.saveWorldSetting(pid, worldSetting.value)}catch(e){} }
+          try{await persistWorkspace()}catch(e){}
           toast('正文方向已应用: '+c.title,'success');
         } else if(step==='supporting_characters'&&c.content){
           const chars = c.content.characters||[];
@@ -1089,15 +1304,67 @@ export function createWriterApp() {
 
       // ═══ Project ═══
       async function createDraftTask(){
-        if(taskId.value) return;
-        try{const d=await API.createTask();taskId.value=d.task_id;statusText.value='就绪';toast('新写作已创建','info',1500)}catch(e){toast('创建失败','error')}
+        if(workspaceTaskId.value) return workspaceTaskId.value;
+        try{const d=await API.createTask();workspaceTaskId.value=d.workspace_task_id||d.task_id;taskId.value=d.task_id;statusText.value='就绪';saveStatus.value='saved';toast('新写作已创建','info',1500);return workspaceTaskId.value}catch(e){toast(errorText(e,'创建失败'),'error');return ''}
       }
-      async function initTaskSession(){
-        if(!taskId.value) return;
-        await loadOutlineFromProject();
-        loadFactions(); loadMap(); loadItems();
-        try{const d=await API.getUndoCount(taskId.value);undoCount.value=d.count||0}catch(e){}
+      async function initTaskSession(generation=taskRestorationGeneration){
+        if(!taskId.value) return {status:null,loadFailed:false};
+        const requestedTaskId = taskId.value;
+        let status = null;
+        try{
+          status=await API.getStatus(requestedTaskId);
+          if(!isCurrentTaskRestoration(generation)) return {status:null,loadFailed:false,stale:true};
+          lastRuntimeAvailable = status.runtime_available !== false;
+          connectionState.value=connectionStateFromStatus(status);
+          const workspaceStatus=status;
+          const activeTaskId=status.active_task_id||requestedTaskId;
+          let activeStatus=status;
+          if(activeTaskId!==requestedTaskId){activeStatus=await API.getStatus(activeTaskId);if(!isCurrentTaskRestoration(generation))return {status:null,loadFailed:false,stale:true}}
+          const snapshot=resolveRestorationSnapshot({requestedTaskId,workspaceStatus,activeStatus});
+          workspaceTaskId.value=snapshot.workspaceTaskId;
+          taskId.value=snapshot.activeTaskId;
+          status=activeStatus;
+          updateRestoredWorkspace(activeStatus);
+          return {status,loadFailed:false,snapshot};
+        }catch(e){
+          if(!isCurrentTaskRestoration(generation)) return {status:null,loadFailed:false,stale:true};
+          workspaceTaskId.value=workspaceTaskId.value||requestedTaskId;connectionState.value='reconnecting';statusText.value='恢复连接中...';
+          return {status:null,loadFailed:true};
+        }
+        return {status,loadFailed:false,snapshot:resolveRestorationSnapshot({requestedTaskId,workspaceStatus:status,activeStatus:status})};
       }
+      async function hydrateTaskSession(generation){
+        const isCurrent=()=>isCurrentTaskRestoration(generation);
+        if(!isCurrent()||!projectTaskId.value) return;
+        if(!outline.value.length){
+          const loadedFromActive=await loadOutlineFromProject(isCurrent,taskId.value,false);
+          if(!loadedFromActive&&workspaceTaskId.value!==taskId.value)await loadOutlineFromProject(isCurrent,workspaceTaskId.value,false);
+        }
+        if(!isCurrent()) return;
+        void loadFactions(isCurrent); void loadMap(isCurrent); void loadItems(isCurrent);
+        void loadSubplots(isCurrent); void loadRelations(isCurrent); void loadForeshadowings(isCurrent);
+        const projectId=projectTaskId.value;
+        try{const d=await API.getUndoCount(projectId);if(isCurrent()&&projectTaskId.value===projectId)undoCount.value=d.count||0}catch(e){}
+      }
+      function restoreDurableDraftBlocks(generation, capturedWorkspaceId){
+        const capturedActiveTaskId=taskId.value;
+        const isCurrent=()=>lifecycleActive&&isCurrentTaskRestoration(generation)&&workspaceTaskId.value===capturedWorkspaceId&&taskId.value===capturedActiveTaskId;
+        return runDurableHydration({
+          isCurrent,
+          load:async()=>{
+            let outlineLoaded=Boolean(outline.value.length);
+            if(!outlineLoaded)outlineLoaded=await loadOutlineFromProject(isCurrent,capturedActiveTaskId,false);
+            if(!outlineLoaded&&capturedWorkspaceId!==capturedActiveTaskId)outlineLoaded=await loadOutlineFromProject(isCurrent,capturedWorkspaceId,false);
+            if(!outlineLoaded||!isCurrent())return {ready:false,blocks:[]};
+            const flatOutline=treeToFlat(outline.value,{});
+            const response=await API.getDraft(capturedActiveTaskId);
+            if(!isCurrent())return {ready:false,blocks:[]};
+            return buildRestoredDraftBlocks({flatOutline,draft:response?.draft,countWords:countCjk,defaultTargetWords:globalWordLimit.value});
+          },
+          apply:blocks=>{if(isCurrent())draftBlocks.value=blocks},
+        }).then(ready=>{if(ready&&isCurrent())releaseRestoredTaskStream(generation);return ready});
+      }
+      function updateRestoredWorkspace(data){if(data.topic)topic.value=data.topic;if(data.world_setting)worldSetting.value=data.world_setting;if(data.story_synopsis)storySynopsis.value=data.story_synopsis;if(data.reference_text)referenceText.value=data.reference_text;if(data.style_profile)styleProfile.value=data.style_profile;if(data.target_words_per_section)globalWordLimit.value=data.target_words_per_section}
 
       function nextWizardStep(){
         const wi = wizardStepKeys.indexOf(currentStep.value);
@@ -1129,10 +1396,10 @@ export function createWriterApp() {
 
       // ═══ Rules & FS ═══
       async function loadRules(){try{const d=await API.listRules();rules.value=d.rules||[]}catch(e){}}
-      async function loadForeshadowings(){try{let tid=taskId.value;if(!tid)return;let d=await API.listForeshadowings(tid);if(!(d.foreshadowings||[]).length&&taskId.value&&tid===taskId.value){d=await API.listForeshadowings(taskId.value||'')}foreshadowings.value=d.foreshadowings||[]}catch(e){}}
+      async function loadForeshadowings(isCurrent=()=>true){try{const tid=projectTaskId.value;if(!tid)return;const d=await API.listForeshadowings(tid);if(!isCurrent()||projectTaskId.value!==tid)return;foreshadowings.value=d.foreshadowings||[]}catch(e){}}
       const reviewTab = ref('section');
       async function loadReviewResults(){if(!taskId.value)return;reviewLoading.value=true;try{const d=await API.getStatus(taskId.value);if(d.review){const r=d.review;const secReviews=r.section_reviews||[];const sr=secReviews.find(s=>s.section===reviewChapter.value)||secReviews[reviewChapter.value-1]||{};const dims=[];if(sr.scores&&Object.keys(sr.scores).length>0){const labels={pace:'节奏',dialogue:'对话',description:'描写',tension:'张力',character_voice:'人物声音'};for(const[k,v]of Object.entries(sr.scores)){dims.push({key:k,label:labels[k]||k,score:v})}}reviewResults.value={global_score:r.global_score,chapter_scores:r.chapter_scores||[],tension_curve:r.tension_curve||'',pacing_issues:r.pacing_issues||[],style_adherence:r.style_adherence||'',subplot_health:r.subplot_health||[],character_arc_health:r.character_arc_health||[],top_3_actions:r.top_3_actions||[],global_strength:r.strength||'',global_weakness:r.weakness||'',global_suggestion:r.suggestion||'',character_consistency:r.character_consistency||'',character_arc_progress:r.character_arc_progress||'',section_reviews:secReviews,volume_title:sr.volume_title||'',leaf_titles:sr.leaf_titles||[],dimensions:dims,section_score:sr.score,highlight:sr.highlight||{},lowlight:sr.lowlight||{},consistency_notes:sr.consistency_notes||'',improvement:sr.improvement||'',rewrite_target:sr.rewrite_target||''}}else{reviewResults.value={}}reviewChapter.value=completedSections.value||1}catch(e){reviewResults.value={}}finally{reviewLoading.value=false}}
-      async function createFSFn(){const f=fsForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};try{await API.createForeshadowing({...f,task_id:taskId.value});fsForm.value={name:'',description:'',plant_chapter:1,resolve_chapter:null,importance:5};showFSForm.value=false;loadForeshadowings();toast('伏笔已创建','success')}catch(e){toast('创建失败','error')}}
+      async function createFSFn(){const f=fsForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};try{const tid=await ensureWorkspace();await API.createForeshadowing({...f,task_id:tid});fsForm.value={name:'',description:'',plant_chapter:1,resolve_chapter:null,importance:5};showFSForm.value=false;loadForeshadowings();toast('伏笔已创建','success')}catch(e){toast(errorText(e,'创建失败'),'error')}}
       async function saveRuleFn(){const f=ruleForm.value;if(!f.name.trim()||!f.content.trim()){toast('名称和内容不能为空','error');return};try{if(editingRule.value){await API.updateRule(editingRule.value.id,f);toast('规则已更新','success')}else{await API.createRule(f);toast('规则已创建','success')};editingRule.value=undefined;loadRules()}catch(e){toast('保存失败','error')}}
       async function deleteRuleFn(id){if(!confirm('确定删除此规则?'))return;try{await API.deleteRule(id);loadRules();toast('已删除','info')}catch(e){toast('删除失败','error')}}
       async function exportRules(){try{const d=await API.req('/api/rules/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(null)});const blob=new Blob([d.json],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rules.json';a.click();toast('已导出','success')}catch(e){toast('导出失败','error')}}
@@ -1144,10 +1411,13 @@ export function createWriterApp() {
       function useInspiration(item){drawCardsFn('world_setting');showInspiration.value=false;toast('已应用灵感: '+item.name,'info')}
 
       // ═══ Map/Subplot/Items/Timeline/AI Detect/Outline Eval ═══
-      async function loadMap(){try{const tid=taskId.value;if(!tid)return;const d=await API.fullMap(tid);mapNodes.value=d.nodes||[]}catch(e){}}
-      async function createMapNodeFn(){const f=mapForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};try{await API.createMapNode({...f,task_id:taskId.value});if(f.plannedChapter){injectElementToChapter(f.plannedChapter,'location',f.name);saveOutlineFn()}mapForm.value={name:'',type:'区域',description:'',atmosphere:'',plannedChapter:''};showMapForm.value=false;loadMap();toast('地点已创建','success')}catch(e){toast('创建失败','error')}}
-      async function loadSubplots(){try{const tid=taskId.value;if(!tid)return;const d=await API.listSubplots(tid);subplots.value=d.subplots||[];refreshSubplotBindings()}catch(e){}}
-      async function saveSubplotFn(){const f=subplotForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};f.task_id=taskId.value;f.elements=(f.elements||[]).map(e=>({element_type:e.element_type,name:e.name,description:e.description,chapter_binding:(e._chStr||'').split(/[,，]/).map(s=>parseInt(s.trim())).filter(Boolean)}));try{if(editingSubplot.value){await API.updateSubplot(editingSubplot.value.id,f);toast('支线已更新','success')}else{await API.createSubplot(f);toast('支线已创建','success')};showSubplotForm.value=false;editingSubplot.value=null;subplotForm.value={name:'',description:'',type:'character_arc',volume_start:1,volume_end:3,priority:5,elements:[]};loadSubplots()}catch(e){toast('保存失败','error')}}
+      async function loadMap(isCurrent=()=>true){try{const tid=projectTaskId.value;if(!tid)return;const d=await API.fullMap(tid);if(!isCurrent()||projectTaskId.value!==tid)return;mapNodes.value=d.nodes||[];mapEdges.value=d.edges||[];try{const route=await API.getMapRoute(tid);if(!isCurrent()||projectTaskId.value!==tid)return;mapRoute.value=route;mapRouteForm.value={chapter_start:route.chapter_start||1,chapter_end:route.chapter_end||100,path_nodes:route.path_nodes||[]}}catch(e){if(isCurrent()&&projectTaskId.value===tid)mapRoute.value=null}}catch(e){if(isCurrent())toast(errorText(e,'地图加载失败'),'error')}}
+      async function createMapNodeFn(){const f=mapForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};try{const tid=await ensureWorkspace();await API.createMapNode({...f,task_id:tid});if(f.plannedChapter){injectElementToChapter(f.plannedChapter,'location',f.name);saveOutlineFn()}mapForm.value={name:'',type:'区域',description:'',atmosphere:'',plannedChapter:''};showMapForm.value=false;loadMap();toast('地点已创建','success')}catch(e){toast(errorText(e,'创建失败'),'error')}}
+      async function createMapEdgeFn(){const f=mapEdgeForm.value;if(!f.source_id||!f.target_id){toast('请选择路线起点和终点','error');return}try{await API.createMapEdge({...f,task_id:await ensureWorkspace()});mapEdgeForm.value={source_id:'',target_id:'',type:'road',name:'',travel_time:'',distance:''};await loadMap();toast('路线已创建','success')}catch(e){toast(errorText(e,'路线创建失败'),'error')}}
+      async function saveMapRouteFn(){const path=(mapRouteForm.value.path_nodes||[]).filter(Boolean);if(!path.length){toast('路线至少包含一个地点','error');return}try{mapRoute.value=await API.setMapRoute({...mapRouteForm.value,path_nodes:path,task_id:await ensureWorkspace()});toast('主角路线已保存','success')}catch(e){toast(errorText(e,'路线保存失败'),'error')}}
+      async function loadSubplots(isCurrent=()=>true){try{const tid=projectTaskId.value;if(!tid)return;const d=await API.listSubplots(tid);if(!isCurrent()||projectTaskId.value!==tid)return;subplots.value=d.subplots||[];refreshSubplotBindings()}catch(e){}}
+      async function loadSubplotHeatMap(){try{const tid=projectTaskId.value;if(!tid)return;const total=Math.max(10,totalSubsections.value||50);const d=await API.getSubplotHeatMap(tid,total);subplotHeatMap.value=d.heat_map||[]}catch(e){toast(errorText(e,'支线热力加载失败'),'error')}}
+      async function saveSubplotFn(){const f=subplotForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};f.task_id=await ensureWorkspace();f.elements=(f.elements||[]).map(e=>({element_type:e.element_type,name:e.name,description:e.description,chapter_binding:(e._chStr||'').split(/[,，]/).map(s=>parseInt(s.trim())).filter(Boolean)}));try{if(editingSubplot.value){await API.updateSubplot(editingSubplot.value.id,f);toast('支线已更新','success')}else{await API.createSubplot(f);toast('支线已创建','success')};showSubplotForm.value=false;editingSubplot.value=null;subplotForm.value={name:'',description:'',type:'character_arc',volume_start:1,volume_end:3,priority:5,elements:[]};loadSubplots()}catch(e){toast(errorText(e,'保存失败'),'error')}}
       async function deleteSubplotFn(id){if(!confirm('删除此支线？'))return;try{await API.deleteSubplot(id);loadSubplots();toast('已删除','info')}catch(e){toast('删除失败','error')}}
       // ── 支线抽卡（独立UI）──
       const subplotCards = ref([]); const drawingSubplotCards = ref(false);
@@ -1184,7 +1454,7 @@ export function createWriterApp() {
             name: sp.name||'', description: sp.description||'', type: sp.type||'character_arc',
             volume_start: sp.volume_start||1, volume_end: sp.volume_end||3,
             priority: sp.priority||5, pov: sp.pov||'protagonist',
-            task_id: taskId.value,
+            task_id: await ensureWorkspace(),
             elements: (sp.elements||[]).map(e=>({element_type:e.element_type||'desire',name:e.name||'',description:e.description||'',chapter_binding:e.chapter_binding||[]}))
           });
           subplotCards.value.splice(i,1);
@@ -1192,77 +1462,72 @@ export function createWriterApp() {
           toast('支线已创建: '+(sp.name||c.title),'success');
         }catch(e){toast('采纳失败: '+e.message,'error')}
       }
-      async function loadItems(){try{const tid=taskId.value;if(!tid)return;const d=await API.req('/api/items?task_id='+tid);itemsList.value=d.items||[]}catch(e){}}
-      async function createItemFn(){const f=itemForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};try{await API.createItem({...f,task_id:taskId.value});if(f.plannedChapter){injectElementToChapter(f.plannedChapter,'item',f.name);saveOutlineFn()}itemForm.value={name:'',type:'weapon',rarity:'普通',description:'',plannedChapter:''};showItemForm.value=false;loadItems();toast('物品已创建','success')}catch(e){toast('创建失败','error')}}
-      async function loadTimeline(){try{const tid=taskId.value;if(!tid)return;const d=await API.req('/api/experience?task_id='+tid);timelineEvents.value=d.events||[]}catch(e){}}
+      async function loadItems(isCurrent=()=>true){try{const tid=projectTaskId.value;if(!tid)return;const d=await API.req('/api/items?task_id='+tid);if(!isCurrent()||projectTaskId.value!==tid)return;itemsList.value=d.items||[]}catch(e){}}
+      async function createItemFn(){const f=itemForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};try{const tid=await ensureWorkspace();await API.createItem({...f,task_id:tid});if(f.plannedChapter){injectElementToChapter(f.plannedChapter,'item',f.name);saveOutlineFn()}itemForm.value={name:'',type:'weapon',rarity:'普通',description:'',plannedChapter:''};showItemForm.value=false;loadItems();toast('物品已创建','success')}catch(e){toast(errorText(e,'创建失败'),'error')}}
+      async function recordItemTransactionFn(){const f=itemTransactionForm.value;if(!f.item_id){toast('请选择要转移的物品','error');return}try{await API.recordItemTransaction(f);itemTransactionForm.value={item_id:'',from_owner:'',to_owner:'',chapter:1,description:''};await loadItems();toast('物品流转已记录','success')}catch(e){toast(errorText(e,'物品流转失败'),'error')}}
+      async function loadTimeline(){try{const tid=projectTaskId.value;if(!tid)return;const d=await API.req('/api/experience?task_id='+tid);timelineEvents.value=d.events||[]}catch(e){}}
       async function loadHistory(){historyLoading.value=true;try{const d=await API.listHistory();historyList.value=d.tasks||[]}catch(e){}finally{historyLoading.value=false}}
       async function resumeTask(tid){
         if(!tid) return;
-        taskId.value=''; draftBlocks.value=[]; isGenerating.value=false; taskDone.value=false;
+        const generation=beginTaskRestoration();
+        taskId.value=''; workspaceTaskId.value=''; outline.value=[]; draftBlocks.value=[]; isGenerating.value=false; taskDone.value=false;
         generatingBlockIdx.value=-1; completedSections.value=0;
         taskId.value = tid;
-        try{
-          const d = await API.getStatus(tid);
-          if(d.topic) topic.value = d.topic;
-          if(d.world_setting) worldSetting.value = d.world_setting;
-          if(d.story_synopsis) storySynopsis.value = d.story_synopsis;
-          if(d.reference_text) referenceText.value = d.reference_text;
-          if(d.style_profile) styleProfile.value = d.style_profile;
-          if(d.target_words_per_section) globalWordLimit.value = d.target_words_per_section;
-          if(d.outline?.length && !outline.value.length) outline.value = flatToTree(d.outline);
-        }catch(e){}
-        await loadOutlineFromProject();
-        await loadCharacters();
-        await loadFactions();
-        try{loadSubplots();loadRelations();loadForeshadowings()}catch(e){}
-        try{
-          const dd = await API.getDraft(tid);
-          if(dd.draft && dd.draft.startsWith('[')) {
-            const snaps = JSON.parse(dd.draft);
-            const flat = treeToFlat(outline.value, {});
-            draftBlocks.value = [];
-            for(const sec of flat){
-              draftBlocks.value.push({type:'section',title:'第'+sec.section+'节：'+(sec.title||''),text:'',wordCount:0,targetWords:0,section:sec.section});
-              for(const sub of(sec.subsections||[])){
-                const snap = snaps.find(s=>s.section===sec.section&&s.subsection===sub.subsection);
-                const txt = snap?snap.text:'';
-                draftBlocks.value.push({type:'subsection',title:sub.title||'',text:txt,wordCount:countCjk(txt),targetWords:sub.target_words||2000,section:sec.section,subsection:sub.subsection});
-              }
-            }
-          }
-        }catch(e){}
+        const restoredSession=await initTaskSession(generation);
+        if(!isCurrentTaskRestoration(generation)||restoredSession.stale)return;
+        applyRestoredTaskState(restoredSession,{deferStream:true});
+        if(restoredSession.loadFailed&&!await waitForRestoredStatus(generation))return;
+        if(restoredSession.status?.outline?.length && !outline.value.length) outline.value = flatToTree(restoredSession.status.outline);
+        await hydrateTaskSession(generation);
+        if(!isCurrentTaskRestoration(generation))return;
+        void loadCharacters();
+        const capturedWorkspaceId=workspaceTaskId.value||tid;
+        void restoreDurableDraftBlocks(generation, capturedWorkspaceId);
         showHistory.value = false;
-        toast('任务已加载','success');
+        toast('任务恢复中','info');
       }
       async function deleteTaskFn(tid){
         if(!confirm('确定删除此任务？所有大纲和设定将丢失。')) return;
         try{await API.deleteTask(tid);loadHistory();toast('已删除','info')}catch(e){toast('删除失败','error')}
       }
-      async function loadOutlineVersions(){if(!taskId.value)return;try{const d=await API.getOutlineVersions(taskId.value);outlineVersions.value=d.versions||[]}catch(e){}}
-      async function restoreOutlineVersion(vid){if(!taskId.value||!confirm('恢复此版本将覆盖当前大纲，确定？'))return;try{await API.restoreOutlineVersion(taskId.value,vid);await loadOutlineFromProject();if(!outline.value.length||!outline.value[0].children?.length){toast('大纲数据为空，请检查数据库','warn');return}showOutlineVersions.value=false;toast('大纲已恢复','success')}catch(e){toast('恢复失败','error')}}
-      async function loadFactions(){const tid=taskId.value;if(!tid)return;try{const d=await API.listFactions(tid);factionsList.value=(d.factions||[]).map(f=>({...f,members_str:(f.members||[]).join(', ')}))}catch(e){}}
-      async function saveFactionFn(){const f=factionForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};f.task_id=taskId.value;f.members=(f.members_str||'').split(/[,，]/).map(s=>s.trim()).filter(Boolean);try{if(editingFaction.value){await API.updateFaction(editingFaction.value.id,f);toast('势力已更新','success')}else{await API.createFaction(f);toast('势力已创建','success')};if(f.plannedChapter){injectElementToChapter(f.plannedChapter,'faction',f.name);saveOutlineFn()}editingFaction.value=null;loadFactions()}catch(e){toast('保存失败','error')}}
+      async function loadOutlineVersions(){if(!projectTaskId.value)return;try{const d=await API.getOutlineVersions(projectTaskId.value);outlineVersions.value=d.versions||[]}catch(e){}}
+      async function restoreOutlineVersion(vid){if(!projectTaskId.value||!confirm('恢复此版本将覆盖当前大纲，确定？'))return;try{await API.restoreOutlineVersion(projectTaskId.value,vid);await loadOutlineFromProject();if(!outline.value.length||!outline.value[0].children?.length){toast('大纲数据为空，请检查数据库','warn');return}showOutlineVersions.value=false;toast('大纲已恢复','success')}catch(e){toast(errorText(e,'恢复失败'),'error')}}
+      async function loadFactions(isCurrent=()=>true){const tid=projectTaskId.value;if(!tid)return;try{const d=await API.listFactions(tid);if(!isCurrent()||projectTaskId.value!==tid)return;factionsList.value=(d.factions||[]).map(f=>({...f,members_str:(f.members||[]).join(', ')}))}catch(e){}}
+      async function saveFactionFn(){const f=factionForm.value;if(!f.name.trim()){toast('名称不能为空','error');return};f.task_id=await ensureWorkspace();f.members=(f.members_str||'').split(/[,，]/).map(s=>s.trim()).filter(Boolean);try{if(editingFaction.value){await API.updateFaction(editingFaction.value.id,f);toast('势力已更新','success')}else{await API.createFaction(f);toast('势力已创建','success')};if(f.plannedChapter){injectElementToChapter(f.plannedChapter,'faction',f.name);saveOutlineFn()}editingFaction.value=null;loadFactions()}catch(e){toast(errorText(e,'保存失败'),'error')}}
       async function deleteFactionFn(id){if(!confirm('确定删除此势力?'))return;try{await API.deleteFaction(id);loadFactions();toast('已删除','info')}catch(e){toast('删除失败','error')}}
       // ── Character Relations ──
-      async function loadRelations(){const tid=taskId.value;if(!tid)return;try{const d=await API.listRelations(tid);relationsList.value=d.relations||[]}catch(e){}}
+      async function loadRelations(isCurrent=()=>true){const tid=projectTaskId.value;if(!tid)return;try{const d=await API.listRelations(tid);if(!isCurrent()||projectTaskId.value!==tid)return;relationsList.value=d.relations||[]}catch(e){}}
       async function loadRelationPresets(){try{const d=await API.getRelationPresets();relationPresets.value=d}catch(e){}}
-      function openRelationForm(r){if(r){editingRelation.value=r;const stages=r.stages&&r.stages.length?r.stages:[{stage:'',section:1,trigger:'',status:'pending'}];relationForm.value={task_id:r.task_id,character_a:r.character_a,character_b:r.character_b,relation_type:r.relation_type,direction:r.direction,intensity:r.intensity,stages:JSON.parse(JSON.stringify(stages)),current_stage:r.current_stage||0,source:r.source||'manual',source_section:r.source_section||0,description:r.description||''};}else{editingRelation.value=null;relationForm.value={task_id:taskId.value,character_a:'',character_b:'',relation_type:'盟友',direction:'positive',intensity:5,stages:[{stage:'',section:1,trigger:'',status:'pending'}],current_stage:0,source:'manual',source_section:0,description:''};}showRelations.value=true;if(!relationPresets.value.relation_types.length)loadRelationPresets();loadRelations();}
+      function openRelationForm(r){if(r){editingRelation.value=r;const stages=r.stages&&r.stages.length?r.stages:[{stage:'',section:1,trigger:'',status:'pending'}];relationForm.value={task_id:r.task_id,character_a:r.character_a,character_b:r.character_b,relation_type:r.relation_type,direction:r.direction,intensity:r.intensity,stages:JSON.parse(JSON.stringify(stages)),current_stage:r.current_stage||0,source:r.source||'manual',source_section:r.source_section||0,description:r.description||''};}else{editingRelation.value=null;relationForm.value={task_id:projectTaskId.value,character_a:'',character_b:'',relation_type:'盟友',direction:'positive',intensity:5,stages:[{stage:'',section:1,trigger:'',status:'pending'}],current_stage:0,source:'manual',source_section:0,description:''};}showRelations.value=true;if(!relationPresets.value.relation_types.length)loadRelationPresets();loadRelations();}
       function addRelationStage(){relationForm.value.stages.push({stage:'',section:1,trigger:'',status:'pending'});}
       function removeRelationStage(i){if(relationForm.value.stages.length>1)relationForm.value.stages.splice(i,1);}
-      async function saveRelation(){const f=relationForm.value;if(!f.character_a.trim()||!f.character_b.trim()){toast('请选择两个角色','error');return}f.task_id=taskId.value;try{if(editingRelation.value){await API.updateRelation(editingRelation.value.id,f);toast('关系已更新','success')}else{await API.createRelation(f);toast('关系已创建','success')}editingRelation.value=null;loadRelations()}catch(e){toast('保存失败: '+e.message,'error')}}
+      async function saveRelation(){const f=relationForm.value;if(!f.character_a.trim()||!f.character_b.trim()){toast('请选择两个角色','error');return}f.task_id=await ensureWorkspace();try{if(editingRelation.value){await API.updateRelation(editingRelation.value.id,f);toast('关系已更新','success')}else{await API.createRelation(f);toast('关系已创建','success')}editingRelation.value=null;loadRelations()}catch(e){toast(errorText(e,'保存失败'),'error')}}
+      async function advanceRelationStageFn(relation,index,status='done'){try{await API.advanceRelationStage(relation.id,index,status);await loadRelations();toast('关系阶段已推进','success')}catch(e){toast(errorText(e,'阶段推进失败'),'error')}}
       async function deleteRelation(id){if(!confirm('确定删除此关系?'))return;try{await API.deleteRelation(id);loadRelations();toast('已删除','info')}catch(e){toast('删除失败','error')}}
       function autoFillDetectText(){detectChapter.value=0;if(draftBlocks.value.length){const blocks=draftBlocks.value.filter(b=>b.type==='subsection');detectText.value=blocks.map(b=>b.text).join('\n\n').slice(0,8000)}}
       function autoFillDetectByChapter(){if(!detectChapter.value){detectText.value='';return}const [sec,sub]=String(detectChapter.value).split('-').map(Number);const b=draftBlocks.value.find(x=>x.section===sec&&x.subsection===sub);detectText.value=b?b.text||'':'未找到对应正文'}
       async function runAIDetect(){if(!detectText.value.trim()){toast('请粘贴文本','error');return}detecting.value=true;agentStatus.value='正在检测AI痕迹...';try{const d=await API.detectAI(detectText.value);detectResult.value=d}catch(e){toast('检测失败','error')}finally{detecting.value=false;agentStatus.value=''}}
-      async function runOutlineEval(){evalLoading.value=true;agentStatus.value='正在评估大纲逻辑...';try{const d=await API.req('/api/analysis/evaluate?task_id='+taskId.value+'&from='+evalRange.value.from+'&to='+evalRange.value.to,{method:'POST'});evalResult.value=d}catch(e){toast('评估失败','error')}finally{evalLoading.value=false;agentStatus.value=''}}
+      async function runOutlineEval(){evalLoading.value=true;agentStatus.value='正在评估大纲逻辑...';try{const id=await ensureWorkspace();evalResult.value=await API.evaluateOutline(id,{nodes:flattenOutlineNodes(),from_section:evalRange.value.from,to_section:evalRange.value.to||null})}catch(e){toast(errorText(e,'评估失败'),'error')}finally{evalLoading.value=false;agentStatus.value=''}}
+      async function exportDraft(format){if(!taskId.value){toast('当前没有可导出的写作任务','error');return}try{const record=await API.createExport(taskId.value,format);const link=document.createElement('a');link.href=API.exportDownloadUrl(taskId.value,record.export_id);link.download=record.filename||'';document.body.appendChild(link);link.click();link.remove();await loadExportHistory();toast('导出已生成','success')}catch(e){toast(errorText(e,'导出失败'),'error')}}
+      function downloadExport(record){if(!taskId.value||!record?.export_id)return;const link=document.createElement('a');link.href=API.exportDownloadUrl(taskId.value,record.export_id);link.download=record.filename||'';document.body.appendChild(link);link.click();link.remove()}
+      async function loadExportHistory(){if(!taskId.value){exportHistory.value=[];return}try{const d=await API.listExports(taskId.value);exportHistory.value=d.exports||[]}catch(e){exportHistory.value=[]}}
+      async function loadProjects(){projectsLoading.value=true;try{const d=await API.listProjects(false);projects.value=d.projects||[]}catch(e){toast(errorText(e,'项目列表加载失败'),'error')}finally{projectsLoading.value=false}}
+      async function openProject(project){if(!project)return;const generation=beginTaskRestoration();workspaceTaskId.value=project.workspace_task_id;taskId.value=project.active_task_id||project.workspace_task_id;outline.value=[];updateRestoredWorkspace(project);draftBlocks.value=[];taskDone.value=project.status==='completed';const restoredSession=await initTaskSession(generation);if(!isCurrentTaskRestoration(generation)||restoredSession.stale)return;applyRestoredTaskState(restoredSession,{deferStream:true});if(restoredSession.loadFailed&&!await waitForRestoredStatus(generation))return;await hydrateTaskSession(generation);if(!isCurrentTaskRestoration(generation))return;const capturedWorkspaceId=workspaceTaskId.value;void restoreDurableDraftBlocks(generation, capturedWorkspaceId);activeWorkspace.value='write';toast('项目恢复中','info')}
+      async function archiveProjectFn(project){try{await API.archiveProject(project.workspace_task_id,true);await loadProjects();toast('项目已归档','success')}catch(e){toast(errorText(e,'归档失败'),'error')}}
+      async function runContinuityAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}analysisLoading.value='continuity';try{continuityResult.value=await API.reviewContinuity(taskId.value)}catch(e){toast(errorText(e,'连续性检查失败'),'error')}finally{analysisLoading.value=''}}
+      async function loadEventGraph(){if(!taskId.value){toast('请先打开任务','error');return}analysisLoading.value='events';try{eventGraphResult.value=await API.getTaskEvents(taskId.value)}catch(e){toast(errorText(e,'事件图加载失败'),'error')}finally{analysisLoading.value=''}}
+      async function runPostWriteAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}analysisLoading.value='post';try{postWriteAnalysis.value=await API.analyzeTask(taskId.value)}catch(e){toast(errorText(e,'写后分析失败'),'error')}finally{analysisLoading.value=''}}
+      async function loadStateFrame(){if(!taskId.value){toast('请先打开任务','error');return}analysisLoading.value='state';try{stateFrameResult.value=await API.getStateFrame(taskId.value,stateFrameSection.value,stateFrameSubsection.value)}catch(e){toast(errorText(e,'StateFrame 加载失败'),'error')}finally{analysisLoading.value=''}}
+      function toggleRouteNode(nodeId){const path=mapRouteForm.value.path_nodes||[];const index=path.indexOf(nodeId);if(index>=0)path.splice(index,1);else path.push(nodeId)}
+      async function switchWorkspace(name){activeWorkspace.value=name;if(name==='world'){await Promise.all([loadMap(),loadItems(),loadRelations(),loadFactions(),loadSubplots()])}else if(name==='analysis'&&taskId.value){await Promise.all([loadSubplotHeatMap(),loadEventGraph()])}else if(name==='projects'){await Promise.all([loadProjects(),loadExportHistory()])}}
 
       // ═══ Persistence ═══
-      function saveState(){try{const s={taskId:taskId.value,topic:topic.value,worldSetting:worldSetting.value,storySynopsis:storySynopsis.value,referenceText:referenceText.value,apiKey:apiKey.value,styleProfile:styleProfile.value,analyzedStyleBrief:analyzedStyleBrief.value,outline:outline.value,globalWordLimit:globalWordLimit.value,mode:mode.value,selectedCharIds:selectedCharIds.value,draftSnap:draftBlocks.value.map(b=>({...b,text:(b.text||'').slice(0,2000)})),savedAt:Date.now()};localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
-      function restoreSession(){try{const r=localStorage.getItem(PK);if(!r)return false;const s=JSON.parse(r);if(Date.now()-(s.savedAt||0)>7*24*60*60*1000){localStorage.removeItem(PK);return false}if(s.taskId)taskId.value=s.taskId;if(s.topic)topic.value=s.topic;if(s.worldSetting)worldSetting.value=s.worldSetting;if(s.storySynopsis)storySynopsis.value=s.storySynopsis;if(s.referenceText)referenceText.value=s.referenceText;if(s.apiKey)apiKey.value=s.apiKey;if(s.styleProfile)styleProfile.value=s.styleProfile;if(s.analyzedStyleBrief)analyzedStyleBrief.value=s.analyzedStyleBrief;if(s.outline?.length)outline.value=s.outline;if(s.globalWordLimit)globalWordLimit.value=s.globalWordLimit;if(s.mode)mode.value=s.mode;if(s.selectedCharIds)selectedCharIds.value=s.selectedCharIds;if(s.draftSnap?.length){draftBlocks.value=s.draftSnap;taskDone.value=true}return!!s.taskId}catch(e){return false}}
+      function saveState(){try{const s={taskId:taskId.value,workspaceTaskId:workspaceTaskId.value,topic:topic.value,worldSetting:worldSetting.value,storySynopsis:storySynopsis.value,referenceText:referenceText.value,styleProfile:styleProfile.value,analyzedStyleBrief:analyzedStyleBrief.value,outline:outline.value,globalWordLimit:globalWordLimit.value,mode:mode.value,selectedCharIds:selectedCharIds.value,taskDone:taskDone.value,draftSnap:draftBlocks.value.map(b=>({...b,text:(b.text||'').slice(0,2000)})),savedAt:Date.now()};localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
+      function restoreSession(){try{const r=localStorage.getItem(PK);if(!r)return false;const s=JSON.parse(r);if(Date.now()-(s.savedAt||0)>7*24*60*60*1000){localStorage.removeItem(PK);return false}if(s.taskId)taskId.value=s.taskId;if(s.workspaceTaskId)workspaceTaskId.value=s.workspaceTaskId;else if(s.taskId)workspaceTaskId.value=s.taskId;if(s.topic)topic.value=s.topic;if(s.worldSetting)worldSetting.value=s.worldSetting;if(s.storySynopsis)storySynopsis.value=s.storySynopsis;if(s.referenceText)referenceText.value=s.referenceText;if(s.styleProfile)styleProfile.value=s.styleProfile;if(s.analyzedStyleBrief)analyzedStyleBrief.value=s.analyzedStyleBrief;if(s.outline?.length)outline.value=s.outline;if(s.globalWordLimit)globalWordLimit.value=s.globalWordLimit;if(s.mode)mode.value=s.mode;if(s.selectedCharIds)selectedCharIds.value=s.selectedCharIds;if(s.draftSnap?.length)draftBlocks.value=s.draftSnap;taskDone.value=!!s.taskDone;return!!s.taskId}catch(e){return false}}
       function resetAll(){
         stopPolling();
         // 先清空 reactive 状态，beforeunload 即使触发也只保存空数据
-        taskId.value=''; draftBlocks.value=[];
+        taskId.value=''; workspaceTaskId.value=''; draftBlocks.value=[];
         outline.value=[]; worldSetting.value=''; storySynopsis.value='';
         topic.value=''; selectedCharIds.value=[];
         try{localStorage.removeItem(PK)}catch(e){}
@@ -1275,10 +1540,17 @@ export function createWriterApp() {
       function startResize(side, e){resizing.value=side;e.preventDefault();document.body.style.cursor='col-resize';document.body.style.userSelect='none'}
       function onMouseMove(e){if(!resizing.value)return;if(resizing.value==='left'){leftPanelWidth.value=Math.max(180,Math.min(500,e.clientX))}else{rightPanelWidth.value=Math.max(180,Math.min(500,window.innerWidth-e.clientX))}}
       function onMouseUp(){resizing.value=null;document.body.style.cursor='';document.body.style.userSelect=''}
+      let lifecycleActive = true;
+      let autosaveInterval = null;
+      function onBeforeUnload(){saveState();if(taskId.value){const snaps=draftBlocks.value.filter(b=>b.type==='subsection'&&b.text).map(b=>({section:b.section,subsection:b.subsection,text:b.text.slice(0,3000)}));if(snaps.length)API.saveDraftBeacon(taskId.value,JSON.stringify(snaps))}}
+      function onUnhandledRejection(event){toast(errorText(event.reason,'操作未完成'),'error')}
 
       // ═══ Init ═══
-      onMounted(async()=>{await loadCharacters();await loadRules();const restored=restoreSession();API.setApiKey(apiKey.value);if(taskId.value){await initTaskSession()}if(restored&&taskId.value){statusText.value='恢复连接中...';beginPolling(null, true)}setInterval(saveState,5000);window.addEventListener('beforeunload',()=>{saveState();if(taskId.value){const snaps=draftBlocks.value.filter(b=>b.type==='subsection'&&b.text).map(b=>({section:b.section,subsection:b.subsection,text:b.text.slice(0,3000)}));if(snaps.length){navigator.sendBeacon('/tasks/'+taskId.value+'/draft',JSON.stringify({draft:JSON.stringify(snaps)}))}}});document.addEventListener('keydown',onKeydown);document.addEventListener('mousemove',onMouseMove);document.addEventListener('mouseup',onMouseUp)});
+      onMounted(async()=>{const restored=restoreSession();API.setApiKey(apiKey.value);const generation=beginTaskRestoration();let restoredSession={status:null,loadFailed:false};if(taskId.value){restoredSession=await initTaskSession(generation)}if(!lifecycleActive||!isCurrentTaskRestoration(generation))return;if(restored&&taskId.value){applyRestoredTaskState(restoredSession)}if(!restoredSession.loadFailed&&!restoredSession.stale){void hydrateTaskSession(generation)}void loadCharacters();void loadRules();autosaveInterval=setInterval(saveState,5000);window.addEventListener('beforeunload',onBeforeUnload);window.addEventListener('unhandledrejection',onUnhandledRejection);document.addEventListener('keydown',onKeydown);document.addEventListener('mousemove',onMouseMove);document.addEventListener('mouseup',onMouseUp)});
+      onUnmounted(()=>{lifecycleActive=false;taskRestorationGeneration+=1;stopPolling();clearInterval(autosaveInterval);window.removeEventListener('beforeunload',onBeforeUnload);window.removeEventListener('unhandledrejection',onUnhandledRejection);document.removeEventListener('keydown',onKeydown);document.removeEventListener('mousemove',onMouseMove);document.removeEventListener('mouseup',onMouseUp);});
       watch(apiKey,(v)=>API.setApiKey(v));
+      watch([topic,worldSetting,storySynopsis,referenceText,globalWordLimit],scheduleWorkspaceSave);
+      watch(styleProfile,scheduleWorkspaceSave,{deep:true});
 
       // Word sync
       let _sw=false;watch(globalWordLimit,(v)=>{if(_sw)return;_sw=true;const leaves=[];function w(ns){for(let n of ns){if(!n.children?.length)leaves.push(n);else w(n.children)}}w(outline.value);if(leaves.length){const each=Math.floor(v/leaves.length);leaves.forEach(l=>l.target_words=each)}nextTick(()=>_sw=false)});
@@ -1286,12 +1558,12 @@ export function createWriterApp() {
       watch(outline,()=>{const flat=treeToFlat(outline.value,{});if(!flat.length)return;let si=0;for(const b of draftBlocks.value){if(b.type==='section'&&si<flat.length){b.title='第'+flat[si].section+'节：'+(flat[si].title||'');si++}}},{deep:true});
       watch(generatingBlockIdx,(idx)=>{if(idx>=0){nextTick(()=>{const b=draftBlocks.value[idx];if(b){const el=document.getElementById('draft-sub-'+b.section+'-'+b.subsection);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})}})}});
 
-      return { refineMode,taskId,statusText,statusColor,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
+      return { refineMode,taskId,workspaceTaskId,statusText,statusColor,saveStatus,saveStatusText,connectionState,connectionStatusText,connectionRetryAvailable,connectionRetryBusy,retryConnection,projectionStatus,projectionStatusText,commitStatus,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
         outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,showOutlineBudgetModal,outlineBudgetError,outlineBudgetAdviceItems,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         showArcProjection,arcProjectionLoading,arcProjectionSavingId,arcProjectionError,arcReviewCandidates,arcExcludedCount,openArcProjectionReview,confirmArcCandidate,arcHardFieldsComplete,arcTypeLabel,arcStatusLabel,
-        tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,
+        tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,revisionInstructions,revisionLoading,beginDraftEdit,onDraftInput,revertDraftEdit,reviseDraftBlock,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,
         rules,foreshadowings,sideOpen,rulesSearch,fsSearch,filteredRules,filteredFS,aiDetectLog,sectionReviewStatus,
@@ -1301,18 +1573,19 @@ export function createWriterApp() {
         applyStylePreset,analyzeStyle,genWorldSettingFn,genStorySynopsisFn,
         loadCharacters,toggleChar,openCharModal,saveCharacter,doExtract,saveExtracted,deleteCharFn,
         aiSplitNodeFn,doImportOutline,saveOutlineFn,undoDeleteFn,initTaskSession,
-        startWriting,stopWriting,resetAll,sendDecisionFn,
+        startWriting,stopWriting,resetAll,sendDecisionFn,persistWorkspace,exportDraft,
         drawCardsFn,adoptCard,modifyCard,skipCards,nextWizardStep,stepLabel,wizardStep,wizardSteps,adoptedCards,selectedGenre,selectGenre,outlinePreview,previewOutlineCard,drawPlotCard,adoptPlotCard,createDraftTask,plotCards,drawingPlotCard,plotCardNode,plotCardSubType,clearPlotCards,
         agentStatus,
         sendDialogue,loadRules,loadForeshadowings,
         showRulesModal,showInspiration,showStyle,showForeshadow,showFSForm,fsForm,
         editingRule,ruleForm,filteredInspirations,inspCat,inspCategories,
         saveRuleFn,deleteRuleFn,exportRules,importRulesFile,loadInspirations,useInspiration,createFSFn,
-        showMap,showSubplot,showItems,showTimeline,showAIDetect,showOutlineEval,showFactions,showHistory,showOutlineVersions,outlineVersions,showMapForm,mapForm,showItemForm,itemForm,showSubplotForm,subplotForm,editingSubplot,selectedSubplot,factionsList,factionForm,editingFaction,sideCollapsed,leftPanelWidth,rightPanelWidth,resizing,startResize,
-        mapNodes,subplots,itemsList,timelineEvents,detectText,detecting,detectResult,detectChapter,evalRange,evalLoading,evalResult,historyList,historyLoading,selectedHistory,taskContent,taskContentLoading,
+        activeWorkspace,switchWorkspace,showMap,showSubplot,showItems,showTimeline,showAIDetect,showOutlineEval,showFactions,showHistory,showOutlineVersions,outlineVersions,showMapForm,mapForm,showItemForm,itemForm,showSubplotForm,subplotForm,editingSubplot,selectedSubplot,factionsList,factionForm,editingFaction,sideCollapsed,leftPanelWidth,rightPanelWidth,resizing,startResize,
+        mapNodes,mapEdges,mapRoute,mapEdgeForm,mapRouteForm,createMapEdgeFn,saveMapRouteFn,toggleRouteNode,subplots,subplotHeatMap,loadSubplotHeatMap,itemsList,itemTransactionForm,recordItemTransactionFn,timelineEvents,detectText,detecting,detectResult,detectChapter,evalRange,evalLoading,evalResult,historyList,historyLoading,selectedHistory,taskContent,taskContentLoading,
+        projects,projectsLoading,loadProjects,openProject,archiveProjectFn,exportHistory,loadExportHistory,downloadExport,analysisTab,analysisLoading,continuityResult,eventGraphResult,postWriteAnalysis,stateFrameResult,stateFrameSection,stateFrameSubsection,runContinuityAnalysis,loadEventGraph,runPostWriteAnalysis,loadStateFrame,
         loadMap,loadSubplots,loadItems,loadTimeline,loadHistory,loadOutlineVersions,restoreOutlineVersion,createMapNodeFn,createItemFn,saveSubplotFn,deleteSubplotFn,autoFillDetectText,autoFillDetectByChapter,runAIDetect,runOutlineEval,loadFactions,saveFactionFn,deleteFactionFn,resumeTask,deleteTaskFn,
         subplotCards,drawingSubplotCards,drawSubplotCardsFn,adoptSubplotCardFn,
-        showRelations,relationsList,relationForm,editingRelation,relationPresets,loadRelations,openRelationForm,addRelationStage,removeRelationStage,saveRelation,deleteRelation,
+        showRelations,relationsList,relationForm,editingRelation,relationPresets,loadRelations,openRelationForm,addRelationStage,removeRelationStage,saveRelation,deleteRelation,advanceRelationStageFn,
         toast,
       };
     }
