@@ -167,3 +167,9 @@ It deliberately does not prove LLM output quality, real broker delivery, worker 
 2. HTTP scenario review: public endpoints only, meaningful assertions, mutation-sensitive tests, and no route-function shortcuts.
 3. Browser review: automatic and interactive visible behavior, task-ID transition, workspace stability, and cleanup.
 4. Final verification: new E2E suite, affected route/frontend suites, JavaScript syntax, Python compileall, and scoped diff checks.
+
+## Self-contained Delivery Closure
+
+The accepted Phase 0 behavior currently depends on an earlier uncommitted frontend workspace stack. Delivery therefore packages the exact prerequisite stack as reviewed commits rather than leaving the E2E commits dependent on a dirty checkout. The closure includes durable `project_workspaces` storage and exports, Redis-outage fallback, the structured API client and connection helpers, the production workspace entry, its local Vue module, and the route/UI contract tests that define those interfaces.
+
+The closure excludes experiment result JSON, server logs, temporary browser runtimes, and frozen or missing benchmark artifacts. Existing user changes outside the frontend workspace stack remain unstaged. A clean exported snapshot of the resulting commit must pass the Phase 0 Python and Node gates before the branch is described as self-contained.

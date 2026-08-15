@@ -818,3 +818,32 @@ Expected: every command exits 0. `git diff --check` may report only pre-existing
 - [ ] **Step 6: Review and handoff**
 
 Inspect the scoped diff for production schema reuse, exact done/completed ordering, mid-stream cursor assertion, storage-clear route isolation, server-state recovery, thread cleanup, and absence of real infrastructure calls. Commit only product/test files that remain uncommitted; do not commit `.superpowers/sdd` reports or unrelated dirty files.
+
+---
+
+### Task 8: Package the production dependency closure
+
+**Files:**
+- Commit the existing frontend workspace prerequisite files under `app/models.py`, `app/routers/`, `app/task_store*.py`, and `app/static/`.
+- Commit their focused tests under `tests/frontend/`, `tests/unit/test_frontend_*`, `tests/unit/test_project_workspace_store.py`, and the two updated integration contracts.
+- Exclude runtime logs, experiment reports, browser runtime directories, and frozen benchmark artifacts.
+
+**Interfaces:**
+- Consumes: the reviewed dirty-worktree implementation used by Tasks 3 and 7.
+- Produces: a committed branch whose Phase 0 tests no longer depend on uncommitted production files.
+
+- [x] **Step 1: Verify the prerequisite regression set**
+
+Run the frontend API/workspace route, store, projection UI, and subsection persistence tests. Update only stale expectations that intentionally pin the old API asset revision or pre-workspace table set.
+
+- [x] **Step 2: Commit the durable backend prerequisite**
+
+Stage only workspace models, TaskStore/migrations, workspace/export routes, and their focused tests. Run the backend prerequisite regression set before committing.
+
+- [x] **Step 3: Commit the frontend workspace prerequisite**
+
+Stage only the API client, connection/restoration modules, production workspace entry/styles/vendor asset, supporting route changes, and focused frontend contracts. Run all `tests/frontend/*.test.mjs`, JavaScript syntax checks, and affected Python contracts before committing.
+
+- [x] **Step 4: Verify a clean committed snapshot**
+
+Export `HEAD` to an owned temporary directory, run the Phase 0 Python gate with the project virtual environment and all frontend Node tests from that directory, then run Python compileall, JavaScript syntax, and `git diff --check`. Remove only the verified owned temporary directory after recording results.
