@@ -46,7 +46,7 @@ Automatic mode will produce a minimal one-section/one-subsection event sequence:
 
 The pytest scenario advances these steps explicitly. The browser server advances one step per configured delay and keeps the task `running` until after the final stream event, preventing a completed status from stopping frontend polling before the deterministic text is consumed.
 
-The ordering is normative: the writer must append the `done` event first and only then persist task/workspace status `completed`. The E2E test will observe the state between these two advances, assert that `done` is readable while status is still nonterminal, then advance once more and assert `completed`.
+The ordering is normative for both the deterministic writer and the production completion helper: append the `done` event first and only then persist task/workspace status `completed`. The current production `_phase_complete` ordering will receive a focused regression test and the minimal write-order correction. The E2E test will observe the state between these two deterministic advances, assert that `done` is readable while status is still nonterminal, then advance once more and assert `completed`.
 
 Interactive mode will first persist a resumable checkpoint and expose an awaiting-confirmation status. When `/tasks/{task_id}/decide` creates a replacement task, the same deterministic writer will complete that replacement task and preserve the original `workspace_task_id`.
 
