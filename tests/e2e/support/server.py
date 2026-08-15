@@ -34,6 +34,7 @@ def create_support_app():
     from app.main import app as production_app
     import app.routers.outline as outline_routes
     import app.routers.tasks as task_routes
+    import app.rule_store as rule_store
     from tests.e2e.support.deterministic_writer import DeterministicWriter
 
     board = Blackboard()
@@ -56,6 +57,7 @@ def create_support_app():
         "writing_task": task_routes.writing_task,
         "export_root": task_routes._export_root,
         "get_redis": outline_routes._get_redis,
+        "rules_db_path": rule_store.RULES_DB_PATH,
     }
 
     def install_test_bindings() -> None:
@@ -65,6 +67,7 @@ def create_support_app():
         task_routes.writing_task = writer
         task_routes._export_root = isolated_export_root
         outline_routes._get_redis = lambda: board._redis
+        rule_store.RULES_DB_PATH = str(runtime / "rules.db")
 
     def restore_production_bindings() -> None:
         settings.TASK_DB_PATH = original_bindings["task_db_path"]
@@ -73,17 +76,20 @@ def create_support_app():
         task_routes.writing_task = original_bindings["writing_task"]
         task_routes._export_root = original_bindings["export_root"]
         outline_routes._get_redis = original_bindings["get_redis"]
+        rule_store.RULES_DB_PATH = original_bindings["rules_db_path"]
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        async with production_app.router.lifespan_context(production_app):
-            try:
-                install_test_bindings()
+        try:
+            install_test_bindings()
+            async with production_app.router.lifespan_context(production_app):
                 writer.start()
-                yield
-            finally:
-                writer.shutdown()
-                restore_production_bindings()
+                try:
+                    yield
+                finally:
+                    writer.shutdown()
+        finally:
+            restore_production_bindings()
 
     support = FastAPI(title="Writer browser E2E support", lifespan=lifespan)
     support.state.writer = writer
