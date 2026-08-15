@@ -141,6 +141,10 @@ class DeterministicWriter:
         ).model_dump(mode="json")
         self.board.save_checkpoint(run.task_id, checkpoint)
         self._set_runtime_status(run, "awaiting_outline_approval")
+        self.board.xadd_event(
+            run.task_id,
+            {"event": "awaiting_decision", "phase": "outline"},
+        )
         run.waiting_for_approval = True
         return "awaiting_outline_approval"
 

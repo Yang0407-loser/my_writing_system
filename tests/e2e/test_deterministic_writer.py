@@ -74,6 +74,9 @@ def test_interactive_checkpoint_is_a_production_task_state():
     assert writer.advance("task-1") == "awaiting_outline_approval"
     checkpoint = board.load_checkpoint("task-1")
     assert TaskState.model_validate(checkpoint).status == "awaiting_outline_approval"
+    assert [event for _, event in board.xread_events("task-1", "0-0")] == [
+        {"event": "awaiting_decision", "phase": "outline"}
+    ]
 
 
 def test_completed_run_persists_workspace_draft_and_production_result():
@@ -115,7 +118,9 @@ def test_background_runner_waits_at_interactive_checkpoint_and_shutdown_cleans_u
             assert time.monotonic() < deadline
             time.sleep(0.01)
         time.sleep(0.03)
-        assert board._redis.xlen(board.stream_key("original-task")) == 0
+        assert [event for _, event in board.xread_events("original-task", "0-0")] == [
+            {"event": "awaiting_decision", "phase": "outline"}
+        ]
 
         replacement = writer.delay(
             topic="雨夜",
