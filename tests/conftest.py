@@ -7,6 +7,9 @@ import sys
 import tempfile
 
 
+pytest_plugins = ["tests.support.pytest_suite_plugin"]
+
+
 _TEST_RUNTIME_DIR = Path(tempfile.mkdtemp(prefix="writer-tests-"))
 
 # These assignments must run before any app.* import. Tests are isolated from

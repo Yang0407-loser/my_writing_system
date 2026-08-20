@@ -35,7 +35,9 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
+addopts = '-m "not historical_artifact"'
 markers = [
+    "historical_artifact: requires historical/generated artifacts or verifies frozen experimental hashes; excluded from the default CI-safe suite",
     "postgres: requires TEST_CANONICAL_DATABASE_URL and a real PostgreSQL test database",
 ]
 
