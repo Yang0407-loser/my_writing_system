@@ -44,7 +44,7 @@ def test_loaded_frontend_exposes_connection_retry_control():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
 
-    assert "'/static/js/main.js?v=20260822b'" in template
+    assert "'/static/js/main.js?v=20260822c'" in template
     assert 'v-if="connectionRetryAvailable"' in template
     assert '@click="retryConnection"' in template
     assert 'createTaskConnectionController' in main_js
@@ -99,9 +99,9 @@ def test_loaded_frontend_cleans_up_lifecycle_and_uses_current_release_keys():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
 
-    assert "'/static/js/main.js?v=20260822b'" in template
+    assert "'/static/js/main.js?v=20260822c'" in template
     assert 'href="/static/styles/base.css?v=20260822b"' in template
-    assert "import * as API from './api.js?v=20260822b';" in main_js
+    assert "import * as API from './api.js?v=20260822c';" in main_js
     assert "from './task-restoration-stream.mjs?v=20260815c';" in main_js
     assert "onUnmounted" in main_js
     assert "clearInterval(autosaveInterval);" in main_js
