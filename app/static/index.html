@@ -289,7 +289,7 @@
 
   <main class="workspace-page" v-if="activeWorkspace==='analysis'">
     <header class="workspace-section-header"><div><h2>质量与状态分析</h2><p>结果定位到章节、小节和状态变化，并注明持久化或实时重建来源。</p></div></header>
-    <div class="analysis-toolbar"><button class="btn btn-outline btn-sm" @click="runContinuityAnalysis" :disabled="analysisLoading==='continuity'">连续性检查</button><button class="btn btn-outline btn-sm" @click="loadEventGraph" :disabled="analysisLoading==='events'">事件图</button><button class="btn btn-outline btn-sm" @click="runPostWriteAnalysis" :disabled="analysisLoading==='post'">写后分析</button><button class="btn btn-outline btn-sm" @click="loadSubplotHeatMap">支线热力</button><span class="analysis-frame-inputs">StateFrame <input type="number" min="1" v-model.number="stateFrameSection">.<input type="number" min="1" v-model.number="stateFrameSubsection"><button class="btn btn-primary btn-sm" @click="loadStateFrame" :disabled="analysisLoading==='state'">加载</button></span></div>
+    <div class="analysis-toolbar"><button class="btn btn-outline btn-sm" @click="runContinuityAnalysis" :disabled="analysisLoading==='continuity'">连续性检查</button><button class="btn btn-outline btn-sm" @click="loadEventGraph" :disabled="analysisLoading==='events'">事件图</button><button class="btn btn-outline btn-sm" @click="runPostWriteAnalysis" :disabled="analysisLoading==='post'">写后分析</button><button class="btn btn-outline btn-sm" @click="loadSubplotHeatMap">支线热力</button><span class="analysis-frame-inputs">StateFrame <input type="number" min="1" v-model.number="stateFrameSection">.<input type="number" min="1" v-model.number="stateFrameSubsection"><button class="btn btn-primary btn-sm" @click="loadStateFrame" :disabled="analysisLoading==='state'">加载</button></span><button v-if="analysisCancelable" class="btn btn-danger btn-sm" @click="cancelAnalysis">取消分析</button></div>
     <div class="workspace-grid analysis-grid">
       <section class="workspace-module"><div class="module-header"><h3>连续性</h3><span v-if="continuityResult">{{continuityResult.average_continuity_score}} / 10</span></div><div class="module-list"><article v-for="r in continuityResult?.results||[]" class="analysis-issue"><strong>第 {{r.from_section||'?'}} → {{r.to_section||'?'}} 节</strong><span>{{r.issue||r.suggestion||JSON.stringify(r)}}</span></article><p v-if="!continuityResult" class="empty-copy">运行后显示相邻章节承续问题</p></div></section>
       <section class="workspace-module"><div class="module-header"><h3>叙事事件图</h3><span>{{eventGraphResult?.events?.length||0}} 事件</span></div><div class="module-list"><article v-for="event in eventGraphResult?.events||[]" class="module-list-item"><div><strong>{{event.event_type||event.type||'事件'}}</strong><span>第 {{event.section||'?'}} 节 · {{event.summary||event.description||event.content||''}}</span></div></article><p v-if="!eventGraphResult?.events?.length" class="empty-copy">暂无事件</p></div></section>
@@ -309,7 +309,7 @@
     <span class="status-dot" :style="{background:statusColor}"></span><span style="margin-right:8px">{{statusText}}</span>
     <span class="status-pill" aria-label="项目标识" :title="workspaceTaskId">项目 {{workspaceTaskId?workspaceTaskId.slice(0,8):'—'}}</span>
     <span class="status-pill" aria-label="当前任务标识" :title="taskId">当前任务 {{taskId?taskId.slice(0,8):'—'}}</span>
-    <span class="status-pill" :class="'state-'+saveStatus">{{saveStatusText}}</span>
+    <span class="status-pill" :class="'state-'+saveStatus" :title="saveErrorMessage">{{saveStatusText}}</span><button v-if="saveStatus==='error'" class="connection-retry-btn" @click="retrySave">重试保存</button>
     <span class="status-pill" :class="'state-'+connectionState">{{connectionStatusText}}</span>
     <button v-if="connectionRetryAvailable" class="connection-retry-btn" @click="retryConnection" :disabled="connectionRetryBusy">重试连接</button>
     <span class="status-pill" :class="'state-'+projectionStatus" v-if="projectionStatusText">{{projectionStatusText}}</span>
@@ -318,8 +318,8 @@
     <span style="white-space:nowrap;font-size:10px">{{completedSections}}/{{queuedCount}}节 · {{totalDraftWords}}字</span>
     <span style="font-size:10px;color:var(--dim);white-space:nowrap" v-if="tokenUsage>0">{{Math.round(tokenUsage/1000)}}K tokens · ${{tokenCost?.est_cost_usd?.toFixed(4)||'--'}}</span>
     <span style="font-size:10px;color:var(--gold);white-space:nowrap" v-if="totalSubsections>0">🟡{{queuedCount}} ⚪{{draftCount}}</span>
-    <button class="btn btn-primary btn-sm" @click="startWriting" :disabled="isGenerating||queuedCount===0">{{startBtnText}}</button>
-    <button class="btn btn-danger btn-sm" @click="stopWriting" :disabled="!isGenerating">停止</button>
+    <button class="btn btn-primary btn-sm" @click="startWriting" :disabled="isGenerating||startSubmitting||queuedCount===0">{{startBtnText}}</button>
+    <button class="btn btn-danger btn-sm" @click="stopWriting" :disabled="!isGenerating||stoppingWriting">{{stoppingWriting?'停止中...':'停止'}}</button>
   </footer>
 
   <!-- ═══ MODALS ═══ -->
@@ -1268,7 +1268,7 @@
 </div>
 
 <script type="module">
-import { createWriterApp } from '/static/js/main.js?v=20260822c';
+import { createWriterApp } from '/static/js/main.js?v=20260822d';
 createWriterApp().mount('#app');
 </script>
 </body>

@@ -17,6 +17,7 @@ import {
   workspaceMeta,
 } from './workspace-shell.mjs?v=20260822a';
 import { buildLineDiff, summarizeRevision } from './draft-revision.mjs?v=20260822b';
+import { createOperationGuard } from './operation-guard.mjs?v=20260822b';
 
 const FLOW_NODES = [
   { id:'style', label:'风格分析', icon:'🎨' }, { id:'outline', label:'大纲生成', icon:'📋' },
@@ -41,6 +42,8 @@ export function createWriterApp() {
       const taskId = ref(''); const workspaceTaskId = ref('');
       const statusText = ref('就绪'); const statusColor = ref('#888');
       const saveStatus = ref('local'); const connectionState = ref('online');
+      const saveErrorMessage = ref('');
+      const saveRetryKind = ref('');
       const connectionRetryAvailable = ref(false);
       const connectionRetryBusy = ref(false);
       const projectionStatus = ref('idle'); const commitStatus = ref('');
@@ -86,6 +89,7 @@ export function createWriterApp() {
 
       // ── Draft ──
       const isGenerating = ref(false); const generatingBlockIdx = ref(-1);
+      const startSubmitting = ref(false); const stoppingWriting = ref(false);
       const completedSections = ref(0); const draftBlocks = ref([]); const taskDone = ref(false);
       const revisionInstructions = reactive({}); const revisionLoading = ref('');
       const revisionPreview = ref(null); const revisionApplying = ref(false);
@@ -141,7 +145,9 @@ export function createWriterApp() {
       const evalRange = ref({from:1,to:3}); const evalLoading = ref(false); const evalResult = ref(null);
       const historyList = ref([]); const historyLoading = ref(false); const selectedHistory = ref(null); const taskContent = ref(''); const taskContentLoading = ref(false);
       const projects = ref([]); const projectsLoading = ref(false); const exportHistory = ref([]);
+      const exportLoading = ref('');
       const analysisTab = ref('overview'); const analysisLoading = ref('');
+      const analysisCancelable = ref('');
       const continuityResult = ref(null); const eventGraphResult = ref(null); const postWriteAnalysis = ref(null);
       const stateFrameResult = ref(null); const stateFrameSection = ref(1); const stateFrameSubsection = ref(1);
       const editingRule = ref(undefined); const ruleForm = ref({name:'',content:'',type:'global',priority:5});
@@ -155,6 +161,7 @@ export function createWriterApp() {
 
       // ── Toast ──
       const toasts = ref([]);
+      const operations = createOperationGuard();
 
       // ═══ Computed ═══
       const totalDraftWords = computed(() => draftBlocks.value.reduce((s,b) => s + (b.wordCount||0), 0));
@@ -272,7 +279,7 @@ export function createWriterApp() {
       const filteredFS = computed(() => { const q = fsSearch.value.toLowerCase(); return foreshadowings.value.filter(f => !q || f.name.toLowerCase().includes(q)); });
       const queuedCount = computed(() => { let c=0; function w(ns){for(const n of ns){if(!n.children?.length){if((n.status||'queued')==='queued')c++}else w(n.children)}} w(outline.value); return c; });
       const draftCount = computed(() => { let c=0; function w(ns){for(const n of ns){if(!n.children?.length&&n.status==='draft')c++;else if(n.children)w(n.children)}} w(outline.value); return c; });
-      const startBtnText = computed(() => isGenerating.value?'写作中...':(taskId.value&&!taskDone.value?'继续写作':'开始写作'));
+      const startBtnText = computed(() => startSubmitting.value?'提交中...':(isGenerating.value?'写作中...':(taskId.value&&!taskDone.value?'继续写作':'开始写作')));
 
       const nodeStates = computed(() => {
         if (!rawStatus.value || rawStatus.value === 'pending') return FLOW_NODES.map(n => ({...n, status:'waiting'}));
@@ -317,6 +324,8 @@ export function createWriterApp() {
         const id = await ensureWorkspace();
         if (!id) throw new Error('工作区尚未创建');
         saveStatus.value = 'saving';
+        saveRetryKind.value = 'workspace';
+        saveErrorMessage.value = '';
         try {
           const saved = await API.patchWorkspace(id, {
             topic:topic.value,
@@ -333,6 +342,7 @@ export function createWriterApp() {
           return saved;
         } catch (error) {
           saveStatus.value = 'error';
+          saveErrorMessage.value = errorText(error, '工作区保存失败');
           if (notify) toast(errorText(error, '工作区保存失败'), 'error');
           throw error;
         }
@@ -345,6 +355,8 @@ export function createWriterApp() {
           return;
         }
         saveStatus.value = 'saving';
+        saveRetryKind.value = 'workspace';
+        saveErrorMessage.value = '';
         clearTimeout(workspaceSaveTimer);
         workspaceSaveTimer = setTimeout(() => persistWorkspace().catch(() => {}), 900);
       }
@@ -363,16 +375,38 @@ export function createWriterApp() {
         saveState();
         if (!taskId.value) return;
         saveStatus.value = 'saving';
+        saveRetryKind.value = 'draft';
+        saveErrorMessage.value = '';
         clearTimeout(draftEditSaveTimer);
         draftEditSaveTimer = setTimeout(async () => {
           try {
             await API.saveDraft(taskId.value, JSON.stringify(draftSnapshots()));
             saveStatus.value = 'saved';
+            saveErrorMessage.value = '';
           } catch (error) {
             saveStatus.value = 'error';
+            saveRetryKind.value = 'draft';
+            saveErrorMessage.value = errorText(error, '正文自动保存失败');
             toast(errorText(error, '正文自动保存失败'), 'error');
           }
         }, 700);
+      }
+      async function retrySave() {
+        if (saveStatus.value !== 'error') return;
+        try {
+          if (saveRetryKind.value === 'draft') {
+            saveStatus.value = 'saving';
+            await API.saveDraft(taskId.value, JSON.stringify(draftSnapshots()));
+            saveStatus.value = 'saved';
+            saveErrorMessage.value = '';
+            toast('正文已重新保存', 'success', 1600);
+          } else {
+            await persistWorkspace({notify:true});
+          }
+        } catch (error) {
+          saveStatus.value = 'error';
+          saveErrorMessage.value = errorText(error, '保存失败');
+        }
       }
       function beginDraftEdit(block) {
         if (block._editBaseline == null) block._editBaseline = block.text || '';
@@ -1133,7 +1167,9 @@ export function createWriterApp() {
       }
 
       async function startWriting() {
+        if (startSubmitting.value || isGenerating.value) return;
         if(!topic.value.trim()&&!referenceText.value.trim()){toast('请输入主题或参考文本','error');return}
+        startSubmitting.value = true;
         // 已有正文时走续写；工作区 ID 始终保持稳定。
         const hasContent = draftBlocks.value.some(b=>b.type==='subsection'&&b.wordCount>0);
         const isResuming = taskId.value && hasContent && queuedCount.value > 0;
@@ -1156,6 +1192,7 @@ export function createWriterApp() {
             taskId.value=d.task_id; workspaceTaskId.value=d.workspace_task_id||workspaceTaskId.value||d.task_id; statusText.value='生成中...'; beginPolling(flat);
           }
         }catch(e){statusText.value='提交失败';statusColor.value='#f44336';toast(errorText(e,'提交失败'),'error')}
+        finally { startSubmitting.value = false; }
       }
 
       function beginPolling(flatOutline, keepExisting=false, options={manualRetry:false,deferStream:false}) {
@@ -1203,8 +1240,22 @@ export function createWriterApp() {
         ps(); pstr();
       }
 
-      async function sendDecisionFn(action,feedback=''){try{const d=await API.sendDecision(taskId.value,confirmPhase.value,action,feedback);awaitingConfirm.value=false;if(d.workspace_task_id)workspaceTaskId.value=d.workspace_task_id;if(d.new_task_id){stopPolling();taskId.value=d.new_task_id;statusText.value='继续执行中...';statusColor.value='var(--accent)';beginPolling(null,true)}return d}catch(e){toast(errorText(e,'操作失败'),'error');throw e}}
-      async function stopWriting(){if(taskId.value){try{await sendDecisionFn('stop')}catch(e){}}stopPolling();isGenerating.value=false;taskDone.value=false;statusText.value='已停止';statusColor.value='#888'}
+      async function sendDecisionFn(action,feedback=''){
+        const key = 'decision-'+action;
+        const operation = operations.begin(key);
+        if (!operation) { toast('操作正在提交，请稍候', 'info', 1600); return null; }
+        try {
+          const d=await API.sendDecision(taskId.value,confirmPhase.value,action,feedback);
+          awaitingConfirm.value=false;if(d.workspace_task_id)workspaceTaskId.value=d.workspace_task_id;if(d.new_task_id){stopPolling();taskId.value=d.new_task_id;statusText.value='继续执行中...';statusColor.value='var(--accent)';beginPolling(null,true)}return d;
+        }catch(e){toast(errorText(e,'操作失败'),'error');throw e}
+        finally { operation.done(); }
+      }
+      async function stopWriting(){
+        if (stoppingWriting.value) return;
+        stoppingWriting.value = true;
+        try { if(taskId.value){try{await sendDecisionFn('stop')}catch(e){}} }
+        finally { stopPolling();isGenerating.value=false;taskDone.value=false;statusText.value='已停止';statusColor.value='#888';stoppingWriting.value=false; }
+      }
       function retryConnection(){
         if(!taskId.value || connectionRetryBusy.value) return;
         connectionRetryBusy.value = true;
@@ -1595,16 +1646,27 @@ export function createWriterApp() {
       function autoFillDetectByChapter(){if(!detectChapter.value){detectText.value='';return}const [sec,sub]=String(detectChapter.value).split('-').map(Number);const b=draftBlocks.value.find(x=>x.section===sec&&x.subsection===sub);detectText.value=b?b.text||'':'未找到对应正文'}
       async function runAIDetect(){if(!detectText.value.trim()){toast('请粘贴文本','error');return}detecting.value=true;agentStatus.value='正在检测AI痕迹...';try{const d=await API.detectAI(detectText.value);detectResult.value=d}catch(e){toast('检测失败','error')}finally{detecting.value=false;agentStatus.value=''}}
       async function runOutlineEval(){evalLoading.value=true;agentStatus.value='正在评估大纲逻辑...';try{const id=await ensureWorkspace();evalResult.value=await API.evaluateOutline(id,{nodes:flattenOutlineNodes(),from_section:evalRange.value.from,to_section:evalRange.value.to||null})}catch(e){toast(errorText(e,'评估失败'),'error')}finally{evalLoading.value=false;agentStatus.value=''}}
-      async function exportDraft(format){if(!taskId.value){toast('当前没有可导出的写作任务','error');return}try{const record=await API.createExport(taskId.value,format);const link=document.createElement('a');link.href=API.exportDownloadUrl(taskId.value,record.export_id);link.download=record.filename||'';document.body.appendChild(link);link.click();link.remove();await loadExportHistory();toast('导出已生成','success')}catch(e){toast(errorText(e,'导出失败'),'error')}}
+      async function exportDraft(format){
+        if(!taskId.value){toast('当前没有可导出的写作任务','error');return}
+        const key='export-'+format; const operation=operations.begin(key);
+        if(!operation){toast('该格式正在导出，请稍候','info',1600);return}
+        exportLoading.value=format;
+        try{const record=await API.createExport(taskId.value,format,{signal:operation.signal});const link=document.createElement('a');link.href=API.exportDownloadUrl(taskId.value,record.export_id);link.download=record.filename||'';document.body.appendChild(link);link.click();link.remove();await loadExportHistory();toast('导出已生成','success')}catch(e){if(!operation.signal.aborted)toast(errorText(e,'导出失败'),'error')}finally{exportLoading.value='';operation.done()}
+      }
       function downloadExport(record){if(!taskId.value||!record?.export_id)return;const link=document.createElement('a');link.href=API.exportDownloadUrl(taskId.value,record.export_id);link.download=record.filename||'';document.body.appendChild(link);link.click();link.remove()}
       async function loadExportHistory(){if(!taskId.value){exportHistory.value=[];return}try{const d=await API.listExports(taskId.value);exportHistory.value=d.exports||[]}catch(e){exportHistory.value=[]}}
       async function loadProjects(){projectsLoading.value=true;try{const d=await API.listProjects(false);projects.value=d.projects||[]}catch(e){toast(errorText(e,'项目列表加载失败'),'error')}finally{projectsLoading.value=false}}
       async function openProject(project){if(!project)return;const generation=beginTaskRestoration();workspaceTaskId.value=project.workspace_task_id;taskId.value=project.active_task_id||project.workspace_task_id;outline.value=[];updateRestoredWorkspace(project);draftBlocks.value=[];taskDone.value=project.status==='completed';const restoredSession=await initTaskSession(generation);if(!isCurrentTaskRestoration(generation)||restoredSession.stale)return;applyRestoredTaskState(restoredSession,{deferStream:true});if(restoredSession.loadFailed&&!await waitForRestoredStatus(generation))return;await hydrateTaskSession(generation);if(!isCurrentTaskRestoration(generation))return;const capturedWorkspaceId=workspaceTaskId.value;void restoreDurableDraftBlocks(generation, capturedWorkspaceId);activeWorkspace.value='write';toast('项目恢复中','info')}
       async function archiveProjectFn(project){try{await API.archiveProject(project.workspace_task_id,true);await loadProjects();toast('项目已归档','success')}catch(e){toast(errorText(e,'归档失败'),'error')}}
-      async function runContinuityAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}analysisLoading.value='continuity';try{continuityResult.value=await API.reviewContinuity(taskId.value)}catch(e){toast(errorText(e,'连续性检查失败'),'error')}finally{analysisLoading.value=''}}
+      async function runContinuityAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}const operation=operations.begin('analysis-continuity');if(!operation){toast('连续性检查正在运行','info',1600);return}analysisLoading.value='continuity';analysisCancelable.value='continuity';try{continuityResult.value=await API.reviewContinuity(taskId.value,{signal:operation.signal})}catch(e){if(!operation.signal.aborted)toast(errorText(e,'连续性检查失败'),'error')}finally{analysisLoading.value='';analysisCancelable.value='';operation.done()}}
       async function loadEventGraph(){if(!taskId.value){toast('请先打开任务','error');return}analysisLoading.value='events';try{eventGraphResult.value=await API.getTaskEvents(taskId.value)}catch(e){toast(errorText(e,'事件图加载失败'),'error')}finally{analysisLoading.value=''}}
-      async function runPostWriteAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}analysisLoading.value='post';try{postWriteAnalysis.value=await API.analyzeTask(taskId.value)}catch(e){toast(errorText(e,'写后分析失败'),'error')}finally{analysisLoading.value=''}}
-      async function loadStateFrame(){if(!taskId.value){toast('请先打开任务','error');return}analysisLoading.value='state';try{stateFrameResult.value=await API.getStateFrame(taskId.value,stateFrameSection.value,stateFrameSubsection.value)}catch(e){toast(errorText(e,'StateFrame 加载失败'),'error')}finally{analysisLoading.value=''}}
+      async function runPostWriteAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}const operation=operations.begin('analysis-post');if(!operation){toast('写后分析正在运行','info',1600);return}analysisLoading.value='post';analysisCancelable.value='post';try{postWriteAnalysis.value=await API.analyzeTask(taskId.value,{signal:operation.signal})}catch(e){if(!operation.signal.aborted)toast(errorText(e,'写后分析失败'),'error')}finally{analysisLoading.value='';analysisCancelable.value='';operation.done()}}
+      async function loadStateFrame(){if(!taskId.value){toast('请先打开任务','error');return}const operation=operations.begin('analysis-state');if(!operation){toast('StateFrame 正在加载','info',1600);return}analysisLoading.value='state';analysisCancelable.value='state';try{stateFrameResult.value=await API.getStateFrame(taskId.value,stateFrameSection.value,stateFrameSubsection.value,{signal:operation.signal})}catch(e){if(!operation.signal.aborted)toast(errorText(e,'StateFrame 加载失败'),'error')}finally{analysisLoading.value='';analysisCancelable.value='';operation.done()}}
+      function cancelAnalysis(){
+        if (!analysisCancelable.value) return;
+        operations.cancel('analysis-'+analysisCancelable.value);
+        toast('已取消分析请求','info',1600);
+      }
       function toggleRouteNode(nodeId){const path=mapRouteForm.value.path_nodes||[];const index=path.indexOf(nodeId);if(index>=0)path.splice(index,1);else path.push(nodeId)}
       async function switchWorkspace(name){const target=normalizeWorkspaceId(name);activeWorkspace.value=target;showToolShelf.value=false;saveState();if(target==='world'){await Promise.all([loadMap(),loadItems(),loadRelations(),loadFactions(),loadSubplots()])}else if(target==='analysis'&&taskId.value){await Promise.all([loadSubplotHeatMap(),loadEventGraph()])}else if(target==='projects'){await Promise.all([loadProjects(),loadExportHistory()])}}
 
@@ -1645,12 +1707,12 @@ export function createWriterApp() {
       watch(outline,()=>{const flat=treeToFlat(outline.value,{});if(!flat.length)return;let si=0;for(const b of draftBlocks.value){if(b.type==='section'&&si<flat.length){b.title='第'+flat[si].section+'节：'+(flat[si].title||'');si++}}},{deep:true});
       watch(generatingBlockIdx,(idx)=>{if(idx>=0){nextTick(()=>{const b=draftBlocks.value[idx];if(b){const el=document.getElementById('draft-sub-'+b.section+'-'+b.subsection);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})}})}});
 
-      return { refineMode,taskId,workspaceTaskId,statusText,statusColor,saveStatus,saveStatusText,connectionState,connectionStatusText,connectionRetryAvailable,connectionRetryBusy,retryConnection,projectionStatus,projectionStatusText,commitStatus,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
+      return { refineMode,taskId,workspaceTaskId,statusText,statusColor,saveStatus,saveStatusText,saveErrorMessage,saveRetryKind,retrySave,connectionState,connectionStatusText,connectionRetryAvailable,connectionRetryBusy,retryConnection,projectionStatus,projectionStatusText,commitStatus,awaitingConfirm,confirmPhase,flowchartCollapsed,selectedNodeId,rawStatus,
         topic,worldSetting,storySynopsis,referenceText,globalWordLimit,mode,apiKey,genWorld,genSynopsis,
         stylePresets,styleProfile,analyzingStyle,
         outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,showOutlineBudgetModal,outlineBudgetError,outlineBudgetAdviceItems,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         showArcProjection,arcProjectionLoading,arcProjectionSavingId,arcProjectionError,arcReviewCandidates,arcExcludedCount,openArcProjectionReview,confirmArcCandidate,arcHardFieldsComplete,arcTypeLabel,arcStatusLabel,
-        tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,revisionInstructions,revisionLoading,revisionPreview,revisionApplying,revisionDiffRows,revisionSummary,showRevisionHistory,revisionHistoryBlock,revisionVersions,revisionHistoryLoading,revisionRestoring,beginDraftEdit,onDraftInput,revertDraftEdit,reviseDraftBlock,acceptRevisionPreview,openDraftVersions,loadDraftVersions,restoreDraftVersion,revisionSourceLabel,revisionCreatedAt,
+        tokenUsage,tokenCost,isGenerating,startSubmitting,stoppingWriting,generatingBlockIdx,completedSections,draftBlocks,taskDone,revisionInstructions,revisionLoading,revisionPreview,revisionApplying,revisionDiffRows,revisionSummary,showRevisionHistory,revisionHistoryBlock,revisionVersions,revisionHistoryLoading,revisionRestoring,beginDraftEdit,onDraftInput,revertDraftEdit,reviseDraftBlock,acceptRevisionPreview,openDraftVersions,loadDraftVersions,restoreDraftVersion,revisionSourceLabel,revisionCreatedAt,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,
         rules,foreshadowings,sideOpen,rulesSearch,fsSearch,filteredRules,filteredFS,aiDetectLog,sectionReviewStatus,
@@ -1660,7 +1722,7 @@ export function createWriterApp() {
         applyStylePreset,analyzeStyle,genWorldSettingFn,genStorySynopsisFn,
         loadCharacters,toggleChar,openCharModal,saveCharacter,doExtract,saveExtracted,deleteCharFn,
         aiSplitNodeFn,doImportOutline,saveOutlineFn,undoDeleteFn,initTaskSession,
-        startWriting,stopWriting,resetAll,sendDecisionFn,persistWorkspace,exportDraft,
+        startWriting,stopWriting,resetAll,sendDecisionFn,persistWorkspace,exportDraft,exportLoading,
         drawCardsFn,adoptCard,modifyCard,skipCards,nextWizardStep,stepLabel,wizardStep,wizardSteps,adoptedCards,selectedGenre,selectGenre,outlinePreview,previewOutlineCard,drawPlotCard,adoptPlotCard,createDraftTask,plotCards,drawingPlotCard,plotCardNode,plotCardSubType,clearPlotCards,
         agentStatus,
         sendDialogue,loadRules,loadForeshadowings,
@@ -1669,7 +1731,7 @@ export function createWriterApp() {
         saveRuleFn,deleteRuleFn,exportRules,importRulesFile,loadInspirations,useInspiration,createFSFn,
          workspaceTabs,activeWorkspace,activeWorkspaceMeta,selectedOutlineNode,showToolShelf,switchWorkspace,showMap,showSubplot,showItems,showTimeline,showAIDetect,showOutlineEval,showFactions,showHistory,showOutlineVersions,outlineVersions,showMapForm,mapForm,showItemForm,itemForm,showSubplotForm,subplotForm,editingSubplot,selectedSubplot,factionsList,factionForm,editingFaction,sideCollapsed,leftPanelWidth,rightPanelWidth,resizing,startResize,
         mapNodes,mapEdges,mapRoute,mapEdgeForm,mapRouteForm,createMapEdgeFn,saveMapRouteFn,toggleRouteNode,subplots,subplotHeatMap,loadSubplotHeatMap,itemsList,itemTransactionForm,recordItemTransactionFn,timelineEvents,detectText,detecting,detectResult,detectChapter,evalRange,evalLoading,evalResult,historyList,historyLoading,selectedHistory,taskContent,taskContentLoading,
-        projects,projectsLoading,loadProjects,openProject,archiveProjectFn,exportHistory,loadExportHistory,downloadExport,analysisTab,analysisLoading,continuityResult,eventGraphResult,postWriteAnalysis,stateFrameResult,stateFrameSection,stateFrameSubsection,runContinuityAnalysis,loadEventGraph,runPostWriteAnalysis,loadStateFrame,
+        projects,projectsLoading,loadProjects,openProject,archiveProjectFn,exportHistory,loadExportHistory,downloadExport,analysisTab,analysisLoading,analysisCancelable,cancelAnalysis,continuityResult,eventGraphResult,postWriteAnalysis,stateFrameResult,stateFrameSection,stateFrameSubsection,runContinuityAnalysis,loadEventGraph,runPostWriteAnalysis,loadStateFrame,
         loadMap,loadSubplots,loadItems,loadTimeline,loadHistory,loadOutlineVersions,restoreOutlineVersion,createMapNodeFn,createItemFn,saveSubplotFn,deleteSubplotFn,autoFillDetectText,autoFillDetectByChapter,runAIDetect,runOutlineEval,loadFactions,saveFactionFn,deleteFactionFn,resumeTask,deleteTaskFn,
         subplotCards,drawingSubplotCards,drawSubplotCardsFn,adoptSubplotCardFn,
         showRelations,relationsList,relationForm,editingRelation,relationPresets,loadRelations,openRelationForm,addRelationStage,removeRelationStage,saveRelation,deleteRelation,advanceRelationStageFn,

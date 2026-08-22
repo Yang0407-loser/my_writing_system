@@ -138,8 +138,8 @@ async function req(url, opts={}) {
   throw lastError || new ApiError('请求失败', {url});
 }
 export { req, req as request };
-function post(url,body){return req(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
-function put(url,body){return req(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
+function post(url,body,options={}){return req(url,{...options,method:'POST',headers:{'Content-Type':'application/json',...(options.headers||{})},body:JSON.stringify(body)})}
+function put(url,body,options={}){return req(url,{...options,method:'PUT',headers:{'Content-Type':'application/json',...(options.headers||{})},body:JSON.stringify(body)})}
 
 // Writing
 export const createTask=()=>post('/tasks',{});
@@ -158,13 +158,13 @@ export const getWorkspace=(id)=>req('/tasks/'+id+'/workspace');
 export const patchWorkspace=(id,body)=>req('/tasks/'+id+'/workspace',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 export const listProjects=(includeArchived=false)=>req('/projects?include_archived='+includeArchived);
 export const archiveProject=(id,archived=true)=>req('/projects/'+id+'/archive',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({archived})});
-export const createExport=(id,format='md')=>post('/tasks/'+id+'/exports',{format});
+export const createExport=(id,format='md',options={})=>post('/tasks/'+id+'/exports',{format},options);
 export const listExports=(id)=>req('/tasks/'+id+'/exports');
 export const exportDownloadUrl=(id,exportId)=>BASE+'/tasks/'+id+'/exports/'+exportId+'/download';
-export const reviewContinuity=(id)=>post('/tasks/'+id+'/review/continuity',{});
+export const reviewContinuity=(id,options={})=>post('/tasks/'+id+'/review/continuity',{},options);
 export const getTaskEvents=(id)=>req('/tasks/'+id+'/events');
-export const analyzeTask=(id)=>post('/tasks/'+id+'/analyze',{});
-export const getStateFrame=(id,section,subsection)=>req('/tasks/'+id+'/state-frame/'+section+'/'+subsection);
+export const analyzeTask=(id,options={})=>post('/tasks/'+id+'/analyze',{},options);
+export const getStateFrame=(id,section,subsection,options={})=>req('/tasks/'+id+'/state-frame/'+section+'/'+subsection,options);
 
 // Generate
 export const genWorldSetting=(topic)=>post('/api/generate/world-setting',{topic});
