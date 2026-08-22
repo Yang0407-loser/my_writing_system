@@ -94,3 +94,19 @@ test('external cancellation is distinct from a client timeout', async () => {
     return true;
   });
 });
+
+test('getStream filters duplicate and late events by Redis message ID', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return response(200, calls === 1
+      ? { events: [['1-0', { event: 'token', text: 'A' }], ['2-0', { event: 'done' }], ['3-0', { event: 'token', text: 'late' }]], last_id: '3-0' }
+      : { events: [['1-0', { event: 'token', text: 'A' }], ['4-0', { event: 'token', text: 'after-done' }]], last_id: '4-0' });
+  };
+  const API = await import(`../../app/static/js/api.js?stream-ledger=${Date.now()}`);
+
+  const first = await API.getStream('stream-task', '0-0');
+  const second = await API.getStream('stream-task', first.last_id);
+  assert.deepEqual(first.events.map(([id]) => id), ['1-0', '2-0']);
+  assert.deepEqual(second.events, []);
+});

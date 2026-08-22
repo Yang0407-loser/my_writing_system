@@ -3,6 +3,8 @@ let _apiKey = '';
 const DEFAULT_TIMEOUT_MS = 120000;
 const DEFAULT_RETRIES = 0;
 const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+import { createStreamEventLedger } from './stream-event-ledger.mjs?v=20260822a';
+const streamLedgers = new Map();
 
 export function setApiKey(k) { _apiKey = k || ''; }
 
@@ -145,7 +147,13 @@ function put(url,body,options={}){return req(url,{...options,method:'PUT',header
 export const createTask=()=>post('/tasks',{});
 export const startWriting=(body,mode)=>req('/write?mode='+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 export const getStatus=(id,options={})=>req('/status/'+id,{timeoutMs:15000,signal:options.signal});
-export const getStream=(id,lastId,options={})=>req('/stream/'+id+'?last_id='+encodeURIComponent(lastId)+'&count=50',{timeoutMs:15000,signal:options.signal});
+export const getStream=async(id,lastId,options={})=>{
+  const payload=await req('/stream/'+id+'?last_id='+encodeURIComponent(lastId)+'&count=50',{timeoutMs:15000,signal:options.signal});
+  let ledger=streamLedgers.get(id);
+  if(!ledger){ledger=createStreamEventLedger();streamLedgers.set(id,ledger)}
+  const events=(payload?.events||[]).filter(([eventId,event])=>ledger.accept(eventId,event));
+  return {...payload,events};
+};
 export const sendDecision=(id,phase,action,fb='')=>req('/tasks/'+id+'/decide?phase='+phase+'&action='+action+'&feedback='+encodeURIComponent(fb),{method:'POST'});
 export const continueWriting=(id,body)=>req('/tasks/'+id+'/continue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 export const reviseSubsection=(id,body)=>post('/tasks/'+id+'/revise',body);

@@ -101,7 +101,7 @@ def test_loaded_frontend_cleans_up_lifecycle_and_uses_current_release_keys():
 
     assert "'/static/js/main.js?v=20260822d'" in template
     assert 'href="/static/styles/base.css?v=20260822b"' in template
-    assert "import * as API from './api.js?v=20260822c';" in main_js
+    assert "import * as API from './api.js?v=20260822d';" in main_js
     assert "from './task-restoration-stream.mjs?v=20260815c';" in main_js
     assert "onUnmounted" in main_js
     assert "clearInterval(autosaveInterval);" in main_js
@@ -205,3 +205,16 @@ def test_loaded_frontend_guards_long_operations_and_surfaces_save_retry():
     assert "operations.begin('analysis-continuity')" in main_js
     assert "operations.cancel('analysis-'+analysisCancelable.value)" in main_js
     assert "export const getStateFrame=(id,section,subsection,options={})" in api_js
+
+
+def test_loaded_frontend_deduplicates_late_stream_events():
+    main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
+    api_js = (ROOT / "app/static/js/api.js").read_text(encoding="utf-8")
+    ledger = (ROOT / "app/static/js/stream-event-ledger.mjs").read_text(encoding="utf-8")
+
+    assert "stream-event-ledger.mjs?v=20260822a" in main_js
+    assert "createStreamEventLedger()" in main_js
+    assert "eventLedger.accept(eventId,evt)" in main_js
+    assert "stream-event-ledger.mjs?v=20260822a" in api_js
+    assert "streamLedgers" in api_js
+    assert "TERMINAL_EVENTS" in ledger
