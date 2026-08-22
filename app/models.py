@@ -184,6 +184,7 @@ class ReviseRequest(BaseModel):
     section: int
     subsection: int | None = None
     instruction: str  # e.g. "加重孤独感", "删除这段", "加入一段环境描写"
+    preview_only: bool = False
 
 
 # ============================================================

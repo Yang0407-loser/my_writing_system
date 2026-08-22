@@ -44,7 +44,7 @@ def test_loaded_frontend_exposes_connection_retry_control():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
 
-    assert "'/static/js/main.js?v=20260822a'" in template
+    assert "'/static/js/main.js?v=20260822b'" in template
     assert 'v-if="connectionRetryAvailable"' in template
     assert '@click="retryConnection"' in template
     assert 'createTaskConnectionController' in main_js
@@ -99,9 +99,9 @@ def test_loaded_frontend_cleans_up_lifecycle_and_uses_current_release_keys():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
 
-    assert "'/static/js/main.js?v=20260822a'" in template
-    assert 'href="/static/styles/base.css?v=20260822a"' in template
-    assert "import * as API from './api.js?v=20260815b';" in main_js
+    assert "'/static/js/main.js?v=20260822b'" in template
+    assert 'href="/static/styles/base.css?v=20260822b"' in template
+    assert "import * as API from './api.js?v=20260822b';" in main_js
     assert "from './task-restoration-stream.mjs?v=20260815c';" in main_js
     assert "onUnmounted" in main_js
     assert "clearInterval(autosaveInterval);" in main_js
@@ -171,3 +171,22 @@ def test_loaded_frontend_uses_a_compact_command_bar_and_dynamic_inspector():
     assert "activeWorkspace:activeWorkspace.value" in main_js
     assert "activeWorkspace.value=normalizeWorkspaceId(s.activeWorkspace)" in main_js
     assert ".main > .panel-center { order: -1; min-width: 100%; }" in styles
+
+
+def test_loaded_frontend_previews_and_restores_draft_revisions():
+    template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
+    main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
+    api_js = (ROOT / "app/static/js/api.js").read_text(encoding="utf-8")
+
+    assert 'class="revision-compare"' in template
+    assert "revisionPreview.original" in template
+    assert "revisionPreview.revised" in template
+    assert '@click="acceptRevisionPreview"' in template
+    assert '@click="restoreDraftVersion(version)"' in template
+    assert "preview_only:true" in main_js
+    assert "API.patchDraftSubsection" in main_js
+    assert "API.getDraftVersions" in main_js
+    assert "API.restoreDraftVersion" in main_js
+    assert "export const patchDraftSubsection" in api_js
+    assert "export const getDraftVersions" in api_js
+    assert "export const restoreDraftVersion" in api_js

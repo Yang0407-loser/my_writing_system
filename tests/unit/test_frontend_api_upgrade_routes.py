@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
+
 import app.dependencies as dependencies
 import app.routers.analysis as analysis_routes
 import app.routers.outline as outline_routes
@@ -237,6 +239,164 @@ def test_revision_helpers_replace_one_subsection_and_merge_snapshots():
     )
     assert merged.count("新A") == 1
     assert "旧B" in merged
+
+
+def test_revision_preview_does_not_mutate_server_draft(monkeypatch):
+    board = FakeBoard()
+    board.tasks["run-2"] = {
+        "status": "completed",
+        "workspace_task_id": "workspace-1",
+        "draft": "第1节第1小节\n旧正文",
+    }
+    board.checkpoints["run-2"] = {
+        "section_texts": {"1": "第1节第1小节\n旧正文"}
+    }
+    monkeypatch.setattr(task_routes, "bb", board)
+    monkeypatch.setattr(
+        "app.agents.writer.Writer.revise_subsection",
+        lambda _self, original, instruction: f"{original}\n修订：{instruction}",
+    )
+
+    result = task_routes.revise_subsection(
+        "run-2",
+        task_routes.ReviseRequest(
+            section=1,
+            subsection=1,
+            instruction="增强冲突",
+            preview_only=True,
+        ),
+    )
+
+    assert result["status"] == "preview"
+    assert result["original"] == "第1节第1小节\n旧正文"
+    assert result["revised"].endswith("修订：增强冲突")
+    assert board.tasks["run-2"]["draft"] == "第1节第1小节\n旧正文"
+    assert board.checkpoints["run-2"]["section_texts"]["1"].endswith("旧正文")
+
+
+def test_revision_preview_recovers_from_durable_completed_workspace(
+    monkeypatch, tmp_path
+):
+    path = tmp_path / "tasks.db"
+    board = FakeBoard()
+    monkeypatch.setattr(task_routes, "bb", board)
+    monkeypatch.setattr(app_config.settings, "TASK_DB_PATH", str(path))
+    monkeypatch.setattr(
+        "app.agents.writer.Writer.revise_subsection",
+        lambda _self, original, instruction: f"{original}\n修订：{instruction}",
+    )
+    with TaskStore(str(path)) as store:
+        store.save_workspace(
+            "workspace-1",
+            {
+                "active_task_id": "run-2",
+                "status": "completed",
+                "draft_backup": '[{"section":1,"subsection":1,"text":"持久化正文"}]',
+            },
+        )
+
+    result = task_routes.revise_subsection(
+        "run-2",
+        task_routes.ReviseRequest(
+            section=1,
+            subsection=1,
+            instruction="增强冲突",
+            preview_only=True,
+        ),
+    )
+
+    assert result["status"] == "preview"
+    assert result["original"] == "持久化正文"
+    assert result["revised"].endswith("修订：增强冲突")
+
+
+def test_accept_revision_creates_versions_and_restore_reapplies_content(
+    monkeypatch, tmp_path
+):
+    path = tmp_path / "tasks.db"
+    board = FakeBoard()
+    board.tasks["run-2"] = {
+        "status": "completed",
+        "workspace_task_id": "workspace-1",
+        "draft": "第1节第1小节\n旧正文",
+        "draft_backup": '[{"section":1,"subsection":1,"text":"旧正文"}]',
+    }
+    board.checkpoints["run-2"] = {
+        "section_texts": {"1": "第1节第1小节\n旧正文"}
+    }
+    monkeypatch.setattr(task_routes, "bb", board)
+    monkeypatch.setattr(app_config.settings, "TASK_DB_PATH", str(path))
+    with TaskStore(str(path)) as store:
+        store.save_workspace(
+            "workspace-1",
+            {
+                "active_task_id": "run-2",
+                "status": "completed",
+                "draft_backup": '[{"section":1,"subsection":1,"text":"旧正文"}]',
+            },
+        )
+
+    accepted = task_routes.patch_draft_subsection(
+        "run-2",
+        1,
+        1,
+        task_routes.DraftSectionPatch(
+            base_text="旧正文",
+            text="新正文",
+            instruction="增强冲突",
+        ),
+    )
+    versions = task_routes.list_draft_versions("run-2", section=1, subsection=1)
+    baseline = next(item for item in versions["versions"] if item["source"] == "baseline")
+    restored = task_routes.restore_draft_version("run-2", baseline["version_id"])
+
+    assert accepted["version"]["source"] == "ai_revision"
+    assert [item["source"] for item in versions["versions"]] == [
+        "ai_revision",
+        "baseline",
+    ]
+    assert restored["text"] == "旧正文"
+    with TaskStore(str(path)) as store:
+        workspace = store.get_workspace("workspace-1")
+        history = store.list_draft_versions("workspace-1", section=1, subsection=1)
+    assert "旧正文" in workspace["draft_backup"]
+    assert history[0]["source"] == "restore"
+
+
+def test_accept_revision_rejects_a_stale_preview(monkeypatch, tmp_path):
+    path = tmp_path / "tasks.db"
+    board = FakeBoard()
+    board.tasks["run-2"] = {
+        "status": "completed",
+        "workspace_task_id": "workspace-1",
+        "draft_backup": '[{"section":1,"subsection":1,"text":"服务器新正文"}]',
+    }
+    monkeypatch.setattr(task_routes, "bb", board)
+    monkeypatch.setattr(app_config.settings, "TASK_DB_PATH", str(path))
+    with TaskStore(str(path)) as store:
+        store.save_workspace(
+            "workspace-1",
+            {
+                "active_task_id": "run-2",
+                "draft_backup": '[{"section":1,"subsection":1,"text":"服务器新正文"}]',
+            },
+        )
+
+    with pytest.raises(task_routes.HTTPException) as caught:
+        task_routes.patch_draft_subsection(
+            "run-2",
+            1,
+            1,
+            task_routes.DraftSectionPatch(
+                base_text="过期正文",
+                text="候选正文",
+                instruction="增强冲突",
+            ),
+        )
+
+    assert caught.value.status_code == 409
+    with TaskStore(str(path)) as store:
+        assert store.list_draft_versions("workspace-1") == []
 
 
 def test_draft_save_resolves_active_task_to_durable_workspace(monkeypatch, tmp_path):

@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>多智能体写作系统 v0.9</title>
 <script type="importmap">{"imports":{"vue":"/static/vendor/vue.esm-browser.prod.js"}}</script>
-<link rel="stylesheet" href="/static/styles/base.css?v=20260822a">
+<link rel="stylesheet" href="/static/styles/base.css?v=20260822b">
 </head>
 <body>
 <div id="app">
@@ -220,7 +220,7 @@
           <div v-if="b.type==='section'" class="section-title" :id="'draft-sec-'+b.section">{{b.title}}</div>
           <div v-else :id="'draft-sub-'+b.section+'-'+b.subsection"><div class="draft-block-header"><span>{{b.title}}</span><span class="word-badge" :class="b.wordCount>b.targetWords*1.2?'over':b.wordCount<b.targetWords*0.8?'under':'ok'">{{b.wordCount}}/{{b.targetWords}}</span><button class="btn btn-outline btn-sm" v-if="b._editBaseline!=null" @click="revertDraftEdit(b)">回退本次编辑</button></div>
           <textarea class="draft-text draft-editor" v-model="b.text" @focus="beginDraftEdit(b)" @input="onDraftInput(b)" :readonly="b===draftBlocks[generatingBlockIdx]" :aria-label="(b.title||'正文')+'编辑区'"></textarea>
-          <div class="revision-bar" v-if="taskDone"><input v-model="revisionInstructions[b.section+'-'+b.subsection]" placeholder="输入本小节修订要求"><button class="btn btn-primary btn-sm" @click="reviseDraftBlock(b)" :disabled="revisionLoading===b.section+'-'+b.subsection">{{revisionLoading===b.section+'-'+b.subsection?'修订中...':'AI 修订'}}</button></div></div>
+          <div class="revision-bar" v-if="taskDone"><input v-model="revisionInstructions[b.section+'-'+b.subsection]" placeholder="输入本小节修订要求"><button class="btn btn-primary btn-sm" @click="reviseDraftBlock(b)" :disabled="revisionLoading===b.section+'-'+b.subsection">{{revisionLoading===b.section+'-'+b.subsection?'生成候选中...':'AI 修订'}}</button><button class="btn btn-outline btn-sm" @click="openDraftVersions(b)">版本</button></div></div>
         </template>
       </div>
       <div v-else class="draft-empty"><div class="draft-empty-icon">&#9997;</div><div class="draft-empty-title">{{queuedCount===0&&totalSubsections>0?'没有排队章节':'准备开始创作'}}</div><div class="draft-empty-sub">{{queuedCount===0&&totalSubsections>0?'点击大纲节点旁的 🟡 加入写作队列<br>然后点击下方「继续写作」':'在左侧设定主题和大纲<br>点击下方「开始写作」'}}</div></div>
@@ -506,6 +506,41 @@
         <button class="btn btn-outline" @click="exportDraft('txt')">导出 TXT</button>
         <button class="btn btn-outline" @click="exportDraft('json')">导出 JSON</button>
         <button class="btn btn-outline" @click="showCompleteModal=false">关闭</button>
+      </div>
+    </div>
+  </div>
+  <!-- Draft revision comparison -->
+  <div class="modal-overlay" v-if="revisionPreview" @click.self="revisionPreview=null">
+    <div class="modal-box wide revision-modal">
+      <div class="revision-modal-header">
+        <div><h3>采用修订前先对比</h3><p>{{revisionPreview.block.title}} · {{revisionPreview.instruction}}</p></div>
+        <button class="btn btn-outline btn-sm" @click="revisionPreview=null">关闭</button>
+      </div>
+      <div class="revision-summary-strip">
+        <span class="revision-added">+{{revisionSummary.addedLines}} 行</span>
+        <span class="revision-removed">-{{revisionSummary.removedLines}} 行</span>
+        <span>字数 {{revisionSummary.characterDelta>=0?'+':''}}{{revisionSummary.characterDelta}}</span>
+      </div>
+      <div class="revision-compare">
+        <section><header>当前原稿</header><pre>{{revisionPreview.original}}</pre></section>
+        <section><header>修订候选</header><pre>{{revisionPreview.revised}}</pre></section>
+      </div>
+      <details class="revision-unified-diff"><summary>查看逐行变化</summary><div><p v-for="(row,index) in revisionDiffRows" :key="index" :class="'revision-line-'+row.type"><span>{{row.type==='added'?'+':row.type==='removed'?'-':' '}}</span>{{row.text||' '}}</p></div></details>
+      <div class="revision-modal-actions"><button class="btn btn-outline" @click="revisionPreview=null">保留原稿</button><button class="btn btn-primary" @click="acceptRevisionPreview" :disabled="revisionApplying">{{revisionApplying?'保存中...':'采用修订'}}</button></div>
+    </div>
+  </div>
+  <!-- Draft revision history -->
+  <div class="modal-overlay" v-if="showRevisionHistory" @click.self="showRevisionHistory=false">
+    <div class="modal-box revision-history-modal">
+      <div class="revision-modal-header"><div><h3>正文版本</h3><p>{{revisionHistoryBlock?.title||'当前小节'}}</p></div><button class="btn btn-outline btn-sm" @click="showRevisionHistory=false">关闭</button></div>
+      <div v-if="revisionHistoryLoading" class="modal-loading">正在加载版本……</div>
+      <div v-else-if="!revisionVersions.length" class="arc-review-empty">尚无版本。采用一次 AI 修订后会同时保存修订前后的正文。</div>
+      <div v-else class="revision-version-list">
+        <article v-for="version in revisionVersions" :key="version.version_id" class="revision-version-card">
+          <div><strong>{{revisionSourceLabel(version.source)}}</strong><span>{{revisionCreatedAt(version.created_at)}}</span></div>
+          <p v-if="version.instruction">{{version.instruction}}</p><pre>{{version.content}}</pre>
+          <button class="btn btn-outline btn-sm" @click="restoreDraftVersion(version)" :disabled="revisionRestoring===version.version_id">{{revisionRestoring===version.version_id?'恢复中...':'恢复此版本'}}</button>
+        </article>
       </div>
     </div>
   </div>
@@ -1233,7 +1268,7 @@
 </div>
 
 <script type="module">
-import { createWriterApp } from '/static/js/main.js?v=20260822a';
+import { createWriterApp } from '/static/js/main.js?v=20260822b';
 createWriterApp().mount('#app');
 </script>
 </body>

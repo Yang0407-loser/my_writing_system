@@ -1,5 +1,6 @@
 import sqlite3
 import json
+import uuid
 from weakref import WeakSet
 
 
@@ -272,6 +273,74 @@ class TaskStore:
             (task_id, task_id),
         ).fetchone()
         return self.get_workspace(row[0]) if row else None
+
+    def add_draft_version(
+        self,
+        workspace_task_id: str,
+        *,
+        active_task_id: str,
+        section: int,
+        subsection: int,
+        content: str,
+        source: str,
+        instruction: str = "",
+        parent_version_id: str | None = None,
+        version_id: str | None = None,
+    ) -> dict:
+        version_id = version_id or str(uuid.uuid4())
+        self._conn.execute(
+            """
+            INSERT INTO draft_versions (
+                version_id, workspace_task_id, active_task_id, section,
+                subsection, content, source, instruction, parent_version_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                version_id,
+                workspace_task_id,
+                active_task_id,
+                int(section),
+                int(subsection),
+                content,
+                source,
+                instruction,
+                parent_version_id,
+            ),
+        )
+        self._conn.commit()
+        return self.get_draft_version(version_id)
+
+    def get_draft_version(self, version_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM draft_versions WHERE version_id = ?",
+            (version_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def list_draft_versions(
+        self,
+        workspace_task_id: str,
+        *,
+        section: int | None = None,
+        subsection: int | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        clauses = ["workspace_task_id = ?"]
+        values: list[object] = [workspace_task_id]
+        if section is not None:
+            clauses.append("section = ?")
+            values.append(int(section))
+        if subsection is not None:
+            clauses.append("subsection = ?")
+            values.append(int(subsection))
+        values.append(int(limit))
+        rows = self._conn.execute(
+            "SELECT * FROM draft_versions WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY created_at DESC, rowid DESC LIMIT ?",
+            values,
+        ).fetchall()
+        return [dict(row) for row in rows]
 
     def delete(self, task_id: str) -> bool:
         cur = self._conn.execute("DELETE FROM task_history WHERE task_id = ?", (task_id,))

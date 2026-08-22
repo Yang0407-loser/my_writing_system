@@ -36,6 +36,7 @@ def test_server_refuses_database_outside_owned_runtime(monkeypatch, tmp_path):
 
 
 def _production_bindings():
+    from app.agents.writer import Writer
     from app.config import settings
     import app.dependencies as dependencies
     import app.routers.outline as outline_routes
@@ -50,10 +51,12 @@ def _production_bindings():
         "export_root": task_routes._export_root,
         "get_redis": outline_routes._get_redis,
         "rules_db_path": rule_store.RULES_DB_PATH,
+        "revise_subsection": Writer.revise_subsection,
     }
 
 
 def _assert_production_bindings(bindings):
+    from app.agents.writer import Writer
     from app.config import settings
     import app.dependencies as dependencies
     import app.routers.outline as outline_routes
@@ -67,9 +70,11 @@ def _assert_production_bindings(bindings):
     assert task_routes._export_root is bindings["export_root"]
     assert outline_routes._get_redis is bindings["get_redis"]
     assert rule_store.RULES_DB_PATH == bindings["rules_db_path"]
+    assert Writer.revise_subsection is bindings["revise_subsection"]
 
 
 def _restore_production_bindings(bindings):
+    from app.agents.writer import Writer
     from app.config import settings
     import app.dependencies as dependencies
     import app.routers.outline as outline_routes
@@ -83,6 +88,7 @@ def _restore_production_bindings(bindings):
     task_routes._export_root = bindings["export_root"]
     outline_routes._get_redis = bindings["get_redis"]
     rule_store.RULES_DB_PATH = bindings["rules_db_path"]
+    Writer.revise_subsection = bindings["revise_subsection"]
 
 
 def test_wrapper_lifespan_runs_production_startup_and_restores_bindings(
@@ -157,3 +163,25 @@ def test_storage_reset_page_clears_both_stores_and_navigates(client):
     assert "localStorage.clear()" in response.text
     assert "sessionStorage.clear()" in response.text
     assert "window.location.assign('/write-ui-v2')" in response.text
+
+
+def test_support_server_uses_deterministic_revision_and_restores_binding(
+    monkeypatch, tmp_path
+):
+    from app.agents.writer import Writer
+
+    runtime = tmp_path / "owned-runtime"
+    runtime.mkdir()
+    monkeypatch.setenv("WRITER_TESTING", "1")
+    monkeypatch.setenv("WRITER_E2E_RUNTIME_DIR", str(runtime))
+    monkeypatch.setenv("TASK_DB_PATH", str(runtime / "tasks.db"))
+    monkeypatch.setenv("WRITER_E2E_SCENARIO", "automatic")
+    before = Writer.revise_subsection
+    support = create_support_app()
+
+    with TestClient(support):
+        assert Writer().revise_subsection("原稿", "增强冲突") == (
+            "原稿\n\n【修订候选】增强冲突"
+        )
+
+    assert Writer.revise_subsection is before

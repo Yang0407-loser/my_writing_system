@@ -804,6 +804,35 @@ textarea { resize: vertical; min-height: 60px; }
 .revision-bar { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
 .revision-bar input { flex: 1; min-width: 0; }
 
+.revision-modal { width: min(1040px, 94vw); }
+.revision-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.revision-modal-header h3 { margin-bottom: 3px; }
+.revision-modal-header p { margin: 0; color: var(--muted); font-size: 10px; }
+.revision-summary-strip { display: flex; gap: 12px; margin: 12px 0 8px; color: var(--muted); font-size: 10px; }
+.revision-added { color: var(--green); }
+.revision-removed { color: var(--red); }
+.revision-compare { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.revision-compare section { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-1); }
+.revision-compare header { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--gold); font-size: 10px; }
+.revision-compare pre,
+.revision-version-card pre { margin: 0; padding: 10px; max-height: 42vh; overflow: auto; color: var(--text); font: inherit; font-size: 11px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.revision-unified-diff { margin-top: 10px; border: 1px solid var(--border); border-radius: 4px; }
+.revision-unified-diff summary { padding: 7px 10px; color: var(--muted); font-size: 10px; cursor: pointer; }
+.revision-unified-diff > div { max-height: 220px; overflow: auto; border-top: 1px solid var(--border); }
+.revision-unified-diff p { display: flex; gap: 7px; margin: 0; padding: 2px 9px; font-family: Consolas, monospace; font-size: 10px; white-space: pre-wrap; }
+.revision-line-added { color: var(--green); background: rgba(111,181,127,0.08); }
+.revision-line-removed { color: var(--red); background: rgba(201,106,106,0.08); }
+.revision-line-unchanged { color: var(--muted); }
+.revision-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.revision-history-modal { width: min(700px, 94vw); }
+.revision-version-list { display: grid; gap: 8px; margin-top: 12px; max-height: 66vh; overflow: auto; }
+.revision-version-card { padding: 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface-1); }
+.revision-version-card > div { display: flex; justify-content: space-between; gap: 8px; }
+.revision-version-card strong { color: var(--text-bright); font-size: 11px; }
+.revision-version-card span { color: var(--dim); font-size: 9px; }
+.revision-version-card > p { margin: 5px 0 0; color: var(--gold-dim); font-size: 10px; }
+.revision-version-card pre { margin: 7px 0; max-height: 130px; padding: 8px; border: 1px solid var(--border); background: var(--bg); }
+
 .status-pill {
   min-width: 58px;
   padding: 2px 7px;
@@ -987,6 +1016,10 @@ textarea { resize: vertical; min-height: 60px; }
   .main > .panel, .main > .panel-center { min-width: min(86vw, 340px); scroll-snap-align: start; }
   .main > .panel-center { order: -1; min-width: 100%; }
   .panel-resize-handle { display: none; }
+  .revision-bar { align-items: stretch; flex-wrap: wrap; }
+  .revision-bar input { flex-basis: 100%; }
+  .revision-compare { grid-template-columns: 1fr; }
+  .revision-compare pre { max-height: 28vh; }
 }
 
 .outline-eval-issue {
