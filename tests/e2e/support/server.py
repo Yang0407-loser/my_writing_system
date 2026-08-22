@@ -5,6 +5,10 @@ import os
 from pathlib import Path
 
 
+def _deterministic_revise_subsection(_writer, original_text: str, instruction: str) -> str:
+    return f"{original_text}\n\n【修订候选】{instruction}"
+
+
 def validate_environment() -> tuple[Path, Path]:
     """Reject a browser harness that could touch non-E2E state."""
     if os.environ.get("WRITER_TESTING") != "1":
@@ -29,6 +33,7 @@ def create_support_app():
     from fastapi.responses import HTMLResponse
 
     from app.blackboard import Blackboard
+    from app.agents.writer import Writer
     from app.config import settings
     import app.dependencies as dependencies
     from app.main import app as production_app
@@ -58,6 +63,7 @@ def create_support_app():
         "export_root": task_routes._export_root,
         "get_redis": outline_routes._get_redis,
         "rules_db_path": rule_store.RULES_DB_PATH,
+        "revise_subsection": Writer.revise_subsection,
     }
 
     def install_test_bindings() -> None:
@@ -68,6 +74,7 @@ def create_support_app():
         task_routes._export_root = isolated_export_root
         outline_routes._get_redis = lambda: board._redis
         rule_store.RULES_DB_PATH = str(runtime / "rules.db")
+        Writer.revise_subsection = _deterministic_revise_subsection
 
     def restore_production_bindings() -> None:
         settings.TASK_DB_PATH = original_bindings["task_db_path"]
@@ -77,6 +84,7 @@ def create_support_app():
         task_routes._export_root = original_bindings["export_root"]
         outline_routes._get_redis = original_bindings["get_redis"]
         rule_store.RULES_DB_PATH = original_bindings["rules_db_path"]
+        Writer.revise_subsection = original_bindings["revise_subsection"]
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):

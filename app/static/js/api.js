@@ -80,6 +80,9 @@ export const getStream=(id,lastId,options={})=>req('/stream/'+id+'?last_id='+enc
 export const sendDecision=(id,phase,action,fb='')=>req('/tasks/'+id+'/decide?phase='+phase+'&action='+action+'&feedback='+encodeURIComponent(fb),{method:'POST'});
 export const continueWriting=(id,body)=>req('/tasks/'+id+'/continue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 export const reviseSubsection=(id,body)=>post('/tasks/'+id+'/revise',body);
+export const patchDraftSubsection=(id,section,subsection,body)=>req('/tasks/'+id+'/draft/sections/'+section+'/'+subsection,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+export const getDraftVersions=(id,section,subsection)=>req('/tasks/'+id+'/draft/versions?section='+section+'&subsection='+subsection);
+export const restoreDraftVersion=(id,versionId)=>req('/tasks/'+id+'/draft/versions/'+versionId+'/restore',{method:'POST'});
 export const updateOutline=(id,outline)=>post('/tasks/'+id+'/update-outline',{outline});
 export const deleteTask=(id)=>req('/tasks/'+id,{method:'DELETE'});
 export const getWorkspace=(id)=>req('/tasks/'+id+'/workspace');

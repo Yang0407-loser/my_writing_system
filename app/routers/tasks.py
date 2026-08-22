@@ -33,6 +33,12 @@ class ExportRequest(BaseModel):
     format: str = "md"
 
 
+class DraftSectionPatch(BaseModel):
+    base_text: str
+    text: str
+    instruction: str = ""
+
+
 _WORKSPACE_CONFIG_FIELDS = {
     "topic": "config_topic",
     "world_setting": "config_world_setting",
@@ -581,10 +587,14 @@ def approve_outline(task_id: str, action: str = "approve", feedback: str = ""):
 
 @router.post("/tasks/{task_id}/revise")
 def revise_subsection(task_id: str, req: ReviseRequest, x_api_key: str = Header("", alias="X-API-Key")):
-    data = bb.get_all(task_id)
-    if not data:
+    try:
+        data = bb.get_all(task_id)
+    except RedisError:
+        data = {}
+    workspace = _durable_workspace_for_task(task_id)
+    if not data and not workspace:
         raise HTTPException(status_code=404, detail="任务不存在")
-    if data.get("status") != "completed":
+    if (data.get("status") or (workspace or {}).get("status")) != "completed":
         raise HTTPException(status_code=400, detail="任务尚未完成，无法修订")
 
     from ..agents.writer import Writer
@@ -594,13 +604,45 @@ def revise_subsection(task_id: str, req: ReviseRequest, x_api_key: str = Header(
         set_api_key(x_api_key)
     writer = Writer()
 
-    checkpoint = bb.load_checkpoint(task_id) or {}
+    try:
+        checkpoint = bb.load_checkpoint(task_id) or {}
+    except RedisError:
+        checkpoint = {}
+    subsection = req.subsection or 1
+    durable_original = _draft_snapshot_text(
+        (workspace or {}).get("draft_backup") or data.get("draft_backup") or "",
+        section=req.section,
+        subsection=subsection,
+    )
+    if durable_original is not None:
+        revised = writer.revise_subsection(durable_original, req.instruction)
+        if req.preview_only:
+            return {
+                "status": "preview",
+                "section": req.section,
+                "subsection": req.subsection,
+                "original": durable_original,
+                "revised": revised,
+            }
+        _persist_draft_subsection(
+            task_id,
+            section=req.section,
+            subsection=subsection,
+            text=revised,
+        )
+        return {
+            "status": "revised",
+            "section": req.section,
+            "subsection": req.subsection,
+            "revised": revised,
+            "draft": data.get("draft") or revised,
+        }
+
     draft = data.get("draft", "") or _assemble_checkpoint_draft(checkpoint)
     lines = draft.split("\n")
     start_idx = None
     end_idx = len(lines)
     # 支持多种节标题格式: "第X节：" / "第X节:" / "Section X:" / "第X章："
-    subsection = req.subsection or 1
     sec_patterns = [
         _regex.compile(rf"第\s*{req.section}\s*节\s*第\s*{subsection}\s*小节"),
         _regex.compile(rf"第\s*{req.section}\s*[节章][：:]"),
@@ -623,6 +665,15 @@ def revise_subsection(task_id: str, req: ReviseRequest, x_api_key: str = Header(
 
     original = "\n".join(lines[start_idx:end_idx])
     revised = writer.revise_subsection(original, req.instruction)
+
+    if req.preview_only:
+        return {
+            "status": "preview",
+            "section": req.section,
+            "subsection": req.subsection,
+            "original": original,
+            "revised": revised,
+        }
 
     new_lines = lines[:start_idx] + [revised] + lines[end_idx:]
     new_draft = "\n".join(new_lines)
@@ -726,6 +777,253 @@ def _merge_draft_snapshot(
         )
     )
     return json.dumps(snapshots, ensure_ascii=False)
+
+
+def _draft_snapshot_text(
+    raw: str,
+    *,
+    section: int,
+    subsection: int,
+) -> str | None:
+    try:
+        snapshots = json.loads(raw) if raw else []
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(snapshots, list):
+        return None
+    for snapshot in snapshots:
+        try:
+            matches = (
+                int(snapshot.get("section") or 0) == section
+                and int(snapshot.get("subsection") or 0) == subsection
+            )
+        except (TypeError, ValueError, AttributeError):
+            matches = False
+        if matches:
+            return str(snapshot.get("text") or "")
+    return None
+
+
+def _persist_draft_subsection(
+    task_id: str,
+    *,
+    section: int,
+    subsection: int,
+    text: str,
+) -> tuple[str, str]:
+    try:
+        data = bb.get_all(task_id)
+    except RedisError:
+        data = {}
+    with TaskStore() as store:
+        workspace = store.find_workspace_for_task(task_id)
+        workspace_task_id = str(
+            data.get("workspace_task_id")
+            or (workspace or {}).get("workspace_task_id")
+            or task_id
+        )
+        workspace = workspace or {
+            "workspace_task_id": workspace_task_id,
+            "active_task_id": task_id,
+            "status": str(data.get("status") or "draft"),
+        }
+        draft_backup = _merge_draft_snapshot(
+            workspace.get("draft_backup") or data.get("draft_backup") or "",
+            section=section,
+            subsection=subsection,
+            text=text,
+        )
+        workspace["active_task_id"] = task_id
+        workspace["draft_backup"] = draft_backup
+        store.save_workspace(workspace_task_id, workspace)
+
+    try:
+        bb.set(task_id, "draft_backup", draft_backup)
+        live_draft = str(data.get("draft") or "")
+        if live_draft:
+            bb.set(
+                task_id,
+                "draft",
+                _replace_subsection_text(
+                    live_draft,
+                    section,
+                    subsection,
+                    text,
+                ),
+            )
+        checkpoint = bb.load_checkpoint(task_id) or {}
+        if checkpoint:
+            section_texts = dict(checkpoint.get("section_texts") or {})
+            section_key = str(section)
+            section_texts[section_key] = _replace_subsection_text(
+                str(section_texts.get(section_key) or section_texts.get(section) or ""),
+                section,
+                subsection,
+                text,
+            )
+            checkpoint["section_texts"] = section_texts
+            bb.save_checkpoint(task_id, checkpoint)
+    except RedisError:
+        logger.warning(
+            "Redis unavailable while applying draft subsection for task %s",
+            task_id,
+        )
+    return workspace_task_id, draft_backup
+
+
+def _draft_workspace_state(
+    task_id: str,
+    *,
+    section: int,
+    subsection: int,
+) -> tuple[str, str | None]:
+    try:
+        data = bb.get_all(task_id)
+    except RedisError:
+        data = {}
+    with TaskStore() as store:
+        workspace = store.find_workspace_for_task(task_id)
+    workspace_task_id = str(
+        data.get("workspace_task_id")
+        or (workspace or {}).get("workspace_task_id")
+        or task_id
+    )
+    raw = (workspace or {}).get("draft_backup") or data.get("draft_backup") or ""
+    return workspace_task_id, _draft_snapshot_text(
+        raw,
+        section=section,
+        subsection=subsection,
+    )
+
+
+@router.patch("/tasks/{task_id}/draft/sections/{section}/{subsection}")
+def patch_draft_subsection(
+    task_id: str,
+    section: int,
+    subsection: int,
+    body: DraftSectionPatch,
+):
+    if section < 1 or subsection < 1:
+        raise HTTPException(status_code=422, detail="章节编号必须大于 0")
+    if body.text == body.base_text:
+        raise HTTPException(status_code=400, detail="修订内容没有变化")
+    workspace_task_id, current_text = _draft_workspace_state(
+        task_id,
+        section=section,
+        subsection=subsection,
+    )
+    if current_text is not None and current_text != body.base_text:
+        raise HTTPException(
+            status_code=409,
+            detail="正文已在其他位置更新，请重新生成修订预览",
+        )
+
+    with TaskStore() as store:
+        versions = store.list_draft_versions(
+            workspace_task_id,
+            section=section,
+            subsection=subsection,
+            limit=1,
+        )
+        parent_version_id = versions[0]["version_id"] if versions else None
+        if not versions or versions[0]["content"] != body.base_text:
+            baseline = store.add_draft_version(
+                workspace_task_id,
+                active_task_id=task_id,
+                section=section,
+                subsection=subsection,
+                content=body.base_text,
+                source="baseline",
+                parent_version_id=parent_version_id,
+            )
+            parent_version_id = baseline["version_id"]
+
+    _persist_draft_subsection(
+        task_id,
+        section=section,
+        subsection=subsection,
+        text=body.text,
+    )
+    with TaskStore() as store:
+        version = store.add_draft_version(
+            workspace_task_id,
+            active_task_id=task_id,
+            section=section,
+            subsection=subsection,
+            content=body.text,
+            source="ai_revision",
+            instruction=body.instruction,
+            parent_version_id=parent_version_id,
+        )
+    return {"status": "saved", "text": body.text, "version": version}
+
+
+@router.get("/tasks/{task_id}/draft/versions")
+def list_draft_versions(
+    task_id: str,
+    section: int | None = Query(default=None, ge=1),
+    subsection: int | None = Query(default=None, ge=1),
+):
+    workspace_task_id, _ = _draft_workspace_state(
+        task_id,
+        section=section or 1,
+        subsection=subsection or 1,
+    )
+    with TaskStore() as store:
+        versions = store.list_draft_versions(
+            workspace_task_id,
+            section=section,
+            subsection=subsection,
+        )
+    return {"versions": versions}
+
+
+@router.post("/tasks/{task_id}/draft/versions/{version_id}/restore")
+def restore_draft_version(task_id: str, version_id: str):
+    with TaskStore() as store:
+        version = store.get_draft_version(version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="正文版本不存在")
+    workspace_task_id, _ = _draft_workspace_state(
+        task_id,
+        section=int(version["section"]),
+        subsection=int(version["subsection"]),
+    )
+    if version["workspace_task_id"] != workspace_task_id:
+        raise HTTPException(status_code=404, detail="正文版本不存在")
+
+    with TaskStore() as store:
+        versions = store.list_draft_versions(
+            workspace_task_id,
+            section=int(version["section"]),
+            subsection=int(version["subsection"]),
+            limit=1,
+        )
+        parent_version_id = versions[0]["version_id"] if versions else None
+    _persist_draft_subsection(
+        task_id,
+        section=int(version["section"]),
+        subsection=int(version["subsection"]),
+        text=str(version["content"]),
+    )
+    with TaskStore() as store:
+        restored = store.add_draft_version(
+            workspace_task_id,
+            active_task_id=task_id,
+            section=int(version["section"]),
+            subsection=int(version["subsection"]),
+            content=str(version["content"]),
+            source="restore",
+            instruction=f"恢复版本 {version_id}",
+            parent_version_id=parent_version_id,
+        )
+    return {
+        "status": "restored",
+        "section": int(version["section"]),
+        "subsection": int(version["subsection"]),
+        "text": str(version["content"]),
+        "version": restored,
+    }
 
 
 # ── 字段编辑 ────────────────────────────────────────────────────

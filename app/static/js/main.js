@@ -1,5 +1,5 @@
 import { createApp, ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import * as API from './api.js?v=20260815b';
+import * as API from './api.js?v=20260822b';
 import * as OT from './outline-tree.js';
 import { countCjk, genId, subtreeWords, flatTree, treeToFlat, flatToTree, findParentAndIndex } from './utils.js';
 import { connectionStateFromStatus } from './runtime-status.mjs?v=20260815a';
@@ -16,6 +16,7 @@ import {
   normalizeWorkspaceId,
   workspaceMeta,
 } from './workspace-shell.mjs?v=20260822a';
+import { buildLineDiff, summarizeRevision } from './draft-revision.mjs?v=20260822b';
 
 const FLOW_NODES = [
   { id:'style', label:'风格分析', icon:'🎨' }, { id:'outline', label:'大纲生成', icon:'📋' },
@@ -87,6 +88,11 @@ export function createWriterApp() {
       const isGenerating = ref(false); const generatingBlockIdx = ref(-1);
       const completedSections = ref(0); const draftBlocks = ref([]); const taskDone = ref(false);
       const revisionInstructions = reactive({}); const revisionLoading = ref('');
+      const revisionPreview = ref(null); const revisionApplying = ref(false);
+      const showRevisionHistory = ref(false); const revisionHistoryBlock = ref(null);
+      const revisionVersions = ref([]); const revisionHistoryLoading = ref(false); const revisionRestoring = ref('');
+      const revisionDiffRows = computed(()=>revisionPreview.value ? buildLineDiff(revisionPreview.value.original, revisionPreview.value.revised) : []);
+      const revisionSummary = computed(()=>revisionPreview.value ? summarizeRevision(revisionPreview.value.original, revisionPreview.value.revised) : {addedLines:0,removedLines:0,characterDelta:0});
 
       // ── Characters ──
       const showCharModal = ref(false); const charTab = ref('library'); const editingChar = ref(null);
@@ -389,22 +395,93 @@ export function createWriterApp() {
         if (!taskId.value || !taskDone.value) { toast('任务完成后才能发起定向修订', 'error'); return; }
         revisionLoading.value = key;
         try {
-          beginDraftEdit(block);
           const result = await API.reviseSubsection(taskId.value, {
             section:block.section,
             subsection:block.subsection,
             instruction,
+            preview_only:true,
           });
-          block.text = result.revised || block.text;
-          block.wordCount = countCjk(block.text || '');
-          revisionInstructions[key] = '';
-          scheduleDraftEditSave();
-          toast('小节修订完成', 'success');
+          revisionPreview.value = {
+            block,
+            key,
+            original:block.text || '',
+            revised:result.revised || block.text || '',
+            instruction,
+          };
         } catch (error) {
           toast(errorText(error, '小节修订失败'), 'error');
         } finally {
           revisionLoading.value = '';
         }
+      }
+      async function acceptRevisionPreview() {
+        const preview = revisionPreview.value;
+        if (!preview || !taskId.value) return;
+        revisionApplying.value = true;
+        try {
+          const result = await API.patchDraftSubsection(
+            taskId.value,
+            preview.block.section,
+            preview.block.subsection,
+            {base_text:preview.original, text:preview.revised, instruction:preview.instruction},
+          );
+          beginDraftEdit(preview.block);
+          preview.block.text = result.text;
+          preview.block.wordCount = countCjk(result.text || '');
+          revisionInstructions[preview.key] = '';
+          saveState();
+          revisionPreview.value = null;
+          toast('已采用修订，可从版本历史恢复', 'success');
+        } catch (error) {
+          toast(errorText(error, '采用修订失败'), 'error');
+        } finally {
+          revisionApplying.value = false;
+        }
+      }
+      async function loadDraftVersions() {
+        const block = revisionHistoryBlock.value;
+        if (!block || !taskId.value) return;
+        revisionHistoryLoading.value = true;
+        try {
+          const result = await API.getDraftVersions(taskId.value, block.section, block.subsection);
+          revisionVersions.value = result.versions || [];
+        } catch (error) {
+          revisionVersions.value = [];
+          toast(errorText(error, '正文版本加载失败'), 'error');
+        } finally {
+          revisionHistoryLoading.value = false;
+        }
+      }
+      function openDraftVersions(block) {
+        revisionHistoryBlock.value = block;
+        showRevisionHistory.value = true;
+        void loadDraftVersions();
+      }
+      async function restoreDraftVersion(version) {
+        const block = revisionHistoryBlock.value;
+        if (!block || !taskId.value) return;
+        revisionRestoring.value = version.version_id;
+        try {
+          const result = await API.restoreDraftVersion(taskId.value, version.version_id);
+          beginDraftEdit(block);
+          block.text = result.text;
+          block.wordCount = countCjk(result.text || '');
+          saveState();
+          await loadDraftVersions();
+          toast('正文版本已恢复', 'success');
+        } catch (error) {
+          toast(errorText(error, '正文版本恢复失败'), 'error');
+        } finally {
+          revisionRestoring.value = '';
+        }
+      }
+      function revisionSourceLabel(source) {
+        return ({baseline:'修订前',ai_revision:'AI 修订',restore:'版本恢复'})[source] || source;
+      }
+      function revisionCreatedAt(value) {
+        if (!value) return '';
+        const parsed = new Date(String(value).replace(' ', 'T') + 'Z');
+        return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
       }
 
       // ═══ Style ═══
@@ -1573,7 +1650,7 @@ export function createWriterApp() {
         stylePresets,styleProfile,analyzingStyle,
         outline,outlineBudgetLoading,showBudgetAdvice,budgetPopupPosition,showOutlineBudgetModal,outlineBudgetError,outlineBudgetAdviceItems,requestOutlineBudgetAdvice,applyBudgetRecommendation,confirmEventContract,toggleBudgetAdvice,budgetApplyValue,budgetReasonLabel,budgetActionLabel,showSplitPopup,splitRequirement,splitNumChildren,aiSplitting,showDescEdit,editingKeyPoints,editingDesc,showImportModal,importText,importMaxDepth,importReplace,importing,importError,importReport,undoCount,injectMenu,injectForm,
         showArcProjection,arcProjectionLoading,arcProjectionSavingId,arcProjectionError,arcReviewCandidates,arcExcludedCount,openArcProjectionReview,confirmArcCandidate,arcHardFieldsComplete,arcTypeLabel,arcStatusLabel,
-        tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,revisionInstructions,revisionLoading,beginDraftEdit,onDraftInput,revertDraftEdit,reviseDraftBlock,
+        tokenUsage,tokenCost,isGenerating,generatingBlockIdx,completedSections,draftBlocks,taskDone,revisionInstructions,revisionLoading,revisionPreview,revisionApplying,revisionDiffRows,revisionSummary,showRevisionHistory,revisionHistoryBlock,revisionVersions,revisionHistoryLoading,revisionRestoring,beginDraftEdit,onDraftInput,revertDraftEdit,reviseDraftBlock,acceptRevisionPreview,openDraftVersions,loadDraftVersions,restoreDraftVersion,revisionSourceLabel,revisionCreatedAt,
         showCharModal,charTab,editingChar,extractText,extracting,extractedChars,charForm,charFormOpen,libraryChars,selectedCharIds,charSearch,
         filteredChars,selectedChars,totalDraftWords,totalSubsections,nodeStates,flatTreeItems,visibleDraftBlocks,queuedCount,draftCount,startBtnText,showOutlineDetail,openOutlinePreview,outlinePreviewText,
         rules,foreshadowings,sideOpen,rulesSearch,fsSearch,filteredRules,filteredFS,aiDetectLog,sectionReviewStatus,

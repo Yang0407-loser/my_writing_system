@@ -9,6 +9,7 @@ LEGACY_COLUMNS_MIGRATION = "0001-task-history-legacy-columns"
 CANONICAL_REFS_MIGRATION = "0002-task-history-canonical-refs"
 PROJECT_WORKSPACE_CONTENT_MIGRATION = "0003-project-workspace-content"
 PROJECT_WORKSPACE_EXPORTS_MIGRATION = "0004-project-workspace-exports"
+DRAFT_VERSIONS_MIGRATION = "0005-draft-versions"
 
 LEGACY_COLUMNS = {
     "topic": "TEXT DEFAULT ''",
@@ -51,6 +52,31 @@ PROJECT_WORKSPACE_COLUMNS = {
 PROJECT_WORKSPACE_EXPORT_COLUMNS = {
     "exports_json": "TEXT DEFAULT '[]'",
 }
+
+
+def _create_draft_versions_table(connection: sqlite3.Connection) -> None:
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS draft_versions (
+            version_id TEXT PRIMARY KEY,
+            workspace_task_id TEXT NOT NULL,
+            active_task_id TEXT NOT NULL,
+            section INTEGER NOT NULL,
+            subsection INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            source TEXT NOT NULL,
+            instruction TEXT DEFAULT '',
+            parent_version_id TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_draft_versions_workspace_section
+        ON draft_versions(workspace_task_id, section, subsection, created_at)
+        """
+    )
 
 
 def _add_missing_columns(
@@ -116,5 +142,11 @@ def apply_task_store_migrations(connection: sqlite3.Connection) -> None:
         connection.execute(
             "INSERT INTO task_store_schema_migrations(version) VALUES (?)",
             (PROJECT_WORKSPACE_EXPORTS_MIGRATION,),
+        )
+    if DRAFT_VERSIONS_MIGRATION not in applied:
+        _create_draft_versions_table(connection)
+        connection.execute(
+            "INSERT INTO task_store_schema_migrations(version) VALUES (?)",
+            (DRAFT_VERSIONS_MIGRATION,),
         )
     connection.commit()

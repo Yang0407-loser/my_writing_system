@@ -46,3 +46,36 @@ def test_workspace_can_be_found_by_active_task(tmp_path):
         )
 
         assert store.find_workspace_for_task("run-2")["workspace_task_id"] == "workspace-1"
+
+
+def test_draft_versions_round_trip_in_reverse_chronological_order(tmp_path):
+    path = tmp_path / "tasks.db"
+
+    with TaskStore(str(path)) as store:
+        baseline = store.add_draft_version(
+            "workspace-1",
+            active_task_id="run-2",
+            section=1,
+            subsection=2,
+            content="旧正文",
+            source="baseline",
+        )
+        revised = store.add_draft_version(
+            "workspace-1",
+            active_task_id="run-2",
+            section=1,
+            subsection=2,
+            content="新正文",
+            source="ai_revision",
+            instruction="增强冲突",
+            parent_version_id=baseline["version_id"],
+        )
+
+        versions = store.list_draft_versions(
+            "workspace-1", section=1, subsection=2
+        )
+        loaded = store.get_draft_version(revised["version_id"])
+
+    assert [version["content"] for version in versions] == ["新正文", "旧正文"]
+    assert loaded["instruction"] == "增强冲突"
+    assert loaded["parent_version_id"] == baseline["version_id"]
