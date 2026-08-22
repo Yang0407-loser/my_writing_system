@@ -1,112 +1,66 @@
-"""StyleSummarizer — 将 50 维风格参数转化为不同 Agent 的结构化 prompt 片段。"""
+"""StyleSummarizer — 4 维风格参数 → 下游 Agent prompt 片段。"""
 
 
 class StyleSummarizer:
-    """为不同下游 Agent 生成风格注入文本。
-
-    策略：关键维度（句长、段落、对话、情感、修饰）精确参数化；
-    其余维度融入自然语言描述。
-    """
-
-    # ── 关键维度提取 ──
 
     @staticmethod
-    def _get(v: dict, key, default=None):
-        if not isinstance(v, dict):
-            return default
-        val = v.get(key)
-        return val if val is not None and val != "" else default
-
-    @classmethod
-    def for_writer(cls, style: dict) -> str:
-        """生成 Writer 用的风格约束块（~300字）。"""
+    def for_writer(style: dict) -> str:
+        """Writer 用的结构化风格文本。"""
+        if not isinstance(style, dict):
+            return ""
         parts = []
 
-        # 句法
-        short_r = cls._get(style, "short_sentence_ratio")
-        long_r = cls._get(style, "long_sentence_ratio")
-        sent_pat = cls._get(style, "sentence_pattern", "长短交替")
-        if short_r is not None and long_r is not None:
-            parts.append(
-                f"句长分布：短句约占 {int(short_r * 100)}%，长句约占 {int(long_r * 100)}%，句式偏好「{sent_pat}」。"
-            )
-
-        # 段落节奏
-        par_rhythm = cls._get(style, "paragraph_rhythm", "渐进式")
-        par_len = cls._get(style, "paragraph_length_avg")
-        if par_len:
-            parts.append(f"段落节奏：平均 {par_len} 字/段，节奏「{par_rhythm}」。")
+        ei = style.get("emotion_intensity", 50)
+        if ei <= 30:
+            parts.append("情感：极度克制，用环境和动作折射情绪，不直接命名情感")
+        elif ei <= 50:
+            parts.append("情感：温婉内敛，可以提及情绪但用感官细节传递，不展开抒情")
+        elif ei <= 70:
+            parts.append("情感：浓郁直白，允许直接叙述内心感受和抒情段落")
         else:
-            parts.append(f"段落节奏偏好「{par_rhythm}」。")
+            parts.append("情感：激烈外放，多用感叹和夸张修辞")
 
-        # 对话
-        dia_ratio = cls._get(style, "dialogue_ratio")
-        dia_tag = cls._get(style, "dialogue_tag_style", "动作替代")
-        if dia_ratio is not None:
-            parts.append(
-                f"对话占比约 {int(dia_ratio * 100)}%，标记风格「{dia_tag}」。"
-            )
+        sp = style.get("sentence_preference", "balanced")
+        if sp == "short":
+            parts.append("句式：以短句为主，节奏明快。动作和对话用短句，描写适度收束")
+        elif sp == "long":
+            parts.append("句式：以长句为主，层层铺陈。描写段落用复合句缓慢推进")
+        else:
+            parts.append("句式：长短交替，自然呼吸。短句用于动作对话，长句用于描写和心理")
 
-        # 情感语域
-        emo_reg = cls._get(style, "emotional_registry", "文学抒情")
-        show_tell = cls._get(style, "show_vs_tell", "平衡")
-        parts.append(f"情感语域「{emo_reg}」，叙事方式偏「{show_tell}」。")
+        sd = style.get("sensory_density", "medium")
+        if sd == "sparse":
+            parts.append("感官：留白简洁。选一个最准确的细节，让读者自己补全")
+        elif sd == "rich":
+            parts.append("感官：多感官交织。不只写看到的，也写听到的、闻到的、触碰到的")
+        else:
+            parts.append("感官：适度描写。关键场景多感官，过渡段落简洁")
 
-        # 感官
-        sen_density = cls._get(style, "sensory_density", "适度")
-        sen_spec = cls._get(style, "sensory_spectrum", "多感官平衡")
-        color = cls._get(style, "color_use", "")
-        img = cls._get(style, "imagery_domain", "")
-        sensory = f"感官密度「{sen_density}」，侧重「{sen_spec}」。"
-        if color:
-            sensory += f" 色调「{color}」。"
-        if img:
-            sensory += f" 意象倾向「{img}」。"
-        parts.append(sensory)
-
-        # 修饰
-        adj_d = cls._get(style, "adjective_density")
-        adv_p = cls._get(style, "adverb_policy", "适度")
-        meta_f = cls._get(style, "metaphor_frequency", "适度")
-        if adj_d is not None:
-            parts.append(
-                f"形容词密度 {adj_d:.2f}，副词「{adv_p}」，比喻「{meta_f}」。"
-            )
-
-        # 节奏
-        pacing = cls._get(style, "pacing", "中等")
-        tension = cls._get(style, "tension_curve", "波浪起伏")
-        scene_t = cls._get(style, "scene_transition", "过渡铺垫")
-        parts.append(f"整体节奏「{pacing}」，张力曲线「{tension}」，场景过渡「{scene_t}」。")
+        dr = style.get("dialogue_ratio", 0.3)
+        parts.append(f"对话：占比约 {int(dr * 100)}%，用动作替代'说'标签")
 
         return "\n".join(f"- {p}" for p in parts)
 
-    @classmethod
-    def for_planner(cls, style: dict) -> str:
-        """生成 Planner 用的风格摘要（~200字）。"""
-        emo = cls._get(style, "primary_emotion", "中性")
-        intensity = cls._get(style, "emotion_intensity", 50)
-        curve = cls._get(style, "emotion_curve", "渐强")
-        peaks = cls._get(style, "emotional_peaks", "均匀分布")
-        pacing = cls._get(style, "pacing", "中等")
-        tension = cls._get(style, "tension_curve", "波浪起伏")
-
+    @staticmethod
+    def for_planner(style: dict) -> str:
+        """Planner 用的精简摘要。"""
+        if not isinstance(style, dict):
+            return ""
         return (
-            f"情感基调「{emo}」，强度 {intensity}/100，"
-            f"曲线呈「{curve}」，高潮分布「{peaks}」。"
-            f"整体节奏「{pacing}」，张力曲线「{tension}」。"
+            f"情感强度 {style.get('emotion_intensity', 50)}/100，"
+            f"句长偏好 {style.get('sentence_preference', 'balanced')}，"
+            f"对话占比 {int(style.get('dialogue_ratio', 0.3) * 100)}%，"
+            f"感官密度 {style.get('sensory_density', 'medium')}"
         )
 
-    @classmethod
-    def for_reviewer(cls, style: dict) -> dict:
-        """生成 Reviewer 用的维度评分参考。"""
+    @staticmethod
+    def for_reviewer(style: dict) -> dict:
+        """Reviewer 用的风格对照维度。"""
+        if not isinstance(style, dict):
+            return {}
         return {
-            "dialogue_ratio": cls._get(style, "dialogue_ratio"),
-            "adjective_density": cls._get(style, "adjective_density"),
-            "emotion_intensity": cls._get(style, "emotion_intensity", 50),
-            "emotion_subtlety": cls._get(style, "emotion_subtlety", "含蓄"),
-            "sentence_pattern": cls._get(style, "sentence_pattern", "长短交替"),
-            "paragraph_rhythm": cls._get(style, "paragraph_rhythm", "渐进式"),
-            "pacing": cls._get(style, "pacing", "中等"),
-            "tension_curve": cls._get(style, "tension_curve", "波浪起伏"),
+            "emotion_intensity": style.get("emotion_intensity", 50),
+            "sentence_preference": style.get("sentence_preference", "balanced"),
+            "dialogue_ratio": style.get("dialogue_ratio", 0.3),
+            "sensory_density": style.get("sensory_density", "medium"),
         }

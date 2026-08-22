@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.2-r3.4",
+  "experiment_id": "writer-boundary-v1-2-r3-4",
+  "source_approval_sha256": "1e4c72e04a6e758377a2438ed2432a172f7f45684a37b47faef7a6f7a96e2e83",
+  "source_request_corpus_sha256": "19d3aa0482bb06ddfc02b413bae12ebcc7cf6415a9540fd93457d66ac5c05d3b",
+  "llm_client_source_sha256": "2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39",
+  "queue_items": 36,
+  "dry_run_receipts": 36,
+  "call_spec": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-pro",
+    "base_url": "https://api.deepseek.com/v1",
+    "temperature": 0.7,
+    "max_tokens": 3000,
+    "json_mode": false,
+    "thinking": "disabled",
+    "transport_max_retries": 0,
+    "seed": null,
+    "seed_required": false,
+    "seed_capability": "unverified_dependency"
+  },
+  "capability_probe_status": "not_run_not_authorized",
+  "generation_enabled": false,
+  "generation_package_build_authorized": true,
+  "capability_probe_authorized": false,
+  "real_generation_authorized": false,
+  "model_call_authorized": false,
+  "model_calls": 0,
+  "fiction_texts": 0,
+  "next_stage_authorized": "independent_r3_4_generation_package_audit"
+}

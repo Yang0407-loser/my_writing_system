@@ -1,0 +1,14 @@
+{
+  "schema_version": "wr4-gold-retrieval-freeze-manifest-v1",
+  "fixture": "wr4_gold_retrieval_v1.json",
+  "fixture_sha256": "b751401b5e83b7f6561b64fd1f5bda99ed50f2b0ee0532f509e10021e99d386e",
+  "corpus_snapshot": "gold_retrieval_corpus_snapshot_v1.json",
+  "corpus_snapshot_sha256": "4ffb28d6f7d088b6b20777d8a07957bd039be6488b0ee37e937c2ab77a3d3e1f",
+  "legacy_annotation": "rag_annotation_07d1391e.json",
+  "legacy_annotation_sha256": "d30cb44b5e837b341ae02d1cdaf44da21b19b6d955f689b47022aff44e2309cc",
+  "entry_count": 18,
+  "tier_a_count": 10,
+  "tier_b_count": 8,
+  "llm_calls": 0,
+  "production_authorized": false
+}

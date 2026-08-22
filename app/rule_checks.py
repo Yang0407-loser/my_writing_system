@@ -19,6 +19,8 @@ def pre_check(event_graph, section_num: int, sub_num: int = 0) -> dict:
     required = []
     for e in event_graph._events.values():
         if e.type == "arc_milestone" and e.section == section_num:
+            if getattr(e, "contract_version", "") == "v2" and getattr(e, "requiredness", "") != "hard":
+                continue
             if sub_num == 0 or e.subsection == sub_num:
                 required.append(e.description)
 

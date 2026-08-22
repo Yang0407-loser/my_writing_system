@@ -1,0 +1,19 @@
+{
+  "schema_version": "world-runtime-evaluator-v2-benchmark-fixture-v1",
+  "partition": "holdout",
+  "gate": {"minimum_precision_recall": 0.9},
+  "cases": [
+    {"case_id":"HLD-S01","scene_id":"adversarial-storefront-hours","text":"林晚推开操作间的门。她把钱退回，告诉来客六点再来，两人继续揉面。","expected":{"required_event_completed":true,"hard_reality_violations":{"storefront_public_open_before_0600":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-S02","scene_id":"adversarial-storefront-hours","text":"林晚走进操作间。钱被留下放到收银台，周野递出一袋面包，此时才四点四十。","expected":{"required_event_completed":true,"hard_reality_violations":{"storefront_public_open_before_0600":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-S03","scene_id":"adversarial-storefront-hours","text":"林晚进入操作间，门外仍有人喊。两人略过来客要求，小节到此结束。","expected":{"required_event_completed":false,"hard_reality_violations":{"storefront_public_open_before_0600":false},"task_evasion":true,"unsourced_setting":false}},
+    {"case_id":"HLD-K01","scene_id":"adversarial-unpublished-knowledge","text":"季晴问她文章写到哪了。林晚把一段草稿贴到公司群，同事回复说第二段的人物反应不自然。","expected":{"required_event_completed":true,"hard_reality_violations":{"public_reaction_before_publication":false,"coworker_knows_without_transmission_path":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-K02","scene_id":"adversarial-unpublished-knowledge","text":"季晴追问草稿。工作群同事说文章里的那个阿姨很真实，但全文从未被发送。","expected":{"required_event_completed":true,"hard_reality_violations":{"public_reaction_before_publication":false,"coworker_knows_without_transmission_path":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-K03","scene_id":"adversarial-unpublished-knowledge","text":"季晴只看了标题，隔壁组的陈晨也只看截图，说写完发我看看；公司群没有人回应正文。","expected":{"required_event_completed":false,"hard_reality_violations":{"public_reaction_before_publication":false,"coworker_knows_without_transmission_path":false},"task_evasion":true,"unsourced_setting":true}},
+    {"case_id":"HLD-O01","scene_id":"adversarial-object-and-repeat","text":"她等着人事回复，打开后台看已发布状态，又看了发件箱。住处无人，汤碗仍盛着绿豆汤。","expected":{"required_event_completed":true,"hard_reality_violations":{"object_changes_without_actor":false,"completed_event_repeated":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-O02","scene_id":"adversarial-object-and-repeat","text":"她等待消息时重新发布文章。无人回家，茶几上的汤没了，只剩空碗。","expected":{"required_event_completed":false,"hard_reality_violations":{"object_changes_without_actor":true,"completed_event_repeated":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-O03","scene_id":"adversarial-object-and-repeat","text":"她确认辞职邮件已送达，还抄送主管。随后不再写住处和碗，到此结束。","expected":{"required_event_completed":false,"hard_reality_violations":{"object_changes_without_actor":false,"completed_event_repeated":false},"task_evasion":true,"unsourced_setting":true}},
+    {"case_id":"HLD-E01","scene_id":"adversarial-employment-transition","text":"她还没收到确认，于是回复同事：我照常去公司。","expected":{"required_event_completed":true,"hard_reality_violations":{"employment_ended_without_acknowledgement":false},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-E02","scene_id":"adversarial-employment-transition","text":"公司尚未确认，她却认定辞职已经生效，决定今天不去。","expected":{"required_event_completed":true,"hard_reality_violations":{"employment_ended_without_acknowledgement":true},"task_evasion":false,"unsourced_setting":false}},
+    {"case_id":"HLD-E03","scene_id":"adversarial-employment-transition","text":"同事小周发来消息，人事没有回复。她不再说明是否到岗，到这里结束。","expected":{"required_event_completed":false,"hard_reality_violations":{"employment_ended_without_acknowledgement":false},"task_evasion":true,"unsourced_setting":true}}
+  ]
+}

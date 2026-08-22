@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.2-r3.5-probe-envelope",
+  "probe_id": "CAPABILITY-PROBE-R35-001",
+  "payload_kind": "non-fiction capability text only",
+  "messages": [
+    {
+      "role": "system",
+      "content": "This is a provider capability check. Do not produce creative prose."
+    },
+    {
+      "role": "user",
+      "content": "Reply with exactly CAPABILITY_OK."
+    }
+  ],
+  "call_spec": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-pro",
+    "base_url": "https://api.deepseek.com/v1",
+    "temperature": 0.0,
+    "max_tokens": 16,
+    "json_mode": false,
+    "thinking": "disabled",
+    "transport_max_retries": 0,
+    "seed": null
+  },
+  "gate_sha256": "452c0285b2ba22e6e510cc59db3e9ed4df8c656791af981bb1db65493e073066",
+  "envelope_sha256": "c92e14c32ece2b771a6dfe9533078a9c13ee10019cc752f15eb0fd1994e0f676"
+}

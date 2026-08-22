@@ -1,0 +1,151 @@
+{
+  "schema_version": "outline-budget-advisor-report-v1",
+  "advisor_version": "outline-budget-advisor-v1",
+  "status": "production_read_only_advisory_ready",
+  "fixed_task_id": "019fc0c8-1a20-4be3-8252-54aaf1c5aa27",
+  "writer_or_llm_calls": 0,
+  "provisional_advisory": true,
+  "actual_output_used_as_ideal_label": false,
+  "writer_execution_contract_default": "off",
+  "formula": {
+    "atomic_event_characters": 180,
+    "extra_time_jump_characters": 100,
+    "scene_change_characters": 100,
+    "actor_after_second_characters": 80,
+    "interaction_chain_characters": 120,
+    "persistent_transition_characters": 150,
+    "style_factor_min": 0.9,
+    "style_factor_max": 1.15,
+    "range_ratio": [0.85, 1.15],
+    "rounding_characters": 50
+  },
+  "chain_audit": {
+    "planner_budget_source": "target_words_per_section with even subsection normalization",
+    "writer_budget_consumer": "subsection.target_words",
+    "frontend_budget_editor": "outline leaf target_words input",
+    "advice_api_mutates_storage": false,
+    "apply_requires_explicit_user_action": true,
+    "save_uses_existing_outline_flow": true,
+    "style_fields_used": [
+      "sentence_preference",
+      "sensory_density",
+      "dialogue_ratio",
+      "emotion_intensity"
+    ],
+    "legacy_style_fields_used": false
+  },
+  "fixed_task_result": {
+    "chapter_budget": 4000,
+    "allocated_total": 4000,
+    "recommended_min_total": 3000,
+    "recommended_preferred_total": 3550,
+    "chapter_overconstrained": false,
+    "style_factor": 1.05,
+    "prompt_conflict": "paragraph_length_instruction_may_conflict_with_subsection_total",
+    "subsections": [
+      {
+        "section": 1,
+        "subsection": 1,
+        "current_target": 1000,
+        "recommended_range": [1100, 1300, 1500],
+        "chapter_allocated_target": 1465,
+        "event_unit_count": 5,
+        "time_jump_count": 2,
+        "scene_change_count": 0,
+        "actor_count": 1,
+        "characters_per_event_unit": 200.0,
+        "density_level": "dense",
+        "recommended_action": "review_structure",
+        "confidence": "medium",
+        "reason_codes": [
+          "explicit_time_progression",
+          "persistent_state_or_decision",
+          "description_only_structure"
+        ],
+        "event_units": [
+          ["36fcacbf633afe8986d4", "task:019f:section:1:subsection:1:description:1", "bdc95984ba41bd1a6be69961161346d23c23fd5d454f41b03392b7e017fb19a8"],
+          ["a8a77558985aa7123e46", "task:019f:section:1:subsection:1:description:2", "cb782370a0b05356685a56e03affd4ccf9053cd3ba3ee624a34b5fe845e57be2"],
+          ["99fe7c3cebd614ac2d21", "task:019f:section:1:subsection:1:description:3", "e3f3932fc499aab487acb37a443e54cef2df60225c094662596427a92f2b3204"],
+          ["abcfa9703e9dc88acd49", "task:019f:section:1:subsection:1:description:5", "e54200b967cffb2d097d8040cb6a31f5e6a322cb2e477a7dfbcc78330fbd9a2e"],
+          ["14ee1470124042e6e100", "task:019f:section:1:subsection:1:description:6", "ce51133983ce6086d55113e22ad4af8c7be1ab6707e823b2b6b2ddb60e39a3ba"]
+        ]
+      },
+      {
+        "section": 1,
+        "subsection": 2,
+        "current_target": 1000,
+        "recommended_range": [700, 850, 1000],
+        "chapter_allocated_target": 958,
+        "event_unit_count": 3,
+        "time_jump_count": 2,
+        "scene_change_count": 0,
+        "actor_count": 3,
+        "characters_per_event_unit": 333.3,
+        "density_level": "balanced",
+        "recommended_action": "keep",
+        "confidence": "high",
+        "reason_codes": ["explicit_time_progression", "multi_actor_coordination"],
+        "event_units": [
+          ["940d55a70b7cb8132b12", "task:019f:section:1:subsection:2:key_point:1", "1a022f8683c745d83e20d82c82621f1a1de7288c4a7450e1fba77c97d4fda14f"],
+          ["e79fefd246e7a9e5056b", "task:019f:section:1:subsection:2:key_point:2", "05d6158001b063127a8a5fb3bda97be296cfe52e14fd8045ec9b25cde05104eb"],
+          ["17093c6e831f441642b2", "task:019f:section:1:subsection:2:key_point:3", "8e7e31d8e4b6a936f03f7ff2f690530e50e8b950ffc2eb7f10054331f3b9a957"]
+        ]
+      },
+      {
+        "section": 1,
+        "subsection": 3,
+        "current_target": 1000,
+        "recommended_range": [550, 650, 750],
+        "chapter_allocated_target": 732,
+        "event_unit_count": 3,
+        "time_jump_count": 0,
+        "scene_change_count": 1,
+        "actor_count": 2,
+        "characters_per_event_unit": 333.3,
+        "density_level": "light",
+        "recommended_action": "review_structure",
+        "confidence": "high",
+        "reason_codes": ["explicit_scene_changes", "current_target_above_recommended_max"],
+        "event_units": [
+          ["3edec340e5d85e6f65a7", "task:019f:section:1:subsection:3:key_point:1", "3c0ac7b791ec97b642d72a3a0262ed0d19c479d785469dd41084d80cf5ac70f2"],
+          ["1c0b64d8c8985657d0d9", "task:019f:section:1:subsection:3:key_point:2", "c88910043372c20bd7e9e55ff95ddcc7a9ae44c3339eaf56fbe4b992bd0d1116"],
+          ["e3fbfa1c952d9f96e1bc", "task:019f:section:1:subsection:3:key_point:3", "bb6aa6693a2737beadb5c567ea090c601a5360d35b26537fb78a65fd487511c4"]
+        ]
+      },
+      {
+        "section": 1,
+        "subsection": 4,
+        "current_target": 1000,
+        "recommended_range": [650, 750, 850],
+        "chapter_allocated_target": 845,
+        "event_unit_count": 4,
+        "time_jump_count": 0,
+        "scene_change_count": 0,
+        "actor_count": 0,
+        "characters_per_event_unit": 250.0,
+        "density_level": "light",
+        "recommended_action": "review_structure",
+        "confidence": "medium",
+        "reason_codes": ["broad_key_points", "current_target_above_recommended_max"],
+        "event_units": [
+          ["1cc6eb30f08da56a7f49", "task:019f:section:1:subsection:4:key_point:1", "71c478d1f85b91530850b5a789d82163e9e633b07d11735c9861516a79a21966"],
+          ["2b59eb20501b095e12ee", "task:019f:section:1:subsection:4:key_point:2", "aafdbb8a31be231b0afc434dd2b2383daaca60021488a104aae23b0e9ab606c0"],
+          ["854975b732a04e42366e", "task:019f:section:1:subsection:4:key_point:3", "03b4e0b93fb126057c16d823b22a749af990ca1fe58810ad5f6bdbabc4a6b0fc"],
+          ["e9b91b3b902355b84a1e", "task:019f:section:1:subsection:4:key_point:4", "0230a63c6d71386976f3abf53856ffb9f0742e88754a13025e6734eee105670f"]
+        ]
+      }
+    ]
+  },
+  "acceptance": {
+    "all_four_subsections_advised": true,
+    "s1_1_not_classified_as_single_simple_event": true,
+    "s1_2_three_saturdays_equivalent_progression_detected": true,
+    "s1_3_not_more_complex_than_s1_2": true,
+    "s1_4_broad_points_lower_confidence": true,
+    "paragraph_vs_subsection_length_conflict_detected": true,
+    "event_source_traceability": 1.0,
+    "writer_messages_changed": false,
+    "writer_or_llm_calls": 0
+  },
+  "next_step": "Author may request advice on one real outline and explicitly apply selected values; do not auto-start Writer."
+}

@@ -1,0 +1,117 @@
+{
+  "report_id": "handover-contract-v2-real-demo",
+  "date": "2026-07-25",
+  "status": "real_demo_failed_output_truncation",
+  "task": {
+    "task_id": "cd830826-61b0-4840-b2a7-45cf807599e0",
+    "status": "completed",
+    "subsection_count": 4,
+    "writer_main_calls": 4,
+    "mandatory_event_actual_retries": 0,
+    "elapsed_seconds": 242.7,
+    "total_tokens": 36525,
+    "writer_tokens": 25277
+  },
+  "source_log": {
+    "sha256": "bb331de4102acdbb4600d74177201b198362867693e69f4088c4827e1bf3be1a",
+    "committed": false
+  },
+  "handover_calls": [
+    {
+      "section": 1,
+      "subsection": 1,
+      "input_tokens": 2130,
+      "output_tokens": 600,
+      "latency_seconds": 5.9,
+      "finish_reason": "length",
+      "execution_status": "error",
+      "error_type": "ValueError",
+      "source_manifest_count": 3
+    },
+    {
+      "section": 1,
+      "subsection": 2,
+      "input_tokens": 2491,
+      "output_tokens": 600,
+      "latency_seconds": 6.3,
+      "finish_reason": "length",
+      "execution_status": "error",
+      "error_type": "ValueError",
+      "source_manifest_count": 3
+    },
+    {
+      "section": 1,
+      "subsection": 3,
+      "input_tokens": 3029,
+      "output_tokens": 600,
+      "latency_seconds": 6.1,
+      "finish_reason": "length",
+      "execution_status": "error",
+      "error_type": "ValueError",
+      "source_manifest_count": 3
+    },
+    {
+      "section": 1,
+      "subsection": 4,
+      "input_tokens": 2311,
+      "output_tokens": 600,
+      "latency_seconds": 6.5,
+      "finish_reason": "length",
+      "execution_status": "error",
+      "error_type": "ValueError",
+      "source_manifest_count": 2
+    }
+  ],
+  "handover_totals": {
+    "calls": 4,
+    "input_tokens": 9961,
+    "output_tokens": 2400,
+    "known_tokens": 12361,
+    "latency_seconds": 24.8,
+    "finish_length_count": 4,
+    "typed_contract_count": 0,
+    "handover_chain_count": 0
+  },
+  "persistence": {
+    "record_count": 4,
+    "pending_count": 0,
+    "error_envelope_count": 0,
+    "execution_error_count": 4,
+    "boundary_hash_count": 4,
+    "typed_contract_hash_count": 0,
+    "accepted_claim_count_available": 0,
+    "rejected_claim_count_available": 0
+  },
+  "attribution": {
+    "primary": "model_output_truncated_before_json_parse",
+    "typed_validator_reached": false,
+    "validator_quality_assessable": false,
+    "content_quality_assessable": false,
+    "fail_open_preserved_task_completion": true
+  },
+  "gates": {
+    "one_handover_call_per_subsection": true,
+    "new_writer_calls": 0,
+    "new_writer_retries": 0,
+    "task_completed": true,
+    "typed_contracts_created": false,
+    "claim_provenance_assessable": false,
+    "handover_chain_created": false,
+    "production_promotion": false
+  },
+  "decision": {
+    "default_version": "v1",
+    "v2_promoted": false,
+    "rerun_same_configuration": false,
+    "next_step_requires_separate_authorization": true,
+    "only_recommended_next_step": "compact_v2_output_contract_before_any_new_demo"
+  },
+  "privacy": {
+    "full_draft_in_report": false,
+    "full_handover_in_report": false,
+    "prompt_or_messages_in_report": false,
+    "database_or_chroma_in_report": false,
+    "attachment_log_committed": false,
+    "max_public_excerpt_characters": 0
+  }
+}

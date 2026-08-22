@@ -1,0 +1,1278 @@
+{
+  "schema_version": 1,
+  "purpose": "Phase 4 Batch 2 generation-quality shadow A/B",
+  "review_provenance": "codex_assisted_review",
+  "independent_human_confirmation": false,
+  "generation_calls": 20,
+  "model": "deepseek-v4-pro",
+  "seed_supported": false,
+  "production_behavior_changed": false,
+  "generated_prose_committed": false,
+  "input_token_reduction": 0.3237,
+  "broker_assembly_latency_ms": {
+    "mean": 5.883,
+    "min": 3.537,
+    "max": 9.122
+  },
+  "arms": {
+    "legacy_full": {
+      "input_estimated_tokens": {
+        "mean": 12406.4,
+        "min": 10511,
+        "max": 14480
+      },
+      "generation_latency_ms": {
+        "mean": 29482.425,
+        "min": 11438.32,
+        "max": 40486.653
+      },
+      "actual_input_plus_output_tokens": {
+        "mean": 8280.5,
+        "min": 6502,
+        "max": 9490
+      },
+      "goal_completion_rate": 1.0,
+      "hard_violations": 0,
+      "relationship_violations": 0,
+      "continuity_defects": 1,
+      "causality_defects": 1,
+      "fact_errors": 2,
+      "wins": 6
+    },
+    "budgeted_broker": {
+      "input_estimated_tokens": {
+        "mean": 8390.4,
+        "min": 7342,
+        "max": 9348
+      },
+      "generation_latency_ms": {
+        "mean": 28575.297,
+        "min": 8317.033,
+        "max": 39488.1
+      },
+      "actual_input_plus_output_tokens": {
+        "mean": 6106.3,
+        "min": 4687,
+        "max": 6985
+      },
+      "goal_completion_rate": 1.0,
+      "hard_violations": 0,
+      "relationship_violations": 0,
+      "continuity_defects": 2,
+      "causality_defects": 1,
+      "fact_errors": 1,
+      "wins": 3
+    }
+  },
+  "ties": 1,
+  "broker_win_or_tie_rate": 0.4,
+  "late_scenes": {
+    "legacy_full": 1,
+    "budgeted_broker": 2,
+    "tie": 0,
+    "count": 3
+  },
+  "ambiguous_review_count": 2,
+  "conclusion_changing_ambiguity_count": 0,
+  "gates": {
+    "broker_input_reduction_at_least_20_percent": true,
+    "no_new_hard_or_relationship_violations": true,
+    "immediate_continuity_not_worse": false,
+    "older_setup_and_causality_not_worse": true,
+    "rag_or_world_fact_errors_not_worse": true,
+    "goal_completion_not_lower": true,
+    "broker_win_plus_tie_at_least_80_percent": false,
+    "late_scene_quality_not_lower": true,
+    "no_conclusion_changing_review_ambiguity": true,
+    "production_messages_hash_unchanged": true
+  },
+  "all_canary_gates_passed": false,
+  "recommendation": "keep_shadow_and_stop_for_user_decision",
+  "samples": [
+    {
+      "query_index": 1,
+      "section": 15,
+      "subsection": 2,
+      "late_scene": true,
+      "legacy_input_estimated_tokens": 12289,
+      "broker_input_estimated_tokens": 8230,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "a27e946b5666d7ce96c864b3f8b4926a890d7c7d4b6c5fe23e3b11474996788f",
+      "broker_messages_hash": "0fd2cb0a79b921498bee77b49eb001259cdcc5bad99711ea1058ee7d99bc1cca",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q01",
+        "rag-annotation:q01",
+        "rag-annotation:q01",
+        "rag-annotation:q01",
+        "rag-annotation:q01",
+        "rag-annotation:q01",
+        "golden:S15:U1",
+        "golden:handover:S14",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "ff4721e6-34d8-433d-a6ed-805b93e0699f",
+        "b27020f9-6b2c-4b96-b6d5-d28fcbb5177f",
+        "a7135684-ea3c-46c4-a109-3f9c47f9a86f",
+        "c7ef5a01-0957-4d05-8dd2-cd18d59cf3c3",
+        "cb40d4f0-76cf-4dee-b6ec-2c0bc2ae4e73",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S14:U2",
+        "golden:S14:U3",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S14:U2",
+        "recent:golden:S14:U3",
+        "style:style_examples"
+      ],
+      "winner_arm": "budgeted_broker",
+      "mapping_exposed_before_review": true,
+      "ambiguous": true,
+      "short_evidence": "candidate_2 将纸条发起者写成‘老周’，与同段‘老张’纸条身份不一致；candidate_1 更聚焦照片墙。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "a9e9a5873928ba11cd70a9bcfc3b87696eb269d7b7e7340d023664265a473cc7",
+          "characters": 2849,
+          "estimated_output_tokens": 3600,
+          "elapsed_ms": 39488.1,
+          "actual_total_tokens": 6492,
+          "deterministic_checks": {
+            "characters": 2849,
+            "estimated_tokens": 3600,
+            "paragraph_count": 53,
+            "dialogue_paragraph_count": 34,
+            "duplicate_paragraph_count": 1,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 1,
+              "她知道": 1,
+              "她以为": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "3d3df947f5d313287a11b9fec111d7e954a6b3163647dfa185acd005fa2cfd74",
+          "characters": 2638,
+          "estimated_output_tokens": 3328,
+          "elapsed_ms": 34756.755,
+          "actual_total_tokens": 8527,
+          "deterministic_checks": {
+            "characters": 2638,
+            "estimated_tokens": 3328,
+            "paragraph_count": 58,
+            "dialogue_paragraph_count": 29,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {}
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 1
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 2,
+      "section": 4,
+      "subsection": 2,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 13683,
+      "broker_input_estimated_tokens": 8206,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "c1fc080ffa238c9b971b0029d5a5b7c878299b3a3a0d2ae46a997868c18f4414",
+      "broker_messages_hash": "cc280c527f324aa8e62eea7ba522ddc7b5e89d6aee011d717cc77c4aed0ae054",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q02",
+        "rag-annotation:q02",
+        "rag-annotation:q02",
+        "rag-annotation:q02",
+        "rag-annotation:q02",
+        "rag-annotation:q02",
+        "golden:S4:U1",
+        "golden:handover:S3",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "b27020f9-6b2c-4b96-b6d5-d28fcbb5177f",
+        "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+        "cb40d4f0-76cf-4dee-b6ec-2c0bc2ae4e73",
+        "da1bc168-abd4-4581-8c3d-86e3c04be52b",
+        "679a7aa0-5f71-4227-94fe-87ccde458284",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S3:U2",
+        "golden:S3:U3",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S3:U2",
+        "recent:golden:S3:U3",
+        "style:style_examples"
+      ],
+      "winner_arm": "legacy_full",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "两者均完成爆火、删帖和转为店员；candidate_2 的邀请与参与转折更完整。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "02112f808d46cbd4606d37ab1d5e36dbc56341120a7d75dee4875d4f24f7ef09",
+          "characters": 2275,
+          "estimated_output_tokens": 2846,
+          "elapsed_ms": 32546.398,
+          "actual_total_tokens": 6115,
+          "deterministic_checks": {
+            "characters": 2275,
+            "estimated_tokens": 2846,
+            "paragraph_count": 66,
+            "dialogue_paragraph_count": 23,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "胸口涌": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "6c51cb4860669d8c347858d792e1ed06f6226fbfa11b0bb6d6fce537cf92f179",
+          "characters": 2889,
+          "estimated_output_tokens": 3667,
+          "elapsed_ms": 40486.653,
+          "actual_total_tokens": 9490,
+          "deterministic_checks": {
+            "characters": 2889,
+            "estimated_tokens": 3667,
+            "paragraph_count": 64,
+            "dialogue_paragraph_count": 26,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 1,
+              "胸口涌": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 3,
+      "section": 2,
+      "subsection": 2,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 10511,
+      "broker_input_estimated_tokens": 7342,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "6c0276385be9c830c07e1dd22dcf714818b3df5abe2593ed21d41594616405db",
+      "broker_messages_hash": "69883c77e6b9f84006593f232af5525f84196803bac7395e8b3607d83604fc88",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q03",
+        "rag-annotation:q03",
+        "rag-annotation:q03",
+        "rag-annotation:q03",
+        "rag-annotation:q03",
+        "rag-annotation:q03",
+        "golden:S2:U1",
+        "golden:handover:S1",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "765b6447-37c8-4cb3-8752-7a69638b0106",
+        "5a76663d-4b81-4f03-9c0c-6b6e5c839585",
+        "b545ef3a-6d7f-4b8c-9f52-4e54efaa1053",
+        "eb887a0e-f263-4117-a702-c18db366984a",
+        "b27020f9-6b2c-4b96-b6d5-d28fcbb5177f",
+        "style:four-control-default-reconstruction",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S1:U1"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S1:U1"
+      ],
+      "winner_arm": "legacy_full",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "两者高度接近；candidate_2 停在第一个生活切片，未额外编造后续六个选题。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "fdb20898786ca33e78ffa3900ec1ea56b6049345ccd651f01038ea3c64eeca7b",
+          "characters": 998,
+          "estimated_output_tokens": 1266,
+          "elapsed_ms": 8317.033,
+          "actual_total_tokens": 4687,
+          "deterministic_checks": {
+            "characters": 998,
+            "estimated_tokens": 1266,
+            "paragraph_count": 20,
+            "dialogue_paragraph_count": 5,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {}
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "043ad1af4031ee3c2681f45603d8f64dd4ba96e5f345d3b2d7ff8a7baf8e8eac",
+          "characters": 1146,
+          "estimated_output_tokens": 1468,
+          "elapsed_ms": 11438.32,
+          "actual_total_tokens": 6502,
+          "deterministic_checks": {
+            "characters": 1146,
+            "estimated_tokens": 1468,
+            "paragraph_count": 23,
+            "dialogue_paragraph_count": 5,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {}
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 4,
+      "section": 17,
+      "subsection": 3,
+      "late_scene": true,
+      "legacy_input_estimated_tokens": 13851,
+      "broker_input_estimated_tokens": 9348,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "7e90177039029a302c4ac1e170092e7b8577b052e26aaa0310e34a791e8d1c3e",
+      "broker_messages_hash": "93e4e25c412012a3cbb3cc72976afd289ae3856e384f4263dca9c457f7e20a10",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q04",
+        "rag-annotation:q04",
+        "rag-annotation:q04",
+        "rag-annotation:q04",
+        "rag-annotation:q04",
+        "rag-annotation:q04",
+        "golden:S17:U2",
+        "golden:handover:S16",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "596b10f8-bb92-4d4c-8716-8602151140c2",
+        "34382730-0c9e-436c-bd00-d223117378fd",
+        "092395c9-d2d5-4884-973a-bf97480246db",
+        "ef5f1778-1429-4626-a938-177c363a06de",
+        "776aa783-78fb-4555-8c20-b0b3525b15de"
+      ],
+      "dropped_source_ids": [
+        "golden:S16:U3",
+        "golden:S17:U1",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "style:four-control-default-reconstruction",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S16:U3",
+        "recent:golden:S17:U1",
+        "other:global-rules:line:0",
+        "other:global-rules:line:5",
+        "other:global-rules:line:6",
+        "other:global-rules:line:7",
+        "other:global-rules:line:8",
+        "other:global-rules:line:9",
+        "world:world_facts",
+        "world:world_contradictions",
+        "world:ranked_events",
+        "style:narrative_density_instruction",
+        "style:style_examples"
+      ],
+      "winner_arm": "legacy_full",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "candidate_1 安排‘留给周野妈妈’，与已确立的母亲去世事实冲突。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "8c122317ef908820383a8f25d61b002775b76c67def214401611acf96ffe06e3",
+          "characters": 2672,
+          "estimated_output_tokens": 3430,
+          "elapsed_ms": 33900.531,
+          "actual_total_tokens": 6985,
+          "deterministic_checks": {
+            "characters": 2672,
+            "estimated_tokens": 3430,
+            "paragraph_count": 53,
+            "dialogue_paragraph_count": 30,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {}
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 1
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "bb6837ac027f4e5b5f927722ff84f5d61240fe2f7685f06d88115bfaa58e72ab",
+          "characters": 2696,
+          "estimated_output_tokens": 3458,
+          "elapsed_ms": 38561.117,
+          "actual_total_tokens": 9410,
+          "deterministic_checks": {
+            "characters": 2696,
+            "estimated_tokens": 3458,
+            "paragraph_count": 49,
+            "dialogue_paragraph_count": 26,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {}
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 5,
+      "section": 7,
+      "subsection": 3,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 11893,
+      "broker_input_estimated_tokens": 8497,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "22e1af23003c2579611119b9a3ee64698991c5c92512feb3374c05da03942a8b",
+      "broker_messages_hash": "3e1a240eeaf236be5241bc68cd643b035a61a8b1503d8d17b4453c83cf9d8a1a",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q05",
+        "rag-annotation:q05",
+        "rag-annotation:q05",
+        "rag-annotation:q05",
+        "rag-annotation:q05",
+        "rag-annotation:q05",
+        "golden:S7:U2",
+        "golden:handover:S6",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "5a87cfbb-3512-469b-aa71-df6310ffec41",
+        "da1bc168-abd4-4581-8c3d-86e3c04be52b",
+        "2c933962-1baf-448f-ad53-55ef299f6668",
+        "50b0b96a-93e7-48e7-969c-ea15a1f473c0",
+        "8817a12b-9845-4862-8ba0-801b010153a8"
+      ],
+      "dropped_source_ids": [
+        "golden:S6:U3",
+        "golden:S7:U1",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "style:four-control-default-reconstruction",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S6:U3",
+        "recent:golden:S7:U1",
+        "world:world_facts",
+        "world:ranked_events",
+        "style:narrative_density_instruction",
+        "style:style_examples"
+      ],
+      "winner_arm": "legacy_full",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "两者均完成童谣和参与决心；candidate_1 少引入年龄及揉面传承等未要求细节。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "legacy_full",
+          "output_sha256": "2ac148118d693bd87987cf84ff7468c2365eceab52c4b9acb3d00b4fcf6b9f32",
+          "characters": 2068,
+          "estimated_output_tokens": 2673,
+          "elapsed_ms": 27065.106,
+          "actual_total_tokens": 7900,
+          "deterministic_checks": {
+            "characters": 2068,
+            "estimated_tokens": 2673,
+            "paragraph_count": 41,
+            "dialogue_paragraph_count": 10,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 2,
+              "她知道": 1,
+              "她以为": 2
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "budgeted_broker",
+          "output_sha256": "08f507937b53300e9ffddc03a5df20a90ee8cbafab10516b0efdb7be1efd62b5",
+          "characters": 2137,
+          "estimated_output_tokens": 2706,
+          "elapsed_ms": 32531.562,
+          "actual_total_tokens": 6190,
+          "deterministic_checks": {
+            "characters": 2137,
+            "estimated_tokens": 2706,
+            "paragraph_count": 55,
+            "dialogue_paragraph_count": 16,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 6,
+      "section": 7,
+      "subsection": 1,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 11768,
+      "broker_input_estimated_tokens": 8116,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "cbc8e8e2cd9af29a71fc2ccccfa67c873a27b9d14538be1591e0b11973d07ef7",
+      "broker_messages_hash": "c40bd875d094d02d50260b51dec4d6ef797927e8a2d1c0dfaef0b333a4485a62",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q06",
+        "rag-annotation:q06",
+        "rag-annotation:q06",
+        "rag-annotation:q06",
+        "rag-annotation:q06",
+        "rag-annotation:q06",
+        "golden:S6:U3",
+        "golden:handover:S6",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "9bbba199-c91c-4ea7-a110-e3c1fd4fe80d",
+        "b27020f9-6b2c-4b96-b6d5-d28fcbb5177f",
+        "da1bc168-abd4-4581-8c3d-86e3c04be52b",
+        "2c933962-1baf-448f-ad53-55ef299f6668",
+        "0c20040a-51c5-4fc4-94d4-324bf62611bd",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S6:U1",
+        "golden:S6:U2",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S6:U1",
+        "recent:golden:S6:U2",
+        "style:style_examples"
+      ],
+      "winner_arm": "legacy_full",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "candidate_1 写成周六七点面包店首次未开门，偏离‘林晚没去’而非‘店没开’的连续状态。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "505b6476edd6489379f19c97827b35418722c73a7e2916755a0f7ec854916e4b",
+          "characters": 1695,
+          "estimated_output_tokens": 2148,
+          "elapsed_ms": 22565.664,
+          "actual_total_tokens": 5612,
+          "deterministic_checks": {
+            "characters": 1695,
+            "estimated_tokens": 2148,
+            "paragraph_count": 34,
+            "dialogue_paragraph_count": 17,
+            "duplicate_paragraph_count": 1,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 2
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 1,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "a86e0141a1e1a20da127379d9521bd6b9ec29ba43af0a90ee224c56e7641d398",
+          "characters": 2093,
+          "estimated_output_tokens": 2653,
+          "elapsed_ms": 32870.847,
+          "actual_total_tokens": 7797,
+          "deterministic_checks": {
+            "characters": 2093,
+            "estimated_tokens": 2653,
+            "paragraph_count": 42,
+            "dialogue_paragraph_count": 22,
+            "duplicate_paragraph_count": 1,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 3
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 7,
+      "section": 6,
+      "subsection": 3,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 11559,
+      "broker_input_estimated_tokens": 8495,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "d04f58e66a35ff38dc4ab096ee1b2dfa3abb44ec4a91411d03a8d0e98aedeca7",
+      "broker_messages_hash": "aa84b0a93bc683c27e2414d892293ff09fcb774aae62fa92e7fa284d91e1d5d7",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q07",
+        "rag-annotation:q07",
+        "rag-annotation:q07",
+        "rag-annotation:q07",
+        "rag-annotation:q07",
+        "rag-annotation:q07",
+        "golden:S6:U2",
+        "golden:handover:S5",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "da1bc168-abd4-4581-8c3d-86e3c04be52b",
+        "679a7aa0-5f71-4227-94fe-87ccde458284",
+        "95b9b439-507d-4130-a932-af05c81b7b05",
+        "5a76663d-4b81-4f03-9c0c-6b6e5c839585",
+        "2c933962-1baf-448f-ad53-55ef299f6668",
+        "style:four-control-default-reconstruction",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S5:U3",
+        "golden:S6:U1",
+        "unavailable:frozen-redis-state"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S5:U3",
+        "recent:golden:S6:U1",
+        "world:world_facts"
+      ],
+      "winner_arm": "legacy_full",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "candidate_1 开头已是周六早上，结尾却写‘明天周六’并称两小时后搅拌机会响。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "26872b5582ddc8b5ee5ee38caf6c16e9918edd5350b9115b1f7c703bc9bb48df",
+          "characters": 2395,
+          "estimated_output_tokens": 3093,
+          "elapsed_ms": 33710.156,
+          "actual_total_tokens": 6194,
+          "deterministic_checks": {
+            "characters": 2395,
+            "estimated_tokens": 3093,
+            "paragraph_count": 56,
+            "dialogue_paragraph_count": 6,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 2
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 1,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "e9679b05705a56b99b9e8544aeb98caf87f9c99d5ba6738febb2c01782111b19",
+          "characters": 2120,
+          "estimated_output_tokens": 2797,
+          "elapsed_ms": 26149.853,
+          "actual_total_tokens": 7677,
+          "deterministic_checks": {
+            "characters": 2120,
+            "estimated_tokens": 2797,
+            "paragraph_count": 35,
+            "dialogue_paragraph_count": 5,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 3,
+              "她以为": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 8,
+      "section": 4,
+      "subsection": 3,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 12537,
+      "broker_input_estimated_tokens": 8406,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "a55893071f64fac4e83e7baf64e6287d7d14cc2ca62aec4cab7aef85429b23e6",
+      "broker_messages_hash": "97975420ac82f168b6a03fc785af0d9dbfcd94edd0b3fbe2482a54a33fd75a7c",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q08",
+        "rag-annotation:q08",
+        "rag-annotation:q08",
+        "rag-annotation:q08",
+        "rag-annotation:q08",
+        "rag-annotation:q08",
+        "golden:S4:U2",
+        "golden:handover:S3",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "4cb38a37-d3b2-4304-be20-4f92b20c278d",
+        "46aa39c1-3ba0-4e75-a593-9b5500c71882",
+        "b3260032-c13a-43db-af1f-074163199858",
+        "ad870d7d-dbd1-4944-9825-ada3d8247819",
+        "da1bc168-abd4-4581-8c3d-86e3c04be52b",
+        "style:four-control-default-reconstruction",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S3:U3",
+        "golden:S4:U1"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S3:U3",
+        "recent:golden:S4:U1"
+      ],
+      "winner_arm": "tie",
+      "mapping_exposed_before_review": false,
+      "ambiguous": true,
+      "short_evidence": "两者都完成微咸余味与分享边界，但都越过本节继续写到后续提问、删帖或当店员。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "budgeted_broker",
+          "output_sha256": "c2d18c4bd800f054955c4d833cf59d17a91e68f30dd5c11ce63de8f939148222",
+          "characters": 2254,
+          "estimated_output_tokens": 2911,
+          "elapsed_ms": 27911.184,
+          "actual_total_tokens": 6095,
+          "deterministic_checks": {
+            "characters": 2254,
+            "estimated_tokens": 2911,
+            "paragraph_count": 46,
+            "dialogue_paragraph_count": 7,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 4
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 1,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "legacy_full",
+          "output_sha256": "7e1880484cf8e7376952f03f80d4997b03478fad39d15f28a6d36ea2e2fa3806",
+          "characters": 2500,
+          "estimated_output_tokens": 3212,
+          "elapsed_ms": 31274.596,
+          "actual_total_tokens": 8472,
+          "deterministic_checks": {
+            "characters": 2500,
+            "estimated_tokens": 3212,
+            "paragraph_count": 54,
+            "dialogue_paragraph_count": 15,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 2
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 1,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 9,
+      "section": 4,
+      "subsection": 1,
+      "late_scene": false,
+      "legacy_input_estimated_tokens": 14480,
+      "broker_input_estimated_tokens": 9089,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "51e7c77d1df6d63386853c53fd551c9405904b2371ab3fbdc3498b294ff45a4a",
+      "broker_messages_hash": "2cdeff7a064872f0611cb10e74329f0ffd7c4b62bc0177758ef7b1d2003d5fc8",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q09",
+        "rag-annotation:q09",
+        "rag-annotation:q09",
+        "rag-annotation:q09",
+        "rag-annotation:q09",
+        "rag-annotation:q09",
+        "golden:S3:U3",
+        "golden:handover:S3",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "b0fedefb-886e-4e19-8225-fc03c82c460c",
+        "3c939bbf-9269-40e8-8045-fdc92316df5d",
+        "85cda2bd-f853-41d2-bff0-b76520368fb9",
+        "a3455914-505d-442f-bf2b-f6320e63ede9",
+        "2a8998dd-2a8a-4ef4-b6c2-ddc1aec41c20"
+      ],
+      "dropped_source_ids": [
+        "golden:S3:U1",
+        "golden:S3:U2",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "style:four-control-default-reconstruction",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S3:U1",
+        "recent:golden:S3:U2",
+        "other:global-rules:line:0",
+        "other:global-rules:line:5",
+        "other:global-rules:line:6",
+        "other:global-rules:line:7",
+        "other:global-rules:line:8",
+        "other:global-rules:line:9",
+        "world:world_facts",
+        "world:world_contradictions",
+        "world:ranked_events",
+        "style:narrative_density_instruction",
+        "style:style_examples"
+      ],
+      "winner_arm": "budgeted_broker",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "candidate_1 将咸味解释为淀粉分解且称‘不是加的’，与后文海盐设定冲突。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "legacy_full",
+          "output_sha256": "23534228c317086d06f0f32b9fbd3c3444426430517993a748a0fdf5c446bc71",
+          "characters": 2355,
+          "estimated_output_tokens": 2986,
+          "elapsed_ms": 31829.866,
+          "actual_total_tokens": 9490,
+          "deterministic_checks": {
+            "characters": 2355,
+            "estimated_tokens": 2986,
+            "paragraph_count": 52,
+            "dialogue_paragraph_count": 27,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {}
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 1
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "budgeted_broker",
+          "output_sha256": "12f02faadc9c072fa2b73a7f34464a3f2c1309963c066e9b0cb8b5d7c6579da3",
+          "characters": 2122,
+          "estimated_output_tokens": 2735,
+          "elapsed_ms": 26174.414,
+          "actual_total_tokens": 6433,
+          "deterministic_checks": {
+            "characters": 2122,
+            "estimated_tokens": 2735,
+            "paragraph_count": 41,
+            "dialogue_paragraph_count": 15,
+            "duplicate_paragraph_count": 0,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 3,
+              "她知道": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    },
+    {
+      "query_index": 10,
+      "section": 13,
+      "subsection": 2,
+      "late_scene": true,
+      "legacy_input_estimated_tokens": 11493,
+      "broker_input_estimated_tokens": 8175,
+      "production_prompt_hash_unchanged": true,
+      "legacy_messages_hash": "55b12f2575537d1ccd8eca6acaeecb06dcbd2fb3da19cfb5156a7c0bb88ff0b6",
+      "broker_messages_hash": "1628fe9124158cc3df17a38e2e38b872d60e895fa988665ab0c2fbdb8789b345",
+      "kept_source_ids": [
+        "prompt:WRITER_SYSTEM_PROMPT",
+        "prompt:WRITING_PROMPT",
+        "rag-annotation:q10",
+        "rag-annotation:q10",
+        "rag-annotation:q10",
+        "rag-annotation:q10",
+        "rag-annotation:q10",
+        "rag-annotation:q10",
+        "golden:S13:U1",
+        "golden:handover:S12",
+        "human-hard-rules:character-stability",
+        "frozen-query:actor-names",
+        "human-hard-rules:relationship-stage",
+        "rules.db:enabled:line:0",
+        "rules.db:enabled:line:1",
+        "rules.db:enabled:line:2",
+        "rules.db:enabled:line:3",
+        "rules.db:enabled:line:4",
+        "rules.db:enabled:line:5",
+        "rules.db:enabled:line:6",
+        "rules.db:enabled:line:7",
+        "rules.db:enabled:line:8",
+        "rules.db:enabled:line:9",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "unavailable:frozen-redis-state",
+        "d26bc669-eb4b-4210-b19a-6a9253059303",
+        "85b9834a-be45-4242-8adc-f4f0d56abfca",
+        "5a76663d-4b81-4f03-9c0c-6b6e5c839585",
+        "2e5d1a73-1da3-4f17-a753-471e252ab60f",
+        "0e5acb1e-25a1-4b78-8f84-b56ced82e052",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_source_ids": [
+        "golden:S12:U2",
+        "golden:S12:U3",
+        "style:four-control-default-reconstruction"
+      ],
+      "dropped_item_ids": [
+        "recent:golden:S12:U2",
+        "recent:golden:S12:U3",
+        "style:style_examples"
+      ],
+      "winner_arm": "budgeted_broker",
+      "mapping_exposed_before_review": false,
+      "ambiguous": false,
+      "short_evidence": "candidate_1 说‘明天老人会来’，但父亲固定周六来店，本节已是周六；candidate_2 保持为下周六。",
+      "candidates": [
+        {
+          "candidate_id": "candidate_1",
+          "arm": "legacy_full",
+          "output_sha256": "75bd22e5766fc3de70a07ab5eb7ac1c20f35906e287aafbeea051123dc7a6851",
+          "characters": 1794,
+          "estimated_output_tokens": 2219,
+          "elapsed_ms": 20391.14,
+          "actual_total_tokens": 7540,
+          "deterministic_checks": {
+            "characters": 1794,
+            "estimated_tokens": 2219,
+            "paragraph_count": 63,
+            "dialogue_paragraph_count": 28,
+            "duplicate_paragraph_count": 1,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 1,
+              "她以为": 1
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 1,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        },
+        {
+          "candidate_id": "candidate_2",
+          "arm": "budgeted_broker",
+          "output_sha256": "6b79c1004d8b368a06468f493c2f4d0cd1ed0dd57f70c96965ec1400a86d35c9",
+          "characters": 2401,
+          "estimated_output_tokens": 2948,
+          "elapsed_ms": 28607.924,
+          "actual_total_tokens": 6260,
+          "deterministic_checks": {
+            "characters": 2401,
+            "estimated_tokens": 2948,
+            "paragraph_count": 82,
+            "dialogue_paragraph_count": 41,
+            "duplicate_paragraph_count": 1,
+            "ai_cliche_occurrences": {},
+            "psychological_narration_occurrences": {
+              "她想起": 3
+            }
+          },
+          "codex_assisted_judgment": {
+            "goal_complete": true,
+            "hard_violations": 0,
+            "relationship_violations": 0,
+            "continuity_defects": 0,
+            "causality_defects": 0,
+            "fact_errors": 0
+          }
+        }
+      ]
+    }
+  ]
+}

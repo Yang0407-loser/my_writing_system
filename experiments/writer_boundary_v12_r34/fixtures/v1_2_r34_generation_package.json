@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.2-r3.4",
+  "experiment_id": "writer-boundary-v1-2-r3-4",
+  "enabled": false,
+  "generation_enabled": false,
+  "capability_probe_authorized": false,
+  "model_call_authorized": false,
+  "real_generation_authorized": false,
+  "r331_approval_sha256": "1e4c72e04a6e758377a2438ed2432a172f7f45684a37b47faef7a6f7a96e2e83",
+  "r3_locked_request_corpus_sha256": "19d3aa0482bb06ddfc02b413bae12ebcc7cf6415a9540fd93457d66ac5c05d3b",
+  "llm_client_source_sha256": "2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39"
+}

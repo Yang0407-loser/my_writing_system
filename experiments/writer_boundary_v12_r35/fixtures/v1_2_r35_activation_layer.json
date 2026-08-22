@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.2-r3.5",
+  "experiment_id": "writer-boundary-v1-2-r3-5",
+  "r34_manifest_sha256": "d897e98cb4247d013a9f18f507127e7092e244679d5648eb50571eb1fec82046",
+  "r34_probe_plan_sha256": "bb1a482afae1f5d5ed64dba1dae8bc6b7fecca644c14b7e6cfd06eccbe13bdfc",
+  "r341_review_aggregate_sha256": "4461aff014d6b05bbe9f929a8b5b7e3685ef291f83b78e88f3f835a1f6afb43a",
+  "llm_client_source_sha256": "2bfd086bcf00f1275accfe37b9b881fb8be64edb6279805d18678c9033a67c39",
+  "activation_layer_build_authorized": true,
+  "capability_probe_call_authorized": false,
+  "real_generation_authorized": false,
+  "model_call_authorized": false
+}

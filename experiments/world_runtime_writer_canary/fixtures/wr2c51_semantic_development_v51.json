@@ -1,0 +1,654 @@
+{
+  "schema_version": "world-runtime-semantic-development-wr2c51-v51",
+  "partition_role": "visible_development_v51_not_holdout",
+  "cases": [
+    {
+      "case_id": "DEV51-CLOCK-NARRATIVE-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "五点四十三分，林晚看了一眼电脑右下角的时间，继续修改文章。",
+      "judgments": [
+        {
+          "change_type": "clock_state",
+          "occurred": true,
+          "after_value": "05:43",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "五点四十三分", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "clock_state",
+          "subject": "world_clock",
+          "predicate": "time",
+          "after_value": "05:43",
+          "mechanism": "explicit_time_progression",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-OPEN-06-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "六点整，林晚拉开卷帘门，正式开门营业。",
+      "judgments": [
+        {
+          "change_type": "clock_state",
+          "occurred": true,
+          "after_value": "06:00",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "六点整", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "occurred": true,
+          "after_value": "open",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "拉开卷帘门，正式开门营业", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "clock_state",
+          "subject": "world_clock",
+          "predicate": "time",
+          "after_value": "06:00",
+          "mechanism": "explicit_time_progression",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "operation_state",
+          "after_value": "open",
+          "mechanism": "explicit_open_close",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-SALE-AFTER-OPEN-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "六点十二分，卷帘门已经拉起，顾客扫码付款，周野把牛角包递给对方。",
+      "judgments": [
+        {
+          "change_type": "clock_state",
+          "occurred": true,
+          "after_value": "06:12",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "六点十二分", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "occurred": true,
+          "after_value": "open",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "卷帘门已经拉起", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_public_sale",
+          "occurred": true,
+          "after_value": "occurred",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "顾客扫码付款", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "clock_state",
+          "subject": "world_clock",
+          "predicate": "time",
+          "after_value": "06:12",
+          "mechanism": "explicit_time_progression",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "operation_state",
+          "after_value": "open",
+          "mechanism": "explicit_open_close",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_public_sale",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "public_sale_event",
+          "after_value": "occurred",
+          "mechanism": "digital_payment_exchange",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-HANDOFF-AFTER-OPEN-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "六点二十分，店门开着，周野把一只牛角包免费塞给路过的孩子。",
+      "judgments": [
+        {
+          "change_type": "clock_state",
+          "occurred": true,
+          "after_value": "06:20",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "六点二十分", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "occurred": true,
+          "after_value": "open",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "店门开着", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_public_handoff",
+          "occurred": true,
+          "after_value": "occurred",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "把一只牛角包免费塞给路过的孩子", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "clock_state",
+          "subject": "world_clock",
+          "predicate": "time",
+          "after_value": "06:20",
+          "mechanism": "explicit_time_progression",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "operation_state",
+          "after_value": "open",
+          "mechanism": "explicit_open_close",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_public_handoff",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "public_goods_handoff",
+          "after_value": "occurred",
+          "mechanism": "free_handoff",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-OPEN-EARLY-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "四点五十分，林晚提前开门营业。",
+      "judgments": [
+        {
+          "change_type": "clock_state",
+          "occurred": true,
+          "after_value": "04:50",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "四点五十分", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "occurred": true,
+          "after_value": "open",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "提前开门营业", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "clock_state",
+          "subject": "world_clock",
+          "predicate": "time",
+          "after_value": "04:50",
+          "mechanism": "explicit_time_progression",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_operation_state",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "operation_state",
+          "after_value": "open",
+          "mechanism": "explicit_open_close",
+          "expected_validation": "invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-SALE-PREOPEN-CLOCK-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "五点五十五分，顾客扫码付款，周野从窗口递出面包。",
+      "judgments": [
+        {
+          "change_type": "clock_state",
+          "occurred": true,
+          "after_value": "05:55",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "五点五十五分", "occurrence": 1}]
+        },
+        {
+          "change_type": "storefront_public_sale",
+          "occurred": true,
+          "after_value": "occurred",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "顾客扫码付款", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "clock_state",
+          "subject": "world_clock",
+          "predicate": "time",
+          "after_value": "05:55",
+          "mechanism": "explicit_time_progression",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "storefront_public_sale",
+          "subject": "bakery:wild-bread:storefront",
+          "predicate": "public_sale_event",
+          "after_value": "occurred",
+          "mechanism": "digital_payment_exchange",
+          "expected_validation": "invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-KNOWLEDGE-01",
+      "scene_id": "adversarial-unpublished-knowledge",
+      "state_variant": "before",
+      "text": "林晚把定稿文件传进工作群。老吴随即在群里引用正文那句“七点打烊”，问她是不是写错。",
+      "judgments": [
+        {
+          "change_type": "knowledge_state",
+          "occurred": true,
+          "after_value": "perceived",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [
+            {"excerpt": "林晚把定稿文件传进工作群", "occurrence": 1},
+            {"excerpt": "老吴随即在群里引用正文那句“七点打烊”", "occurrence": 1}
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "knowledge_state",
+          "subject": "character:coworker",
+          "predicate": "article_knowledge",
+          "after_value": "perceived",
+          "mechanism": "group_file_send_and_body_response",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-ACK-01",
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "after",
+      "text": "林晚的辞职提交后，人事系统回了受理回执。",
+      "judgments": [
+        {
+          "change_type": "resignation_acknowledgement",
+          "occurred": true,
+          "after_value": true,
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "人事系统回了受理回执", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "resignation_acknowledgement",
+          "subject": "company:lin-wan",
+          "predicate": "resignation_acknowledged",
+          "after_value": true,
+          "mechanism": "institutional_reply",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-UNSOURCED-01",
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "text": "新来的排班员韩冰看完排班表，让周野明早六点到岗。",
+      "judgments": [
+        {
+          "change_type": "unsourced_project_fact",
+          "occurred": true,
+          "after_value": "排班员",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "新来的排班员韩冰", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "unsourced_project_fact",
+          "subject": "character:han-bing",
+          "predicate": "identity_role",
+          "after_value": "shift_scheduler",
+          "mechanism": "text_assertion",
+          "expected_validation": "unresolved"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-OBJECT-POUR-01",
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "text": "林晚把碗端到水池边，把剩下的绿豆汤倒掉，空碗放回原处。",
+      "judgments": [
+        {
+          "change_type": "object_state",
+          "occurred": true,
+          "after_value": "empty",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "把剩下的绿豆汤倒掉", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "object_state",
+          "subject": "object:green-bean-soup-bowl",
+          "predicate": "content_state",
+          "after_value": "empty",
+          "mechanism": "actor_pours_out",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-OBJECT-COMPOSITE-01",
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "text": "门窗整夜锁着，没人进屋；早上发现碗已经洗干净收进柜子。",
+      "judgments": [
+        {
+          "change_type": "object_state",
+          "occurred": true,
+          "after_value": "clean_and_stored",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "碗已经洗干净收进柜子", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "object_state",
+          "subject": "object:green-bean-soup-bowl",
+          "predicate": "content_state",
+          "after_value": "clean_and_stored",
+          "mechanism": "missing_actor_or_event",
+          "expected_validation": "invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-REPEAT-01",
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "text": "发布记录显示成功，她却又回到编辑页重新点了一次发布。",
+      "judgments": [
+        {
+          "change_type": "repeated_completed_event",
+          "occurred": true,
+          "after_value": "repeated",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "重新点了一次发布", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "repeated_completed_event",
+          "subject": "article:lin-wan",
+          "predicate": "publication_event",
+          "after_value": "repeated",
+          "mechanism": "explicit_repeat_marker",
+          "expected_validation": "invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-EMPLOYMENT-CHAIN-01",
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "after",
+      "text": "人事邮件确认辞职当天生效；交接完成后，系统把她的状态改为已离职。",
+      "judgments": [
+        {
+          "change_type": "resignation_acknowledgement",
+          "occurred": true,
+          "after_value": true,
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "人事邮件确认辞职当天生效", "occurrence": 1}]
+        },
+        {
+          "change_type": "employment_state",
+          "occurred": true,
+          "after_value": "ended",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "系统把她的状态改为已离职", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "resignation_acknowledgement",
+          "subject": "company:lin-wan",
+          "predicate": "resignation_acknowledged",
+          "after_value": true,
+          "mechanism": "institutional_reply",
+          "expected_validation": "valid"
+        },
+        {
+          "change_type": "employment_state",
+          "subject": "employment:lin-wan",
+          "predicate": "status",
+          "after_value": "ended",
+          "mechanism": "acknowledged_effective_resignation",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-EMPLOYMENT-SELF-01",
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "after",
+      "text": "公司没有回复，林晚自己认为劳动关系已经结束，隔天不再来。",
+      "judgments": [
+        {
+          "change_type": "employment_state",
+          "occurred": true,
+          "after_value": "ended",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "林晚自己认为劳动关系已经结束", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "employment_state",
+          "subject": "employment:lin-wan",
+          "predicate": "status",
+          "after_value": "ended",
+          "mechanism": "self_assumed_effective",
+          "expected_validation": "invalid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-PUBLISH-01",
+      "scene_id": "adversarial-unpublished-knowledge",
+      "state_variant": "before",
+      "text": "她提交终稿，平台审核完成后显示文章已发布。",
+      "judgments": [
+        {
+          "change_type": "publication_state",
+          "occurred": true,
+          "after_value": "published",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [
+            {"excerpt": "她提交终稿", "occurrence": 1},
+            {"excerpt": "文章已发布", "occurrence": 1}
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "publication_state",
+          "subject": "article:lin-wan",
+          "predicate": "publication_state",
+          "after_value": "published",
+          "mechanism": "submit_and_platform_publish",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-DELIVERY-01",
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "before",
+      "text": "辞职信发往公司人事邮箱，系统回执显示投递成功。",
+      "judgments": [
+        {
+          "change_type": "resignation_delivery",
+          "occurred": true,
+          "after_value": "delivered",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [
+            {"excerpt": "辞职信发往公司人事邮箱", "occurrence": 1},
+            {"excerpt": "系统回执显示投递成功", "occurrence": 1}
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "resignation_delivery",
+          "subject": "resignation:lin-wan",
+          "predicate": "lifecycle_state",
+          "after_value": "delivered",
+          "mechanism": "institutional_email_delivery",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-PERSONAL-01",
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "before",
+      "text": "她没有通知公司，只把辞职信存进私人邮箱作备份。",
+      "judgments": [
+        {
+          "change_type": "resignation_personal_record",
+          "occurred": true,
+          "after_value": "saved",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [{"excerpt": "只把辞职信存进私人邮箱作备份", "occurrence": 1}]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "resignation_personal_record",
+          "subject": "resignation:lin-wan",
+          "predicate": "personal_record_state",
+          "after_value": "saved",
+          "mechanism": "private_email_copy",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-LOCATION-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "周野推开操作间的门，林晚跟着走了进去。",
+      "judgments": [
+        {
+          "change_type": "location_state",
+          "occurred": true,
+          "after_value": "操作间",
+          "mode": "actual",
+          "epistemic": "asserted",
+          "evidence": [
+            {"excerpt": "林晚跟着走了进去", "occurrence": 1},
+            {"excerpt": "周野推开操作间的门", "occurrence": 1}
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "change_type": "location_state",
+          "subject": "character:lin-wan",
+          "predicate": "location",
+          "after_value": "bakery:wild-bread:workshop",
+          "mechanism": "explicit_entry",
+          "expected_validation": "valid"
+        }
+      ]
+    },
+    {
+      "case_id": "DEV51-NEGATED-SALE-01",
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "text": "顾客举起付款码，周野摆手没收钱，面包仍放在柜台上。",
+      "judgments": [],
+      "changes": []
+    },
+    {
+      "case_id": "DEV51-PLANNED-KNOWLEDGE-01",
+      "scene_id": "adversarial-unpublished-knowledge",
+      "state_variant": "before",
+      "text": "林晚打算改完结尾再把链接发给季晴，输入框还是空的。",
+      "judgments": [],
+      "changes": []
+    },
+    {
+      "case_id": "DEV51-REPEAT-CHECK-01",
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "text": "她核对发布后台，文章显示在线，她没有再点发布。",
+      "judgments": [],
+      "changes": []
+    },
+    {
+      "case_id": "DEV51-OBJECT-NOOP-01",
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "text": "林晚看见盛冷汤的碗还在茶几原处，没有碰。",
+      "judgments": [],
+      "changes": []
+    },
+    {
+      "case_id": "DEV51-FICTIONAL-ENTITY-01",
+      "scene_id": "adversarial-unpublished-knowledge",
+      "state_variant": "before",
+      "text": "她在草稿里写了位叫韩冰的排班员，随即又删掉了。",
+      "judgments": [],
+      "changes": []
+    }
+  ]
+}

@@ -19,6 +19,8 @@ class ContinuityEditor(BaseAgent):
         Returns:
             {critical_fixes: [...], minor_fixes: [...], summary: str}
         """
+        from ..utils.llm_client import set_cost_label
+        set_cost_label("continuity_editor")
         # 格式化回溯建议
         sug_text = "\n".join(
             f"- [第{s.get('from_section', '?')}节提出] 目标第{s.get('target_section', '?')}节: {s.get('description', '')}"

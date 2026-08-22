@@ -1,0 +1,121 @@
+{
+  "date": "2026-07-22",
+  "status": "v11_engineering_complete_not_eligible_for_demo",
+  "task_id": "019fc0c8-1a20-4be3-8252-54aaf1c5aa27",
+  "default_mode": "off",
+  "token_cap": 450,
+  "runtime_calls": {"writer": 0, "llm": 0, "new_generation": 0},
+  "real_canary": {
+    "task_status": "completed",
+    "main_draft_calls": 4,
+    "mandatory_event_retries": 0,
+    "condense_calls": 0,
+    "elapsed_seconds": 351.2,
+    "total_tokens": 36387,
+    "target_characters": 4000,
+    "reported_output_characters": 8250,
+    "subsections": [
+      {"subsection": 1, "v1_tokens": 796, "v1_injected": false, "output_characters": 1256},
+      {"subsection": 2, "v1_tokens": 488, "v1_injected": false, "output_characters": 2272},
+      {"subsection": 3, "v1_tokens": 405, "v1_injected": true, "output_characters": 1592},
+      {"subsection": 4, "v1_tokens": 248, "v1_injected": true, "output_characters": 3095}
+    ]
+  },
+  "v11_reconstruction": [
+    {
+      "subsection": 1,
+      "contract_hash": "249dd2d282eb6ee718a5fe0e79a443a7a55ab3b900611fca3c88e19271960bfd",
+      "attempted_estimated_tokens": 888,
+      "injected": false,
+      "fallback_reason": "contract_over_budget",
+      "required_event_count": 1,
+      "target_characters": 1000,
+      "characters_per_required_event": 1000.0,
+      "characters": {"objective": 214, "required_events": [214], "confirmed_continuity": [], "prohibited_inventions": [16], "stop_boundary": 113},
+      "component_tokens": {"objective": 283, "required_events": [283], "confirmed_continuity": [], "prohibited_inventions": [24], "length_instruction": 89, "stop_boundary": 176, "wrapper_and_labels": 33, "total": 888},
+      "source_traceable": true,
+      "semantic_hash_stable": true
+    },
+    {
+      "subsection": 2,
+      "contract_hash": "13b1d1713288d1367d0330442bce1e108216f49d8bbb993c32dbb6efb6419204",
+      "attempted_estimated_tokens": 579,
+      "injected": false,
+      "fallback_reason": "contract_over_budget",
+      "required_event_count": 4,
+      "target_characters": 1000,
+      "characters_per_required_event": 250.0,
+      "characters": {"objective": 41, "required_events": [29, 27, 32, 41], "confirmed_continuity": [], "prohibited_inventions": [16], "stop_boundary": 123},
+      "component_tokens": {"objective": 57, "required_events": [39, 38, 44, 57], "confirmed_continuity": [], "prohibited_inventions": [24], "length_instruction": 89, "stop_boundary": 194, "wrapper_and_labels": 37, "total": 579},
+      "source_traceable": true,
+      "semantic_hash_stable": true
+    },
+    {
+      "subsection": 3,
+      "contract_hash": "f3a74abfeaf7c33d34de21c74cec80a6f4cf13476f77133ceab5b93f9b4c77cc",
+      "attempted_estimated_tokens": 496,
+      "injected": false,
+      "fallback_reason": "contract_over_budget",
+      "required_event_count": 4,
+      "target_characters": 1000,
+      "characters_per_required_event": 250.0,
+      "characters": {"objective": 38, "required_events": [34, 31, 33, 38], "confirmed_continuity": [], "prohibited_inventions": [16], "stop_boundary": 58},
+      "component_tokens": {"objective": 53, "required_events": [48, 42, 48, 53], "confirmed_continuity": [], "prohibited_inventions": [24], "length_instruction": 89, "stop_boundary": 102, "wrapper_and_labels": 37, "total": 496},
+      "source_traceable": true,
+      "semantic_hash_stable": true
+    },
+    {
+      "subsection": 4,
+      "contract_hash": "b737888054bf25b37bd58052e867cc2740302de6cedc303a8ca0079e21fc4e9b",
+      "attempted_estimated_tokens": 339,
+      "injected": true,
+      "fallback_reason": null,
+      "required_event_count": 5,
+      "target_characters": 1000,
+      "characters_per_required_event": 200.0,
+      "characters": {"objective": 21, "required_events": [9, 8, 8, 7, 21], "confirmed_continuity": [], "prohibited_inventions": [16], "stop_boundary": 43},
+      "component_tokens": {"objective": 30, "required_events": [13, 12, 12, 10, 30], "confirmed_continuity": [], "prohibited_inventions": [24], "length_instruction": 89, "stop_boundary": 82, "wrapper_and_labels": 37, "total": 339},
+      "source_traceable": true,
+      "semantic_hash_stable": true
+    }
+  ],
+  "attributions": [
+    {"type": "duplicated_contract_content", "scope": "all_subsections", "finding": "The description is already present in the legacy prompt and mandatory-event block, then appears again as contract objective and required event."},
+    {"type": "verbose_objective", "scope": "S1.1", "finding": "The 214-character objective costs 283 estimated tokens and is repeated by the sole required event."},
+    {"type": "verbose_stop_boundary", "scope": "S1.1-S1.3", "finding": "The complete next-subsection event list is embedded in the stop boundary; it costs 176, 194 and 102 tokens after the explicit stop instruction."},
+    {"type": "overplanned_event_density", "scope": "S1.2-S1.4", "finding": "Four to five required items share a 1,000-character target, leaving 200-250 characters per item before transitions and prose."},
+    {"type": "conflicting_length_instruction", "scope": "all_subsections", "finding": "The style brief asks for roughly 400 characters per paragraph while the subsection prompt targets roughly 1,000 total characters and requests multiple events, sensory detail and gradual pacing."},
+    {"type": "weak_total_length_wording", "scope": "v1", "finding": "V1 did not state that 850-1,300 characters applied to the entire subsection rather than each paragraph."},
+    {"type": "insufficient_evidence", "scope": "model_instruction_noncompliance", "finding": "Prompt-level conflicts prevent attributing the overrun solely to model noncompliance."}
+  ],
+  "v11_changes": [
+    "Preserve attempted token counts and component breakdown on over-budget fallback.",
+    "Remove only normalized exact duplicates from rendered repeated lists; typed fields and provenance remain unchanged.",
+    "State that the range applies to the whole subsection and request compressed depiction without extra people, scenes or later events.",
+    "Place the stop boundary last and require the subsection to end immediately after the listed events.",
+    "Keep the 450-token cap and generation, retry and checkpoint behavior unchanged."
+  ],
+  "semantic_hash_regression": {
+    "S1.3": "f3a74abfeaf7c33d34de21c74cec80a6f4cf13476f77133ceab5b93f9b4c77cc",
+    "S1.4": "b737888054bf25b37bd58052e867cc2740302de6cedc303a8ca0079e21fc4e9b",
+    "preserved": true
+  },
+  "promotion_gate": {
+    "all_four_within_450_tokens": false,
+    "all_four_injected_offline": false,
+    "source_hash_traceability_100_percent": true,
+    "off_messages_unchanged": true,
+    "semantic_hashes_preserved": true,
+    "no_prompt_length_conflict": false,
+    "token_cap_raised": false,
+    "required_events_deleted": false,
+    "allow_one_more_real_demo": false
+  },
+  "decision": {
+    "execution_contract_mode": "off",
+    "real_demo_authorized": false,
+    "next_single_direction": "audit_outline_event_density",
+    "reason": "Only one of four real contracts fits the frozen cap without deleting semantic fields, and the upstream plan contains unresolved length-density conflicts."
+  },
+  "verification": {"targeted_tests_passed": 28, "compileall": "passed"}
+}

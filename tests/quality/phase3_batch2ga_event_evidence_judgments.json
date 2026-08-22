@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "review_provenance": "codex_assisted_review",
+  "independent_human_confirmation": false,
+  "decisions": {
+    "q04-8e9a3ccc": {"preserved": true, "note": "The assembled funding event retains Lin Wan, Ji Qing, Gu Yan, Wu Aunt, their contributions and the 300,000 total."},
+    "q05-2c933962": {"preserved": true, "note": "The event assembly retains Zhou Ye's invitation, Lin Wan's acceptance and her transition from behind the viewfinder into participation."},
+    "q05-91e847dc": {"preserved": true, "note": "The assembly retains the early-arrival plan, learning work and explicit line about stepping out from behind the viewfinder."},
+    "q05-85cda2bd": {"preserved": true, "note": "The assembly retains Lin Wan arriving early, receiving the bakery apron and entering the worker role."},
+    "q05-097053c9": {"preserved": true, "note": "The assembly retains the explicit 'you teach, I learn' participation commitment."},
+    "q06-2c933962": {"preserved": true, "note": "The assembly retains Zhou Ye's staffing request and explicit invitation for Lin Wan to come inside and help."},
+    "q06-679a7aa0": {"preserved": false, "note": "Baseline annotation ceiling, not an EventChunker loss: the original parent contains no active invitation from Zhou Ye."},
+    "q07-679a7aa0": {"preserved": false, "note": "Baseline annotation ceiling, not an EventChunker loss: the original parent stops before Lin Wan directly faces Zhou Ye."},
+    "q07-7714910d": {"preserved": true, "note": "The assembly retains the photo consequences, deletion, direct exchange with Zhou Ye and Lin Wan's proposal to address the crowd."},
+    "q07-2c933962": {"preserved": true, "note": "The assembly retains deletion and the ensuing face-to-face exchange with Zhou Ye."},
+    "q08-890a929d": {"preserved": true, "note": "The assembly retains the slowly emerging salty aftertaste, wheat aroma and explicit sea-salt explanation."}
+  }
+}

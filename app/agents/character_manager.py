@@ -5,9 +5,12 @@ from .base import BaseAgent
 from ..utils.prompt_templates import (
     CHARACTER_EXTRACTION_PROMPT,
     CHARACTER_ARC_PROMPT,
+    CHARACTER_ARC_PROMPT_V2,
     CHARACTER_STATE_UPDATE_PROMPT,
 )
 from ..utils.json_parser import parse_json
+from ..character_arc_contract import normalize_v2_arcs, resolve_contract_version
+from ..config import settings
 
 
 class CharacterManager(BaseAgent):
@@ -72,7 +75,9 @@ class CharacterManager(BaseAgent):
         characters_json = json.dumps(characters, ensure_ascii=False, indent=2)
         outline_json = json.dumps(outline, ensure_ascii=False, indent=2)
 
-        prompt = CHARACTER_ARC_PROMPT.format(
+        contract_version = resolve_contract_version(settings.CHARACTER_ARC_CONTRACT_VERSION)
+        prompt_template = CHARACTER_ARC_PROMPT_V2 if contract_version == "v2" else CHARACTER_ARC_PROMPT
+        prompt = prompt_template.format(
             characters_json=characters_json,
             outline_json=outline_json,
         )
@@ -92,6 +97,9 @@ class CharacterManager(BaseAgent):
         except ValueError:
             return []
 
+        if contract_version == "v2":
+            result = normalize_v2_arcs(result, outline)
+
         # 确保 current_state 初始等于 starting_state
         for arc in result:
             if not arc.get("current_state"):
@@ -110,6 +118,7 @@ class CharacterManager(BaseAgent):
         if not arcs:
             return arcs
 
+        original_arcs = [copy.deepcopy(a) for a in arcs]
         updated_arcs = [copy.deepcopy(a) for a in arcs]
 
         # 按角色分组
@@ -150,18 +159,34 @@ class CharacterManager(BaseAgent):
 
             try:
                 results = parse_json(response)
-                if isinstance(results, dict):
-                    results = [results]
-                if isinstance(results, list):
-                    for item in results:
-                        cid = item.get("character_id", "")
-                        new_state = item.get("current_state", "")
-                        if new_state:
-                            for arc in updated_arcs:
-                                if arc.get("character_id") == cid:
-                                    arc["current_state"] = new_state
-                                    break
-            except ValueError:
-                pass
+            except (TypeError, ValueError):
+                return original_arcs
+            if isinstance(results, dict):
+                results = [results]
+            if not isinstance(results, list):
+                return original_arcs
+
+            expected_ids = {arc.get("character_id", "") for arc, _ in batch}
+            parsed_states: dict[str, str] = {}
+            for item in results:
+                if not isinstance(item, dict):
+                    return original_arcs
+                cid = item.get("character_id", "")
+                new_state = item.get("current_state", "")
+                if (
+                    cid not in expected_ids
+                    or cid in parsed_states
+                    or not isinstance(new_state, str)
+                    or not new_state.strip()
+                ):
+                    return original_arcs
+                parsed_states[cid] = new_state
+            if set(parsed_states) != expected_ids:
+                return original_arcs
+
+            for arc in updated_arcs:
+                cid = arc.get("character_id", "")
+                if cid in parsed_states:
+                    arc["current_state"] = parsed_states[cid]
 
         return updated_arcs

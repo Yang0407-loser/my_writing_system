@@ -1,0 +1,134 @@
+{
+  "profile": "smoke",
+  "chroma_version": "1.5.9",
+  "repeats": 3,
+  "embedding_dimension": 8,
+  "synthetic": true,
+  "production_strategy_changed": false,
+  "limitations": [
+    "Smoke profile is not the complete plan matrix.",
+    "Collection-open timing is a warm-process metadata operation, not a cold OS startup.",
+    "Synthetic exact-neighbor parity verifies filter semantics, not production embedding quality."
+  ],
+  "cases": [
+    {
+      "task_count": 1,
+      "chunks_per_task": 100,
+      "stored_vectors": 200,
+      "insert_seconds": 0.128,
+      "metadata_filter": {
+        "mean_ms": 1.5,
+        "p50_ms": 1.073,
+        "p95_ms": 2.572
+      },
+      "per_task_collection": {
+        "mean_ms": 1.284,
+        "p50_ms": 0.613,
+        "p95_ms": 2.674
+      },
+      "top5_exact_parity": 1.0,
+      "collection_count": 2,
+      "open_all_collections_ms": 0.451,
+      "disk_bytes": 334408,
+      "query_count": 3,
+      "query_errors": []
+    },
+    {
+      "task_count": 10,
+      "chunks_per_task": 100,
+      "stored_vectors": 2000,
+      "insert_seconds": 0.981,
+      "metadata_filter": {
+        "mean_ms": 1.228,
+        "p50_ms": 1.122,
+        "p95_ms": 1.987
+      },
+      "per_task_collection": {
+        "mean_ms": 1.182,
+        "p50_ms": 0.79,
+        "p95_ms": 2.381
+      },
+      "top5_exact_parity": 1.0,
+      "collection_count": 11,
+      "open_all_collections_ms": 0.803,
+      "disk_bytes": 1667512,
+      "query_count": 30,
+      "query_errors": []
+    },
+    {
+      "task_count": 100,
+      "chunks_per_task": 100,
+      "stored_vectors": 20000,
+      "insert_seconds": 12.764,
+      "metadata_filter": {
+        "mean_ms": 3.736,
+        "p50_ms": 3.619,
+        "p95_ms": 4.867
+      },
+      "per_task_collection": {
+        "mean_ms": 7.667,
+        "p50_ms": 1.365,
+        "p95_ms": 33.993
+      },
+      "top5_exact_parity": 1.0,
+      "collection_count": 101,
+      "open_all_collections_ms": 5.946,
+      "disk_bytes": 14212784,
+      "query_count": 28,
+      "query_errors": [
+        {
+          "task_index": 0,
+          "error": "InternalError: Error executing plan: Internal error: Error creating hnsw segment reader: Nothing found on disk"
+        },
+        {
+          "task_index": 0,
+          "error": "InternalError: Error executing plan: Internal error: Error creating hnsw segment reader: Nothing found on disk"
+        }
+      ]
+    },
+    {
+      "task_count": 1,
+      "chunks_per_task": 1000,
+      "stored_vectors": 2000,
+      "insert_seconds": 0.512,
+      "metadata_filter": {
+        "mean_ms": 3.616,
+        "p50_ms": 3.194,
+        "p95_ms": 4.708
+      },
+      "per_task_collection": {
+        "mean_ms": 1.418,
+        "p50_ms": 1.095,
+        "p95_ms": 2.089
+      },
+      "top5_exact_parity": 1.0,
+      "collection_count": 2,
+      "open_all_collections_ms": 0.702,
+      "disk_bytes": 1550908,
+      "query_count": 3,
+      "query_errors": []
+    },
+    {
+      "task_count": 10,
+      "chunks_per_task": 1000,
+      "stored_vectors": 20000,
+      "insert_seconds": 4.943,
+      "metadata_filter": {
+        "mean_ms": 4.967,
+        "p50_ms": 4.95,
+        "p95_ms": 7.126
+      },
+      "per_task_collection": {
+        "mean_ms": 1.631,
+        "p50_ms": 1.239,
+        "p95_ms": 3.257
+      },
+      "top5_exact_parity": 1.0,
+      "collection_count": 11,
+      "open_all_collections_ms": 0.837,
+      "disk_bytes": 12017016,
+      "query_count": 30,
+      "query_errors": []
+    }
+  ]
+}

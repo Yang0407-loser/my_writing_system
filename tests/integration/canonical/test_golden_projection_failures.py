@@ -1,0 +1,234 @@
+from __future__ import annotations
+
+from unittest.mock import MagicMock
+
+import pytest
+from sqlalchemy import func, select
+
+from app.canonical.commit_service import CanonicalCommitService, PROJECTION_MANIFEST
+from app.canonical.hashing import sha256_json
+from app.canonical.models import (
+    CanonicalCommit,
+    DocumentRevision,
+    EventLedger,
+    OutboxEvent,
+    ProjectionDelivery,
+)
+from app.canonical.outbox import OutboxDispatcher
+from app.canonical.projection_barrier import ProjectionBarrier
+from app.canonical.projection_ports import ProjectionReceipt
+from app.canonical.projection_replay import CanonicalProjectionReplay
+from app.writing.canonical_subsection_runtime import (
+    CanonicalSubsectionCommand,
+    CanonicalSubsectionRuntime,
+)
+from app.writing.legacy_subsection_projection import LegacySubsectionProjection
+from tests.unit.canonical.test_commit_service import _prepared
+
+pytest_plugins = ("tests.unit.canonical.test_commit_service",)
+
+
+def _projectors(**overrides):
+    def apply(message):
+        return ProjectionReceipt(
+            projection_event_id=message.projection_event_id,
+            projector_id=message.projector_id,
+            projector_version=message.projector_version,
+            stream_position=message.stream_position,
+            record_count=1,
+            content_digest=sha256_json({"event": message.projection_event_id}),
+        )
+
+    values = {name: MagicMock(side_effect=apply) for name, _ in PROJECTION_MANIFEST}
+    values.update(overrides)
+    return values
+
+
+def _command():
+    return CanonicalSubsectionCommand(
+        task_id="task-1",
+        document_id="document-1",
+        subsection_id="subsection-1",
+        generation_attempt_id="golden-failure-attempt",
+        expected_revision_id="GENESIS",
+        expected_state_version_id="state-genesis",
+    )
+
+
+def _generator(session, spy=None):
+    def generate(*, snapshot, base_revision_number, command):
+        if spy is not None:
+            spy()
+        return _prepared(
+            session,
+            subsection_id=command.subsection_id,
+            base_revision_number=base_revision_number,
+            base_state_version_id=snapshot.version_id,
+        ).candidate
+
+    return generate
+
+
+def _runtime(session, projectors, generator):
+    return CanonicalSubsectionRuntime(
+        session=session,
+        tenant_id="tenant-1",
+        project_id="project-1",
+        candidate_generator=generator,
+        projectors=projectors,
+        checkpoint_writer=lambda _payload: None,
+    )
+
+
+@pytest.mark.parametrize(
+    "stage",
+    ["after_revision", "after_state", "after_ledger", "after_outbox", "before_commit"],
+)
+def test_sql_crash_points_leave_zero_partial_canon(canonical_session, stage):
+    def fail(name):
+        if name == stage:
+            raise RuntimeError(stage)
+
+    with pytest.raises(RuntimeError, match=stage):
+        CanonicalCommitService(
+            canonical_session,
+            "tenant-1",
+            "project-1",
+            failure_hook=fail,
+        ).commit(_prepared(canonical_session), f"failure-{stage}")
+
+    assert canonical_session.scalar(select(func.count()).select_from(CanonicalCommit)) == 0
+    assert canonical_session.scalar(select(func.count()).select_from(DocumentRevision)) == 0
+    assert canonical_session.scalar(select(func.count()).select_from(EventLedger)) == 0
+    assert canonical_session.scalar(select(func.count()).select_from(OutboxEvent)) == 0
+
+
+def test_critical_outage_keeps_canon_and_retry_preflight_skips_llm(canonical_session):
+    failing = _projectors(
+        chroma_story_chunks=MagicMock(side_effect=RuntimeError("chroma offline"))
+    )
+    llm = MagicMock()
+    first = _runtime(canonical_session, failing, _generator(canonical_session, llm)).execute(
+        _command()
+    )
+
+    assert first.phase == "awaiting_critical_projection"
+    assert canonical_session.scalar(select(func.count()).select_from(CanonicalCommit)) == 1
+    assert canonical_session.scalar(select(func.count()).select_from(DocumentRevision)) == 1
+    retryable = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "chroma_story_chunks",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    retryable.available_at = retryable.created_at
+    canonical_session.commit()
+
+    retry_llm = MagicMock(side_effect=AssertionError("retry LLM is forbidden"))
+    retried = _runtime(
+        canonical_session, _projectors(), retry_llm
+    ).execute(_command())
+    assert retried.phase == "ready"
+    assert retried.commit.commit_id == first.commit.commit_id
+    retry_llm.assert_not_called()
+
+
+def test_nonblocking_outage_does_not_close_critical_barrier(canonical_session):
+    projectors = _projectors(
+        redis_stream=MagicMock(side_effect=RuntimeError("redis offline")),
+        markdown_export=MagicMock(side_effect=RuntimeError("disk offline")),
+    )
+    result = _runtime(
+        canonical_session, projectors, _generator(canonical_session)
+    ).execute(_command())
+
+    assert result.phase == "ready"
+    assert result.critical_projection_status == "ready"
+    assert result.non_blocking_summary == {"published": 2, "failed": 2}
+
+
+def test_dispatcher_restart_continues_failed_rows_without_republishing_successes(
+    canonical_session,
+):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "dispatcher-crash")
+    first = _projectors(
+        handover_context=MagicMock(side_effect=RuntimeError("process terminated"))
+    )
+    OutboxDispatcher(
+        lambda: canonical_session, "tenant-1", "project-1", first
+    ).dispatch_critical(result.commit_id)
+    retryable = canonical_session.scalar(
+        select(ProjectionDelivery).where(
+            ProjectionDelivery.projector_id == "handover_context",
+            ProjectionDelivery.stream_position == 1,
+        )
+    )
+    retryable.available_at = retryable.created_at
+    canonical_session.commit()
+
+    restarted = _projectors()
+    summary = OutboxDispatcher(
+        lambda: canonical_session, "tenant-1", "project-1", restarted
+    ).dispatch_pending(100)
+
+    assert summary == {"published": 5, "failed": 0}
+    assert restarted["legacy_world_event"].call_count == 0
+    assert restarted["chroma_story_chunks"].call_count == 0
+    assert ProjectionBarrier(
+        canonical_session, "tenant-1", "project-1"
+    ).ensure_ready(result.commit_id) == "ready"
+
+
+def test_same_message_100_times_is_one_commit_revision_and_manifest(canonical_session):
+    prepared = _prepared(canonical_session)
+    service = CanonicalCommitService(canonical_session, "tenant-1", "project-1")
+    results = [service.commit(prepared, "one-message") for _ in range(100)]
+
+    assert len({result.commit_id for result in results}) == 1
+    assert canonical_session.scalar(select(func.count()).select_from(CanonicalCommit)) == 1
+    assert canonical_session.scalar(select(func.count()).select_from(DocumentRevision)) == 1
+    assert canonical_session.scalar(select(func.count()).select_from(OutboxEvent)) == 7
+
+
+class _ReplaceVector:
+    def __init__(self):
+        self.rows = {}
+
+    def add_text(self, text, metadata, *, document_id=None):
+        self.rows[document_id] = (text, metadata)
+        return document_id
+
+    def enforce_task_limit(self, _task_id):
+        return 0
+
+
+def test_deleted_derived_chunks_rebuild_identically_from_canon(canonical_session):
+    result = CanonicalCommitService(
+        canonical_session, "tenant-1", "project-1"
+    ).commit(_prepared(canonical_session), "rebuild-projection")
+    delivery = canonical_session.scalar(
+        select(ProjectionDelivery)
+        .join(OutboxEvent, OutboxEvent.id == ProjectionDelivery.outbox_event_id)
+        .where(
+            OutboxEvent.commit_id == result.commit_id,
+            ProjectionDelivery.projector_id == "chroma_story_chunks",
+        )
+    )
+    message = CanonicalProjectionReplay(canonical_session).message_for_delivery(
+        delivery.id
+    )
+    vector = _ReplaceVector()
+    projection = LegacySubsectionProjection(
+        canonical_session,
+        "tenant-1",
+        "project-1",
+        vector_store=vector,
+    )
+    projection.project(message)
+    original = dict(vector.rows)
+    vector.rows.clear()
+    projection.project(message)
+
+    assert vector.rows == original

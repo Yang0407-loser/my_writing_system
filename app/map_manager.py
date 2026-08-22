@@ -105,18 +105,15 @@ def get_node(nid: str) -> dict | None:
 
 
 def list_nodes(task_id: str = "", parent_id: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        sql = "SELECT * FROM map_nodes WHERE 1=1"
-        params = []
-        if task_id:
-            sql += " AND task_id = ?"
-            params.append(task_id)
+        sql = "SELECT * FROM map_nodes WHERE task_id = ?"
+        params = [task_id]
         if parent_id:
             sql += " AND parent_id = ?"
             params.append(parent_id)
-        else:
-            sql += " AND parent_id = ''" if not parent_id else ""
         rows = conn.execute(sql, params).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -141,12 +138,11 @@ def create_edge(data: dict) -> dict:
 
 
 def list_edges(task_id: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        if task_id:
-            rows = conn.execute("SELECT * FROM map_edges WHERE task_id = ?", (task_id,)).fetchall()
-        else:
-            rows = conn.execute("SELECT * FROM map_edges").fetchall()
+        rows = conn.execute("SELECT * FROM map_edges WHERE task_id = ?", (task_id,)).fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()

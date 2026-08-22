@@ -12,16 +12,255 @@ from .agents.reviewer import Reviewer
 from .agents.continuity_editor import ContinuityEditor
 from .agents.character_manager import CharacterManager
 from .blackboard import Blackboard
+from .checkpoint_sanitizer import sanitize_checkpoint
 from .vector_store import VectorStore
+from .embedding.factory import preflight_embedding_backend
 from .world_state import WorldStateManager
-from .narrative_event import EventGraph, NarrativeEvent
+from .narrative_event import EventGraph
 from .utils.prompt_templates import OUTLINE_REVIEW_PROMPT
 from .utils.json_parser import parse_json
 from .utils.word_counter import count_chinese_chars
-from .utils.llm_client import set_api_key, reset_token_counter
-from .config import settings, set_task_id
+from .utils.llm_client import set_api_key, reset_token_counter, get_cumulative_tokens, get_token_breakdown
+from .config import CanonicalSettings, settings, set_task_id
+from .character_arc_contract import (
+    build_v2_edge_plan,
+    iter_v2_event_milestones,
+    normalize_v2_arcs,
+    resolve_contract_version,
+)
+from .writing.character_state_propagation import (
+    build_character_state_propagation_event,
+    character_arcs_hash,
+    copy_character_arcs,
+    is_valid_character_arcs,
+    resolve_writer_character_arcs,
+)
 
 logger = logging.getLogger("writing_system.coordinator")
+
+
+def execute_canonical_subsection(
+    runtime,
+    command,
+    *,
+    rollout: CanonicalSettings | None = None,
+    pre_foundation_resume: bool = False,
+):
+    """Select exactly one subsection write path at the Coordinator boundary."""
+
+    rollout = rollout or CanonicalSettings(
+        database_url=settings.CANONICAL_DATABASE_URL,
+        commit_mode=settings.CANONICAL_COMMIT_MODE,
+        canary_task_ids=settings.CANONICAL_CANARY_TASK_IDS,
+        canary_subsection_ids=settings.CANONICAL_CANARY_SUBSECTION_IDS,
+    )
+    task_id = str(getattr(command, "task_id", "") or "")
+    subsection_id = str(getattr(command, "subsection_id", "") or "")
+    path = rollout.resolve_path(
+        task_id,
+        subsection_id,
+        pre_foundation_resume=pre_foundation_resume,
+    )
+    if path == "legacy":
+        return None
+    if runtime is None or not task_id or not subsection_id:
+        raise RuntimeError(
+            "canonical internal_required/canary binding missing; fail closed"
+        )
+    return runtime.execute(command)
+
+
+def _build_canonical_writer_bridge(
+    *,
+    writer,
+    bb,
+    task_id: str,
+    state: dict,
+    outline: list[dict],
+    vector_store,
+    world_state,
+    event_graph,
+):
+    """Build the real Coordinator-owned Canonical runtime for selected rows."""
+
+    from .canonical.database import build_engine, build_session_factory
+    from .canonical.repositories import CanonicalRepository
+    from .writing import (
+        CanonicalSubsectionRuntime,
+        CanonicalWriterBridge,
+        LegacySubsectionProjection,
+        StateCommitter,
+    )
+    from .writing.subsection_handover_persistence import (
+        SubsectionHandoverHistoryRecorder,
+    )
+
+    rollout = CanonicalSettings(
+        database_url=settings.CANONICAL_DATABASE_URL,
+        commit_mode=settings.CANONICAL_COMMIT_MODE,
+        canary_task_ids=settings.CANONICAL_CANARY_TASK_IDS,
+        canary_subsection_ids=settings.CANONICAL_CANARY_SUBSECTION_IDS,
+    )
+    pre_foundation_resume = bool(state.get("pre_foundation_resume"))
+    selected: list[tuple[str, int, int, int]] = []
+    ordinal = 0
+    for section in outline:
+        section_number = int(section.get("section", 0))
+        for subsection in section.get("subsections", []):
+            ordinal += 1
+            subsection_number = int(subsection.get("subsection", 0))
+            subsection_id = str(
+                subsection.get("canonical_subsection_id")
+                or subsection.get("id")
+                or ""
+            )
+            path = rollout.resolve_path(
+                task_id,
+                subsection_id,
+                pre_foundation_resume=pre_foundation_resume,
+            )
+            if path == "canonical":
+                if not subsection_id:
+                    raise RuntimeError(
+                        "canonical subsection binding is missing; fail closed"
+                    )
+                selected.append(
+                    (subsection_id, ordinal, section_number, subsection_number)
+                )
+    if not selected:
+        return None
+
+    tenant_id = str(state.get("canonical_tenant_id") or "")
+    project_id = str(state.get("canonical_project_id") or "")
+    document_id = str(state.get("document_id") or "")
+    if not tenant_id or not project_id or not document_id:
+        raise RuntimeError(
+            "canonical tenant/project/document binding is missing; fail closed"
+        )
+
+    engine = build_engine(rollout.database_url)
+    session = build_session_factory(engine)()
+    try:
+        repo = CanonicalRepository(session, tenant_id, project_id)
+        project = repo.get_project()
+        document = repo.get_document(document_id)
+        if project is None or document is None:
+            raise RuntimeError("canonical project/document binding is missing")
+        for subsection_id, expected_ordinal, section_number, subsection_number in selected:
+            bound = repo.get_subsection(subsection_id)
+            if (
+                bound is None
+                or bound.document_id != document_id
+                or bound.ordinal != expected_ordinal
+                or bound.legacy_section != section_number
+                or bound.legacy_subsection != subsection_number
+            ):
+                raise RuntimeError(
+                    "canonical subsection binding does not match the outline"
+                )
+
+        compatibility_committer = StateCommitter()
+
+        def world_event_sink(envelope):
+            compatibility_committer.commit_handover_effects(
+                idempotency_key=f"canonical-world:{envelope.event_id}",
+                handover_note=envelope.handover_candidate,
+                event_graph=event_graph,
+                world_state=world_state,
+                world_state_enabled=settings.ENABLE_WORLD_STATE,
+                task_id=task_id,
+                section=envelope.section,
+                subsection=envelope.subsection,
+                logger=logger,
+            )
+
+        def redis_stream_sink(envelope):
+            bb.xadd_event(
+                task_id,
+                {
+                    "event": "canonical_subsection_committed",
+                    "event_id": envelope.event_id,
+                    "section": envelope.section,
+                    "subsection": envelope.subsection,
+                    "text": envelope.draft,
+                    "commit_id": envelope.commit_id,
+                    "revision_id": envelope.revision_id,
+                    "content_hash": envelope.content_hash,
+                },
+            )
+
+        def task_preview_sink(envelope):
+            bb.set(task_id, "document_id", document_id)
+            bb.set(task_id, "current_revision_id", envelope.revision_id)
+            bb.set(task_id, "last_commit_id", envelope.commit_id)
+
+        def reference_sink(envelope):
+            bb.set(
+                task_id,
+                "canonical_projection_ref",
+                {
+                    "event_id": envelope.event_id,
+                    "commit_id": envelope.commit_id,
+                    "revision_id": envelope.revision_id,
+                    "content_hash": envelope.content_hash,
+                },
+            )
+
+        projection = LegacySubsectionProjection(
+            session,
+            tenant_id,
+            project_id,
+            world_event_sink=world_event_sink,
+            handover_recorder=SubsectionHandoverHistoryRecorder(bb, task_id),
+            vector_store=vector_store,
+            non_blocking_sinks={
+                "redis_stream": redis_stream_sink,
+                "task_preview": task_preview_sink,
+                "markdown_export": reference_sink,
+                "analytics": reference_sink,
+            },
+        )
+
+        def checkpoint_writer(payload):
+            state.update(payload)
+            state["commit_status"] = "committed"
+            for key in (
+                "document_id",
+                "current_revision_id",
+                "current_state_version_id",
+                "last_commit_id",
+                "critical_projection_status",
+            ):
+                bb.set(task_id, key, state.get(key))
+            bb.set(task_id, "commit_status", "committed")
+            bb.save_checkpoint(task_id, sanitize_checkpoint(state))
+
+        runtime = CanonicalSubsectionRuntime(
+            session=session,
+            tenant_id=tenant_id,
+            project_id=project_id,
+            candidate_generator=lambda **_kwargs: None,
+            projectors=projection.as_projectors(),
+            checkpoint_writer=checkpoint_writer,
+        )
+    except Exception:
+        session.close()
+        engine.dispose()
+        raise
+
+    def close_runtime():
+        session.close()
+        engine.dispose()
+
+    return CanonicalWriterBridge(
+        writer=writer,
+        runtime=runtime,
+        rollout=rollout,
+        document_id=document_id,
+        runtime_executor=execute_canonical_subsection,
+        pre_foundation_resume=pre_foundation_resume,
+        close_callback=close_runtime,
+    )
 
 
 def _safe_serialize(obj):
@@ -33,6 +272,38 @@ def _safe_serialize(obj):
     if isinstance(obj, dict):
         return obj
     return {}
+
+
+def _apply_writer_character_state(bb, task_id: str, state: dict, result: dict, fallback):
+    """Adopt Writer state without relying on Blackboard as the source of truth."""
+    character_arcs, source = resolve_writer_character_arcs(result, fallback)
+    propagation = result.get("character_state_propagation")
+    state_hash = character_arcs_hash(character_arcs)
+    if not isinstance(propagation, dict):
+        propagation = build_character_state_propagation_event(
+            task_id=task_id,
+            section=None,
+            subsection=None,
+            source=source,
+            input_state_hash=state_hash,
+            updated_state_hash=state_hash,
+            coordinator_state_hash=state_hash,
+            checkpoint_state_hash=state_hash,
+            update_applied=False,
+            fallback_reason=source,
+            checkpoint_version="phase4r-r1",
+        )
+    else:
+        propagation = dict(propagation)
+        if source != "writer_updated":
+            propagation["source"] = source
+            propagation["fallback_reason"] = source
+        propagation["coordinator_state_hash"] = state_hash
+        propagation["checkpoint_state_hash"] = state_hash
+    state["character_arcs"] = copy_character_arcs(character_arcs)
+    state["_character_state_propagation"] = propagation
+    bb.set(task_id, "character_arcs", copy_character_arcs(character_arcs))
+    return character_arcs, propagation
 
 
 def _add_timeline(bb, task_id, stage, agent, action, detail="", section=None):
@@ -76,6 +347,7 @@ def writing_task(
 
     style_profile: dict | None = None,
     outline: list[dict] | None = None,
+    workspace_task_id: str = "",
     api_key: str = "",
 ):
     """写作流水线入口。resume=True 时从检查点恢复继续。"""
@@ -92,6 +364,7 @@ def writing_task(
         set_api_key(api_key)
 
     bb = Blackboard()
+    phase_timings: dict[str, float] = {}
 
     # 防止重启后自动续跑已停止的任务
     if not resume:
@@ -104,23 +377,26 @@ def writing_task(
     if resume:
         # resume_from_task_id: 从其他任务的检查点恢复（避免竞态条件）
         checkpoint_src = resume_from_task_id or task_id
-        state = bb.load_checkpoint(checkpoint_src)
-        if not state:
+        loaded_state = bb.load_checkpoint(checkpoint_src)
+        if not loaded_state:
             bb.set(task_id, "status", "failed")
             bb.set(task_id, "error", "检查点不存在，无法恢复")
             return {"task_id": task_id, "status": "failed", "error": "checkpoint not found"}
+        state = sanitize_checkpoint(loaded_state)
+        state["task_id"] = task_id
+        state["workspace_task_id"] = (
+            workspace_task_id
+            or state.get("workspace_task_id")
+            or checkpoint_src
+        )
         # 将检查点转移到当前 task_id，后续 save_checkpoint 使用当前 ID
         bb.save_checkpoint(task_id, state)
-        # Restore per-task API key from checkpoint; fall back to the new param
-        resume_key = state.get("api_key", "") or api_key
-        if resume_key:
-            set_api_key(resume_key)
-            state["api_key"] = resume_key
         phase = state.get("phase", "init")
         bb.set(task_id, "status", "running")
     else:
         state = {
             "task_id": task_id, "phase": "characters",
+            "workspace_task_id": workspace_task_id or task_id,
             "config_topic": topic, "config_reference_text": reference_text,
             "config_target_words": target_words_per_section,
             "config_character_text": character_text,
@@ -130,8 +406,14 @@ def writing_task(
 
             "config_style_profile": style_profile or {},
             "config_outline": outline or [],
-            "api_key": api_key,
         }
+        # 同步 config 到主 Redis hash，让 /status 可返回
+        bb.set(task_id, "topic", topic)
+        bb.set(task_id, "world_setting", world_setting)
+        bb.set(task_id, "story_synopsis", story_synopsis)
+        bb.set(task_id, "reference_text", reference_text)
+        bb.set(task_id, "style_profile", style_profile or {})
+        bb.set(task_id, "target_words_per_section", target_words_per_section)
         if characters is None:
             characters = []
         state["characters"] = characters
@@ -162,7 +444,29 @@ def writing_task(
         bb.set(task_id, "status", "running")
         phase = state.get("phase", "characters")
 
+    workspace_task_id = str(
+        state.get("workspace_task_id") or workspace_task_id or task_id
+    )
+    state["workspace_task_id"] = workspace_task_id
+    bb.set(task_id, "workspace_task_id", workspace_task_id)
+    bb.set(task_id, "active_task_id", task_id)
+    bb.set(workspace_task_id, "workspace_task_id", workspace_task_id)
+    bb.set(workspace_task_id, "active_task_id", task_id)
+
     try:
+        # ── 基础设施前置检查 ──
+        # embedding 后端只在 _phase_writing 里才被触碰，那时 character_arcs 和
+        # world_state 的 LLM token 已经花掉了；后端不可达抛出的 RuntimeError 又
+        # 正好命中 autoretry_for，导致整任务重放、规划阶段重复计费。
+        # 2026-07-26 的真实事故：5 次重放烧掉 26,058 token（占该任务约 40%）。
+        # 这里探活零成本，且不改变重试语义——后端在退避窗口内恢复，任务照样成功。
+        backend_ok, backend_reason = preflight_embedding_backend()
+        if not backend_ok:
+            logger.warning(
+                f"[{task_id[:8]}] embedding 后端预检失败，零 token 退出: {backend_reason}"
+            )
+            raise RuntimeError(f"EmbeddingBackendUnavailable: {backend_reason}")
+
         # ── 阶段路由 ──
         phase_order = [
             "characters", "style", "outline", "awaiting_outline",
@@ -246,15 +550,53 @@ def writing_task(
                 break
 
             elapsed = time.time() - t0
+            phase_timings[p] = round(elapsed, 1)
             logger.info(f"[{task_id[:8]}] <<< 完成阶段: {p} (耗时 {elapsed:.1f}s)")
 
     except Exception as e:
-        bb.set(task_id, "status", "failed")
+        logger.warning(
+            f"[{task_id[:8]}] 任务失败，累计 Token: {get_cumulative_tokens()}, "
+            f"阶段耗时: {_json.dumps(phase_timings) if phase_timings else 'N/A'}"
+        )
+        from .writing import CanonicalProjectionPending
+        projection_pending = isinstance(e, CanonicalProjectionPending)
+
+        bb.set(
+            task_id,
+            "status",
+            (
+                "awaiting_critical_projection"
+                if projection_pending
+                else "failed"
+            ),
+        )
         bb.set(task_id, "error", str(e))
         bb.xadd_event(task_id, {"event": "error", "message": str(e)[:500]})
         _add_timeline(bb, task_id, "error", "system", f"出错: {str(e)[:200]}")
-        bb.save_checkpoint(task_id, {"task_id": task_id, "phase": "failed", "status": "failed"})
-        _save_task_history(bb, task_id, state, status="failed", error=str(e)[:500])
+        failure_state = sanitize_checkpoint(
+            {
+                **state,
+                "task_id": task_id,
+                "phase": "writing" if projection_pending else "failed",
+                "status": (
+                    "awaiting_critical_projection"
+                    if projection_pending
+                    else "failed"
+                ),
+            }
+        )
+        bb.save_checkpoint(task_id, failure_state)
+        _save_task_history(
+            bb,
+            task_id,
+            state,
+            status=(
+                "awaiting_critical_projection"
+                if projection_pending
+                else "failed"
+            ),
+            error=str(e)[:500],
+        )
         raise
 
     timeline_raw = bb.get(task_id, "timeline")
@@ -262,6 +604,84 @@ def writing_task(
         timeline = _json.loads(timeline_raw) if isinstance(timeline_raw, str) else (timeline_raw or [])
     except (_json.JSONDecodeError, TypeError):
         timeline = []
+
+    # ── v0.9.2: Token 成本 & 端到端延迟汇总 ──
+    total_tokens = get_cumulative_tokens()
+    total_time = sum(phase_timings.values())
+    est_cost = total_tokens * 0.000000435  # DeepSeek V4 Pro input price (cache miss)
+    token_breakdown = get_token_breakdown()
+
+    logger.info(
+        f"[{task_id[:8]}] ====== 性能汇总 ======"
+    )
+    logger.info(
+        f"[{task_id[:8]}] 总耗时: {total_time:.1f}s | "
+        f"总 Token: {total_tokens} | 预估成本: ${est_cost:.4f}"
+    )
+    if token_breakdown:
+        logger.info(
+            f"[{task_id[:8]}] Agent Token 分布: {_json.dumps(token_breakdown, ensure_ascii=False)}"
+        )
+    logger.info(
+        f"[{task_id[:8]}] 各阶段耗时: {_json.dumps(phase_timings, ensure_ascii=False)}"
+    )
+
+    # ── v0.9.2: 事实验证统计 ──
+    try:
+        from .world_state import fact_stats
+        fs = fact_stats.summary()
+        logger.info(
+            f"[{task_id[:8]}] 事实验证: total={fs['total_facts']} "
+            f"rule(subj={fs['rule_subjective']}/obj={fs['rule_objective']}/mixed={fs['rule_mixed']}) "
+            f"llm(ok={fs['llm_verified']}/rej={fs['llm_rejected']}) "
+            f"矛盾(detect={fs['contradictions_detected']}/confirm={fs['contradictions_confirmed']})"
+        )
+        logger.info(
+            f"[{task_id[:8]}] 抽样事实: {_json.dumps(fs['sample_facts'][:10], ensure_ascii=False)}"
+        )
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 事实验证统计记录失败", exc_info=True)
+
+    # ── v0.9.5: 风格基线（4 维标签 → 预期区间，供离线对比） ──
+    try:
+        initial_style = state.get("config_style_profile") or state.get("style_profile") or {}
+        style_baseline = {
+            "emotion_intensity": initial_style.get("emotion_intensity", 50),
+            "dialogue_ratio": initial_style.get("dialogue_ratio", 0.3),
+            "sentence_preference": initial_style.get("sentence_preference", "balanced"),
+            "sensory_density": initial_style.get("sensory_density", "medium"),
+        }
+        if style_baseline:
+            bb.set(task_id, "style_baseline", style_baseline)
+            logger.info(
+                f"[{task_id[:8]}] 风格基线: {_json.dumps(style_baseline, ensure_ascii=False)}"
+                f"（完成后运行 eval 对比漂移量）"
+            )
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 风格基线保存失败", exc_info=True)
+
+    # ── v0.9.3: 逐节延迟 p50/p95 ──
+    try:
+        section_timings = state.get("section_timings") or result.get("section_timings", []) if isinstance(result, dict) else []
+        if section_timings:
+            latencies = sorted([t["total_time_s"] for t in section_timings])
+            n = len(latencies)
+            p50 = latencies[int(n * 0.5)] if n > 0 else 0
+            p95 = latencies[int(n * 0.95)] if n > 1 else latencies[-1] if n > 0 else 0
+            avg_latency = sum(latencies) / n if n > 0 else 0
+            bb.set(task_id, "section_timings", section_timings)
+            logger.info(f"[{task_id[:8]}] 逐节延迟 (n={n}): avg={avg_latency:.1f}s p50={p50:.1f}s p95={p95:.1f}s")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 逐节延迟统计失败", exc_info=True)
+
+    # 写入黑板，前端可展示
+    bb.set(task_id, "phase_timings", phase_timings)
+    bb.set(task_id, "token_cost", {
+        "total_tokens": total_tokens,
+        "est_cost_usd": round(est_cost, 4),
+        "total_time_s": round(total_time, 1),
+        "by_agent": token_breakdown,
+    })
 
     return {
         "task_id": task_id, "topic": state.get("config_topic", ""),
@@ -313,7 +733,7 @@ def _phase_style(bb, task_id, state):
     """Phase 1: 风格分析。若用户已提供 style_profile，直接使用。"""
     provided = state.get("config_style_profile") or {}
 
-    if provided.get("style_brief"):
+    if provided.get("emotion_intensity"):
         bb.set(task_id, "style", provided)
         state["style_profile"] = provided
         _add_timeline(bb, task_id, "style", "system", "使用用户提供的风格参数")
@@ -324,8 +744,6 @@ def _phase_style(bb, task_id, state):
 
     sa = StyleAnalyzer()
     style = sa.analyze(reference_text=state.get("config_reference_text", ""))
-    if not style.get("style_brief"):
-        style["style_brief"] = sa.build_brief(style)
     bb.set(task_id, "style", style)
     state["style_profile"] = style
     _add_timeline(bb, task_id, "style", "style_analyst", "完成风格分析")
@@ -431,13 +849,6 @@ def _phase_narrative_rhythm(bb, task_id, state):
 
     outline_v2 = state.get("outline_v2") or []
     characters = state.get("characters") or []
-    style = state.get("style_profile") or {}
-    topic = state.get("config_topic", "")
-
-    style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
-    if not style_brief:
-        style_brief = f"情感强度{style.get('emotion_intensity', 50)}/100"
-
     # 简化的节奏生成：按小节位置计算 intensity 曲线
     total_subs = sum(len(s.get("subsections", [])) for s in outline_v2)
     beats = []
@@ -473,7 +884,7 @@ def _phase_world_state(bb, task_id, state):
         return state
 
     ws = WorldStateManager(bb, task_id)
-    event_graph = EventGraph(bb, task_id)  # v3: 初始事实也写入 EventGraph
+    EventGraph(bb, task_id)  # v3: 初始化并校验事件图存储
     world_setting_text = state.get("config_world_setting", "")
     characters = state.get("characters") or []
 
@@ -535,6 +946,14 @@ def _phase_writing(bb, task_id, state):
     topic = state.get("config_topic", "")
     style = state.get("style_profile") or {}
     outline = state.get("outline_v2") or []
+    # 从 Redis 刷新大纲，获取用户最新编辑（subsection status 变更等）
+    try:
+        redis_outline = bb.get(task_id, "outline")
+        if redis_outline and isinstance(redis_outline, list) and len(redis_outline) > 0:
+            outline = redis_outline
+            state["outline_v2"] = outline
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] Redis 大纲刷新失败，使用本地缓存", exc_info=True)
     characters = state.get("characters") or []
     character_arcs = state.get("character_arcs") or []
     interactive = state.get("config_interactive", False)
@@ -542,23 +961,114 @@ def _phase_writing(bb, task_id, state):
     existing_draft = state.get("draft", {})
     existing_section_texts = state.get("section_texts", {})
     existing_handover = state.get("handover_chain", [])
-    existing_backrefs = state.get("backref_suggestions", [])
     # 从 Redis 重建 WorldStateManager（state 序列化会丢失对象引用）
     event_graph = EventGraph(bb, task_id)
+    # 本阶段每次进入都会从当前 character_arcs 全量重建里程碑。Celery 重试会从
+    # characters 阶段整个重跑，弧线由 LLM 重新生成（措辞每次不同），若不先清空，
+    # 每次尝试都会往图里追加一份同义改写，导致 pre_check 的必写事件列表按尝试
+    # 次数线性膨胀，并被拼进 Writer prompt。清空后重建即幂等；逐字未变的里程碑
+    # 通过 ledger 恢复 done/deviated 进度。
+    arc_reset = event_graph.reset_arc_milestones()
     world_state = WorldStateManager(bb, task_id, event_graph=event_graph) if settings.ENABLE_WORLD_STATE else None
     # 将角色弧线里程碑注入 EventGraph
-    for arc in (character_arcs or []):
-        if isinstance(arc, dict) and arc.get("key_milestones"):
-            cid = arc.get("character_id", "")
-            for ms in arc["key_milestones"]:
-                desc = ms.get("event", ms.get("description", ""))
-                if desc:
-                    event_graph.add_arc_milestone(
-                        description=desc,
-                        section=ms.get("section", 0), subsection=ms.get("subsection", 0),
-                        character_id=cid,
-                        weight=5,
-                    )
+    arc_event_ids: dict[str, list[str]] = {}  # character_id -> [event_id, ...]
+    section_event_ids: dict[int, list[str]] = {}  # section -> [event_id, ...]
+    contract_version = resolve_contract_version(settings.CHARACTER_ARC_CONTRACT_VERSION)
+    edge_count = 0
+
+    if contract_version == "v2":
+        # Old checkpoints are interpreted through a compatibility view only;
+        # their stored character_arcs payload is not rewritten.
+        character_arcs = normalize_v2_arcs(
+            character_arcs,
+            outline,
+            legacy_unclassified_as_soft=True,
+        )
+        event_ids_by_milestone: dict[str, str] = {}
+        for cid, ms in iter_v2_event_milestones(character_arcs):
+            desc = ms.get("event", ms.get("description", ""))
+            if not desc:
+                continue
+            eid = event_graph.add_arc_milestone(
+                description=desc,
+                section=ms.get("section", 0),
+                subsection=ms.get("subsection", 0),
+                character_id=cid,
+                weight=9 if ms.get("requiredness") == "hard" else 3,
+                classification=ms.get("classification", ""),
+                requiredness=ms.get("requiredness", ""),
+                contract_version="v2",
+                source_id=ms.get("source_id", ""),
+                source_hash=ms.get("source_hash", ""),
+                rationale=ms.get("rationale", ""),
+            )
+            event_ids_by_milestone[str(ms.get("milestone_id", ""))] = eid
+            arc_event_ids.setdefault(cid, []).append(eid)
+
+        for edge in build_v2_edge_plan(character_arcs):
+            from_event_id = event_ids_by_milestone.get(edge["from_milestone_id"])
+            to_event_id = event_ids_by_milestone.get(edge["to_milestone_id"])
+            if not from_event_id or not to_event_id:
+                continue
+            event_graph.link_events(from_event_id, to_event_id, metadata=edge)
+            edge_count += 1
+    else:
+        for arc in (character_arcs or []):
+            if isinstance(arc, dict) and arc.get("key_milestones"):
+                cid = arc.get("character_id", "")
+                eids: list[str] = []
+                for ms in arc["key_milestones"]:
+                    desc = ms.get("event", ms.get("description", ""))
+                    if desc:
+                        eid = event_graph.add_arc_milestone(
+                            description=desc,
+                            section=ms.get("section", 0), subsection=ms.get("subsection", 0),
+                            character_id=cid,
+                            weight=5,
+                        )
+                        eids.append(eid)
+                        sec = ms.get("section", 0)
+                        if sec:
+                            section_event_ids.setdefault(sec, []).append(eid)
+                if eids:
+                    arc_event_ids[cid] = eids
+
+        # v0.9.4 legacy behavior: same-character chain + same-section pairwise links.
+        for eids in arc_event_ids.values():
+            for i in range(len(eids) - 1):
+                event_graph.link_events(eids[i], eids[i + 1])
+                edge_count += 1
+        for eids in section_event_ids.values():
+            for i in range(len(eids)):
+                for j in range(i + 1, len(eids)):
+                    event_graph.link_events(eids[i], eids[j])
+                    edge_count += 1
+    restored_status = event_graph.restore_milestone_status(arc_reset["carried_status"])
+    rebuilt = event_graph.get_summary()["arc_milestones_total"]
+    logger.info(
+        "arc_milestone_rebuild=%s",
+        _json.dumps(
+            {
+                "section_scope": "all",
+                "contract_version": contract_version,
+                "removed_before_rebuild": arc_reset["removed"],
+                "rebuilt_total": rebuilt,
+                "status_carried_over": restored_status,
+                "edge_count": edge_count,
+                "idempotent": arc_reset["removed"] == 0 or rebuilt <= arc_reset["removed"],
+                "production_effect": "arc_milestone_rebuild_only",
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+    )
+    if edge_count > 0:
+        if contract_version == "v2":
+            logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条显式事件边 "
+                        f"({len(arc_event_ids)} 个角色弧, contract=v2)")
+        else:
+            logger.info(f"[{task_id[:8]}] 创建 {edge_count} 条事件因果边 "
+                        f"({len(arc_event_ids)} 个角色弧, {len(section_event_ids)} 个章节)")
 
     bb.set(task_id, "status", "writing")
     bb.xadd_event(task_id, {"event": "phase_change", "phase": "writing"})
@@ -576,6 +1086,7 @@ def _phase_writing(bb, task_id, state):
                 "task_id": task_id, "section": 0, "subsection": 0,
                 "title": "前作", "topic": topic,
             })
+        vector_store.enforce_task_limit(task_id)
         _add_timeline(bb, task_id, "writing", "system",
                       f"续写模式：前作 {count_chinese_chars(prev_draft)} 字已入库 ({len(chunks)} 块)")
 
@@ -605,22 +1116,48 @@ def _phase_writing(bb, task_id, state):
             bb.set(task_id, "draft", current_draft + new_section)
 
     # 用可变容器收集写作过程中的累积数据，供 on_section_done 和后续代码访问
-    _accum = {"section_texts": {}, "handover_notes": [], "backref_suggestions": []}
+    _accum = {
+        "section_texts": {},
+        "handover_notes": [],
+        "backref_suggestions": [],
+        "character_arcs": None,
+        "character_state_propagation": None,
+    }
+    canonical_bridge = None
 
-    def on_section_done(section_num, section_texts=None, handover_notes=None, backref_suggestions=None):
+    def on_section_done(
+        section_num,
+        section_texts=None,
+        handover_notes=None,
+        backref_suggestions=None,
+        character_arcs=None,
+        character_state_propagation=None,
+    ):
         """交互模式：每节完成后保存检查点并挂起。"""
         _accum["section_texts"].update(section_texts or {})
         if handover_notes:
             _accum["handover_notes"] = handover_notes
         if backref_suggestions:
             _accum["backref_suggestions"] = backref_suggestions
+        checkpoint_character_arcs = (
+            copy_character_arcs(character_arcs)
+            if is_valid_character_arcs(character_arcs)
+            else copy_character_arcs(state.get("character_arcs") or [])
+        )
+        _accum["character_arcs"] = checkpoint_character_arcs
+        if isinstance(character_state_propagation, dict):
+            _accum["character_state_propagation"] = dict(character_state_propagation)
         state["draft"] = existing_draft
         state["section_texts"] = {str(k): v for k, v in _accum["section_texts"].items()}
         state["handover_chain"] = _accum["handover_notes"]
         state["backref_suggestions"] = _accum["backref_suggestions"]
-        state["character_arcs"] = character_arcs
+        state["character_arcs"] = checkpoint_character_arcs
+        if _accum["character_state_propagation"]:
+            state["_character_state_propagation"] = dict(
+                _accum["character_state_propagation"]
+            )
         state["phase"] = "writing"
-        bb.set(task_id, "character_arcs", character_arcs)
+        bb.set(task_id, "character_arcs", copy_character_arcs(checkpoint_character_arcs))
         bb.save_checkpoint(task_id, state)
         bb.xadd_event(task_id, {
             "event": "awaiting_decision", "phase": "section",
@@ -654,6 +1191,25 @@ def _phase_writing(bb, task_id, state):
             _add_timeline(bb, task_id, "writing", "system",
                           f"关系上下文已加载 ({len(relation_context)} 字符)")
 
+        if state.get("style_evaluations"):
+            bb.set(
+                task_id,
+                "style_evaluation_v1",
+                state["style_evaluations"],
+            )
+        canonical_bridge = _build_canonical_writer_bridge(
+            writer=writer,
+            bb=bb,
+            task_id=task_id,
+            state=state,
+            outline=outline,
+            vector_store=vector_store,
+            world_state=world_state,
+            event_graph=event_graph,
+        )
+        if canonical_bridge is not None:
+            writer.bind_canonical_subsection_executor(canonical_bridge)
+
         result = writer.run(
             topic=topic,
             style=style,
@@ -680,6 +1236,8 @@ def _phase_writing(bb, task_id, state):
             relation_context=relation_context,
             improvement_context=improvement_context,
             experience_context=experience_context,
+            narrative_beats=state.get("narrative_beats"),
+            reference_text=state.get("config_reference_text", ""),
         )
     except Exception as e:
         # Writer.run() 内部已有 per-subsection 错误处理，这里做最外层兜底
@@ -687,10 +1245,34 @@ def _phase_writing(bb, task_id, state):
         bb.set(task_id, "status", "failed")
         bb.set(task_id, "error", f"写作阶段异常: {str(e)[:500]}")
         raise
+    finally:
+        if canonical_bridge is not None:
+            canonical_bridge.close()
 
     section_texts = result.get("section_texts", {})
+    character_arcs, writer_propagation = _apply_writer_character_state(
+        bb, task_id, state, result, character_arcs
+    )
+    logger.info(
+        "character_state_propagation %s",
+        _json.dumps(writer_propagation, ensure_ascii=True, sort_keys=True),
+    )
     all_handover = result.get("handover_notes", [])
     all_backrefs = result.get("backref_suggestions", [])
+    section_timings = result.get("section_timings", [])
+    if section_timings:
+        state["section_timings"] = section_timings
+    state["style_evaluations"] = result.get(
+        "style_evaluations", state.get("style_evaluations", [])
+    )
+    prior_policy_observations = state.get("style_policy_observations", [])
+    new_policy_observations = result.get("style_policy_observations", [])
+    policy_by_subsection = {
+        (item.get("section"), item.get("subsection")): item
+        for item in [*prior_policy_observations, *new_policy_observations]
+        if isinstance(item, dict)
+    }
+    state["style_policy_observations"] = list(policy_by_subsection.values())
 
     # 合并 on_section_done 中累积的数据（交互模式下由回调填充）
     if _accum["section_texts"]:
@@ -705,7 +1287,7 @@ def _phase_writing(bb, task_id, state):
     try:
         from .foreshadowing_store import (
             create_foreshadowing, update_foreshadowing,
-            list_foreshadowings, get_active_for_chapter,
+            list_foreshadowings,
         )
         all_fs = list_foreshadowings(task_id)
         existing_names = {f["name"] for f in all_fs}
@@ -755,7 +1337,7 @@ def _phase_writing(bb, task_id, state):
                         existing_names.add(item)
                         _add_timeline(bb, task_id, "writing", "system", f"伏笔已归档: {item[:40]}")
                     except Exception:
-                        pass
+                        logger.warning(f"[{task_id[:8]}] 伏笔归档失败: {item[:40]}", exc_info=True)
     except Exception as e:
         logger.warning(f"伏笔自动归档失败: {e}", exc_info=True)
 
@@ -792,7 +1374,6 @@ def _phase_writing(bb, task_id, state):
     # 全部完成
     assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
     bb.set(task_id, "draft", assembled)
-    import json as _json
     bb.set(task_id, "section_texts", _json.dumps({str(k): v for k, v in section_texts.items()}, ensure_ascii=False))
     state["draft"] = existing_draft
     state["section_texts"] = {str(k): v for k, v in section_texts.items()}
@@ -860,6 +1441,10 @@ def _phase_continuity(bb, task_id, state):
         section_summary_parts.append(f"第{i}节 ({count_chinese_chars(section_texts.get(i, ''))}字): {preview}...")
     section_summaries = "\n".join(section_summary_parts)
 
+    # v0.9.4: 矛盾检测统计埋点
+    total_backrefs = len(backrefs)
+    sections_with_backrefs = len(set(s.get("from_section") for s in backrefs if s.get("from_section")))
+
     fix_checklist = ce.run(backrefs, section_summaries)
     bb.set(task_id, "fix_checklist", fix_checklist)
     state["fix_checklist"] = fix_checklist
@@ -870,6 +1455,8 @@ def _phase_continuity(bb, task_id, state):
                   f"生成修正清单: {critical_count} 严重 + {minor_count} 轻微")
 
     # 执行 critical 修正
+    fixes_applied = 0
+    fixes_skipped = 0
     if fix_checklist.get("critical_fixes"):
         bb.set(task_id, "status", "fixing")
         bb.xadd_event(task_id, {"event": "phase_change", "phase": "fixing"})
@@ -883,7 +1470,23 @@ def _phase_continuity(bb, task_id, state):
                 _add_timeline(bb, task_id, "fixing", "writer",
                               f"修正第{target_sec}节", fix.get("description", "")[:200],
                               section=target_sec)
+                fixes_applied += 1
+            else:
+                fixes_skipped += 1
         state["section_texts"] = section_texts
+
+    # 写入矛盾检测统计
+    import json as _json
+    contradiction_stats = {
+        "total_backrefs": total_backrefs,
+        "critical_fixes": critical_count,
+        "minor_fixes": minor_count,
+        "fixes_applied": fixes_applied,
+        "fixes_skipped": fixes_skipped,
+        "sections_with_backrefs": sections_with_backrefs,
+    }
+    bb.set(task_id, "contradiction_stats", _json.dumps(contradiction_stats, ensure_ascii=False))
+    logger.info(f"[矛盾检测] 检出{total_backrefs}条 -> 严重{critical_count}/轻微{minor_count} -> 执行{fixes_applied}/跳过{fixes_skipped}")
 
     return state
 
@@ -898,6 +1501,15 @@ def _phase_review(bb, task_id, state):
     characters = state.get("characters") or []
     character_arcs = state.get("character_arcs") or []
     outline_v2 = state.get("outline_v2") or []
+    propagation = state.get("_character_state_propagation")
+    if isinstance(propagation, dict):
+        propagation = dict(propagation)
+        propagation["reviewer_state_hash"] = character_arcs_hash(character_arcs)
+        state["_character_state_propagation"] = propagation
+        logger.info(
+            "character_state_propagation %s",
+            _json.dumps(propagation, ensure_ascii=True, sort_keys=True),
+        )
 
     bb.set(task_id, "status", "reviewing")
     bb.xadd_event(task_id, {"event": "phase_change", "phase": "reviewing"})
@@ -911,7 +1523,19 @@ def _phase_review(bb, task_id, state):
         subs = vol.get("subsections", [])
         leaves = [s.get("title", "") for s in subs]
         volume_labels[vi] = {"title": vol_title, "leaves": leaves}
-    for i in sorted(section_texts.keys()):
+    # v0.9.4: 间隔抽样审阅（每3节1次），减少 token 消耗
+    sorted_sections = sorted(section_texts.keys())
+    total_sections = len(sorted_sections)
+    if total_sections > 6:
+        sample_count = len([idx for idx in range(total_sections) if idx % 3 == 0])
+        logger.info(f"[{task_id[:8]}] Reviewer 采样模式: 每3节1次, {sample_count}/{total_sections} 节参与审阅")
+    else:
+        logger.info(f"[{task_id[:8]}] Reviewer 全审模式: {total_sections} 节 ≤6, 全部审阅")
+    skipped_sections = []
+    for idx, i in enumerate(sorted_sections):
+        if idx % 3 != 0 and total_sections > 6:
+            skipped_sections.append(i)
+            continue  # 跳过非采样节（但总节数≤6时全审）
         try:
             sr = reviewer.review_section(i, topic, style, section_texts[i])
             sr["section"] = i
@@ -929,6 +1553,10 @@ def _phase_review(bb, task_id, state):
                 "leaf_titles": vi.get("leaves", []),
                 "_fallback": True,
             })
+
+    if skipped_sections:
+        logger.info(f"[{task_id[:8]}] Reviewer 跳过 {len(skipped_sections)} 节: {skipped_sections}")
+    logger.info(f"[{task_id[:8]}] Reviewer 实际审阅 {len(section_reviews)} 节")
 
     handover_chain_text = "\n".join(
         f"第{n.get('from_section', '?')}节→第{n.get('to_section', '?')}节: "
@@ -984,6 +1612,47 @@ def _phase_review(bb, task_id, state):
         "character_consistency": global_review.get("character_consistency", ""),
         "character_arc_progress": global_review.get("character_arc_progress", ""),
     }
+
+    # ── v0.9.5: 量化指标（风格硬统计 / 伏笔健康 / 交接穿透率） ──
+    assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
+
+    # 1. 风格硬统计
+    try:
+        from .style_stats import style_report
+        style_metrics = style_report(assembled, style)
+        review["style_metrics"] = style_metrics
+        if style_metrics.get("deviation"):
+            dev = style_metrics["deviation"]
+            _add_timeline(bb, task_id, "review", "system",
+                          f"风格偏差: {dev['verdict']} (总偏差={dev['total_deviation']})")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 风格硬统计计算失败", exc_info=True)
+
+    # 2. 伏笔健康度
+    try:
+        from .foreshadowing_store import get_foreshadowing_summary
+        max_section = max(section_texts.keys()) if section_texts else 0
+        fs_summary = get_foreshadowing_summary(task_id, max_section)
+        review["foreshadowing_health"] = fs_summary
+        _add_timeline(bb, task_id, "review", "system",
+                      f"伏笔健康度: {fs_summary['health']} "
+                      f"({fs_summary['resolved']}/{fs_summary['total']} 已回收, "
+                      f"{fs_summary['broken']} 断裂)")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 伏笔健康度检查失败", exc_info=True)
+
+    # 3. 交接笔记穿透率
+    try:
+        from .handover_penetration import compute_handover_penetration
+        hp_result = compute_handover_penetration(handover_chain, section_texts)
+        review["handover_penetration"] = hp_result
+        _add_timeline(bb, task_id, "review", "system",
+                      f"交接穿透率: {hp_result['verdict']} "
+                      f"({hp_result['total_hits']}/{hp_result['total_keywords']} "
+                      f"= {hp_result['overall_penetration']:.0%})")
+    except Exception:
+        logger.warning(f"[{task_id[:8]}] 交接穿透率计算失败", exc_info=True)
+
     bb.set(task_id, "review", review)
     state["review_result"] = review
 
@@ -1005,9 +1674,9 @@ def _phase_complete(bb, task_id, state):
     section_texts = state.get("section_texts", {})
     assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
 
+    bb.xadd_event(task_id, {"event": "done", "draft": assembled, "review": state.get("review_result")})
     bb.set(task_id, "status", "completed")
     bb.set(task_id, "progress", f"完成 — 共 {count_chinese_chars(assembled)} 字")
-    bb.xadd_event(task_id, {"event": "done", "draft": assembled, "review": state.get("review_result")})
 
     output_path = _export_draft(task_id, state.get("config_topic", ""), assembled,
                                 state.get("handover_chain", []),
@@ -1024,7 +1693,6 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
     """写入任务历史到 SQLite，完成和失败都记录。"""
     try:
         from .task_store import TaskStore
-        ts = TaskStore(settings.TASK_DB_PATH)
         event_graph = EventGraph(bb, task_id)
         events_data = [e.to_dict() for e in event_graph._events.values()]
         outline_data = state.get("outline_v2") or []
@@ -1040,7 +1708,36 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             section_texts = state.get("section_texts", {})
             assembled = "\n\n".join(section_texts.get(i, "") for i in sorted(section_texts.keys()))
 
-        ts.save(task_id, {
+        from .writing.state_frame_persistence import (
+            history_for_checkpoint,
+            merge_history_into_analysis,
+        )
+        with TaskStore(settings.TASK_DB_PATH) as ts:
+            existing_task = ts.get(task_id) or {}
+        existing_analysis = existing_task.get("analysis_json")
+        analysis_base = (
+            dict(existing_analysis)
+            if isinstance(existing_analysis, dict)
+            else {}
+        )
+        current_analysis = state.get("analysis", {}) or {}
+        if isinstance(current_analysis, dict):
+            analysis_base.update(current_analysis)
+        analysis = merge_history_into_analysis(
+            analysis_base,
+            history_for_checkpoint(bb, task_id),
+        )
+        from .writing.subsection_handover_persistence import (
+            history_for_checkpoint as handover_history_for_checkpoint,
+            merge_history_into_analysis as merge_handover_history_into_analysis,
+        )
+        analysis = merge_handover_history_into_analysis(
+            analysis,
+            handover_history_for_checkpoint(bb, task_id),
+        )
+
+        with TaskStore(settings.TASK_DB_PATH) as ts:
+            ts.save(task_id, {
             "topic": state.get("config_topic", ""),
             "word_count": count_chinese_chars(assembled),
             "section_count": len(state.get("section_texts", {})),
@@ -1058,8 +1755,41 @@ def _save_task_history(bb, task_id, state, status="completed", error=""):
             "draft": assembled,
             "output_file": state.get("_output_file", ""),
             "events": events_data,
-            "analysis": state.get("analysis", {}) or {},
-        })
+            "analysis": analysis,
+            "document_id": state.get("document_id", ""),
+            "current_revision_id": state.get("current_revision_id", ""),
+            "last_commit_id": state.get("last_commit_id", ""),
+            "state_version_id": state.get("current_state_version_id", ""),
+            "commit_status": state.get("commit_status", ""),
+            "critical_projection_status": state.get(
+                "critical_projection_status", ""
+            ),
+            "non_blocking_projection_status": state.get(
+                "non_blocking_projection_status", ""
+            ),
+            })
+            workspace_task_id = str(state.get("workspace_task_id") or task_id)
+            existing_workspace = ts.get_workspace(workspace_task_id) or {}
+            ts.save_workspace(
+                workspace_task_id,
+                {
+                    **existing_workspace,
+                    "active_task_id": task_id,
+                    "topic": state.get("config_topic", ""),
+                    "world_setting": state.get("config_world_setting", ""),
+                    "story_synopsis": state.get("config_story_synopsis", ""),
+                    "reference_text": state.get("config_reference_text", ""),
+                    "style_profile": state.get("config_style_profile")
+                    or state.get("style_profile")
+                    or {},
+                    "target_words_per_section": state.get(
+                        "config_target_words", 3000
+                    ),
+                    "outline": outline_data or existing_workspace.get("outline") or [],
+                    "draft_backup": existing_workspace.get("draft_backup") or "",
+                    "status": status,
+                },
+            )
     except Exception:
         logger.warning("任务历史写入失败", exc_info=True)
 
@@ -1081,11 +1811,7 @@ def _assemble_draft(state):
 
 def _writer_review_outline(writer, topic, style, outline) -> dict:
     """撰稿人审查大纲的可执行性。"""
-    style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
-    style_summary = style_brief if style_brief else (
-        f"情感强度{style.get('emotion_intensity', 50)}/100，"
-        f"段落长度约{style.get('paragraph_length_avg', 200)}字"
-    )
+    style_summary = f"情感{style.get('emotion_intensity', 50)}/100 句长{style.get('sentence_preference', 'balanced')}" if isinstance(style, dict) else ""
     outline_text = _json.dumps(outline, ensure_ascii=False, indent=2)
     prompt = OUTLINE_REVIEW_PROMPT.format(
         reviewer_role="撰稿人", review_perspective="可执行性（结构是否合理、小节是否过多/过少、逻辑是否连贯）",

@@ -1,0 +1,625 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "node_id": "tests/quality/test_handover_contract_v2_report.py::test_fixed_negative_regression_blocks_known_failure_categories",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_artifact_registry_is_coherent_and_reviewer_cannot_author_missing",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_r3_sources_and_request_corpus_remain_pinned",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r32.py::test_full_r32_build_is_zero_call_and_role_specific",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r32.py::test_hard_outcome_is_derived_from_c_audit_not_constant",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r32.py::test_vote_roster_membership_hash_and_exact_coverage",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r32.py::test_public_packages_have_no_private_values_or_fixed_abc_order",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r32.py::test_audit_evidence_is_bound_to_public_paragraphs_and_scene_m_catalog",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r32.py::test_pinned_r3_request_corpus_and_history_are_unchanged",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_r31_preserves_r3_inputs",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_full_r31_build_is_zero_call_and_exports_no_join",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_default_anonymity_uses_fresh_csprng",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_public_packs_have_no_private_join_keys",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_different_display_orders_normalize_to_same_arm",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_unblind_is_delayed_and_rejects_duplicate_or_missing_ballots",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_vote_rejects_cross_block_candidate_and_hash_mismatch",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_audit_binding_uses_public_id_scene_and_locked_content",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r31.py::test_public_schemas_reject_route_fields_and_identity_claims",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_r3_preserves_r2_inputs",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_full_synthetic_build_is_zero_call",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_missing_truth_table_rejects_positive_vote",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_missing_pairs_cannot_add_positive_evidence",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_aggregate_requires_exact_matrix_analysis_set",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_csprng_join_changes_without_injected_entropy_and_is_committed",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_audit_recomputes_text_request_and_matrix_identity",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_fake_gateway_fails_consumed_envelope_mismatch",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_request_is_bound_to_registered_block_arm_and_text",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_a_has_no_assignment_and_all_arms_share_boundary_sentence",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_independence_and_locked_fields_are_required_not_defaulted",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_assignment_is_canonical_and_request_rejects_tampering",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_role_public_ids_are_disjoint_and_unique",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_violation_uses_typed_f_catalog_not_m_ids",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_build_creates_twelve_pending_single_attempt_rows",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_provider_config_is_identical_and_has_no_retries",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_all_arms_share_identical_common_scene_brief",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_b_and_c_share_locked_choice_but_not_representation",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_queue_is_two_scenes_three_arms_two_repeats",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_aggregate_command_refuses_incomplete_reviews",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_duplicate_reviewer_and_does_not_autofill",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_invalid_or_incomplete_reviews[obligation_order-hard obligation IDs/order]",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_invalid_or_incomplete_reviews[sample_order-sample IDs/order]",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_invalid_or_incomplete_reviews[out_of_range_confidence-schema validation]",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_invalid_or_incomplete_reviews[string_confidence-schema validation]",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_invalid_or_incomplete_reviews[missing_evidence-requires evidence]",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_rejects_invalid_or_incomplete_reviews[bad_paragraph-unknown paragraph]",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_review_validation_accepts_three_complete_independent_reviews",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_build_package_has_no_arm_leak_and_creates_blank_templates",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_decision_shadow.py::test_frozen_corpus_order_hash_and_paragraph_roundtrip",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r341.py::test_builder_emits_machine_schema_and_keeps_calls_disabled",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r341.py::test_historical_reviews_are_hash_pinned",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r331.py::test_r331_is_zero_call_and_does_not_authorize_generation",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r331.py::test_r331_preserves_r33_history",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r331.py::test_r331_runbook_requires_kernel_validation",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r331.py::test_r331_packages_use_lf_exact_bytes",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r331.py::test_r331_delivery_bytes_match_manifests_on_disk",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_full_r33_build_is_zero_call_and_emits_four_isolated_dispatches",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_semantic_mocks_support_each_m_and_each_no_violation_claim",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_unblind_and_aggregate_revalidate_exact_roster_product",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_votes_are_bound_to_recipient_dispatch_and_exact_roster",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r33.py::test_audit_requires_every_m_exactly_once_and_correct_dispatch",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r3.py::test_materialized_r3_is_disabled_and_repairs_sc11_sc12",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_build_preserves_r1_and_r2_inputs",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_build_is_zero_call_and_authorizes_only_independent_review",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_shadow_wr2a.py::test_automatic_extractor_matches_visible_calibration_and_holdout_contracts",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_shadow_wr2a.py::test_preexisting_holdout_source_is_hash_locked",
+      "category": "frozen_hash_drift",
+      "reason": "wr2a_holdout_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_adversarial_wr2a.py::test_failure_separates_ontology_gaps_from_paraphrase_gaps",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_adversarial_wr2a.py::test_failed_diagnostic_is_reported_without_promotion_or_commit",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_adversarial_wr2a.py::test_one_shot_ledger_is_consumed_and_binds_the_result",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_adversarial_wr2a.py::test_adversarial_fixture_and_runtime_sources_remain_hash_locked",
+      "category": "frozen_hash_drift",
+      "reason": "wr2a_adversarial_lock"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_external_runner_wr1p.py::test_run_once_makes_exactly_eight_zero_retry_calls_then_evaluates",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_external_runner_wr1p.py::test_preflight_requires_hash_bound_authorization",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evidence_contract_wr1r.py::test_proxy_accuracy_exposes_false_positive_false_negative_and_coverage_gap",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evidence_contract_wr1r.py::test_gold_contract_rejects_output_hash_drift",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evidence_contract_wr1r.py::test_gold_contract_binds_all_outputs_and_compiles_exact_spans",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evaluator_v2_wr1e.py::test_v2_matches_wr1r_manual_gold_without_changing_frozen_evaluator",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evaluator_v2_wr1e.py::test_freeze_manifest_binds_evaluator_fixtures_and_reports",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evaluation_v2_wr1m.py::test_blind_review_package_hides_arms_and_preserves_private_key",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_evaluation_v2_wr1m.py::test_existing_runtime_replay_is_posthoc_and_does_not_promote",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_development_wr2b.py::test_wr2b_sources_are_frozen_before_holdout_authoring",
+      "category": "frozen_hash_drift",
+      "reason": "wr2b_source_lock"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_development_wr2b.py::test_wr2a_locked_sources_remain_unchanged_after_v2_is_added",
+      "category": "frozen_hash_drift",
+      "reason": "wr2a_adversarial_lock"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_delta_shadow_wr2a.py::test_base_revision_drift_fails_closed",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_delta_shadow_wr2a.py::test_explicit_group_transfer_is_valid_but_named_character_stays_unresolved",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_delta_shadow_wr2a.py::test_storefront_sale_is_rejected_even_when_writer_received_runtime_frame",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_delta_shadow_wr2a.py::test_shadow_validator_matches_gold_partitions_without_state_mutation",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_delta_shadow_wr2a.py::test_gold_loads_all_eight_outputs_with_exact_spans_and_no_commit_sink",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_style_baseline_registry.py::test_style_baseline_registry_reclassifies_old_gold_and_pins_hash",
+      "category": "frozen_hash_drift",
+      "reason": "style_baseline"
+    },
+    {
+      "node_id": "tests/quality/test_phase8_style_observability.py::test_emotional_layering_is_not_automated_and_four_controls_remain",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/quality/test_phase8_style_observability.py::test_phase8_all_units_are_traceable_and_metrics_are_complete",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/quality/test_phase8_style_observability.py::test_phase8_report_contract_and_scope",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/quality/test_phase4r_batch_r6a.py::test_r5_prediction_bytes_remain_frozen_after_production_extraction",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_shadow_wr2a.py::test_all_extracted_evidence_is_exact_and_no_sink_is_writable",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_extractor_shadow_wr2a.py::test_holdout_invalid_families_reach_validator_and_remain_uncommitted",
+      "category": "frozen_hash_drift",
+      "reason": "wr2a_holdout_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_prose_canary_wr1p.py::test_build_and_audit_freeze_eight_zero_call_requests",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_prose_canary_wr1p.py::test_build_refuses_to_replace_attempt_ledger",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_missing_text_is_retained_with_automatic_preference",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_fixed_denominator_evaluator_has_executable_directional_gate",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_public_shell_must_match_sealed_join",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_join_is_one_to_one_randomized_and_requires_content_when_locked",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_full_envelope_hash_covers_config_messages_and_assignment",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_b_c_instruction_is_byte_identical_and_only_payload_differs",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_arm_a_never_consumes_assignment_and_b_c_share_one",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_assignment_is_precomputed_and_exactly_bound_to_block_scene_matrix",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_matrix_has_12_fixed_blocks_and_a_does_not_control_assignment",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_materialization_is_bound_to_r1_hash_and_repairs_sc9_sc11",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_writer_boundary_v12_r2.py::test_r2_is_disabled_fixed_denominator_pilot_without_reruns",
+      "category": "frozen_hash_drift",
+      "reason": "r1_protocol"
+    },
+    {
+      "node_id": "tests/unit/test_wr4_gold_retrieval_holdout.py::test_evaluation_exists_and_is_sealed_bound",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_wr4_gold_retrieval_holdout.py::test_sealed_runtime_is_bound",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_reserved_request_cannot_be_reserved_twice",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_wr39_dual_chain_full.py::test_fake_run_once_calls_six_times_and_writes_report",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_wr38_dual_chain_compare_r2.py::test_fake_run_once_calls_with_4000_tokens",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_wr38_dual_chain_compare_r2.py::test_build_and_preflight_with_authorization",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_wr38_dual_chain_compare.py::test_fake_run_once_calls_three_times_and_writes_report",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_wr38_dual_chain_compare.py::test_build_and_preflight_with_authorization",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_sentence_body_and_multi_candidate_requirements",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_all_13_types_covered",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_count_requirements",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_case_ids_unique_and_formatted",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_holdout_schema_and_scene_variants",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_holdout_hash_matches_lock",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_sealed_holdout_wr2b_contract.py::test_three_source_hashes_match_lock",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_prose_canary_wr1p.py::test_evaluate_uses_v2_and_requires_only_one_owner_review_after_machine_pass",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_world_runtime_prose_canary_wr1p.py::test_audit_rejects_frozen_fixture_drift",
+      "category": "frozen_hash_drift",
+      "reason": "wr1e_evaluator_source"
+    },
+    {
+      "node_id": "tests/unit/test_wr39_dual_chain_full.py::test_build_and_preflight_with_authorization",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    },
+    {
+      "node_id": "tests/unit/test_writer_sparse_kernel_canary.py::test_build_refuses_to_reset_existing_ledger",
+      "category": "missing_generated_artifact",
+      "reason": "missing-path"
+    }
+  ]
+}

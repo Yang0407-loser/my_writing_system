@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.2-r3",
+  "experiment_id": "writer-boundary-v1-2-r3",
+  "enabled": false,
+  "generation_authorized": false,
+  "r2_protocol_sha256": "3d40e1aacb33b5834087dc6d6646133ed1013e77d13d797c4cf802a35f9a3ff6",
+  "r2_matrix_sha256": "b6fce93798e1b8350e46eab9c9ae0922a4ddbff8462cdfed0624111ed2181c0d",
+  "synthetic_only": true,
+  "provider_capability": "unverified_dependency"
+}

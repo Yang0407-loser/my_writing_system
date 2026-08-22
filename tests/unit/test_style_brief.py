@@ -19,7 +19,8 @@ class TestForWriter:
 
     def test_includes_paragraph_rhythm(self, sample_style):
         result = StyleSummarizer.for_writer(sample_style)
-        assert "均匀块状" in result
+        assert "长短交替" in result
+        assert "适度描写" in result
 
     def test_empty_style(self):
         result = StyleSummarizer.for_writer({})
@@ -34,8 +35,8 @@ class TestForPlanner:
 
     def test_includes_emotion(self, sample_style):
         result = StyleSummarizer.for_planner(sample_style)
-        assert "中性" in result
-        assert "50" in result
+        assert "情感强度 50/100" in result
+        assert "句长偏好 balanced" in result
 
     def test_empty_style(self):
         result = StyleSummarizer.for_planner({})

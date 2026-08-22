@@ -4,7 +4,11 @@ import sqlite3
 import json
 import uuid
 import os
+import logging
+import re
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 from .config import settings
 
 
@@ -43,7 +47,49 @@ def _get_conn() -> sqlite3.Connection:
     return conn
 
 
-def _row_to_dict(row) -> dict:
+_POSITIVE_INTEGER_PATTERN = re.compile(r"^[0-9]+$")
+
+
+def normalize_resolve_chapter(value) -> int | None:
+    """Normalize persisted/API resolve chapters without guessing invalid values."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if _POSITIVE_INTEGER_PATTERN.fullmatch(stripped):
+            parsed = int(stripped)
+            return parsed if parsed > 0 else None
+    return None
+
+
+def _has_invalid_resolve_chapter(value) -> bool:
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return False
+    return normalize_resolve_chapter(value) is None
+
+
+def _normalize_resolve_chapter_for_write(data: dict, operation: str) -> dict:
+    normalized = dict(data)
+    if "resolve_chapter" not in normalized:
+        return normalized
+    raw = normalized.get("resolve_chapter")
+    normalized["resolve_chapter"] = normalize_resolve_chapter(raw)
+    if _has_invalid_resolve_chapter(raw):
+        logger.warning(
+            "Invalid resolve_chapter normalized to null during %s (input_type=%s)",
+            operation,
+            type(raw).__name__,
+        )
+    return normalized
+
+
+def _row_to_dict(row, *, track_invalid_resolve_chapter: bool = False) -> dict:
     d = dict(row)
     for field in ("related_characters", "related_items", "tags"):
         raw = d.get(field, "[]")
@@ -52,6 +98,10 @@ def _row_to_dict(row) -> dict:
                 d[field] = json.loads(raw)
             except (json.JSONDecodeError, TypeError):
                 d[field] = []
+    raw_resolve_chapter = d.get("resolve_chapter")
+    d["resolve_chapter"] = normalize_resolve_chapter(raw_resolve_chapter)
+    if track_invalid_resolve_chapter:
+        d["_invalid_resolve_chapter"] = _has_invalid_resolve_chapter(raw_resolve_chapter)
     return d
 
 
@@ -66,16 +116,37 @@ def _serialize_lists(data: dict) -> dict:
 # ── CRUD ─────────────────────────────────────────────────────────
 
 def list_foreshadowings(task_id: str = "") -> list[dict]:
+    if not task_id:
+        return []
     conn = _get_conn()
     try:
-        if task_id:
-            rows = conn.execute(
-                "SELECT * FROM foreshadowings WHERE task_id = ? ORDER BY plant_chapter ASC",
-                (task_id,)
-            ).fetchall()
-        else:
-            rows = conn.execute("SELECT * FROM foreshadowings ORDER BY plant_chapter ASC").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM foreshadowings WHERE task_id = ? ORDER BY plant_chapter ASC",
+            (task_id,)
+        ).fetchall()
         return [_row_to_dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def list_foreshadowings_read_only(task_id: str = "") -> list[dict]:
+    """Read existing foreshadowings without schema initialization or writes."""
+    if not task_id or not Path(FORESHADOWING_DB_PATH).exists():
+        return []
+    db_uri = f"file:{Path(FORESHADOWING_DB_PATH).resolve().as_posix()}?mode=ro"
+    conn = sqlite3.connect(db_uri, uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT * FROM foreshadowings WHERE task_id = ? ORDER BY plant_chapter ASC",
+            (task_id,),
+        ).fetchall()
+        return [
+            _row_to_dict(row, track_invalid_resolve_chapter=True)
+            for row in rows
+        ]
+    except sqlite3.OperationalError:
+        return []
     finally:
         conn.close()
 
@@ -93,7 +164,7 @@ def create_foreshadowing(data: dict) -> dict:
     conn = _get_conn()
     try:
         fs_id = data.get("id") or str(uuid.uuid4())
-        d = _serialize_lists(data)
+        d = _serialize_lists(_normalize_resolve_chapter_for_write(data, "create"))
         conn.execute("""
             INSERT OR REPLACE INTO foreshadowings
             (id, task_id, name, description, plant_chapter, resolve_chapter, status,
@@ -124,7 +195,9 @@ def update_foreshadowing(fs_id: str, updates: dict) -> dict | None:
         existing = get_foreshadowing(fs_id)
         if not existing:
             return None
-        merged = _serialize_lists({**existing, **updates, "id": fs_id})
+        merged = _serialize_lists(_normalize_resolve_chapter_for_write(
+            {**existing, **updates, "id": fs_id}, "update"
+        ))
         conn.execute("""
             UPDATE foreshadowings SET
                 name=?, description=?, plant_chapter=?, resolve_chapter=?, status=?,
@@ -153,21 +226,30 @@ def delete_foreshadowing(fs_id: str) -> bool:
         conn.close()
 
 
-def get_active_for_chapter(task_id: str, chapter: int) -> list[dict]:
+def get_active_for_chapter(task_id: str, chapter: int | str) -> list[dict]:
     """获取某章节相关的所有活跃伏笔。"""
+    normalized_chapter = normalize_resolve_chapter(chapter)
+    if normalized_chapter is None:
+        return []
+
     conn = _get_conn()
     try:
         rows = conn.execute("""
             SELECT * FROM foreshadowings
             WHERE task_id = ?
               AND status IN ('pending', 'planted', 'hinted')
-              AND (
-                plant_chapter = ? OR
-                (resolve_chapter IS NOT NULL AND resolve_chapter >= ? AND plant_chapter <= ?)
-              )
             ORDER BY importance DESC
-        """, (task_id, chapter, chapter, chapter)).fetchall()
-        return [_row_to_dict(r) for r in rows]
+        """, (task_id,)).fetchall()
+        normalized_rows = [_row_to_dict(r) for r in rows]
+        return [
+            row for row in normalized_rows
+            if row["plant_chapter"] == normalized_chapter
+            or (
+                row.get("resolve_chapter") is not None
+                and row["resolve_chapter"] >= normalized_chapter
+                and row["plant_chapter"] <= normalized_chapter
+            )
+        ]
     finally:
         conn.close()
 
@@ -243,7 +325,7 @@ def ensure_world_anchors(task_id: str, world_setting_text: str, characters: list
                 existing_names.add(a["name"])
                 created += 1
             except Exception:
-                pass
+                logger.warning(f"世界锚点创建失败: {a.get('name', '?')[:40]}", exc_info=True)
     return created
 
 
@@ -295,6 +377,127 @@ def _extract_world_anchors(world_setting_text: str, characters: list[dict]) -> l
                         "description": item.get("description", f"世界观设定: {name}"),
                     })
     except Exception:
-        pass
+        logger.warning("LLM 世界锚点提取失败，仅使用角色名作为锚点", exc_info=True)
 
     return anchors
+
+
+# ── 伏笔回收验证 ──────────────────────────────────────────────────────
+
+def get_unresolved_foreshadowings(
+    task_id: str, current_chapter: int | str
+) -> list[dict]:
+    """查找应在当前章节前回收但尚未回收的伏笔。
+
+    Args:
+        task_id: 项目 ID
+        current_chapter: 当前已完成的最大章节号
+
+    Returns:
+        断裂伏笔列表 [{name, plant_chapter, resolve_chapter, status, importance, ...}]
+    """
+    normalized_current_chapter = normalize_resolve_chapter(current_chapter)
+    if normalized_current_chapter is None:
+        return []
+
+    conn = _get_conn()
+    try:
+        rows = conn.execute("""
+            SELECT * FROM foreshadowings
+            WHERE task_id = ?
+              AND status != 'resolved'
+            ORDER BY importance DESC
+        """, (task_id,)).fetchall()
+        normalized_rows = [_row_to_dict(r) for r in rows]
+        return [
+            row for row in normalized_rows
+            if row.get("resolve_chapter") is not None
+            and row["resolve_chapter"] != 999
+            and row["resolve_chapter"] <= normalized_current_chapter
+        ]
+    finally:
+        conn.close()
+
+
+def get_foreshadowing_summary(task_id: str, current_chapter: int | str) -> dict:
+    """伏笔健康度汇总。
+
+    Returns:
+        {
+            "total": int,
+            "resolved": int,
+            "pending": int,
+            "planted": int,
+            "hinted": int,
+            "broken": int,          # 应回收但未回收
+            "broken_list": [...],
+            "upcoming": int,        # 即将需要回收的（未来3章内）
+            "health": "健康" | "注意" | "断裂",
+        }
+    """
+    normalized_current_chapter = normalize_resolve_chapter(current_chapter)
+    conn = _get_conn()
+    try:
+        # 全部伏笔
+        all_rows = conn.execute(
+            "SELECT * FROM foreshadowings WHERE task_id = ?",
+            (task_id,)
+        ).fetchall()
+        all_fs = [
+            _row_to_dict(r, track_invalid_resolve_chapter=True)
+            for r in all_rows
+        ]
+        invalid_resolve_chapter_count = sum(
+            1 for f in all_fs if f.pop("_invalid_resolve_chapter", False)
+        )
+
+        total = len(all_fs)
+        resolved = sum(1 for f in all_fs if f["status"] == "resolved")
+        pending = sum(1 for f in all_fs if f["status"] == "pending")
+        planted = sum(1 for f in all_fs if f["status"] == "planted")
+        hinted = sum(1 for f in all_fs if f["status"] == "hinted")
+
+        # 断裂：应回收但未回收（排除世界锚点 resolve_chapter=999）
+        broken_list = [
+            f for f in all_fs
+            if f["status"] != "resolved"
+            and f.get("resolve_chapter") is not None
+            and f["resolve_chapter"] != 999
+            and normalized_current_chapter is not None
+            and f["resolve_chapter"] <= normalized_current_chapter
+        ]
+        broken = len(broken_list)
+
+        # 即将需要回收
+        upcoming = sum(
+            1 for f in all_fs
+            if f["status"] != "resolved"
+            and f.get("resolve_chapter") is not None
+            and f["resolve_chapter"] != 999
+            and normalized_current_chapter is not None
+            and normalized_current_chapter
+            < f["resolve_chapter"]
+            <= normalized_current_chapter + 3
+        )
+
+        if broken == 0:
+            health = "健康"
+        elif broken <= 2:
+            health = "注意"
+        else:
+            health = "断裂"
+
+        return {
+            "total": total,
+            "resolved": resolved,
+            "pending": pending,
+            "planted": planted,
+            "hinted": hinted,
+            "broken": broken,
+            "broken_list": broken_list,
+            "upcoming": upcoming,
+            "health": health,
+            "invalid_resolve_chapter_count": invalid_resolve_chapter_count,
+        }
+    finally:
+        conn.close()

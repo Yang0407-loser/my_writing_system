@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.2-r3.3",
+  "experiment_id": "writer-boundary-v1-2-r3-3",
+  "enabled": false,
+  "generation_authorized": false,
+  "synthetic_only": true,
+  "threat_model": {
+    "protects": [
+      "accidental package crossover",
+      "route identity leakage between reviewer roles",
+      "artifact and reviewer population mismatch",
+      "incorrect evidence and aggregation"
+    ],
+    "does_not_protect": [
+      "an administrator able to rewrite code, database, and all outputs",
+      "operating-system account compromise",
+      "cryptographic non-repudiation between mutually hostile custodians"
+    ]
+  },
+  "r3_protocol_sha256": "69566c819c23e5999ef9debe2fc9693bfa5845500ed407709c7a597b89f38808",
+  "r3_matrix_sha256": "191375b7aa9e6c436ead06f1d196188429efc3fe1dab9fed8f5f4dbb5b76176e",
+  "r3_locked_request_corpus_sha256": "19d3aa0482bb06ddfc02b413bae12ebcc7cf6415a9540fd93457d66ac5c05d3b"
+}

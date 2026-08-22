@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.2-preflight",
+  "scene_id": "SC4",
+  "decision_id": "store_item_temporary_handling",
+  "choose_exactly": 1,
+  "allowed_values": [
+    {
+      "value": "raised_mesh_rack",
+      "definition": "将书店校样本移到高处的通风网架上临时避水；不再叠加另一条独立保护或干燥路径。",
+      "allowed_implementation_details": [
+        "拿取并搬动校样本",
+        "在网架上平放并调整方向",
+        "移除已接触物件的表面水滴"
+      ]
+    },
+    {
+      "value": "single_absorbent_wrap",
+      "definition": "只用一层吸水材料对书店校样本做临时包覆；不再叠加另一条独立保护或干燥路径。",
+      "allowed_implementation_details": [
+        "拿取并铺平一层吸水材料",
+        "将校样本放入该单层包覆",
+        "把已包覆物件移到普通干燥桌面"
+      ]
+    }
+  ],
+  "solution_boundary_policy": {
+    "allowed_detail_definition": "只是执行已选白名单方案的必要动作，不替代该方案、不形成第二条处置路径，也不引入能独立改变风险的新资源。",
+    "additional_candidate_definition": "替代白名单、并用独立保护层、引入能独立改变风险的新资源、形成第二条处置路径、改变资源权限或解决长期问题时，记录为 additional solution candidate。",
+    "confirmed_new_solution_min_signals": 2,
+    "confirmation_signals": [
+      "replaces_whitelist_solution",
+      "adds_independent_protection_layer",
+      "adds_resource_that_independently_changes_risk",
+      "creates_second_disposition_path",
+      "changes_resource_or_authority_boundary",
+      "resolves_long_term_problem"
+    ]
+  }
+}

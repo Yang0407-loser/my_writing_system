@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "purpose": "Phase 3 Batch 2C：V2 相对真实 V1 新进入 top-5 且无既有标签的候选",
+  "summary": {
+    "candidate_count": 0,
+    "suppressed_new_top5_candidates": 12,
+    "codex_assisted_reviewed": 0,
+    "independent_human_reviewed": 0,
+    "status": "review_not_required_release_gate_already_impossible",
+    "reason": "Even if every new unlabeled candidate were relevant, pooled known-relevant retention would be 0.6286, below 0.90."
+  },
+  "candidates": []
+}

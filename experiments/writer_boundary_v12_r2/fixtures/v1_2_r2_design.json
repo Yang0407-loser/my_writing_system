@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.2-r2",
+  "experiment_id": "writer-boundary-v1-2-r2",
+  "enabled": false,
+  "generation_authorized": false,
+  "arms": ["A", "B", "C"],
+  "repeats_per_scene": 3,
+  "base_r1_protocol_sha256": "80f2f25ae170b5c5079dd37456d7e45990a2b507b6e5376431702cac23f4a950",
+  "provider_config": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "max_tokens": 3000,
+    "json_mode": false,
+    "thinking": "disabled",
+    "seed_capability": "unverified_dependency"
+  },
+  "pilot_rule": {
+    "planned_blocks": 12,
+    "fixed_denominator": 12,
+    "silent_reruns_allowed": false,
+    "reserve_runs_allowed": false,
+    "missing_or_failed_text_retained": true,
+    "primary_comparison": "A_vs_C_product_regimen",
+    "primary_directional_score_min": 8,
+    "scene_consistency_min_scenes": 3,
+    "scene_noninferior_blocks_min": 2,
+    "hard_task_non_degradation_required": true,
+    "confirmatory_causal_claims_allowed": false,
+    "secondary_controls_expansion": false,
+    "tie_score": 0.5
+  },
+  "estimands": {
+    "primary": "A vs C：固定 12 block 分母上的完整产品 regimen 方向信号；A 的选择差异属于产品效果，不解释为单一认知机制。",
+    "secondary": "B vs C：消费同一预分配 Assignment Ticket 时，完整合同暴露相对中性 selected summary 的方向信号；不控制扩展结论。",
+    "diagnostic": "A vs B：自行选择 regimen 相对预锁定选择 regimen 的诊断性差异；不得称为纯 decision-burden 因果效应。"
+  },
+  "scene_overrides": {
+    "SC9": {
+      "world_fact_replacement": "干燥高层网架和离墙的干燥转运车上层均已空出，两处都能让练习照片离开墙面水迹。",
+      "replace_option_value": "single_acid_free_absorbent_sheet",
+      "replacement_option": {
+        "value": "dry_rolling_cart_top",
+        "definition": "把练习照片平移到现有干燥转运车的离墙上层，作为到天亮前唯一临时处理。",
+        "selected_summary": "练习照片只移到现有干燥转运车的离墙上层临时避潮；不增加其他保护层，长期除湿和修复留到天亮。",
+        "allowed_implementation_details": [
+          "调整照片在车面上的间距。",
+          "确认车面干燥并保持转运车位置不动。"
+        ]
+      }
+    },
+    "SC11": {
+      "scene_replacement": "闭馆后的巡查中，市立展厅一只借展密封陈列柜持续发出湿度报警。两名夜班人员无权开柜、移动借展品或改写恒湿控制参数。值班规程允许两种为期十分钟的可逆响应：关闭展厅后从观察窗做起止两次记录，或保持入口现状、在门槛外做同样两次记录。两人必须锁定一种响应，专业检查与设备调整留到天亮。",
+      "world_fact_replacements": [
+        "两人无权开柜、移动借展品或改变恒湿参数。",
+        "两种响应均固定为十分钟，并在起点和终点各记录一次可见状态。",
+        "报警没有显示破柜、积水或需要立即撤离的危险。"
+      ],
+      "replace_options": [
+        {
+          "value": "closed_gallery_two_point_log",
+          "definition": "关闭展厅入口，在十分钟窗口的起点和终点各从观察窗记录一次可见状态。",
+          "selected_summary": "夜间响应锁定为关闭展厅入口，并在十分钟窗口起止各从观察窗记录一次；不得开柜或改参数，专业处理留到天亮。",
+          "allowed_implementation_details": [
+            "确认入口关闭且观察窗可见。",
+            "两次记录使用同一现有时钟。"
+          ]
+        },
+        {
+          "value": "threshold_two_point_log",
+          "definition": "保持入口现状，在十分钟窗口的起点和终点各从门槛外记录一次可见状态。",
+          "selected_summary": "夜间响应锁定为保持入口现状，并在十分钟窗口起止各从门槛外记录一次；不得开柜或改参数，专业处理留到天亮。",
+          "allowed_implementation_details": [
+            "保持同一门槛外观察位置。",
+            "两次记录使用同一现有时钟。"
+          ]
+        }
+      ]
+    }
+  }
+}

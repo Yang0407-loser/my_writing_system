@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.2-r3.4-capability-probe-plan",
+  "status": "not_run_not_authorized",
+  "provider": "deepseek",
+  "model": "deepseek-v4-pro",
+  "base_url": "https://api.deepseek.com/v1",
+  "checks": [
+    "endpoint and model availability",
+    "thinking disabled accepted",
+    "json_mode false accepted for prose",
+    "seed omitted and seed capability recorded as unverified_dependency",
+    "finish_reason and token usage metadata available",
+    "nonempty UTF-8 content returned for a non-fiction probe"
+  ],
+  "probe_payload_kind": "non-fiction capability text only",
+  "activation_prerequisites": [
+    "independent generation-package audit passes",
+    "new versioned activation layer is built",
+    "user explicitly authorizes capability probe"
+  ],
+  "provider_request_sent": false,
+  "model_calls": 0
+}

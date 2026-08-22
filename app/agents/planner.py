@@ -14,13 +14,14 @@ class Planner(BaseAgent):
         world_setting: str = "", story_synopsis: str = "",
     ) -> list[dict]:
         """生成初版大纲（含小节结构）。"""
+        from ..utils.llm_client import set_cost_label
+        set_cost_label("planner")
         subs_per_section = max(3, min(12, target_words // 2000))
         subsection_words = target_words // subs_per_section
 
         ws_text = f"## 世界观设定\n{world_setting}" if world_setting.strip() else ""
         ss_text = f"## 故事梗概\n{story_synopsis}" if story_synopsis.strip() else ""
 
-        style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
         style_structured = StyleSummarizer.for_planner(style) if isinstance(style, dict) else ""
 
         prompt = PLANNING_PROMPT.format(
@@ -31,7 +32,6 @@ class Planner(BaseAgent):
             world_setting=ws_text,
             story_synopsis=ss_text,
             style_structured=style_structured,
-            style_brief=style_brief if style_brief else f"情感强度{style.get('emotion_intensity', 50)}/100",
         )
 
         messages = [

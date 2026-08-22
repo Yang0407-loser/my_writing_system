@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "golden_story": {
+    "title": "周六面包店与凌晨三点半",
+    "sections": 18,
+    "generation_reused": true,
+    "llm_regeneration_required": false
+  },
+  "source_file": "output/周六面包店与凌晨三点半_20260715_143857.md",
+  "sha256": "0B1E3153D81E1CE1A1BAA8D23BDB6A8629BABD29EF29CA381D4922EBB7B42F96",
+  "expected_ranges": {
+    "short_sentence_ratio": [0.25, 0.72],
+    "medium_sentence_ratio": [0.18, 0.58],
+    "long_sentence_ratio": [0.02, 0.28],
+    "dialogue_ratio": [0.03, 0.32],
+    "paragraph_length_avg": [20, 110],
+    "sensory_terms_per_1k": [12, 55]
+  },
+  "qualitative_issues": [
+    {
+      "id": "style-human-01",
+      "source": "human_review_2026-07-18",
+      "status": "baseline_issue",
+      "dimensions": ["mechanical_counting", "repetitive_sentence_patterns", "insufficient_emotional_layering"],
+      "description": "部分段落呈现机械计数、重复句法模板和情绪层次不足，文字显得流水账且缺少圆润过渡。",
+      "measurement_status": "partially_observable_with_human_judgment_required",
+      "deterministic_scope": {
+        "mechanical_counting": ["mechanical_start_ratio", "sentence_starts"],
+        "repetitive_sentence_patterns": ["exact_sentence_groups", "exact_paragraph_groups", "consecutive_isomorphic_sentence_runs"],
+        "insufficient_emotional_layering": []
+      },
+      "contract_decision": "保留 emotion_intensity、dialogue_ratio、sentence_preference、sensory_density 四个主旋钮；不恢复旧 50 维字段，本轮不修改 Writer。"
+    }
+  ],
+  "samples": [
+    {"id": "style-s01", "section": 1, "label": "开篇观察与感官铺陈"},
+    {"id": "style-s04", "section": 4, "label": "人物访谈与克制对话"},
+    {"id": "style-s07", "section": 7, "label": "关系升温与动作叙事"},
+    {"id": "style-s10", "section": 10, "label": "重复仪式与留白"},
+    {"id": "style-s14", "section": 14, "label": "流量危机与节奏加速"},
+    {"id": "style-s18", "section": 18, "label": "结尾回环与情绪收束"}
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "schema_version": "phase4r-r6a-shadow-integration-v1",
+  "phase": "Phase 4R Batch R6A",
+  "status": "completed_stopped",
+  "mode": "default_off_post_commit_shadow",
+  "feature_flag": {
+    "name": "WRITER_BOUNDARY_VALIDATOR_SHADOW",
+    "default": false
+  },
+  "hook": {
+    "module": "app/agents/writer.py",
+    "order": [
+      "GenerationController",
+      "StateCommitter.commit_subsection",
+      "SubsectionPipeline.record_commit",
+      "ShadowBoundaryValidationRunner.observe_committed",
+      "return_original_writer_result"
+    ],
+    "runs_after_successful_commit": true
+  },
+  "r5_compatibility": {
+    "expected_prediction_sha256": "fb6e21589d362b9e43f8da00ed8f99709c2d90804a2c72be63e691553baa42c0",
+    "actual_prediction_sha256": "fb6e21589d362b9e43f8da00ed8f99709c2d90804a2c72be63e691553baa42c0",
+    "unchanged": true,
+    "app_imports_tests": false
+  },
+  "production_invariants": {
+    "writer_messages_changed": false,
+    "writer_output_changed": false,
+    "checkpoint_contract_changed": false,
+    "checkpoint_order_changed": false,
+    "prompt_changed": false,
+    "rag_changed": false,
+    "context_manager_changed": false,
+    "llm_calls": 0,
+    "production_effect": false
+  },
+  "shadow_contract": {
+    "typed_scene_spec_adapter": true,
+    "unknown_promoted_to_confirmed": false,
+    "default_sink": "NoOpShadowValidationSink",
+    "test_sink": "InMemoryShadowValidationSink",
+    "database_created": false,
+    "full_prose_recorded": false,
+    "full_messages_recorded": false,
+    "prompt_recorded": false,
+    "max_evidence_excerpt_chars": 140,
+    "duplicate_observation_suppressed": true
+  },
+  "failure_behavior": {
+    "missing_provider": "skipped:scene_spec_provider_unavailable",
+    "missing_scene_spec": "skipped:scene_spec_unavailable",
+    "unsupported_contract": "skipped:no_executable_deterministic_rules",
+    "validator_exception": "shadow_error",
+    "exception_propagates_to_writer": false,
+    "triggers_retry_or_repair": false
+  },
+  "verification": {
+    "unit": {"passed": 229, "failed": 0},
+    "integration": {"passed": 9, "failed": 0},
+    "quality": {"passed": 85, "failed": 0},
+    "compileall": "passed"
+  },
+  "real_shadow_samples": 0,
+  "decision": "R6A integration is structurally ready but remains default-off; only separately authorized R6B may collect real shadow samples",
+  "next_batches_started": []
+}

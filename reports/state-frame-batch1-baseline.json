@@ -1,0 +1,112 @@
+{
+  "phase": "StateFrame Batch 1",
+  "mode": "offline_contract_only",
+  "schema_version": "state-frame-v1",
+  "writer_generation_calls": 0,
+  "llm_calls": 0,
+  "production_writer_imports_state_frame": false,
+  "runtime_evaluation_fields_used": [],
+  "summary": {
+    "case_count": 4,
+    "mean_estimated_tokens": 33,
+    "min_estimated_tokens": 26,
+    "max_estimated_tokens": 40,
+    "all_sources_traceable": true,
+    "all_unknowns_preserved": true,
+    "plans_and_hard_rules_excluded": true
+  },
+  "cases": [
+    {
+      "case_id": "time_and_unknown",
+      "frame_hash": "6a2a53159f07cd21117d937058dd1111c1c4b779860451bfaa4cdee0acc2d772",
+      "source_hash": "5870e5ac8091a29902ad9f7fbc1efccd102f26ed79c39d044cfee873c759449f",
+      "rendered_hash": "d70104e4e449d6bdd532e5f14f3eb8f47463a67dbde3d6f7e53b3b0b01b6b4bb",
+      "estimated_tokens": 27,
+      "counts": {
+        "temporal": 1,
+        "location": 0,
+        "presence": 0,
+        "persistent": 0,
+        "relationship": 0,
+        "open_loops": 0,
+        "unknowns_conflicts": 1,
+        "excluded": 1
+      },
+      "excluded_assertion_ids": [
+        "assertion:1:3"
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "case_id": "location_and_presence",
+      "frame_hash": "20ca3029ce51757de04d734e21855808ada8c71b72644839940997fd4dc6df58",
+      "source_hash": "c09a18d07b3b6c96650514d61b9ab266207aec7f5c907744295dcc11a4ba60c5",
+      "rendered_hash": "4539813d4c30eaf150157ee11d351f59ae0e80918da18f545decfcdb80caaf4d",
+      "estimated_tokens": 26,
+      "counts": {
+        "temporal": 0,
+        "location": 1,
+        "presence": 1,
+        "persistent": 0,
+        "relationship": 0,
+        "open_loops": 0,
+        "unknowns_conflicts": 0,
+        "excluded": 1
+      },
+      "excluded_assertion_ids": [
+        "assertion:2:3"
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "case_id": "persistent_and_relationship",
+      "frame_hash": "25938ef1e25a8f9b9abb09ae6ac2fc122fde11d9b099c906cff784f84a82d793",
+      "source_hash": "1adc9585f37380871f6feb02bb8ddfbfd6099d0938b3e662e7e9ff47cf0f2b10",
+      "rendered_hash": "0e8c3131ea56a88a7b2ab79bbb25fb9df34aa44245151600f53c2ae3a36c0600",
+      "estimated_tokens": 40,
+      "counts": {
+        "temporal": 0,
+        "location": 0,
+        "presence": 0,
+        "persistent": 2,
+        "relationship": 1,
+        "open_loops": 0,
+        "unknowns_conflicts": 0,
+        "excluded": 1
+      },
+      "excluded_assertion_ids": [
+        "assertion:3:4"
+      ],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "case_id": "open_and_conflict",
+      "frame_hash": "93b4eba0a014df0a787231574a971b24f332be4103b43538ec6470b12335698c",
+      "source_hash": "151c89b825d0f6334c8c03f2ab7d1b4026431c6bc7745179ff67293ae91b8b2c",
+      "rendered_hash": "c7d19d43ad3a10d0395c2d2b1ff811e33047e54e522624a676f77525f765ffb3",
+      "estimated_tokens": 39,
+      "counts": {
+        "temporal": 0,
+        "location": 0,
+        "presence": 0,
+        "persistent": 1,
+        "relationship": 0,
+        "open_loops": 1,
+        "unknowns_conflicts": 1,
+        "excluded": 0
+      },
+      "excluded_assertion_ids": [],
+      "traceability_rate": 1.0,
+      "contains_story_text": false
+    }
+  ],
+  "decision": "contract_ready_for_separate_real-input_coverage_audit",
+  "limitations": [
+    "This batch validates structure and provenance, not Writer quality.",
+    "No StateFrame is injected into production messages.",
+    "Explicit predicates are required; text keywords are not used for classification."
+  ]
+}

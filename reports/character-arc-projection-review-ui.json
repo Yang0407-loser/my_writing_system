@@ -1,0 +1,56 @@
+{
+  "schema_version": "character-arc-projection-review-ui-report-v1",
+  "date": "2026-07-24",
+  "status": "thin_review_ui_ready_not_promoted",
+  "production_effect": false,
+  "writer_or_llm_calls": 0,
+  "ui_visibility": {
+    "budget_opens_modal_immediately": true,
+    "arc_opens_modal_immediately": true,
+    "loading_state_visible": true,
+    "static_asset_cache_busted": true
+  },
+  "actor_binding": {
+    "pronoun_guessing": false,
+    "author_can_assign_selected_character": true,
+    "confirmed_assignment_persisted_in_event_contract": true
+  },
+  "visible_event_types": [
+    "decision",
+    "state_transition"
+  ],
+  "author_choices": [
+    "soft_arc_progress",
+    "hard_arc_transition",
+    "ordinary_plot_event"
+  ],
+  "hard_required_fields": [
+    "before_state",
+    "trigger",
+    "after_state",
+    "observable_evidence",
+    "rationale"
+  ],
+  "guards": {
+    "outline_event_must_be_author_confirmed": true,
+    "exact_character_actor_required": true,
+    "pronoun_actor_guessing": false,
+    "event_text_hash_revalidated": true,
+    "hard_fields_required": true
+  },
+  "storage": {
+    "key": "character_arc_projection_review",
+    "blackboard_only": true,
+    "writes_character_arcs": false,
+    "writes_event_graph": false,
+    "writes_checkpoint": false,
+    "creates_database": false
+  },
+  "tests": {
+    "targeted_passed": 32,
+    "targeted_failed": 0,
+    "javascript_syntax": "passed",
+    "compileall": "passed"
+  },
+  "next_step": "Use the thin UI on one real outline to confirm a small number of explicit decision/state-transition candidates; do not promote to production arcs yet."
+}

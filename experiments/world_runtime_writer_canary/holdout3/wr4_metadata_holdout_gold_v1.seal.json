@@ -1,0 +1,17 @@
+{
+  "schema_version": "wr4-metadata-holdout-seal-v1",
+  "fixture": "wr4_metadata_holdout_gold_v1.json",
+  "fixture_sha256": "2ba4fc5c841ff1627ebdf87b2622d4c30857146fdcbec57b05930b0539b1e6d6",
+  "corpus_task_id": "20f02dc7-dc64-4233-bd6c-06a6d8647dbe",
+  "corpus_hash": "05420ab03eb3ec11ac42f07b334ca434ba6a79b9250cbec505f2857b99317878",
+  "corpus_snapshot_sha256": "6e52a0f738fb89f0b43fdc8207b63abd4e052f9694b4747c560b7b3b8b8a309a",
+  "entry_count": 14,
+  "tier_counts": {
+    "continuity_fact": 8,
+    "wr_key_evidence": 6
+  },
+  "llm_calls": 0,
+  "production_authorized": false,
+  "author": "independent-holdout-author-human-batch3",
+  "sealed_at": "2026-08-07"
+}

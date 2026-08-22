@@ -1,13 +1,251 @@
-import os
+import json
 import re
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+import logging
 from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
+from redis.exceptions import RedisError
+
 from ..models import WriteRequest, WriteResponse, TaskStatus, ReviseRequest
 from ..dependencies import bb
 from ..task_store import TaskStore
 from ..coordinator import writing_task
 from ..celery_app import celery_app
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["tasks"])
+
+
+class WorkspacePatch(BaseModel):
+    topic: str | None = None
+    world_setting: str | None = None
+    story_synopsis: str | None = None
+    reference_text: str | None = None
+    style_profile: dict | None = None
+    target_words_per_section: int | None = Field(default=None, ge=500)
+
+
+class ExportRequest(BaseModel):
+    format: str = "md"
+
+
+_WORKSPACE_CONFIG_FIELDS = {
+    "topic": "config_topic",
+    "world_setting": "config_world_setting",
+    "story_synopsis": "config_story_synopsis",
+    "reference_text": "config_reference_text",
+    "style_profile": "config_style_profile",
+    "target_words_per_section": "config_target_words",
+}
+
+
+def _runtime_data(task_id: str) -> tuple[dict, bool]:
+    """Return live Blackboard data without blocking durable recovery."""
+    try:
+        return bb.get_all(task_id), True
+    except RedisError:
+        logger.warning(
+            "Redis unavailable while loading task %s; using durable data",
+            task_id,
+        )
+        return {}, False
+
+
+def _runtime_checkpoint(task_id: str, *, available: bool) -> tuple[dict, bool]:
+    if not available:
+        return {}, False
+    try:
+        return bb.load_checkpoint(task_id) or {}, True
+    except RedisError:
+        logger.warning(
+            "Redis unavailable while loading checkpoint for task %s",
+            task_id,
+        )
+        return {}, False
+
+
+def _workspace_task_id(data: dict, fallback: str) -> str:
+    return str(data.get("workspace_task_id") or fallback)
+
+
+def _workspace_payload(
+    task_id: str,
+    data: dict,
+    checkpoint: dict | None = None,
+) -> dict:
+    checkpoint = checkpoint or {}
+    workspace_task_id = _workspace_task_id(data, task_id)
+    return {
+        "workspace_task_id": workspace_task_id,
+        "active_task_id": str(data.get("active_task_id") or task_id),
+        "topic": data.get("topic") or checkpoint.get("config_topic") or "",
+        "world_setting": data.get("world_setting")
+        or checkpoint.get("config_world_setting")
+        or "",
+        "story_synopsis": data.get("story_synopsis")
+        or checkpoint.get("config_story_synopsis")
+        or "",
+        "reference_text": data.get("reference_text")
+        or checkpoint.get("config_reference_text")
+        or "",
+        "style_profile": data.get("style_profile")
+        or checkpoint.get("config_style_profile")
+        or {},
+        "target_words_per_section": data.get("target_words_per_section")
+        or checkpoint.get("config_target_words")
+        or 3000,
+        "updated_at": data.get("workspace_updated_at"),
+    }
+
+
+def _read_output_file(value: object) -> str:
+    if not value:
+        return ""
+    try:
+        path = Path(str(value)).expanduser().resolve()
+        allowed_root = (Path(__file__).resolve().parents[2] / "output").resolve()
+        if allowed_root not in path.parents:
+            logger.warning("Rejected task output path outside output root: %s", path)
+            return ""
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        logger.warning("Unable to read task output file", exc_info=True)
+    return ""
+
+
+def _load_export_source(task_id: str) -> dict:
+    data, runtime_available = _runtime_data(task_id)
+    checkpoint, runtime_available = _runtime_checkpoint(
+        task_id, available=runtime_available
+    )
+    if data or checkpoint:
+        section_texts = checkpoint.get("section_texts") or {}
+        draft = data.get("draft") or data.get("draft_backup") or ""
+        if section_texts:
+            keys = sorted(
+                section_texts,
+                key=lambda value: (
+                    0,
+                    int(value),
+                ) if str(value).isdigit() else (1, str(value)),
+            )
+            draft = "\n\n".join(str(section_texts[key]) for key in keys)
+        if not draft:
+            draft = _read_output_file(
+                data.get("output_file") or checkpoint.get("_output_file")
+            )
+        if draft:
+            return {
+                **_workspace_payload(task_id, data, checkpoint),
+                "task_id": task_id,
+                "draft": draft,
+                "outline": data.get("outline") or checkpoint.get("outline_v2") or [],
+                "review": data.get("review") or checkpoint.get("review_result") or {},
+                "document_ref": _canonical_response_fields(data).get("document_ref"),
+            }
+    with TaskStore() as store:
+        workspace = store.find_workspace_for_task(task_id)
+        if workspace:
+            return {
+                **workspace,
+                "task_id": task_id,
+                "draft": workspace.get("draft_backup") or "",
+                "outline": workspace.get("outline") or [],
+                "review": {},
+                "document_ref": None,
+            }
+        stored = store.get(task_id)
+    if not stored:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    return {
+        "task_id": task_id,
+        "workspace_task_id": task_id,
+        "active_task_id": task_id,
+        "topic": stored.get("topic", ""),
+        "world_setting": stored.get("world_setting", ""),
+        "story_synopsis": stored.get("story_synopsis", ""),
+        "reference_text": "",
+        "style_profile": stored.get("style_json") or {},
+        "target_words_per_section": stored.get("target_words", 0),
+        "draft": _read_output_file(stored.get("output_file"))
+        or stored.get("draft_preview", ""),
+        "outline": stored.get("outline_json") or [],
+        "review": stored.get("review_json") or {},
+        "document_ref": {
+            "document_id": stored.get("document_id"),
+            "revision_id": stored.get("current_revision_id"),
+            "commit_id": stored.get("last_commit_id"),
+        },
+    }
+
+
+def _export_root() -> Path:
+    root = Path(__file__).resolve().parents[1] / "output" / "exports"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _safe_export_name(topic: str) -> str:
+    value = re.sub(r"[^\w\- ]+", "", topic, flags=re.UNICODE).strip()
+    return value[:40] or "writing"
+
+
+def _durable_workspace_for_task(task_id: str) -> dict | None:
+    with TaskStore() as store:
+        return store.find_workspace_for_task(task_id)
+
+
+def _canonical_response_fields(data: dict) -> dict:
+    document_id = data.get("document_id")
+    revision_id = data.get("current_revision_id")
+    commit_id = data.get("last_commit_id")
+    document_ref = None
+    if document_id:
+        document_ref = {
+            "document_id": document_id,
+            "revision_id": revision_id,
+            "commit_id": commit_id,
+        }
+    return {
+        "document_ref": document_ref,
+        "commit_status": data.get("commit_status") or (
+            "committed" if commit_id else None
+        ),
+        "state_version_id": data.get("current_state_version_id")
+        or data.get("state_version_id"),
+        "critical_projection_status": data.get("critical_projection_status"),
+        "non_blocking_projection_status": data.get(
+            "non_blocking_projection_status"
+        ),
+    }
+
+
+@router.post("/tasks")
+def create_draft_task():
+    """创建 draft task，返回 task_id。之后的所有编辑操作都以此 task_id 为锚点。"""
+    task_id = str(uuid.uuid4())
+    bb.set(task_id, "status", "draft")
+    bb.set(task_id, "workspace_task_id", task_id)
+    bb.set(task_id, "active_task_id", task_id)
+    with TaskStore() as store:
+        store.save_workspace(
+            task_id,
+            {
+                "active_task_id": task_id,
+                "status": "draft",
+            },
+        )
+    return {
+        "task_id": task_id,
+        "workspace_task_id": task_id,
+        "status": "draft",
+    }
+
 
 @router.post("/write", response_model=WriteResponse)
 def create_writing_task(
@@ -15,17 +253,9 @@ def create_writing_task(
     mode: str = Query("celery", description="执行模式: 'celery' 或 'interactive'"),
     x_api_key: str = Header("", alias="X-API-Key"),
 ):
-    """提交写作任务。
-
-    - mode=celery: Celery 异步执行，通过 GET /status/{task_id} 轮询进度，
-      通过 GET /stream/{task_id} 获取流式事件。
-    - mode=interactive: 同上，但每节完成后暂停等待用户确认，
-      用户通过 POST /tasks/{task_id}/decide 发送决策。
-    - X-API-Key: 用户自己的 API Key（可选，不填则使用服务器 Key）。
-    """
     interactive = (mode == "interactive")
 
-    task = writing_task.delay(
+    task_kwargs = dict(
         topic=req.topic,
         reference_text=req.reference_text,
         target_words_per_section=req.target_words_per_section,
@@ -34,26 +264,82 @@ def create_writing_task(
         interactive=interactive,
         world_setting=req.world_setting,
         story_synopsis=req.story_synopsis,
-
         style_profile=req.style_profile,
         outline=req.outline,
         api_key=x_api_key,
     )
-    bb.set(task.id, "status", "pending")
-    bb.set(task.id, "mode", mode)
-    return WriteResponse(task_id=task.id, status="pending")
+
+    if req.task_id:
+        task_kwargs["workspace_task_id"] = req.task_id
+
+    if req.task_id:
+        # 使用已有的 draft task_id
+        task_id = req.task_id
+        writing_task.apply_async(kwargs=task_kwargs, task_id=task_id)
+    else:
+        task = writing_task.delay(**task_kwargs)
+        task_id = task.id
+
+    bb.set(task_id, "status", "pending")
+    bb.set(task_id, "mode", mode)
+    workspace_task_id = req.task_id or task_id
+    bb.set(task_id, "workspace_task_id", workspace_task_id)
+    bb.set(task_id, "active_task_id", task_id)
+    bb.set(workspace_task_id, "workspace_task_id", workspace_task_id)
+    bb.set(workspace_task_id, "active_task_id", task_id)
+    with TaskStore() as store:
+        existing = store.get_workspace(workspace_task_id) or {}
+        store.save_workspace(
+            workspace_task_id,
+            {
+                **existing,
+                "active_task_id": task_id,
+                "topic": req.topic,
+                "world_setting": req.world_setting,
+                "story_synopsis": req.story_synopsis,
+                "reference_text": req.reference_text,
+                "style_profile": req.style_profile,
+                "target_words_per_section": req.target_words_per_section,
+                "status": "pending",
+            },
+        )
+    return WriteResponse(
+        task_id=task_id,
+        workspace_task_id=workspace_task_id,
+        status="pending",
+    )
 
 
 # ── 状态查询 ────────────────────────────────────────────────────
 
 @router.get("/status/{task_id}", response_model=TaskStatus)
 def get_task_status(task_id: str):
-    data = bb.get_all(task_id)
+    data, runtime_available = _runtime_data(task_id)
+    data_source = "runtime"
     if not data:
-        raise HTTPException(status_code=404, detail="任务不存在")
+        with TaskStore() as store:
+            durable = store.find_workspace_for_task(task_id)
+        if not durable:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        data = {
+            **durable,
+            "workspace_task_id": durable["workspace_task_id"],
+            "active_task_id": durable.get("active_task_id") or task_id,
+            "outline": durable.get("outline") or [],
+            "draft": durable.get("draft_backup") or "",
+        }
+        data_source = "durable_workspace"
+    workspace_task_id = _workspace_task_id(data, task_id)
+    workspace_data = data
+    if runtime_available and workspace_task_id != task_id:
+        workspace_data, runtime_available = _runtime_data(workspace_task_id)
+    config = workspace_data or data
+    canonical_fields = _canonical_response_fields(data)
     return TaskStatus(
         task_id=task_id,
         status=data.get("status", "unknown"),
+        workspace_task_id=workspace_task_id,
+        active_task_id=str(data.get("active_task_id") or task_id),
         progress=data.get("progress"),
         style=data.get("style"),
         outline=data.get("outline"),
@@ -73,6 +359,26 @@ def get_task_status(task_id: str):
         ai_detect_log=data.get("ai_detect_log"),
         section_reviews=data.get("section_reviews"),
         token_usage=data.get("token_usage"),
+        token_cost=data.get("token_cost"),
+        topic=data.get("topic") or config.get("topic") or data.get("config_topic"),
+        world_setting=data.get("world_setting")
+        or config.get("world_setting")
+        or data.get("config_world_setting"),
+        story_synopsis=data.get("story_synopsis")
+        or config.get("story_synopsis")
+        or data.get("config_story_synopsis"),
+        reference_text=data.get("reference_text")
+        or config.get("reference_text")
+        or data.get("config_reference_text"),
+        style_profile=data.get("style_profile")
+        or config.get("style_profile")
+        or data.get("config_style_profile"),
+        target_words_per_section=data.get("target_words_per_section")
+        or config.get("target_words_per_section")
+        or data.get("config_target_words"),
+        runtime_available=runtime_available,
+        data_source=data_source,
+        **canonical_fields,
     )
 
 
@@ -81,14 +387,22 @@ def get_task_result(task_id: str):
     task = writing_task.AsyncResult(task_id)
     if task.ready():
         if task.successful():
-            return task.result
+            result = task.result
+            if isinstance(result, dict):
+                return {**result, **_canonical_response_fields(result)}
+            return result
         else:
             raise HTTPException(status_code=500, detail=str(task.info))
     else:
         data = bb.get_all(task_id)
         if not data:
             raise HTTPException(status_code=404, detail="任务不存在")
-        return {"task_id": task_id, "status": data.get("status", "pending"), "message": "任务尚未完成"}
+        return {
+            "task_id": task_id,
+            "status": data.get("status", "pending"),
+            "message": "任务尚未完成",
+            **_canonical_response_fields(data),
+        }
 
 
 # ── Redis Stream 流式事件 ───────────────────────────────────────
@@ -155,6 +469,13 @@ def task_decision(
                 checkpoint["_outline_approved"] = True
             # 先存检查点（旧 task_id），再创建任务——避免 worker 竞态
             bb.save_checkpoint(task_id, checkpoint)
+            workspace_task_id = str(
+                data.get("workspace_task_id")
+                or checkpoint.get("workspace_task_id")
+                or task_id
+            )
+            checkpoint["workspace_task_id"] = workspace_task_id
+            bb.save_checkpoint(task_id, checkpoint)
             new_task = writing_task.delay(
                 topic=checkpoint.get("config_topic", ""),
                 reference_text=checkpoint.get("config_reference_text", ""),
@@ -164,16 +485,35 @@ def task_decision(
                 interactive=checkpoint.get("config_interactive", False),
                 resume=True,
                 resume_from_task_id=task_id,
+                workspace_task_id=workspace_task_id,
                 api_key=x_api_key,
             )
-            return {"status": "ok", "phase": phase, "action": action, "new_task_id": new_task.id}
+            bb.set(new_task.id, "workspace_task_id", workspace_task_id)
+            bb.set(new_task.id, "active_task_id", new_task.id)
+            bb.set(workspace_task_id, "active_task_id", new_task.id)
+            with TaskStore() as store:
+                workspace = store.get_workspace(workspace_task_id) or {}
+                store.save_workspace(
+                    workspace_task_id,
+                    {
+                        **workspace,
+                        "active_task_id": new_task.id,
+                        "status": "pending",
+                    },
+                )
+            return {
+                "status": "ok",
+                "phase": phase,
+                "action": action,
+                "new_task_id": new_task.id,
+                "workspace_task_id": workspace_task_id,
+            }
     else:
         # 撤销 Celery 任务，防止重启后自动续跑
         try:
             celery_app.control.revoke(task_id, terminate=False)
         except Exception:
-            pass
-        bb.set(task_id, "status", "stopped")
+            logger.warning(f"Celery 任务撤销失败: {task_id}", exc_info=True)
         bb.xadd_event(task_id, {"event": "cancelled", "message": "用户停止"})
 
     return {"status": "ok", "phase": phase, "action": action}
@@ -250,19 +590,24 @@ def revise_subsection(task_id: str, req: ReviseRequest, x_api_key: str = Header(
     from ..agents.writer import Writer
     from ..utils.llm_client import set_api_key
     import re as _regex
-    if x_api_key: set_api_key(x_api_key)
+    if x_api_key:
+        set_api_key(x_api_key)
     writer = Writer()
 
-    draft = data.get("draft", "")
+    checkpoint = bb.load_checkpoint(task_id) or {}
+    draft = data.get("draft", "") or _assemble_checkpoint_draft(checkpoint)
     lines = draft.split("\n")
     start_idx = None
     end_idx = len(lines)
     # 支持多种节标题格式: "第X节：" / "第X节:" / "Section X:" / "第X章："
+    subsection = req.subsection or 1
     sec_patterns = [
+        _regex.compile(rf"第\s*{req.section}\s*节\s*第\s*{subsection}\s*小节"),
         _regex.compile(rf"第\s*{req.section}\s*[节章][：:]"),
         _regex.compile(rf"[Ss]ection\s+{req.section}[：:]"),
     ]
     next_patterns = [
+        _regex.compile(rf"第\s*{req.section}\s*节\s*第\s*{subsection + 1}\s*小节"),
         _regex.compile(rf"第\s*{req.section + 1}\s*[节章][：:]"),
         _regex.compile(rf"[Ss]ection\s+{req.section + 1}[：:]"),
     ]
@@ -282,8 +627,105 @@ def revise_subsection(task_id: str, req: ReviseRequest, x_api_key: str = Header(
     new_lines = lines[:start_idx] + [revised] + lines[end_idx:]
     new_draft = "\n".join(new_lines)
     bb.set(task_id, "draft", new_draft)
+    if checkpoint:
+        section_texts = dict(checkpoint.get("section_texts") or {})
+        section_key = str(req.section)
+        section_texts[section_key] = _replace_subsection_text(
+            str(section_texts.get(section_key) or section_texts.get(req.section) or ""),
+            req.section,
+            subsection,
+            revised,
+        )
+        checkpoint["section_texts"] = section_texts
+        bb.save_checkpoint(task_id, checkpoint)
+    try:
+        data = bb.get_all(task_id)
+        workspace_task_id = str(data.get("workspace_task_id") or task_id)
+        with TaskStore() as store:
+            workspace = store.find_workspace_for_task(task_id) or {
+                "workspace_task_id": workspace_task_id,
+                "active_task_id": task_id,
+            }
+            snapshots = _merge_draft_snapshot(
+                workspace.get("draft_backup") or data.get("draft_backup") or "",
+                section=req.section,
+                subsection=subsection,
+                text=revised,
+            )
+            workspace["draft_backup"] = snapshots
+            bb.set(task_id, "draft_backup", snapshots)
+            store.save_workspace(workspace_task_id, workspace)
+    except Exception:
+        logger.warning("Failed to persist revised subsection", exc_info=True)
 
-    return {"status": "revised", "section": req.section}
+    return {
+        "status": "revised",
+        "section": req.section,
+        "subsection": req.subsection,
+        "revised": revised,
+        "draft": new_draft,
+    }
+
+
+def _assemble_checkpoint_draft(checkpoint: dict) -> str:
+    section_texts = checkpoint.get("section_texts") or {}
+    keys = sorted(
+        section_texts,
+        key=lambda value: (0, int(value)) if str(value).isdigit() else (1, str(value)),
+    )
+    return "\n\n".join(str(section_texts[key]) for key in keys)
+
+
+def _replace_subsection_text(
+    section_text: str,
+    section: int,
+    subsection: int,
+    revised: str,
+) -> str:
+    if not section_text:
+        return revised
+    pattern = re.compile(
+        rf"第\s*{section}\s*节\s*第\s*{subsection}\s*小节.*?(?="
+        rf"第\s*{section}\s*节\s*第\s*{subsection + 1}\s*小节|\Z)",
+        flags=re.DOTALL,
+    )
+    return pattern.sub(revised, section_text, count=1) if pattern.search(section_text) else revised
+
+
+def _merge_draft_snapshot(
+    raw: str,
+    *,
+    section: int,
+    subsection: int,
+    text: str,
+) -> str:
+    try:
+        snapshots = json.loads(raw) if raw else []
+    except (json.JSONDecodeError, TypeError):
+        snapshots = []
+    if not isinstance(snapshots, list):
+        snapshots = []
+    replacement = {
+        "section": section,
+        "subsection": subsection,
+        "text": text,
+    }
+    for index, snapshot in enumerate(snapshots):
+        if (
+            snapshot.get("section") == section
+            and snapshot.get("subsection") == subsection
+        ):
+            snapshots[index] = {**snapshot, **replacement}
+            break
+    else:
+        snapshots.append(replacement)
+    snapshots.sort(
+        key=lambda snapshot: (
+            int(snapshot.get("section") or 0),
+            int(snapshot.get("subsection") or 0),
+        )
+    )
+    return json.dumps(snapshots, ensure_ascii=False)
 
 
 # ── 字段编辑 ────────────────────────────────────────────────────
@@ -323,7 +765,6 @@ def continue_writing(task_id: str, body: dict, x_api_key: str = Header("", alias
 
     # 加载前作状态
     prev_checkpoint = bb.load_checkpoint(task_id) or {}
-    prev_draft_map = prev_checkpoint.get("draft", {})
     prev_section_texts = prev_checkpoint.get("section_texts", {})
     assembled_prev = "\n\n".join(
         prev_section_texts.get(str(i), "") for i in sorted(int(k) for k in prev_section_texts.keys())
@@ -344,6 +785,12 @@ def continue_writing(task_id: str, body: dict, x_api_key: str = Header("", alias
         new_sec["section"] = prev_section_count + i + 1
         offset_outline.append(new_sec)
 
+    source_data = bb.get_all(task_id)
+    workspace_task_id = str(
+        source_data.get("workspace_task_id")
+        or prev_checkpoint.get("workspace_task_id")
+        or task_id
+    )
     task = writing_task.delay(
         topic=prev_checkpoint.get("config_topic", ""),
         reference_text=assembled_prev[:8000],  # 前作作为风格参考
@@ -353,10 +800,284 @@ def continue_writing(task_id: str, body: dict, x_api_key: str = Header("", alias
         interactive=interactive,
         continue_from_task_id=task_id,
         continue_outline=offset_outline,
+        workspace_task_id=workspace_task_id,
         api_key=x_api_key,
     )
 
     bb.set(task.id, "status", "pending")
     bb.set(task.id, "mode", "interactive" if interactive else "celery")
     bb.set(task.id, "continue_from", task_id)
-    return {"task_id": task.id, "status": "pending", "continue_from": task_id, "total_new_sections": len(offset_outline)}
+    bb.set(task.id, "workspace_task_id", workspace_task_id)
+    bb.set(task.id, "active_task_id", task.id)
+    bb.set(workspace_task_id, "active_task_id", task.id)
+    with TaskStore() as store:
+        workspace = store.get_workspace(workspace_task_id) or {}
+        store.save_workspace(
+            workspace_task_id,
+            {
+                **workspace,
+                "active_task_id": task.id,
+                "status": "pending",
+            },
+        )
+    return {
+        "task_id": task.id,
+        "workspace_task_id": workspace_task_id,
+        "status": "pending",
+        "continue_from": task_id,
+        "total_new_sections": len(offset_outline),
+    }
+
+
+@router.get("/tasks/{task_id}/workspace")
+def get_task_workspace(task_id: str):
+    data, runtime_available = _runtime_data(task_id)
+    if not data:
+        with TaskStore() as store:
+            durable = store.find_workspace_for_task(task_id)
+        if not durable:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        return {
+            **durable,
+            "runtime_available": runtime_available,
+            "data_source": "durable_workspace",
+        }
+    workspace_task_id = _workspace_task_id(data, task_id)
+    workspace_data = data
+    if workspace_task_id != task_id:
+        workspace_data, runtime_available = _runtime_data(workspace_task_id)
+    checkpoint, runtime_available = _runtime_checkpoint(
+        task_id, available=runtime_available
+    )
+    if not checkpoint and runtime_available and workspace_task_id != task_id:
+        checkpoint, runtime_available = _runtime_checkpoint(
+            workspace_task_id, available=runtime_available
+        )
+    payload = _workspace_payload(workspace_task_id, workspace_data or data, checkpoint)
+    payload["active_task_id"] = str(data.get("active_task_id") or task_id)
+    payload["runtime_available"] = runtime_available
+    payload["data_source"] = "runtime"
+    return payload
+
+
+@router.patch("/tasks/{task_id}/workspace")
+def patch_task_workspace(task_id: str, body: WorkspacePatch):
+    data, runtime_available = _runtime_data(task_id)
+    with TaskStore() as store:
+        durable = store.find_workspace_for_task(task_id)
+    if not data:
+        if not durable:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        data = {
+            **durable,
+            "workspace_task_id": durable["workspace_task_id"],
+            "active_task_id": durable.get("active_task_id") or task_id,
+        }
+    workspace_task_id = _workspace_task_id(data, task_id)
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        payload = _workspace_payload(workspace_task_id, durable or data, {})
+        payload["runtime_available"] = runtime_available
+        payload["data_source"] = (
+            "runtime" if runtime_available else "durable_workspace"
+        )
+        return payload
+    updated_at = datetime.now(timezone.utc).isoformat()
+    workspace_data = {
+        **(durable or {}),
+        **data,
+        **updates,
+        "workspace_task_id": workspace_task_id,
+        "workspace_updated_at": updated_at,
+    }
+    checkpoint: dict = {}
+    if runtime_available:
+        try:
+            if not bb.get_all(workspace_task_id):
+                for field, value in (durable or {}).items():
+                    if field in _WORKSPACE_CONFIG_FIELDS:
+                        bb.set(workspace_task_id, field, value)
+                bb.set(workspace_task_id, "workspace_task_id", workspace_task_id)
+                bb.set(
+                    workspace_task_id,
+                    "active_task_id",
+                    data.get("active_task_id") or task_id,
+                )
+            for field, value in updates.items():
+                bb.set(workspace_task_id, field, value)
+            bb.set(workspace_task_id, "workspace_updated_at", updated_at)
+            workspace_data = {
+                **workspace_data,
+                **bb.get_all(workspace_task_id),
+            }
+        except RedisError:
+            logger.warning(
+                "Redis unavailable while patching workspace %s; SQLite remains authoritative",
+                workspace_task_id,
+            )
+            runtime_available = False
+    active_task_id = str(
+        workspace_data.get("active_task_id")
+        or data.get("active_task_id")
+        or task_id
+    )
+    if runtime_available:
+        for checkpoint_task_id in (active_task_id, task_id, workspace_task_id):
+            checkpoint, runtime_available = _runtime_checkpoint(
+                checkpoint_task_id, available=runtime_available
+            )
+            if checkpoint:
+                break
+    if checkpoint:
+        checkpoint = dict(checkpoint)
+        checkpoint["workspace_task_id"] = workspace_task_id
+        for field, value in updates.items():
+            checkpoint[_WORKSPACE_CONFIG_FIELDS[field]] = value
+        try:
+            bb.save_checkpoint(active_task_id, checkpoint)
+            if workspace_task_id != active_task_id:
+                bb.save_checkpoint(workspace_task_id, checkpoint)
+        except RedisError:
+            logger.warning(
+                "Redis unavailable while saving workspace checkpoint %s",
+                workspace_task_id,
+            )
+            runtime_available = False
+    payload = _workspace_payload(workspace_task_id, workspace_data, checkpoint or {})
+    payload["active_task_id"] = active_task_id
+    payload["runtime_available"] = runtime_available
+    payload["data_source"] = "runtime" if runtime_available else "durable_workspace"
+    with TaskStore() as store:
+        durable = store.get_workspace(workspace_task_id) or {}
+        store.save_workspace(
+            workspace_task_id,
+            {
+                **durable,
+                **payload,
+                "status": str(workspace_data.get("status") or durable.get("status") or "draft"),
+            },
+        )
+    return payload
+
+
+@router.get("/tasks/{task_id}/exports")
+def list_task_exports(task_id: str):
+    data, _runtime_available = _runtime_data(task_id)
+    if not data:
+        workspace = _durable_workspace_for_task(task_id)
+        if workspace:
+            return {"exports": workspace.get("exports") or []}
+        with TaskStore() as store:
+            if not store.get(task_id):
+                raise HTTPException(status_code=404, detail="任务不存在")
+    exports = data.get("exports") if data else []
+    return {"exports": exports if isinstance(exports, list) else []}
+
+
+@router.post("/tasks/{task_id}/exports")
+def create_task_export(task_id: str, body: ExportRequest):
+    export_format = body.format.lower().strip()
+    if export_format not in {"md", "txt", "json"}:
+        raise HTTPException(status_code=422, detail="format 必须是 md、txt 或 json")
+    source = _load_export_source(task_id)
+    if not source.get("draft"):
+        raise HTTPException(status_code=400, detail="当前任务没有可导出的正文")
+    export_id = str(uuid.uuid4())
+    filename = (
+        f"{_safe_export_name(source.get('topic', ''))}_"
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{export_id[:8]}.{export_format}"
+    )
+    path = _export_root() / filename
+    if export_format == "json":
+        content = json.dumps(source, ensure_ascii=False, indent=2)
+        media_type = "application/json"
+    elif export_format == "txt":
+        content = str(source["draft"])
+        media_type = "text/plain"
+    else:
+        content = (
+            f"# {source.get('topic') or '未命名'}\n\n"
+            f"> 导出时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+            f"{source['draft']}\n"
+        )
+        media_type = "text/markdown"
+    path.write_text(content, encoding="utf-8")
+    record = {
+        "export_id": export_id,
+        "format": export_format,
+        "filename": filename,
+        "media_type": media_type,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    data, runtime_available = _runtime_data(task_id)
+    with TaskStore() as store:
+        workspace = store.find_workspace_for_task(task_id)
+    exports = list(data.get("exports") or []) if data else list(
+        (workspace or {}).get("exports") or []
+    )
+    exports.insert(0, record)
+    if runtime_available:
+        try:
+            bb.set(task_id, "exports", exports[:20])
+        except RedisError:
+            logger.warning("Redis unavailable while recording export for %s", task_id)
+    with TaskStore() as store:
+        if workspace:
+            workspace["exports"] = exports[:20]
+            store.save_workspace(workspace["workspace_task_id"], workspace)
+    return record
+
+
+@router.get("/tasks/{task_id}/exports/{export_id}/download")
+def download_task_export(task_id: str, export_id: str):
+    data, _runtime_available = _runtime_data(task_id)
+    exports = data.get("exports") if data else []
+    if not exports:
+        workspace = _durable_workspace_for_task(task_id)
+        exports = workspace.get("exports") if workspace else []
+    record = next(
+        (item for item in exports or [] if item.get("export_id") == export_id),
+        None,
+    )
+    if not record:
+        raise HTTPException(status_code=404, detail="导出记录不存在")
+    path = (_export_root() / Path(record["filename"]).name).resolve()
+    root = _export_root().resolve()
+    if root not in path.parents or not path.is_file():
+        raise HTTPException(status_code=404, detail="导出文件不存在")
+    return FileResponse(
+        path,
+        media_type=record.get("media_type") or "application/octet-stream",
+        filename=record["filename"],
+    )
+
+
+# ── 任务列表 / 删除 ──────────────────────────────────────────────
+
+@router.delete("/tasks/{task_id}")
+def delete_task(task_id: str):
+    """删除任务：清 Redis、SQLite 归档和该任务的向量块。"""
+    try:
+        bb.delete_checkpoint(task_id)
+        bb.delete(task_id)
+        bb.stream_delete(task_id)
+    except Exception:
+        logger.warning(f"任务检查点清理失败: {task_id}", exc_info=True)
+    try:
+        ts = TaskStore()
+        try:
+            ts.delete(task_id)
+        finally:
+            ts.close()
+    except Exception:
+        logger.warning(f"任务历史删除失败: {task_id}", exc_info=True)
+    try:
+        from ..vector_store import VectorStore
+        deleted_chunks = VectorStore().cleanup_task(task_id)
+        logger.info(f"任务向量清理完成: task={task_id[:8]} chunks={deleted_chunks}")
+    except Exception:
+        logger.warning(
+            f"任务向量清理失败: task={task_id[:8]} feature=rag_cleanup fallback=retain",
+            exc_info=True,
+        )
+    return {"status": "deleted", "task_id": task_id}

@@ -1,6 +1,9 @@
 import json
+import hashlib
 import redis
+from redis.exceptions import ResponseError, WatchError
 from .config import settings
+from .checkpoint_sanitizer import is_credential_field, sanitize_checkpoint
 
 
 class Blackboard:
@@ -13,7 +16,19 @@ class Blackboard:
     """
 
     def __init__(self):
-        self._redis = redis.Redis.from_url(settings.REDIS_BACKEND_URL)
+        # A writing task holds this connection for minutes at a time with long
+        # idle gaps while the LLM streams.  Without keepalive and health checks
+        # an idle socket can be reaped underneath us; the resulting
+        # ConnectionError matches writing_task's autoretry_for and replays the
+        # entire task, planning LLM calls included.  These options make the
+        # client re-establish silently instead.
+        self._redis = redis.Redis.from_url(
+            settings.REDIS_BACKEND_URL,
+            socket_keepalive=True,
+            socket_connect_timeout=5,
+            health_check_interval=30,
+            retry_on_timeout=True,
+        )
 
     # ── Hash 操作 ──────────────────────────────────────────────
 
@@ -42,6 +57,63 @@ class Blackboard:
             except (json.JSONDecodeError, TypeError):
                 result[key] = val
         return result
+
+    def set_if_absent(self, task_id: str, key: str, value: object) -> bool:
+        """Atomically create one task hash field without replacing a winner."""
+        serialized = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
+        return bool(self._redis.hsetnx(task_id, key, serialized))
+
+    @staticmethod
+    def _decode_json_value(value):
+        if value is None:
+            return None
+        if isinstance(value, bytes):
+            value = value.decode("utf-8")
+        return json.loads(value)
+
+    def hash_get(self, namespace: str, field: str):
+        return self._decode_json_value(self._redis.hget(namespace, field))
+
+    def hash_get_all(self, namespace: str) -> dict:
+        return {
+            (key.decode("utf-8") if isinstance(key, bytes) else key): self._decode_json_value(value)
+            for key, value in self._redis.hgetall(namespace).items()
+        }
+
+    def hash_set(self, namespace: str, field: str, value: object) -> None:
+        self._redis.hset(namespace, field, json.dumps(value, ensure_ascii=False))
+
+    def hash_delete(self, namespace: str, *fields: str) -> int:
+        return int(self._redis.hdel(namespace, *fields)) if fields else 0
+
+    def hash_upsert_by_position(
+        self,
+        namespace: str,
+        field: str,
+        value: dict,
+        position: int,
+    ) -> str:
+        """Atomically keep the highest stream position for one hash field."""
+        encoded = json.dumps(value, ensure_ascii=False)
+        while True:
+            with self._redis.pipeline() as pipe:
+                try:
+                    pipe.watch(namespace)
+                    existing = self._decode_json_value(pipe.hget(namespace, field))
+                    if existing is not None:
+                        old_position = existing.get("stream_position")
+                        if position < old_position:
+                            return "stale"
+                        if position == old_position:
+                            old_semantic = {k: v for k, v in existing.items() if k != "created_at"}
+                            new_semantic = {k: v for k, v in value.items() if k != "created_at"}
+                            return "identical" if old_semantic == new_semantic else "conflict"
+                    pipe.multi()
+                    pipe.hset(namespace, field, encoded)
+                    pipe.execute()
+                    return "inserted" if existing is None else "updated"
+                except WatchError:
+                    continue
 
     def delete(self, task_id: str) -> None:
         self._redis.delete(task_id)
@@ -92,6 +164,69 @@ class Blackboard:
     def stream_delete(self, task_id: str) -> None:
         self._redis.delete(self.stream_key(task_id))
 
+    @staticmethod
+    def canonical_scope_hash(tenant_id: str, project_id: str) -> str:
+        return hashlib.sha256(f"{tenant_id}\0{project_id}".encode("utf-8")).hexdigest()
+
+    def canonical_stream_key(self, tenant_id: str, project_id: str) -> str:
+        return f"canonical:stream:{self.canonical_scope_hash(tenant_id, project_id)}"
+
+    def xadd_canonical_event(
+        self, tenant_id: str, project_id: str, stream_position: int, event: dict
+    ) -> str:
+        """Write one deterministic canonical event, rejecting same-ID conflicts."""
+        if stream_position < 1:
+            raise ValueError("stream_position must be positive")
+        key = self.canonical_stream_key(tenant_id, project_id)
+        event = dict(event)
+        event["tenant_id"] = tenant_id
+        event["project_id"] = project_id
+        event["stream_position"] = stream_position
+        event_id = f"{stream_position}-0"
+        existing = self._redis.xrange(key, min=event_id, max=event_id)
+        encoded = json.dumps(event, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        if existing:
+            _, fields = existing[0]
+            raw = fields.get(b"payload", fields.get("payload"))
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            if raw != encoded:
+                raise ValueError("canonical Redis Stream conflict at stream_position")
+            return event_id
+        try:
+            self._redis.xadd(key, {"payload": encoded}, id=event_id)
+        except ResponseError:
+            existing = self._redis.xrange(key, min=event_id, max=event_id)
+            if not existing:
+                raise
+            _, fields = existing[0]
+            raw = fields.get(b"payload", fields.get("payload"))
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            if raw != encoded:
+                raise ValueError(
+                    "canonical Redis Stream conflict at stream_position"
+                )
+        return event_id
+
+    def list_canonical_events(self, tenant_id: str, project_id: str) -> list[dict]:
+        key = self.canonical_stream_key(tenant_id, project_id)
+        rows = []
+        for msg_id, fields in self._redis.xrange(key):
+            raw = fields.get(b"payload", fields.get("payload"))
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            payload = json.loads(raw)
+            payload["_redis_id"] = msg_id.decode() if isinstance(msg_id, bytes) else msg_id
+            rows.append(payload)
+        return rows
+
+    def clear_canonical_events(self, tenant_id: str, project_id: str) -> None:
+        self._redis.delete(self.canonical_stream_key(tenant_id, project_id))
+
+    def canonical_preview_namespace(self, tenant_id: str, project_id: str) -> str:
+        return f"canonical:preview:{self.canonical_scope_hash(tenant_id, project_id)}"
+
     # ── 控制队列 ───────────────────────────────────────────────
 
     def decision_queue_key(self, task_id: str, phase: str) -> str:
@@ -139,11 +274,41 @@ class Blackboard:
     def save_checkpoint(self, task_id: str, state_dict: dict) -> None:
         """保存任务状态快照到 Redis Hash。"""
         key = self.checkpoint_key(task_id)
+        state_dict = dict(state_dict)
+        # Optional mirror of the task-level logical artifact. Its absence keeps
+        # legacy checkpoints unchanged under the legacy field projection.
+        if "state_frame_history_v1" not in state_dict:
+            history = self.get(task_id, "state_frame_history_v1")
+            if history:
+                try:
+                    state_dict["state_frame_history_v1"] = json.loads(history)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        if "subsection_handover_history_v1" not in state_dict:
+            handover_history = self.get(
+                task_id, "subsection_handover_history_v1"
+            )
+            if handover_history:
+                try:
+                    state_dict["subsection_handover_history_v1"] = json.loads(
+                        handover_history
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        state_dict = sanitize_checkpoint(state_dict)
+        legacy_credential_fields = [
+            field
+            for field in self._redis.hkeys(key)
+            if is_credential_field(
+                field.decode("utf-8") if isinstance(field, bytes) else field
+            )
+        ]
+        if legacy_credential_fields:
+            self._redis.hdel(key, *legacy_credential_fields)
         mapping = {}
         for field, value in state_dict.items():
             mapping[field] = json.dumps(value, ensure_ascii=False, default=str)
         self._redis.hset(key, mapping=mapping)
-        self._redis.expire(key, 86400)
 
     def load_checkpoint(self, task_id: str) -> dict | None:
         """从 Redis 加载任务状态快照。"""
@@ -159,7 +324,7 @@ class Blackboard:
                 result[field] = json.loads(val)
             except (json.JSONDecodeError, TypeError):
                 result[field] = val
-        return result
+        return sanitize_checkpoint(result)
 
     def delete_checkpoint(self, task_id: str) -> None:
         self._redis.delete(self.checkpoint_key(task_id))

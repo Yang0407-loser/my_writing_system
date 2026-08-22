@@ -1,0 +1,113 @@
+{
+  "schema_version": "style-anti-ai-probe-v0",
+  "experiment_id": "style-anti-ai-probe-v0",
+  "provider": {
+    "provider": "deepseek",
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 2400,
+    "json_mode": false,
+    "thinking": "disabled",
+    "transport_max_retries": 0
+  },
+  "target_characters": {
+    "minimum": 1000,
+    "maximum": 1600
+  },
+  "shared_web_policy": "这是快节奏商业玄幻网文场景。尽快进入当前事件，让阻力迫使主角行动；优先用动作和对白推进；完成合同规定的信息揭露或冲突升级；结尾必须发生具体状态变化，并留下新的压力、机会或问题。",
+  "arms": {
+    "W": {
+      "private_name": "web_policy_only",
+      "additional_policy": ""
+    },
+    "WA": {
+      "private_name": "web_policy_plus_anti_ai_surface",
+      "additional_policy": "语言实现追加四条：动作或对白已显明的意义不再抽象解释；不用通用比喻、成串修饰和格言短句代替具体细节；不按输入字段顺序逐项展示，让人物目标、阻力和因果组织正文；结尾停在具体的新局面或未完成动作上，不追加主题总结。遇到重复优先删除或合并，不靠同义替换和刻意碎句制造利落。"
+    }
+  },
+  "scenes": [
+    {
+      "scene_id": "AA-S1",
+      "scene_type": "dialogue_evidence_conflict",
+      "title": "被改过的功簿",
+      "premise": "外门弟子陆青川在宗门档案房补录任务时，发现自己三个月前斩杀铁背妖狼的功绩被记到内门弟子韩照名下。执事赵衡正好进门，并急着收走这册功簿。",
+      "characters": [
+        {
+          "name": "陆青川",
+          "role": "视点人物",
+          "current_goal": "确认功簿是否被人改动，并留下能证明问题的证据",
+          "known": "自己完成过妖狼任务，原始任务牌仍在身上",
+          "unknown": "是谁授意改动功簿"
+        },
+        {
+          "name": "赵衡",
+          "role": "档案房执事",
+          "current_goal": "在陆青川看清更多内容前拿走功簿",
+          "known": "他知道功簿上的记录异常",
+          "unknown": "他是主谋还是奉命办事"
+        }
+      ],
+      "must_happen": [
+        "陆青川发现自己的妖狼功绩被记到韩照名下",
+        "赵衡试图立即收走或毁掉这册功簿",
+        "陆青川用现有任务牌或现场信息留下一个可验证的证据",
+        "双方冲突升级，陆青川主动决定追查此事"
+      ],
+      "must_hold_back": [
+        "幕后主使的身份",
+        "赵衡是否为主谋"
+      ],
+      "forbidden_events": [
+        "宗主或长老突然出现替陆青川主持公道",
+        "陆青川当场杀死或击败赵衡",
+        "韩照本人出现并承认作弊",
+        "本场彻底恢复陆青川的功绩"
+      ],
+      "allowed_end_state": "功簿仍可能被赵衡控制，但陆青川已经保住一项可验证证据并决定继续追查；双方关系公开恶化，幕后主使仍未知。"
+    },
+    {
+      "scene_id": "AA-S2",
+      "scene_type": "action_exposure_escape",
+      "title": "试火台上的断剑",
+      "premise": "散修苏砚在炼器坊参加低阶灵器试火，只想换取路费。他带着一柄来历不明的断剑。试火炉失控时，断剑自行吸走一缕青白异火，监炉使孟驹注意到了异常。",
+      "characters": [
+        {
+          "name": "苏砚",
+          "role": "视点人物",
+          "current_goal": "完成最低等级试火并拿到报酬，不暴露断剑异常",
+          "known": "断剑偶尔会吸收灵气，但从未吸收过异火",
+          "unknown": "断剑的真实来历和吸火后的变化"
+        },
+        {
+          "name": "孟驹",
+          "role": "监炉使",
+          "current_goal": "扣下断剑并确认它为何能吸收异火",
+          "known": "普通残兵不可能承受青白异火",
+          "unknown": "断剑究竟是什么"
+        }
+      ],
+      "must_happen": [
+        "试火炉出现失控征兆，断剑自行吸收青白异火",
+        "孟驹注意异常并试图扣下断剑或封住出口",
+        "苏砚主动放弃报酬和原计划，带断剑离开试火台",
+        "断剑在离开前产生一个尚无法解释的新变化"
+      ],
+      "must_hold_back": [
+        "断剑的真实来历",
+        "新变化的完整能力"
+      ],
+      "forbidden_events": [
+        "断剑开口说话或出现器灵解释真相",
+        "苏砚当场击杀孟驹",
+        "坊主或神秘强者出手救走苏砚",
+        "孟驹彻底放弃追查"
+      ],
+      "allowed_end_state": "苏砚已离开试火台或冲出炼器坊，报酬没有拿到，孟驹仍在追查；断剑出现新变化但能力和来历未被解释。"
+    }
+  ],
+  "repeats_per_scene": 2,
+  "randomization_seed": 22631
+}
+

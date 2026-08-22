@@ -1,0 +1,1 @@
+"""Canonical database integration contracts."""

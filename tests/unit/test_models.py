@@ -32,11 +32,13 @@ class TestWriteRequest:
 class TestStyleProfile:
     def test_default_narrative_density(self):
         sp = StyleProfile()
-        assert sp.narrative_density == 0.7
+        assert sp.narrative_density == 0.5
 
     def test_full_profile(self, sample_style):
         sp = StyleProfile(**sample_style)
-        assert sp.primary_emotion == "中性"
         assert sp.emotion_intensity == 50
-        assert sp.short_sentence_ratio == 0.3
         assert sp.dialogue_ratio == 0.3
+        assert sp.sentence_preference == "balanced"
+        assert sp.sensory_density == "medium"
+        assert sp.short_sentence_ratio == 0.33  # 兼容字段，不是主旋钮
+        assert not hasattr(sp, "primary_emotion")

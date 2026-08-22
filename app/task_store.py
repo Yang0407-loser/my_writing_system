@@ -1,37 +1,59 @@
 import sqlite3
 import json
-import os
-from datetime import datetime
+from weakref import WeakSet
 
 
 class TaskStore:
     """SQLite 任务历史存储 —— 持久化已完成任务的元数据。"""
 
-    _MIGRATIONS_DONE = set()
+    _INSTANCES = WeakSet()
 
     def __init__(self, db_path: str | None = None):
         if db_path is None:
             from .config import settings
             db_path = settings.TASK_DB_PATH
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._ensure_tables()
-        # 仅在首次实例化时执行 schema migration（按 db_path 去重）
-        if db_path not in self._MIGRATIONS_DONE:
-            self._MIGRATIONS_DONE.add(db_path)
-            for col, col_type in [
-                ("world_setting", "TEXT DEFAULT ''"),
-                ("story_synopsis", "TEXT DEFAULT ''"),
-                ("target_words", "INTEGER DEFAULT 0"),
-                ("world_state_json", "TEXT DEFAULT '{}'"),
-                ("events_json", "TEXT DEFAULT '[]'"),
-                ("analysis_json", "TEXT DEFAULT '{}'"),
-            ]:
-                try:
-                    self._conn.execute(f"ALTER TABLE task_history ADD COLUMN {col} {col_type}")
-                except sqlite3.OperationalError:
-                    pass
+        self._closed = False
+        try:
+            self._conn.row_factory = sqlite3.Row
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._ensure_tables()
+            # Migration records live in the database, so every connection may
+            # safely apply them. A process-local path cache would incorrectly
+            # skip migrations when a test or operator recreates a database at
+            # the same path, and would also poison retries after a failure.
+            from .task_store_migrations import apply_task_store_migrations
+
+            apply_task_store_migrations(self._conn)
+        except Exception:
+            self._conn.close()
+            self._closed = True
+            raise
+        self._INSTANCES.add(self)
+
+    def close(self) -> None:
+        if not self._closed:
+            self._conn.close()
+            self._closed = True
+            self._INSTANCES.discard(self)
+
+    def __enter__(self) -> "TaskStore":
+        return self
+
+    def __exit__(self, _exc_type, _exc, _traceback) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            # Interpreter shutdown may already have torn down sqlite internals.
+            pass
+
+    @classmethod
+    def close_all(cls) -> None:
+        for store in list(cls._INSTANCES):
+            store.close()
 
     def _ensure_tables(self):
         self._conn.execute("""
@@ -56,6 +78,32 @@ class TaskStore:
                 analysis_json TEXT DEFAULT '{}',
                 draft_preview TEXT DEFAULT '',
                 output_file TEXT DEFAULT '',
+                document_id TEXT DEFAULT '',
+                current_revision_id TEXT DEFAULT '',
+                last_commit_id TEXT DEFAULT '',
+                state_version_id TEXT DEFAULT '',
+                commit_status TEXT DEFAULT '',
+                critical_projection_status TEXT DEFAULT '',
+                non_blocking_projection_status TEXT DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        self._conn.execute("""
+            CREATE TABLE IF NOT EXISTS project_workspaces (
+                workspace_task_id TEXT PRIMARY KEY,
+                active_task_id TEXT DEFAULT '',
+                topic TEXT DEFAULT '',
+                world_setting TEXT DEFAULT '',
+                story_synopsis TEXT DEFAULT '',
+                reference_text TEXT DEFAULT '',
+                style_json TEXT DEFAULT '{}',
+                target_words INTEGER DEFAULT 3000,
+                outline_json TEXT DEFAULT '[]',
+                draft_backup TEXT DEFAULT '',
+                exports_json TEXT DEFAULT '[]',
+                status TEXT DEFAULT 'draft',
+                archived INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT (datetime('now')),
                 updated_at TEXT DEFAULT (datetime('now'))
             )
@@ -68,7 +116,9 @@ class TaskStore:
             "task_id", "topic", "word_count", "section_count", "status", "mode",
             "style_json", "outline_json", "handover_json", "characters_json",
             "review_json", "world_setting", "story_synopsis", "target_words",
-"world_state_json", "events_json", "analysis_json", "draft_preview", "output_file",
+            "world_state_json", "events_json", "analysis_json", "draft_preview", "output_file",
+            "document_id", "current_revision_id", "last_commit_id", "state_version_id",
+            "commit_status", "critical_projection_status", "non_blocking_projection_status",
         ]
         draft_text = data.get("draft", "") or ""
         values = {
@@ -92,6 +142,15 @@ class TaskStore:
             "analysis_json": json.dumps(data.get("analysis", {}), ensure_ascii=False),
             "draft_preview": draft_text[:2000],
             "output_file": data.get("output_file", ""),
+            "document_id": data.get("document_id", ""),
+            "current_revision_id": data.get("current_revision_id", ""),
+            "last_commit_id": data.get("last_commit_id", ""),
+            "state_version_id": data.get("state_version_id", ""),
+            "commit_status": data.get("commit_status", ""),
+            "critical_projection_status": data.get("critical_projection_status", ""),
+            "non_blocking_projection_status": data.get(
+                "non_blocking_projection_status", ""
+            ),
         }
 
         existing = self._conn.execute(
@@ -125,6 +184,94 @@ class TaskStore:
             "SELECT * FROM task_history ORDER BY updated_at DESC LIMIT ?", (limit,)
         ).fetchall()
         return [self._row_to_dict(r) for r in rows]
+
+    def save_workspace(self, workspace_task_id: str, data: dict) -> None:
+        existing = self.get_workspace(workspace_task_id)
+        merged = {**(existing or {}), **data}
+        values = (
+            workspace_task_id,
+            merged.get("active_task_id", workspace_task_id),
+            merged.get("topic", ""),
+            merged.get("world_setting", ""),
+            merged.get("story_synopsis", ""),
+            merged.get("reference_text", ""),
+            json.dumps(merged.get("style_profile", {}), ensure_ascii=False),
+            merged.get("target_words_per_section", 3000),
+            json.dumps(merged.get("outline", []), ensure_ascii=False),
+            merged.get("draft_backup", ""),
+            json.dumps(merged.get("exports", []), ensure_ascii=False),
+            merged.get("status", "draft"),
+            int(bool(merged.get("archived", False))),
+        )
+        self._conn.execute(
+            """
+            INSERT INTO project_workspaces (
+                workspace_task_id, active_task_id, topic, world_setting,
+                story_synopsis, reference_text, style_json, target_words,
+                outline_json, draft_backup, exports_json, status, archived
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(workspace_task_id) DO UPDATE SET
+                active_task_id=excluded.active_task_id,
+                topic=excluded.topic,
+                world_setting=excluded.world_setting,
+                story_synopsis=excluded.story_synopsis,
+                reference_text=excluded.reference_text,
+                style_json=excluded.style_json,
+                target_words=excluded.target_words,
+                outline_json=excluded.outline_json,
+                draft_backup=excluded.draft_backup,
+                exports_json=excluded.exports_json,
+                status=excluded.status,
+                archived=excluded.archived,
+                updated_at=datetime('now')
+            """,
+            values,
+        )
+        self._conn.commit()
+
+    def get_workspace(self, workspace_task_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM project_workspaces WHERE workspace_task_id = ?",
+            (workspace_task_id,),
+        ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        try:
+            data["style_profile"] = json.loads(data.pop("style_json") or "{}")
+        except (json.JSONDecodeError, TypeError):
+            data["style_profile"] = {}
+        data["target_words_per_section"] = data.pop("target_words", 3000)
+        try:
+            data["outline"] = json.loads(data.pop("outline_json") or "[]")
+        except (json.JSONDecodeError, TypeError):
+            data["outline"] = []
+        try:
+            data["exports"] = json.loads(data.pop("exports_json") or "[]")
+        except (json.JSONDecodeError, TypeError):
+            data["exports"] = []
+        data["archived"] = bool(data.get("archived"))
+        return data
+
+    def list_workspaces(self, limit: int = 100, include_archived: bool = False) -> list[dict]:
+        where = "" if include_archived else "WHERE archived = 0"
+        rows = self._conn.execute(
+            f"SELECT workspace_task_id FROM project_workspaces {where} "
+            "ORDER BY updated_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [self.get_workspace(row[0]) for row in rows]
+
+    def find_workspace_for_task(self, task_id: str) -> dict | None:
+        row = self._conn.execute(
+            """
+            SELECT workspace_task_id FROM project_workspaces
+            WHERE workspace_task_id = ? OR active_task_id = ?
+            ORDER BY updated_at DESC LIMIT 1
+            """,
+            (task_id, task_id),
+        ).fetchone()
+        return self.get_workspace(row[0]) if row else None
 
     def delete(self, task_id: str) -> bool:
         cur = self._conn.execute("DELETE FROM task_history WHERE task_id = ?", (task_id,))

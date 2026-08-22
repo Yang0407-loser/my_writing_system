@@ -2,13 +2,56 @@ import re
 import json
 import uuid
 import logging
+import hashlib
 from datetime import datetime
 from typing import Optional
 
-from .config import settings
-
 logger = logging.getLogger(__name__)
 
+
+# v0.9.2: 事实验证统计收集器。不做自动化判断，只记录数字供人工抽查。
+class _FactStats:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.total_facts = 0
+        self.rule_subjective = 0       # 规则层: 纯主观，丢弃
+        self.rule_objective = 0        # 规则层: 纯客观，自动验证
+        self.rule_mixed = 0            # 规则层: 混合，送LLM
+        self.llm_verified = 0          # LLM回复: verified=true
+        self.llm_rejected = 0          # LLM回复: verified=false
+        self.contradictions_detected = 0  # 矛盾检测触发次数
+        self.contradictions_confirmed = 0  # LLM确认的的矛盾
+        self.sample_facts: list[str] = []  # 保留最近20条事实供抽样标注
+
+    def record_fact(self, fact: str, rule_result: str):
+        self.total_facts += 1
+        if rule_result == "subjective":
+            self.rule_subjective += 1
+        elif rule_result == "objective":
+            self.rule_objective += 1
+        elif rule_result == "mixed":
+            self.rule_mixed += 1
+        if len(self.sample_facts) < 20:
+            self.sample_facts.append(f"[{rule_result}] {fact[:120]}")
+
+    def summary(self) -> dict:
+        return {
+            "total_facts": self.total_facts,
+            "rule_subjective": self.rule_subjective,
+            "rule_objective": self.rule_objective,
+            "rule_mixed": self.rule_mixed,
+            "llm_verified": self.llm_verified,
+            "llm_rejected": self.llm_rejected,
+            "contradictions_detected": self.contradictions_detected,
+            "contradictions_confirmed": self.contradictions_confirmed,
+            "sample_facts": self.sample_facts,
+        }
+
+
+# 模块级单例，每次任务启动时 reset
+fact_stats = _FactStats()
 # ============================================================
 # 规则层：零成本预过滤主观/客观
 #
@@ -73,7 +116,9 @@ class WorldFact:
     __slots__ = (
         "fact_id", "category", "fact", "source_section",
         "source_subsection", "immutable", "verified",
-        "contradiction_of", "created_at",
+        "contradiction_of", "created_at", "canonical_tenant_id",
+        "canonical_project_id", "stream_position", "commit_id",
+        "revision_id", "projection_event_id",
     )
 
     def __init__(
@@ -86,6 +131,12 @@ class WorldFact:
         verified: bool = False,
         contradiction_of: Optional[str] = None,
         fact_id: Optional[str] = None,
+        canonical_tenant_id: Optional[str] = None,
+        canonical_project_id: Optional[str] = None,
+        stream_position: Optional[int] = None,
+        commit_id: Optional[str] = None,
+        revision_id: Optional[str] = None,
+        projection_event_id: Optional[str] = None,
     ):
         self.fact_id = fact_id or str(uuid.uuid4())
         self.category = category
@@ -96,9 +147,15 @@ class WorldFact:
         self.verified = verified
         self.contradiction_of = contradiction_of
         self.created_at = datetime.now().isoformat()
+        self.canonical_tenant_id = canonical_tenant_id
+        self.canonical_project_id = canonical_project_id
+        self.stream_position = stream_position
+        self.commit_id = commit_id
+        self.revision_id = revision_id
+        self.projection_event_id = projection_event_id
 
     def to_dict(self) -> dict:
-        return {
+        payload = {
             "fact_id": self.fact_id,
             "category": self.category,
             "fact": self.fact,
@@ -109,6 +166,16 @@ class WorldFact:
             "contradiction_of": self.contradiction_of,
             "created_at": self.created_at,
         }
+        canonical = {
+            "canonical_tenant_id": self.canonical_tenant_id,
+            "canonical_project_id": self.canonical_project_id,
+            "stream_position": self.stream_position,
+            "commit_id": self.commit_id,
+            "revision_id": self.revision_id,
+            "projection_event_id": self.projection_event_id,
+        }
+        payload.update({key: value for key, value in canonical.items() if value is not None})
+        return payload
 
     @classmethod
     def from_dict(cls, d: dict) -> "WorldFact":
@@ -121,6 +188,12 @@ class WorldFact:
             immutable=d.get("immutable", True),
             verified=d.get("verified", False),
             contradiction_of=d.get("contradiction_of"),
+            canonical_tenant_id=d.get("canonical_tenant_id"),
+            canonical_project_id=d.get("canonical_project_id"),
+            stream_position=d.get("stream_position"),
+            commit_id=d.get("commit_id"),
+            revision_id=d.get("revision_id"),
+            projection_event_id=d.get("projection_event_id"),
         )
 
 
@@ -182,6 +255,7 @@ class WorldStateManager:
         """
         # 1. 规则预过滤
         rule_result = _rule_filter_fact(fact)
+        fact_stats.record_fact(fact, rule_result)
         if rule_result == "subjective":
             return ""  # 纯主观 → 丢弃
 
@@ -235,6 +309,157 @@ class WorldStateManager:
         self._save()
         return fact_id
 
+    def upsert_fact(
+        self,
+        *,
+        fact_id: str,
+        category: str,
+        fact: str,
+        source_section: int = 0,
+        source_subsection: int = 0,
+        immutable: bool = True,
+        verified: bool = False,
+        canonical_tenant_id: str,
+        canonical_project_id: str,
+        stream_position: int,
+        commit_id: str,
+        revision_id: str,
+        projection_event_id: str,
+    ) -> str:
+        """Replace one deterministically identified Canon-projected fact."""
+        if not fact_id or not fact.strip():
+            raise ValueError("fact_id and non-empty fact are required")
+        world_fact = WorldFact(
+            fact_id=fact_id,
+            category=category,
+            fact=fact,
+            source_section=source_section,
+            source_subsection=source_subsection,
+            immutable=immutable,
+            verified=verified,
+            canonical_tenant_id=canonical_tenant_id,
+            canonical_project_id=canonical_project_id,
+            stream_position=stream_position,
+            commit_id=commit_id,
+            revision_id=revision_id,
+            projection_event_id=projection_event_id,
+        )
+        self._bb.hash_set(
+            self._canonical_namespace(canonical_tenant_id, canonical_project_id),
+            fact_id,
+            world_fact.to_dict(),
+        )
+        return fact_id
+
+    def list_projected_facts(self, *, tenant_id: str, project_id: str) -> list[dict]:
+        scoped = list(
+            self._bb.hash_get_all(
+                self._canonical_namespace(tenant_id, project_id)
+            ).values()
+        )
+        self._validate_projected_payloads(scoped, tenant_id, project_id)
+        legacy_envelope = [
+            fact.to_dict()
+            for fact in self._facts.values()
+            if fact.canonical_tenant_id == tenant_id
+            and fact.canonical_project_id == project_id
+        ]
+        self._validate_projected_payloads(legacy_envelope, tenant_id, project_id)
+        return scoped + legacy_envelope
+
+    def clear_projected_facts(self, *, tenant_id: str, project_id: str) -> int:
+        namespace = self._canonical_namespace(tenant_id, project_id)
+        scoped = self._bb.hash_get_all(namespace)
+        self._validate_projected_payloads(scoped.values(), tenant_id, project_id)
+        scoped_ids = tuple(scoped)
+        legacy_ids = [
+            fact_id
+            for fact_id, fact in self._facts.items()
+            if fact.canonical_tenant_id == tenant_id
+            and fact.canonical_project_id == project_id
+        ]
+        removed = self._bb.hash_delete(namespace, *scoped_ids)
+        for fact_id in legacy_ids:
+            del self._facts[fact_id]
+        if legacy_ids:
+            self._save()
+        return removed + len(legacy_ids)
+
+    @staticmethod
+    def _validate_projected_payloads(
+        payloads, tenant_id: str, project_id: str
+    ) -> None:
+        markers = (
+            "canonical_tenant_id",
+            "canonical_project_id",
+            "stream_position",
+            "commit_id",
+            "revision_id",
+            "projection_event_id",
+        )
+        for payload in payloads:
+            if not all(payload.get(marker) is not None for marker in markers):
+                raise ValueError("malformed World canonical identity markers")
+            if (
+                payload["canonical_tenant_id"] != tenant_id
+                or payload["canonical_project_id"] != project_id
+            ):
+                raise ValueError("World canonical identity scope mismatch")
+
+    def _canonical_namespace(self, tenant_id: str, project_id: str) -> str:
+        scope_hash = hashlib.sha256(
+            f"{tenant_id}\0{project_id}".encode("utf-8")
+        ).hexdigest()
+        task_hash = hashlib.sha256(self._task_id.encode("utf-8")).hexdigest()
+        return f"canonical:world:{task_hash}:{scope_hash}"
+
+    @staticmethod
+    def _canonical_physical_id(
+        fact_id: str, tenant_id: str, project_id: str
+    ) -> str:
+        scope_hash = hashlib.sha256(
+            f"{tenant_id}\0{project_id}".encode("utf-8")
+        ).hexdigest()
+        return f"canonical:{scope_hash}:{fact_id}"
+
+    def list_unscoped_facts(self) -> list[dict]:
+        return [
+            fact.to_dict()
+            for fact in self._facts.values()
+            if all(value is None for value in self._canonical_marker_values(fact))
+        ]
+
+    @staticmethod
+    def _canonical_marker_values(fact: WorldFact) -> tuple[object, ...]:
+        return (
+            fact.canonical_tenant_id,
+            fact.canonical_project_id,
+            fact.stream_position,
+            fact.commit_id,
+            fact.revision_id,
+            fact.projection_event_id,
+        )
+
+    def list_malformed_projection_facts(self) -> list[dict]:
+        return [
+            fact.to_dict()
+            for fact in self._facts.values()
+            if any(value is not None for value in self._canonical_marker_values(fact))
+            and not all(value is not None for value in self._canonical_marker_values(fact))
+        ]
+
+    def clear_unscoped_facts(self) -> int:
+        ids = [
+            fact_id
+            for fact_id, fact in self._facts.items()
+            if all(value is None for value in self._canonical_marker_values(fact))
+        ]
+        for fact_id in ids:
+            del self._facts[fact_id]
+        if ids:
+            self._save()
+        return len(ids)
+
     def verify_facts(
         self,
         potential_facts: list[dict],
@@ -264,9 +489,13 @@ class WorldStateManager:
 
         if mode == "both" and uncertain and self._llm:
             llm_verified = self._llm_verify(uncertain)
+            fact_stats.llm_verified += len(llm_verified)
+            fact_stats.llm_rejected += len(uncertain) - len(llm_verified)
             verified += llm_verified
         elif mode == "llm" and self._llm:
             verified = self._llm_verify(potential_facts)
+            fact_stats.llm_verified += len(verified)
+            fact_stats.llm_rejected += len(potential_facts) - len(verified)
 
         return verified
 
@@ -277,12 +506,17 @@ class WorldStateManager:
         top_k: int = 8,
     ) -> list[dict]:
         """检索与当前场景最相关的事实。按关键词交集 + recency 排序。"""
+        legacy_facts = [
+            fact
+            for fact in self._facts.values()
+            if all(value is None for value in self._canonical_marker_values(fact))
+        ]
         if not keywords:
-            return [f.to_dict() for f in self._facts.values()][:top_k]
+            return [f.to_dict() for f in legacy_facts][:top_k]
 
         keyword_set = set(k.lower() for k in keywords)
         scored = []
-        for wf in self._facts.values():
+        for wf in legacy_facts:
             score = 0
             fact_lower = wf.fact.lower()
             for kw in keyword_set:
@@ -301,7 +535,11 @@ class WorldStateManager:
         return [wf.to_dict() for _, wf in scored[:top_k]]
 
     def get_all_facts(self) -> list[dict]:
-        return [f.to_dict() for f in self._facts.values()]
+        return [
+            fact.to_dict()
+            for fact in self._facts.values()
+            if all(value is None for value in self._canonical_marker_values(fact))
+        ]
 
     def get_contradictions(self) -> list[dict]:
         return list(self._contradictions)
@@ -357,7 +595,7 @@ class WorldStateManager:
                 f_names = [f"{f['name']}({f.get('type','')})" for f in active_factions[:6]]
                 active_parts.append(f"【势力】{', '.join(f_names)}")
         except Exception:
-            pass
+            logger.warning(f"[{self._task_id[:8]}] 势力上下文构建失败，跳过", exc_info=True)
 
         active_block = "\n".join(active_parts) if active_parts else "（无活跃元素）"
 
@@ -409,11 +647,15 @@ class WorldStateManager:
             common = new_entities & old_entities
             if common and wf.source_section != source_section:
                 # 有共同实体且在不同节 → 调用 LLM 精判
+                fact_stats.contradictions_detected += 1
                 if self._llm:
-                    return self._llm_detect_contradiction(
+                    result = self._llm_detect_contradiction(
                         {"category": category, "fact": fact},
                         wf,
                     )
+                    if result:
+                        fact_stats.contradictions_confirmed += 1
+                    return result
                 # 无 LLM 时保守处理：有交集即标记
                 return wf.to_dict()
         return None
@@ -490,12 +732,26 @@ class WorldStateManager:
             if isinstance(result, dict) and result.get("contradiction"):
                 return old_wf.to_dict()
         except Exception:
-            pass
+            logger.warning(f"[{self._task_id[:8]}] 矛盾检测 LLM 调用失败", exc_info=True)
         return None
 
     def serialize(self) -> dict:
         return {
-            "facts": [f.to_dict() for f in self._facts.values()],
+            "facts": [
+                fact.to_dict()
+                for fact in self._facts.values()
+                if all(
+                    value is None
+                    for value in self._canonical_marker_values(fact)
+                )
+            ],
+            "contradictions": self._contradictions,
+            "active_warnings": self._active_warnings,
+        }
+
+    def _serialize_storage(self) -> dict:
+        return {
+            "facts": [fact.to_dict() for fact in self._facts.values()],
             "contradictions": self._contradictions,
             "active_warnings": self._active_warnings,
         }
@@ -504,7 +760,7 @@ class WorldStateManager:
 
     def _save(self) -> None:
         if self._bb:
-            self._bb.set(self._task_id, "world_state", self.serialize())
+            self._bb.set(self._task_id, "world_state", self._serialize_storage())
 
     def _load(self) -> None:
         if not self._bb:
@@ -518,7 +774,17 @@ class WorldStateManager:
             data = raw if isinstance(raw, dict) else {}
             for fd in data.get("facts", []):
                 wf = WorldFact.from_dict(fd)
-                self._facts[wf.fact_id] = wf
+                physical_id = (
+                    self._canonical_physical_id(
+                        wf.fact_id,
+                        wf.canonical_tenant_id,
+                        wf.canonical_project_id,
+                    )
+                    if wf.canonical_tenant_id is not None
+                    and wf.canonical_project_id is not None
+                    else wf.fact_id
+                )
+                self._facts[physical_id] = wf
             self._contradictions = data.get("contradictions", [])
             self._active_warnings = data.get("active_warnings", [])
         except (json.JSONDecodeError, TypeError, KeyError):

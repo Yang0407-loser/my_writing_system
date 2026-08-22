@@ -32,7 +32,9 @@ def list_items(task_id: str = Query(""), owner: str = Query("")):
     if owner:
         items = im.get_character_inventory(owner)
         return {"items": items, "total": len(items)}
-    # 暂不支持全量查询，返回空
+    if task_id:
+        items = im.list_items(task_id)
+        return {"items": items, "total": len(items)}
     return {"items": [], "total": 0}
 
 
