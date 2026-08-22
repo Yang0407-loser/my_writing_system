@@ -1,5 +1,5 @@
 import { createApp, ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import * as API from './api.js?v=20260822b';
+import * as API from './api.js?v=20260822c';
 import * as OT from './outline-tree.js';
 import { countCjk, genId, subtreeWords, flatTree, treeToFlat, flatToTree, findParentAndIndex } from './utils.js';
 import { connectionStateFromStatus } from './runtime-status.mjs?v=20260815a';

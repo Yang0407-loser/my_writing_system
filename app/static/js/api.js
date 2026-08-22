@@ -1,74 +1,143 @@
 const BASE = window.location.origin;
 let _apiKey = '';
 const DEFAULT_TIMEOUT_MS = 120000;
+const DEFAULT_RETRIES = 0;
+const RETRYABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 export function setApiKey(k) { _apiKey = k || ''; }
 
 export class ApiError extends Error {
-  constructor(message, { status=0, detail=null, retryable=false, url='' }={}) {
+  constructor(message, { status=0, detail=null, retryable=false, url='', code='', fields=null, requestId='', retryAfter=null, cancelled=false, timedOut=false }={}) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.detail = detail;
     this.retryable = retryable;
     this.url = url;
+    this.code = code || '';
+    this.fields = fields || null;
+    this.requestId = requestId || '';
+    this.retryAfter = retryAfter;
+    this.cancelled = cancelled;
+    this.timedOut = timedOut;
   }
 }
 
 function _hdrs(opts) {
   const h = { ...(opts.headers || {}) };
   if (_apiKey) h['X-API-Key'] = _apiKey;
+  if (!h['X-Request-ID']) {
+    h['X-Request-ID'] = typeof crypto?.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `writer-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
   return h;
+}
+
+function _header(response, name) {
+  return response.headers?.get?.(name) || '';
+}
+
+function _errorPayload(payload) {
+  if (!payload || typeof payload !== 'object') return {detail: payload, code: '', fields: null};
+  const raw = payload.detail ?? payload.error ?? payload;
+  const detail = raw;
+  const message = raw && typeof raw === 'object' && 'message' in raw ? raw.message : raw;
+  const code = payload.code || (raw && typeof raw === 'object' ? raw.code : '') || '';
+  const fields = payload.fields || (raw && typeof raw === 'object' ? raw.fields : null) || null;
+  return {detail, message, code, fields};
+}
+
+function _retryDelay(attempt, retryAfter, baseDelay) {
+  const serverDelay = Number(retryAfter);
+  if (Number.isFinite(serverDelay) && serverDelay >= 0) return serverDelay * 1000;
+  return Math.min(baseDelay * (2 ** attempt), 5000);
+}
+
+function _sleep(ms, signal) {
+  if (!ms) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    let timer = setTimeout(done, ms);
+    function done() {
+      if (signal) signal.removeEventListener('abort', abort);
+      resolve();
+    }
+    if (!signal) return;
+    const abort = () => { clearTimeout(timer); signal.removeEventListener('abort', abort); reject(new DOMException('aborted', 'AbortError')); };
+    if (signal.aborted) abort();
+    else signal.addEventListener('abort', abort, {once:true});
+  });
 }
 
 async function req(url, opts={}) {
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const controller = new AbortController();
-  const timer = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  const method = String(opts.method || 'GET').toUpperCase();
+  const retries = Math.max(0, Number(opts.retries ?? (RETRYABLE_METHODS.has(method) ? DEFAULT_RETRIES : 0)));
+  const retryDelayMs = Math.max(0, Number(opts.retryDelayMs ?? 250));
+  const retryOn = opts.retryOn || ((error) => error?.retryable === true);
   const externalSignal = opts.signal;
-  const abortFromExternal = () => controller.abort();
-  if (externalSignal) {
-    if (externalSignal.aborted) controller.abort();
-    else externalSignal.addEventListener('abort', abortFromExternal, {once:true});
-  }
-  const fetchOpts = {...opts, headers:_hdrs(opts), signal:controller.signal};
-  delete fetchOpts.timeoutMs;
-  try {
-    const r = await fetch(BASE + url, fetchOpts);
-    const contentType = r.headers.get('content-type') || '';
-    let payload = null;
-    if (r.status !== 204) {
-      if (contentType.includes('application/json')) {
-        payload = await r.json();
-      } else {
-        payload = await r.text();
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = timeoutMs > 0 ? setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs) : null;
+    const abortFromExternal = () => controller.abort();
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener('abort', abortFromExternal, {once:true});
+    }
+    const fetchOpts = {...opts, method, headers:_hdrs(opts), signal:controller.signal};
+    delete fetchOpts.timeoutMs; delete fetchOpts.retries; delete fetchOpts.retryDelayMs; delete fetchOpts.retryOn;
+    try {
+      const r = await fetch(BASE + url, fetchOpts);
+      const contentType = _header(r, 'content-type');
+      let payload = null;
+      if (r.status !== 204) {
+        if (contentType.includes('application/json')) payload = await r.json();
+        else payload = await r.text();
       }
+      if (!r.ok) {
+        const parsed = _errorPayload(payload);
+        const message = typeof parsed.message === 'string'
+          ? parsed.message
+          : parsed.message ? JSON.stringify(parsed.message) : `请求失败 (${r.status})`;
+        throw new ApiError(message, {
+          status:r.status,
+          detail:parsed.detail,
+          code:parsed.code,
+          fields:parsed.fields,
+          retryable:r.status === 408 || r.status === 425 || r.status === 429 || r.status >= 500,
+          retryAfter:_header(r, 'retry-after'),
+          requestId:_header(r, 'x-request-id') || _header(r, 'x-correlation-id'),
+          url,
+        });
+      }
+      return payload;
+    } catch (error) {
+      if (error instanceof ApiError) lastError = error;
+      else if (error?.name === 'AbortError') {
+        const cancelled = Boolean(externalSignal?.aborted) && !timedOut;
+        const knownTimeout = timedOut;
+        lastError = new ApiError(cancelled ? '请求已取消' : (knownTimeout ? '请求超时' : '请求超时或已取消'), {
+          retryable:!cancelled, cancelled, timedOut:knownTimeout, url,
+        });
+      } else {
+        lastError = new ApiError(error?.message || '网络连接失败', {retryable:true, url});
+      }
+    } finally {
+      if (timer) clearTimeout(timer);
+      if (externalSignal) externalSignal.removeEventListener('abort', abortFromExternal);
     }
-    if (!r.ok) {
-      const detail = payload && typeof payload === 'object' ? payload.detail : payload;
-      const message = typeof detail === 'string'
-        ? detail
-        : detail ? JSON.stringify(detail) : `请求失败 (${r.status})`;
-      throw new ApiError(message, {
-        status:r.status,
-        detail,
-        retryable:r.status === 429 || r.status >= 500,
-        url,
-      });
+    if (!lastError || attempt >= retries || !retryOn(lastError, attempt)) throw lastError;
+    try { await _sleep(_retryDelay(attempt, lastError.retryAfter, retryDelayMs), externalSignal); }
+    catch (error) {
+      throw new ApiError('请求已取消', {retryable:false, cancelled:true, url});
     }
-    return payload;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    if (error?.name === 'AbortError') {
-      throw new ApiError('请求超时或已取消', {retryable:true, url});
-    }
-    throw new ApiError(error?.message || '网络连接失败', {retryable:true, url});
-  } finally {
-    if (timer) clearTimeout(timer);
-    if (externalSignal) externalSignal.removeEventListener('abort', abortFromExternal);
   }
+  throw lastError || new ApiError('请求失败', {url});
 }
-export { req };
+export { req, req as request };
 function post(url,body){return req(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
 function put(url,body){return req(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
 
