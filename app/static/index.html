@@ -4,37 +4,38 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>多智能体写作系统 v0.9</title>
 <script type="importmap">{"imports":{"vue":"/static/vendor/vue.esm-browser.prod.js"}}</script>
-<link rel="stylesheet" href="/static/styles/base.css?v=20260815b">
+<link rel="stylesheet" href="/static/styles/base.css?v=20260822a">
 </head>
 <body>
 <div id="app">
 
-  <div class="header">
-    <h1>多智能体写作系统 <span class="badge draft">v0.9</span></h1>
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <button class="tb-btn tb-purple" @click="showCards=true;wizardStep=0;currentStep=''">🎴 抽卡</button>
-      <button class="tb-btn tb-blue" @click="showInspiration=true;loadInspirations()">💡 灵感</button>
-      <button class="tb-btn tb-green" @click="showStyle=true">🎨 风格</button>
-      <button class="tb-btn tb-cyan" @click="openCharModal(null)">👤 角色</button>
-      <button class="tb-btn tb-yellow" @click="showRulesModal=true">📋 规则</button>
-      <button class="tb-btn tb-orange" @click="showForeshadow=true">🔮 伏笔</button>
-      <button class="tb-btn tb-teal" @click="showDialogue=true">💬 对话</button>
-      <button class="tb-btn tb-pink" @click="showReview=true;loadReviewResults()">✅ 审阅</button>
-      <button class="tb-btn tb-red" @click="showMap=true;loadMap()">🗺 地图</button>
-      <button class="tb-btn tb-gold" @click="showFactions=true;loadFactions()">🏛 势力</button>
-      <button class="tb-btn tb-pink" @click="openRelationForm(null)">💞 关系</button>
-	      <button class="tb-btn tb-indigo" @click="showSubplot=true;loadSubplots()">📖 支线</button>
-      <button class="tb-btn tb-lime" @click="showItems=true;loadItems()">🎒 物品</button>
-      <button class="tb-btn tb-amber" @click="showTimeline=true;loadTimeline()">📊 经历</button>
-      <button class="tb-btn tb-slate" @click="showAIDetect=true;autoFillDetectText()">🔍 AI检测</button>
-      <span style="width:1px;height:20px;background:var(--border)"></span>
-      <button class="btn btn-primary btn-sm" @click="resetAll">新写作</button>
-          <button class="btn btn-outline btn-sm" @click="showHistory=true;loadHistory()" style="margin-left:4px">📜 历史</button>
+  <header class="app-command-bar">
+    <div class="command-bar-brand">
+      <span class="command-bar-kicker">NARRATIVE OS</span>
+      <h1>写作工作台 <span class="badge draft">v0.9</span></h1>
     </div>
-  </div>
+    <div class="command-bar-project">
+      <strong>{{topic||'未命名项目'}}</strong>
+      <span>{{activeWorkspaceMeta.label}} · {{saveStatusText}}</span>
+    </div>
+    <div class="command-bar-actions">
+      <button class="btn btn-outline btn-sm" @click="resetAll">新写作</button>
+      <button class="btn btn-primary btn-sm" @click="showToolShelf=!showToolShelf" :aria-expanded="showToolShelf" aria-controls="tool-shelf">{{showToolShelf?'收起工具':'打开工具'}}</button>
+    </div>
+  </header>
+
+  <div v-if="showToolShelf" class="tool-shelf-backdrop" @click="showToolShelf=false"></div>
+  <aside v-if="showToolShelf" id="tool-shelf" class="tool-shelf" aria-label="工作台工具" @keydown.esc="showToolShelf=false">
+    <header><div><strong>项目工具</strong><span>低频操作集中在这里，工作区保持安静。</span></div><button class="btn btn-outline btn-sm" @click="showToolShelf=false" aria-label="关闭工具架">关闭</button></header>
+    <div class="tool-shelf-groups">
+      <section class="tool-shelf-group" aria-label="创作工具"><h2>创作</h2><div><button @click="showCards=true;wizardStep=0;currentStep='';showToolShelf=false">抽卡</button><button @click="showInspiration=true;loadInspirations();showToolShelf=false">灵感</button><button @click="showStyle=true;showToolShelf=false">风格</button><button @click="showDialogue=true;showToolShelf=false">创作讨论</button></div></section>
+      <section class="tool-shelf-group" aria-label="世界工具"><h2>世界</h2><div><button @click="openCharModal(null);showToolShelf=false">角色</button><button @click="showRulesModal=true;showToolShelf=false">规则</button><button @click="showForeshadow=true;showToolShelf=false">伏笔</button><button @click="showMap=true;loadMap();showToolShelf=false">地图</button><button @click="showFactions=true;loadFactions();showToolShelf=false">势力</button><button @click="openRelationForm(null);showToolShelf=false">关系</button><button @click="showSubplot=true;loadSubplots();showToolShelf=false">支线</button><button @click="showItems=true;loadItems();showToolShelf=false">物品</button><button @click="showTimeline=true;loadTimeline();showToolShelf=false">经历</button></div></section>
+      <section class="tool-shelf-group" aria-label="质量工具"><h2>质量</h2><div><button @click="showReview=true;loadReviewResults();showToolShelf=false">审阅</button><button @click="showAIDetect=true;autoFillDetectText();showToolShelf=false">AI 痕迹</button><button @click="showHistory=true;loadHistory();showToolShelf=false">写作历史</button><button @click="switchWorkspace('analysis')">分析工作区</button><button @click="switchWorkspace('projects')">项目与导出</button></div></section>
+    </div>
+  </aside>
 
   <nav class="workspace-tabs" aria-label="写作工作区">
-    <button v-for="tab in [{id:'write',label:'写作'},{id:'outline',label:'大纲'},{id:'world',label:'世界'},{id:'analysis',label:'分析'},{id:'projects',label:'项目'}]" :key="tab.id" class="workspace-tab" :class="{active:activeWorkspace===tab.id}" @click="switchWorkspace(tab.id)">{{tab.label}}</button>
+    <button v-for="tab in workspaceTabs" :key="tab.id" class="workspace-tab" :class="{active:activeWorkspace===tab.id}" @click="switchWorkspace(tab.id)">{{tab.label}}</button>
     <span class="workspace-anchor" v-if="workspaceTaskId" :title="workspaceTaskId">项目 {{workspaceTaskId.slice(0,8)}}</span>
   </nav>
 
@@ -242,8 +243,14 @@
 
     <!-- RIGHT PANEL: Quick view only -->
     <aside class="panel panel-right" :class="{collapsed:sideCollapsed.right}" :style="{width:sideCollapsed.right?'36px':rightPanelWidth+'px'}">
-      <div class="panel-header"><h3 v-if="!sideCollapsed.right">上下文面板</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.right=!sideCollapsed.right" :title="sideCollapsed.right?'展开右侧栏':'收起右侧栏'">{{sideCollapsed.right?'◀':'▶'}}</button></div>
+      <div class="panel-header"><h3 v-if="!sideCollapsed.right">{{activeWorkspaceMeta.label}}检查器</h3><button class="btn btn-outline btn-sm panel-toggle" @click="sideCollapsed.right=!sideCollapsed.right" :title="sideCollapsed.right?'展开右侧栏':'收起右侧栏'">{{sideCollapsed.right?'◀':'▶'}}</button></div>
       <div class="panel-body" style="overflow-y:auto">
+        <section class="inspector-summary">
+          <span class="inspector-eyebrow">当前工作区</span>
+          <strong>{{activeWorkspaceMeta.label}}</strong>
+          <p>{{activeWorkspaceMeta.description}}</p>
+          <dl><div><dt>保存</dt><dd>{{saveStatusText}}</dd></div><div><dt>同步</dt><dd>{{projectionStatusText||'等待任务'}}</dd></div><div><dt>选中节点</dt><dd>{{selectedOutlineNode?.title||'未选择'}}</dd></div></dl>
+        </section>
         <div class="side-section">
           <div class="side-section-header" @click="sideOpen.chars=!sideOpen.chars"><span class="arrow" :style="{transform:sideOpen.chars?'rotate(0)':'rotate(-90deg)'}">▼</span> 已选角色</div>
           <div class="side-section-body" v-if="sideOpen.chars">
@@ -1226,7 +1233,7 @@
 </div>
 
 <script type="module">
-import { createWriterApp } from '/static/js/main.js?v=20260815c';
+import { createWriterApp } from '/static/js/main.js?v=20260822a';
 createWriterApp().mount('#app');
 </script>
 </body>

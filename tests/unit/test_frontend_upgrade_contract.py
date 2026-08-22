@@ -44,7 +44,7 @@ def test_loaded_frontend_exposes_connection_retry_control():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
 
-    assert "'/static/js/main.js?v=20260815c'" in template
+    assert "'/static/js/main.js?v=20260822a'" in template
     assert 'v-if="connectionRetryAvailable"' in template
     assert '@click="retryConnection"' in template
     assert 'createTaskConnectionController' in main_js
@@ -99,8 +99,8 @@ def test_loaded_frontend_cleans_up_lifecycle_and_uses_current_release_keys():
     template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
     main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
 
-    assert "'/static/js/main.js?v=20260815c'" in template
-    assert 'href="/static/styles/base.css?v=20260815b"' in template
+    assert "'/static/js/main.js?v=20260822a'" in template
+    assert 'href="/static/styles/base.css?v=20260822a"' in template
     assert "import * as API from './api.js?v=20260815b';" in main_js
     assert "from './task-restoration-stream.mjs?v=20260815c';" in main_js
     assert "onUnmounted" in main_js
@@ -145,3 +145,29 @@ def test_loaded_frontend_does_not_resume_mount_work_after_unmount():
     assert mounted.index("if(!lifecycleActive||!isCurrentTaskRestoration(generation))return;") < mounted.index("void loadCharacters()")
     unmounted = main_js[main_js.index("onUnmounted(") :]
     assert unmounted.index("lifecycleActive=false;") < unmounted.index("stopPolling()")
+
+
+def test_loaded_frontend_uses_a_compact_command_bar_and_dynamic_inspector():
+    template = (ROOT / "app/static/index.html").read_text(encoding="utf-8")
+    main_js = (ROOT / "app/static/js/main.js").read_text(encoding="utf-8")
+    styles = (ROOT / "app/static/styles/base.css").read_text(encoding="utf-8")
+
+    header = template[template.index('<header class="app-command-bar">') : template.index("</header>")]
+    assert 'class="command-bar-project"' in header
+    assert '@click="showToolShelf=!showToolShelf"' in header
+    assert ':aria-expanded="showToolShelf"' in header
+    assert "tb-purple" not in header
+    assert 'class="tool-shelf"' in template
+    assert 'aria-label="创作工具"' in template
+    assert 'aria-label="世界工具"' in template
+    assert 'aria-label="质量工具"' in template
+    assert 'showHistory=true;loadHistory();showToolShelf=false' in template
+    assert "{{activeWorkspaceMeta.label}}检查器" in template
+    assert "{{activeWorkspaceMeta.description}}" in template
+
+    assert "from './workspace-shell.mjs" in main_js
+    assert "const workspaceTabs = WORKSPACE_DEFINITIONS;" in main_js
+    assert "const activeWorkspaceMeta = computed(()=>workspaceMeta(activeWorkspace.value));" in main_js
+    assert "activeWorkspace:activeWorkspace.value" in main_js
+    assert "activeWorkspace.value=normalizeWorkspaceId(s.activeWorkspace)" in main_js
+    assert ".main > .panel-center { order: -1; min-width: 100%; }" in styles
