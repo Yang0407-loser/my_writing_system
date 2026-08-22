@@ -10,6 +10,12 @@ import {
   runDurableHydration,
 } from './task-restoration-stream.mjs?v=20260815c';
 import { buildRestoredDraftBlocks, resolveRestorationSnapshot } from './task-restoration-state.mjs?v=20260815a';
+import {
+  DEFAULT_WORKSPACE_ID,
+  WORKSPACE_DEFINITIONS,
+  normalizeWorkspaceId,
+  workspaceMeta,
+} from './workspace-shell.mjs?v=20260822a';
 
 const FLOW_NODES = [
   { id:'style', label:'风格分析', icon:'🎨' }, { id:'outline', label:'大纲生成', icon:'📋' },
@@ -112,7 +118,9 @@ export function createWriterApp() {
       const sideCollapsed = ref({left:false, right:false});
       const leftPanelWidth = ref(280); const rightPanelWidth = ref(280); const resizing = ref(null);
       const showTimeline = ref(false); const showAIDetect = ref(false); const showOutlineEval = ref(false); const showHistory = ref(false);
-      const activeWorkspace = ref('write');
+      const workspaceTabs = WORKSPACE_DEFINITIONS;
+      const activeWorkspace = ref(DEFAULT_WORKSPACE_ID);
+      const showToolShelf = ref(false);
       const showOutlineVersions = ref(false); const outlineVersions = ref([]);
       const mapNodes = ref([]); const mapEdges = ref([]); const mapRoute = ref(null);
       const mapEdgeForm = ref({source_id:'',target_id:'',type:'road',name:'',travel_time:'',distance:''});
@@ -187,6 +195,8 @@ export function createWriterApp() {
         (total, chapter) => total + (chapter.exclusions || []).length, 0
       ));
       const flatTreeItems = computed(() => flatTree(outline.value));
+      const activeWorkspaceMeta = computed(()=>workspaceMeta(activeWorkspace.value));
+      const selectedOutlineNode = computed(()=>flatTreeItems.value.find(item=>item.node.id===selectedNodeId.value)?.node||null);
       const showOutlineDetail = ref(false);
       function openOutlinePreview() { showOutlineDetail.value = true; }
       const outlinePreviewText = computed(() => {
@@ -1519,11 +1529,11 @@ export function createWriterApp() {
       async function runPostWriteAnalysis(){if(!taskId.value){toast('请先打开有正文的任务','error');return}analysisLoading.value='post';try{postWriteAnalysis.value=await API.analyzeTask(taskId.value)}catch(e){toast(errorText(e,'写后分析失败'),'error')}finally{analysisLoading.value=''}}
       async function loadStateFrame(){if(!taskId.value){toast('请先打开任务','error');return}analysisLoading.value='state';try{stateFrameResult.value=await API.getStateFrame(taskId.value,stateFrameSection.value,stateFrameSubsection.value)}catch(e){toast(errorText(e,'StateFrame 加载失败'),'error')}finally{analysisLoading.value=''}}
       function toggleRouteNode(nodeId){const path=mapRouteForm.value.path_nodes||[];const index=path.indexOf(nodeId);if(index>=0)path.splice(index,1);else path.push(nodeId)}
-      async function switchWorkspace(name){activeWorkspace.value=name;if(name==='world'){await Promise.all([loadMap(),loadItems(),loadRelations(),loadFactions(),loadSubplots()])}else if(name==='analysis'&&taskId.value){await Promise.all([loadSubplotHeatMap(),loadEventGraph()])}else if(name==='projects'){await Promise.all([loadProjects(),loadExportHistory()])}}
+      async function switchWorkspace(name){const target=normalizeWorkspaceId(name);activeWorkspace.value=target;showToolShelf.value=false;saveState();if(target==='world'){await Promise.all([loadMap(),loadItems(),loadRelations(),loadFactions(),loadSubplots()])}else if(target==='analysis'&&taskId.value){await Promise.all([loadSubplotHeatMap(),loadEventGraph()])}else if(target==='projects'){await Promise.all([loadProjects(),loadExportHistory()])}}
 
       // ═══ Persistence ═══
-      function saveState(){try{const s={taskId:taskId.value,workspaceTaskId:workspaceTaskId.value,topic:topic.value,worldSetting:worldSetting.value,storySynopsis:storySynopsis.value,referenceText:referenceText.value,styleProfile:styleProfile.value,analyzedStyleBrief:analyzedStyleBrief.value,outline:outline.value,globalWordLimit:globalWordLimit.value,mode:mode.value,selectedCharIds:selectedCharIds.value,taskDone:taskDone.value,draftSnap:draftBlocks.value.map(b=>({...b,text:(b.text||'').slice(0,2000)})),savedAt:Date.now()};localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
-      function restoreSession(){try{const r=localStorage.getItem(PK);if(!r)return false;const s=JSON.parse(r);if(Date.now()-(s.savedAt||0)>7*24*60*60*1000){localStorage.removeItem(PK);return false}if(s.taskId)taskId.value=s.taskId;if(s.workspaceTaskId)workspaceTaskId.value=s.workspaceTaskId;else if(s.taskId)workspaceTaskId.value=s.taskId;if(s.topic)topic.value=s.topic;if(s.worldSetting)worldSetting.value=s.worldSetting;if(s.storySynopsis)storySynopsis.value=s.storySynopsis;if(s.referenceText)referenceText.value=s.referenceText;if(s.styleProfile)styleProfile.value=s.styleProfile;if(s.analyzedStyleBrief)analyzedStyleBrief.value=s.analyzedStyleBrief;if(s.outline?.length)outline.value=s.outline;if(s.globalWordLimit)globalWordLimit.value=s.globalWordLimit;if(s.mode)mode.value=s.mode;if(s.selectedCharIds)selectedCharIds.value=s.selectedCharIds;if(s.draftSnap?.length)draftBlocks.value=s.draftSnap;taskDone.value=!!s.taskDone;return!!s.taskId}catch(e){return false}}
+      function saveState(){try{const s={taskId:taskId.value,workspaceTaskId:workspaceTaskId.value,activeWorkspace:activeWorkspace.value,topic:topic.value,worldSetting:worldSetting.value,storySynopsis:storySynopsis.value,referenceText:referenceText.value,styleProfile:styleProfile.value,analyzedStyleBrief:analyzedStyleBrief.value,outline:outline.value,globalWordLimit:globalWordLimit.value,mode:mode.value,selectedCharIds:selectedCharIds.value,taskDone:taskDone.value,draftSnap:draftBlocks.value.map(b=>({...b,text:(b.text||'').slice(0,2000)})),savedAt:Date.now()};localStorage.setItem(PK,JSON.stringify(s))}catch(e){}}
+      function restoreSession(){try{const r=localStorage.getItem(PK);if(!r)return false;const s=JSON.parse(r);if(Date.now()-(s.savedAt||0)>7*24*60*60*1000){localStorage.removeItem(PK);return false}activeWorkspace.value=normalizeWorkspaceId(s.activeWorkspace);if(s.taskId)taskId.value=s.taskId;if(s.workspaceTaskId)workspaceTaskId.value=s.workspaceTaskId;else if(s.taskId)workspaceTaskId.value=s.taskId;if(s.topic)topic.value=s.topic;if(s.worldSetting)worldSetting.value=s.worldSetting;if(s.storySynopsis)storySynopsis.value=s.storySynopsis;if(s.referenceText)referenceText.value=s.referenceText;if(s.styleProfile)styleProfile.value=s.styleProfile;if(s.analyzedStyleBrief)analyzedStyleBrief.value=s.analyzedStyleBrief;if(s.outline?.length)outline.value=s.outline;if(s.globalWordLimit)globalWordLimit.value=s.globalWordLimit;if(s.mode)mode.value=s.mode;if(s.selectedCharIds)selectedCharIds.value=s.selectedCharIds;if(s.draftSnap?.length)draftBlocks.value=s.draftSnap;taskDone.value=!!s.taskDone;return!!s.taskId}catch(e){return false}}
       function resetAll(){
         stopPolling();
         // 先清空 reactive 状态，beforeunload 即使触发也只保存空数据
@@ -1580,7 +1590,7 @@ export function createWriterApp() {
         showRulesModal,showInspiration,showStyle,showForeshadow,showFSForm,fsForm,
         editingRule,ruleForm,filteredInspirations,inspCat,inspCategories,
         saveRuleFn,deleteRuleFn,exportRules,importRulesFile,loadInspirations,useInspiration,createFSFn,
-        activeWorkspace,switchWorkspace,showMap,showSubplot,showItems,showTimeline,showAIDetect,showOutlineEval,showFactions,showHistory,showOutlineVersions,outlineVersions,showMapForm,mapForm,showItemForm,itemForm,showSubplotForm,subplotForm,editingSubplot,selectedSubplot,factionsList,factionForm,editingFaction,sideCollapsed,leftPanelWidth,rightPanelWidth,resizing,startResize,
+         workspaceTabs,activeWorkspace,activeWorkspaceMeta,selectedOutlineNode,showToolShelf,switchWorkspace,showMap,showSubplot,showItems,showTimeline,showAIDetect,showOutlineEval,showFactions,showHistory,showOutlineVersions,outlineVersions,showMapForm,mapForm,showItemForm,itemForm,showSubplotForm,subplotForm,editingSubplot,selectedSubplot,factionsList,factionForm,editingFaction,sideCollapsed,leftPanelWidth,rightPanelWidth,resizing,startResize,
         mapNodes,mapEdges,mapRoute,mapEdgeForm,mapRouteForm,createMapEdgeFn,saveMapRouteFn,toggleRouteNode,subplots,subplotHeatMap,loadSubplotHeatMap,itemsList,itemTransactionForm,recordItemTransactionFn,timelineEvents,detectText,detecting,detectResult,detectChapter,evalRange,evalLoading,evalResult,historyList,historyLoading,selectedHistory,taskContent,taskContentLoading,
         projects,projectsLoading,loadProjects,openProject,archiveProjectFn,exportHistory,loadExportHistory,downloadExport,analysisTab,analysisLoading,continuityResult,eventGraphResult,postWriteAnalysis,stateFrameResult,stateFrameSection,stateFrameSubsection,runContinuityAnalysis,loadEventGraph,runPostWriteAnalysis,loadStateFrame,
         loadMap,loadSubplots,loadItems,loadTimeline,loadHistory,loadOutlineVersions,restoreOutlineVersion,createMapNodeFn,createItemFn,saveSubplotFn,deleteSubplotFn,autoFillDetectText,autoFillDetectByChapter,runAIDetect,runOutlineEval,loadFactions,saveFactionFn,deleteFactionFn,resumeTask,deleteTaskFn,
