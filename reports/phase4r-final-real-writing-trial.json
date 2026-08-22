@@ -1,0 +1,59 @@
+{
+  "schema_version": "phase4r-final-field-trial-public-result-v1",
+  "status": "completed_phase4r_closed",
+  "review_provenance": "user_real_writing_acceptance",
+  "scene_count": 4,
+  "main_writer_calls": 8,
+  "arms": [
+    "legacy_full",
+    "legacy_full_scene_spec"
+  ],
+  "b_not_worse_count": 3,
+  "positive_effect_scene_count": 3,
+  "summary": {
+    "legacy_full": {
+      "goal_complete_count": 2,
+      "error_count": 10,
+      "errors": {
+        "hard_violation": 1,
+        "relationship_violation": 1,
+        "continuity_error": 3,
+        "fact_error": 3,
+        "event_order_error": 1,
+        "crossed_stop_boundary": 1
+      },
+      "edit_cost_status": "not_measured"
+    },
+    "legacy_full_scene_spec": {
+      "goal_complete_count": 3,
+      "error_count": 4,
+      "errors": {
+        "hard_violation": 0,
+        "relationship_violation": 0,
+        "continuity_error": 1,
+        "fact_error": 2,
+        "event_order_error": 1,
+        "crossed_stop_boundary": 0
+      },
+      "edit_cost_status": "not_measured"
+    }
+  },
+  "gates": {
+    "b_not_worse_at_least_3_of_4": true,
+    "b_no_new_hard_violations": true,
+    "b_no_new_relationship_violations": true,
+    "b_no_new_fact_errors": true,
+    "b_no_increase_in_continuity_event_order_or_boundary_errors": true,
+    "b_goal_completion_not_lower": true,
+    "positive_effect_in_at_least_2_scenes": true
+  },
+  "keep_scene_spec_route": true,
+  "decision": "retain_scene_spec_experimental_route",
+  "production_behavior_changed": false,
+  "private_prose_emitted": false,
+  "limitations": [
+    "Four consecutive real subsections support a route decision, not a claim of comprehensive production quality.",
+    "Manual edit cost was not measured and was not used as a release gate.",
+    "SceneSpec remains outside production Writer messages."
+  ]
+}

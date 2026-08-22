@@ -56,8 +56,16 @@ class CharacterStore:
         """)
         # 迁移：添加隐层字段
         for col in ("previous_life", "previous_world", "preserved_knowledge", "identity_conflict"):
-            try: self._conn.execute(f"ALTER TABLE characters ADD COLUMN {col} TEXT DEFAULT ''"); self._conn.commit()
-            except Exception: pass
+            try:
+                self._conn.execute(f"ALTER TABLE characters ADD COLUMN {col} TEXT DEFAULT ''")
+                self._conn.commit()
+            except sqlite3.OperationalError as exc:
+                if "duplicate column name" not in str(exc).lower():
+                    logger.warning(
+                        "角色表迁移失败: column=%s feature=schema_migration fallback=existing_schema",
+                        col,
+                        exc_info=True,
+                    )
         self._conn.execute("""
             CREATE TABLE IF NOT EXISTS character_traits (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

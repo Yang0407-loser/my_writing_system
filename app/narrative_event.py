@@ -34,11 +34,18 @@ class NarrativeEvent:
     urgency: str = "low"       # low|medium|high，动态紧迫度
     related_events: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    classification: str = ""
+    requiredness: str = ""
+    contract_version: str = ""
+    source_id: str = ""
+    source_hash: str = ""
+    rationale: str = ""
+    relation_metadata: dict[str, dict] = field(default_factory=dict)
 
     # ── 序列化 ──
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "event_id": self.event_id,
             "type": self.type,
             "description": self.description,
@@ -52,6 +59,17 @@ class NarrativeEvent:
             "related_events": self.related_events,
             "tags": self.tags,
         }
+        optional = {
+            "classification": self.classification,
+            "requiredness": self.requiredness,
+            "contract_version": self.contract_version,
+            "source_id": self.source_id,
+            "source_hash": self.source_hash,
+            "rationale": self.rationale,
+            "relation_metadata": self.relation_metadata,
+        }
+        data.update({key: value for key, value in optional.items() if value})
+        return data
 
     @classmethod
     def from_dict(cls, d: dict) -> "NarrativeEvent":
@@ -68,6 +86,13 @@ class NarrativeEvent:
             urgency=d.get("urgency", "low"),
             related_events=d.get("related_events", []),
             tags=d.get("tags", []),
+            classification=d.get("classification", ""),
+            requiredness=d.get("requiredness", ""),
+            contract_version=d.get("contract_version", ""),
+            source_id=d.get("source_id", ""),
+            source_hash=d.get("source_hash", ""),
+            rationale=d.get("rationale", ""),
+            relation_metadata=d.get("relation_metadata", {}),
         )
 
 
@@ -141,7 +166,7 @@ class EventGraph:
     # ── 弧线 CRUD ──
 
     def add_arc_milestone(self, description: str, section: int, subsection: int = 0,
-                          character_id: str = "", weight: int = 5) -> str:
+                          character_id: str = "", weight: int = 5, **metadata) -> str:
         """添加一个弧线里程碑事件。"""
         event = NarrativeEvent(
             event_id=str(uuid.uuid4()), type="arc_milestone",
@@ -149,10 +174,91 @@ class EventGraph:
             section=section, subsection=subsection,
             character_id=character_id, status="pending",
             weight=weight,
+            classification=metadata.get("classification", ""),
+            requiredness=metadata.get("requiredness", ""),
+            contract_version=metadata.get("contract_version", ""),
+            source_id=metadata.get("source_id", ""),
+            source_hash=metadata.get("source_hash", ""),
+            rationale=metadata.get("rationale", ""),
         )
         self._events[event.event_id] = event
         self._save()
         return event.event_id
+
+    def link_events(self, event_id1: str, event_id2: str, metadata: dict | None = None) -> None:
+        """创建双向因果关联边。"""
+        if event_id1 in self._events and event_id2 in self._events:
+            e1, e2 = self._events[event_id1], self._events[event_id2]
+            if event_id2 not in e1.related_events:
+                e1.related_events.append(event_id2)
+            if event_id1 not in e2.related_events:
+                e2.related_events.append(event_id1)
+            if metadata:
+                e1.relation_metadata[event_id2] = dict(metadata)
+                reverse = dict(metadata)
+                reverse["reverse_view"] = True
+                e2.relation_metadata[event_id1] = reverse
+            self._save()
+
+    @staticmethod
+    def _milestone_key(event: NarrativeEvent) -> tuple:
+        """Identity of a milestone across regenerations of the same arcs."""
+        return (
+            event.character_id,
+            event.section,
+            event.subsection,
+            event.description,
+        )
+
+    def reset_arc_milestones(self) -> dict:
+        """Drop every arc milestone and return a ledger of non-pending status.
+
+        Arc milestones are a pure function of the current ``character_arcs``:
+        the writing phase rebuilds them from scratch on entry.  When that phase
+        is re-entered — a Celery retry, or a resume — the planner regenerates
+        the arcs, and ``add_arc_milestone`` appends a *new* uuid for every
+        milestone.  Without clearing first, each pass leaves its own paraphrase
+        of the same beats in the graph, so ``pre_check`` hands Writer a
+        required-event list that grows once per attempt.
+
+        Content hashing does not solve this: successive planner runs word the
+        same beat differently, so the duplicates are semantic, not literal.
+        Clearing before the rebuild is what makes it idempotent.
+
+        The returned ledger lets the caller restore ``done``/``deviated`` for
+        milestones that come back verbatim, so resuming a task with unchanged
+        arcs keeps its progress.
+        """
+        ledger: dict[tuple, str] = {}
+        remaining: dict[str, NarrativeEvent] = {}
+        removed = 0
+        for event_id, event in self._events.items():
+            if event.type != "arc_milestone":
+                remaining[event_id] = event
+                continue
+            if event.status != "pending":
+                ledger[self._milestone_key(event)] = event.status
+            removed += 1
+        if removed:
+            self._events = remaining
+            self._save()
+        return {"removed": removed, "carried_status": ledger}
+
+    def restore_milestone_status(self, carried_status: dict) -> int:
+        """Re-apply progress to milestones that survived a rebuild verbatim."""
+        if not carried_status:
+            return 0
+        count = 0
+        for event in self._events.values():
+            if event.type != "arc_milestone":
+                continue
+            status = carried_status.get(self._milestone_key(event))
+            if status and event.status != status:
+                event.status = status
+                count += 1
+        if count:
+            self._save()
+        return count
 
     def update_arc_status(self, character_id: str, status: str) -> int:
         """更新指定角色的所有 pending 弧线状态。status: done|deviated。
@@ -210,6 +316,33 @@ class EventGraph:
     def query_relevant(self, section: int, subsection: int = 0) -> list[NarrativeEvent]:
         """返回当前小节的弧线事件（向后兼容）。"""
         return self.get_arc_events(section, subsection)
+
+    def get_events_by_sections(self, sections: set[int]) -> list[NarrativeEvent]:
+        """返回指定章节范围内的所有事件 (v0.9.1: RAG因果扩展)。"""
+        if 0 in sections:
+            sections = sections - {0}  # section 0 是前作引用，没有事件
+        if not sections:
+            return []
+        return [e for e in self._events.values()
+                if e.section in sections]
+
+    def expand_causal(self, events: list[NarrativeEvent]) -> list[NarrativeEvent]:
+        """对每个事件做 1-hop 因果扩展：同章节事件 + related_events 邻居。"""
+        expanded = list(events)
+        seen = {e.event_id for e in events}
+        for event in events:
+            # V1 保留旧行为；V2 只信任带来源的显式边。
+            if event.contract_version != "v2":
+                for e in self._events.values():
+                    if e.section == event.section and e.event_id not in seen:
+                        expanded.append(e)
+                        seen.add(e.event_id)
+            # related_events 显式关联（coordinator 写入边时填充）
+            for neighbor_id in event.related_events:
+                if neighbor_id in self._events and neighbor_id not in seen:
+                    expanded.append(self._events[neighbor_id])
+                    seen.add(neighbor_id)
+        return expanded
 
     # ── 持久化 ──
 

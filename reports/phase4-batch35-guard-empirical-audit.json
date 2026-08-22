@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "purpose": "Phase 4 Batch 3.5 empirical audit of ContinuityRiskGuard assumptions",
+  "new_generation_calls": 0,
+  "new_generation_blocked_reason": "tenant policy denied private workspace data transmission to api.deepseek.com",
+  "historical_real_generation_source": "reports/phase4-batch2-generation-quality-ab.json",
+  "historical_budgeted_writer_outputs_reused": 4,
+  "historical_legacy_comparators_reused": 4,
+  "model": "deepseek-v4-pro",
+  "seed_supported": false,
+  "review_provenance": "codex_assisted_review",
+  "independent_human_confirmation": false,
+  "guard_theoretical_protected_items_all_scenes": 19,
+  "guard_theoretical_protected_items_target_scenes": 8,
+  "target_scene_count": 4,
+  "empirical_net_regression_scene_count": 3,
+  "empirical_net_regression_rate": 0.75,
+  "shared_defect_not_attributable_to_broker_scene_count": 1,
+  "all_budgeted_hashes_match_batch3": true,
+  "conclusions": {
+    "supported": [
+      "the complete budgeted-broker deletion bundle was associated with measured regressions in Q4, Q6 and Q7",
+      "Q8 over-advancement occurred in both legacy and budgeted outputs and is not a net Broker regression",
+      "the any-risk-restores-full-item guard is too broad to meet the token target"
+    ],
+    "not_supported": [
+      "all 19 protected older items are necessary",
+      "each of the five guard signal classes prevents a measured regression",
+      "all whole-item selection strategies are infeasible",
+      "traceable section summaries are the only remaining architecture"
+    ]
+  },
+  "recommendation": "hold_architecture_decision_and_test_minimal_restoration_across_all_dropped_context_items_when_generation_is_permitted",
+  "production_behavior_changed": false,
+  "generated_prose_committed": false,
+  "samples": [
+    {
+      "query_index": 4,
+      "section": 17,
+      "subsection": 3,
+      "budgeted_messages_hash": "93e4e25c412012a3cbb3cc72976afd289ae3856e384f4263dca9c457f7e20a10",
+      "matches_frozen_batch3_budgeted_hash": true,
+      "budgeted_output_sha256": "8c122317ef908820383a8f25d61b002775b76c67def214401611acf96ffe06e3",
+      "legacy_output_sha256": "bb6837ac027f4e5b5f927722ff84f5d61240fe2f7685f06d88115bfaa58e72ab",
+      "budgeted_output_characters": 2672,
+      "actual_input_plus_output_tokens": 6985,
+      "restored_by_guard_item_ids": [
+        "recent:golden:S16:U3",
+        "recent:golden:S17:U1"
+      ],
+      "guard_theoretical_risk_item_count": 2,
+      "legacy_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "budgeted_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 0,
+        "fact_errors": 1
+      },
+      "budgeted_minus_legacy_issue_delta": {
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 0,
+        "fact_errors": 1
+      },
+      "goal_completion_delta": 0,
+      "empirical_net_regression": true,
+      "winner_arm": "legacy_full",
+      "short_evidence": "candidate_1 安排‘留给周野妈妈’，与已确立的母亲去世事实冲突。",
+      "review_provenance": "codex_assisted_review"
+    },
+    {
+      "query_index": 6,
+      "section": 7,
+      "subsection": 1,
+      "budgeted_messages_hash": "c40bd875d094d02d50260b51dec4d6ef797927e8a2d1c0dfaef0b333a4485a62",
+      "matches_frozen_batch3_budgeted_hash": true,
+      "budgeted_output_sha256": "505b6476edd6489379f19c97827b35418722c73a7e2916755a0f7ec854916e4b",
+      "legacy_output_sha256": "a86e0141a1e1a20da127379d9521bd6b9ec29ba43af0a90ee224c56e7641d398",
+      "budgeted_output_characters": 1695,
+      "actual_input_plus_output_tokens": 5612,
+      "restored_by_guard_item_ids": [
+        "recent:golden:S6:U1",
+        "recent:golden:S6:U2"
+      ],
+      "guard_theoretical_risk_item_count": 2,
+      "legacy_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "budgeted_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 1,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "budgeted_minus_legacy_issue_delta": {
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 1,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "goal_completion_delta": 0,
+      "empirical_net_regression": true,
+      "winner_arm": "legacy_full",
+      "short_evidence": "candidate_1 写成周六七点面包店首次未开门，偏离‘林晚没去’而非‘店没开’的连续状态。",
+      "review_provenance": "codex_assisted_review"
+    },
+    {
+      "query_index": 7,
+      "section": 6,
+      "subsection": 3,
+      "budgeted_messages_hash": "aa84b0a93bc683c27e2414d892293ff09fcb774aae62fa92e7fa284d91e1d5d7",
+      "matches_frozen_batch3_budgeted_hash": true,
+      "budgeted_output_sha256": "26872b5582ddc8b5ee5ee38caf6c16e9918edd5350b9115b1f7c703bc9bb48df",
+      "legacy_output_sha256": "e9679b05705a56b99b9e8544aeb98caf87f9c99d5ba6738febb2c01782111b19",
+      "budgeted_output_characters": 2395,
+      "actual_input_plus_output_tokens": 6194,
+      "restored_by_guard_item_ids": [
+        "recent:golden:S5:U3",
+        "recent:golden:S6:U1"
+      ],
+      "guard_theoretical_risk_item_count": 2,
+      "legacy_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "budgeted_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 1,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "budgeted_minus_legacy_issue_delta": {
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 1,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "goal_completion_delta": 0,
+      "empirical_net_regression": true,
+      "winner_arm": "legacy_full",
+      "short_evidence": "candidate_1 开头已是周六早上，结尾却写‘明天周六’并称两小时后搅拌机会响。",
+      "review_provenance": "codex_assisted_review"
+    },
+    {
+      "query_index": 8,
+      "section": 4,
+      "subsection": 3,
+      "budgeted_messages_hash": "97975420ac82f168b6a03fc785af0d9dbfcd94edd0b3fbe2482a54a33fd75a7c",
+      "matches_frozen_batch3_budgeted_hash": true,
+      "budgeted_output_sha256": "c2d18c4bd800f054955c4d833cf59d17a91e68f30dd5c11ce63de8f939148222",
+      "legacy_output_sha256": "7e1880484cf8e7376952f03f80d4997b03478fad39d15f28a6d36ea2e2fa3806",
+      "budgeted_output_characters": 2254,
+      "actual_input_plus_output_tokens": 6095,
+      "restored_by_guard_item_ids": [
+        "recent:golden:S3:U3",
+        "recent:golden:S4:U1"
+      ],
+      "guard_theoretical_risk_item_count": 2,
+      "legacy_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 1,
+        "fact_errors": 0
+      },
+      "budgeted_judgment": {
+        "goal_complete": true,
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 1,
+        "fact_errors": 0
+      },
+      "budgeted_minus_legacy_issue_delta": {
+        "hard_violations": 0,
+        "relationship_violations": 0,
+        "continuity_defects": 0,
+        "causality_defects": 0,
+        "fact_errors": 0
+      },
+      "goal_completion_delta": 0,
+      "empirical_net_regression": false,
+      "winner_arm": "tie",
+      "short_evidence": "两者都完成微咸余味与分享边界，但都越过本节继续写到后续提问、删帖或当店员。",
+      "review_provenance": "codex_assisted_review"
+    }
+  ]
+}

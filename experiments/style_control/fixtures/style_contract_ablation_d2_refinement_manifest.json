@@ -1,0 +1,89 @@
+{
+  "schema_version": "2.0",
+  "experiment": {
+    "experiment_id": "style-contract-ablation-d2-refinement-sc2-v1",
+    "purpose": "确认 D2 在行动场的收益来自错误模式约束，还是来自完整反例文本。",
+    "enabled": false,
+    "target_style": "S3",
+    "arms": ["D2", "D2R"],
+    "production_candidate_arms": ["D2R"],
+    "diagnostic_only_arms": ["D2"],
+    "pair_baseline_arm": "D2",
+    "pair_candidate_arms": ["D2R"],
+    "repeats": 3,
+    "base_seed": 20260729,
+    "target_chars": 1000,
+    "model": "deepseek-v4-pro",
+    "temperature": 0.6,
+    "max_tokens": 3000,
+    "expected_output_tokens_per_sample": 1000,
+    "real_calls_require_explicit_enable": true
+  },
+  "shared_context": {
+    "characters": [
+      "许栀：旧书店合伙人，谨慎、直接，不替别人决定是否承担风险",
+      "沈闻：修复师，行动克制，遇到压力时先确认事实再承诺"
+    ],
+    "world_facts": [
+      "故事发生在连续降雨后的旧城区",
+      "两人共同经营一家带修复工坊的旧书店",
+      "仓库租约即将到期，店铺现金流紧张",
+      "许栀保管仓库钥匙，但没有权力单方面把全部责任转给沈闻"
+    ]
+  },
+  "styles": [
+    {
+      "id": "S3",
+      "label": "对话黑色",
+      "reference_path": "reference_dialogue_noir.txt"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "SC2",
+      "type": "action_introspection",
+      "prompt": "次日清晨，两人进入受潮仓库清点书箱。屋顶开始漏水，他们必须先抢救一箱顾客寄存的旧信，再决定其余货物如何转移。情绪通过选择和动作呈现。",
+      "mandatory_events": [
+        "两人进入受潮仓库并开始清点",
+        "屋顶漏水加剧",
+        "优先抢救顾客寄存的旧信",
+        "对其余货物的去向只形成临时方案"
+      ],
+      "forbidden_events": [
+        "不得让全部货物毫无代价地获救",
+        "不得用长篇心理独白替代抢救行动",
+        "不得让任何一方未经讨论擅自丢弃他人物品"
+      ],
+      "scene_modulation": "本节为行动场。保持对话主导；允许动作句略增，但动作必须改变抢救局面，不得形成搬运步骤清单。"
+    }
+  ],
+  "exception_regressions": [
+    {
+      "case": "S3__SC2",
+      "risk": "完整反例可能诱导动作清单、挤占任务约束或降低目标风格识别",
+      "included_in_refinement_batch": true
+    },
+    {
+      "case": "S1__SC2",
+      "risk": "防潮逻辑与过程动作机械化",
+      "included_in_refinement_batch": false
+    },
+    {
+      "case": "S2__SC1",
+      "risk": "参考原句复制",
+      "included_in_refinement_batch": false
+    }
+  ],
+  "acceptance": {
+    "decision_scope": "仅判断 D2R 是否值得进入跨场景确认，不直接批准生产接入",
+    "single_score_forbidden": true,
+    "target_style_recognition_min_percentage": 70,
+    "plot_or_character_errors_max": 0,
+    "core_task_misses_max": 0,
+    "severe_prompt_conflicts_max": 0,
+    "exact_sentence_copies_max": 0,
+    "shared_12grams_max": 0,
+    "truncations_max": 0,
+    "max_quality_drop_percentage_points": 10
+  }
+}

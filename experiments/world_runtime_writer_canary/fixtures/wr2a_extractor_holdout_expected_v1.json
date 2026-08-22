@@ -1,0 +1,37 @@
+{
+  "schema_version": "world-runtime-typed-delta-extractor-holdout-v1",
+  "source_fixture": "wr1e_evaluator_holdout_v1.json",
+  "source_fixture_sha256": "554d5c094312e036d1dd8448c04dc5af94201defdbea4812b220af5070089a6b",
+  "status": "preexisting_text_partition_semantic_expectations",
+  "cases": [
+    {"case_id":"HLD-S01","state_variant":"before","changes":[]},
+    {"case_id":"HLD-S02","state_variant":"before","changes":[
+      {"change_type":"storefront_public_sale","subject":"bakery:wild-bread:storefront","predicate":"public_sale_event","after_value":"occurred","mechanism":"cash_exchange","expected_validation":"invalid"}
+    ]},
+    {"case_id":"HLD-S03","state_variant":"before","changes":[]},
+    {"case_id":"HLD-K01","state_variant":"before","changes":[
+      {"change_type":"knowledge_state","subject":"character:coworker","predicate":"article_knowledge","after_value":"perceived","mechanism":"explicit_group_send_and_body_response","expected_validation":"valid"}
+    ]},
+    {"case_id":"HLD-K02","state_variant":"before","changes":[
+      {"change_type":"knowledge_state","subject":"character:coworker","predicate":"article_knowledge","after_value":"perceived","mechanism":"missing_transmission_path","expected_validation":"invalid"}
+    ]},
+    {"case_id":"HLD-K03","state_variant":"before","changes":[
+      {"change_type":"unsourced_project_fact","subject":"character:chen-chen","predicate":"identity_role","after_value":"company_coworker","mechanism":"text_assertion","expected_validation":"unresolved"}
+    ]},
+    {"case_id":"HLD-O01","state_variant":"after_augmented","changes":[]},
+    {"case_id":"HLD-O02","state_variant":"after_augmented","changes":[
+      {"change_type":"repeated_completed_event","subject":"article:lin-wan","predicate":"publication_event","after_value":"repeated","mechanism":"explicit_repeat_marker","expected_validation":"invalid"},
+      {"change_type":"object_state","subject":"object:green-bean-soup-bowl","predicate":"content_state","after_value":"empty","mechanism":"missing_actor_or_event","expected_validation":"invalid"}
+    ]},
+    {"case_id":"HLD-O03","state_variant":"after_augmented","changes":[
+      {"change_type":"unsourced_project_fact","subject":"company:lin-wan:supervisor","predicate":"communication_recipient","after_value":"resignation_cc_recipient","mechanism":"text_assertion","expected_validation":"unresolved"}
+    ]},
+    {"case_id":"HLD-E01","state_variant":"after","changes":[]},
+    {"case_id":"HLD-E02","state_variant":"after","changes":[
+      {"change_type":"employment_state","subject":"employment:lin-wan","predicate":"status","after_value":"ended","mechanism":"self_assumed_effective","expected_validation":"invalid"}
+    ]},
+    {"case_id":"HLD-E03","state_variant":"after","changes":[
+      {"change_type":"unsourced_project_fact","subject":"character:xiao-zhou","predicate":"identity_role","after_value":"company_coworker","mechanism":"text_assertion","expected_validation":"unresolved"}
+    ]}
+  ]
+}

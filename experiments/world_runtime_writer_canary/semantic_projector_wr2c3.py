@@ -1,0 +1,512 @@
+"""WR2-C3 deterministic projector.
+
+The language model only judges whether each ontology type occurred in the text
+and returns after_value + evidence.  This module owns every canonical field:
+subject, predicate, mechanism, actor, after_value normalization, no-op
+suppression, duplicate suppression and chain ordering.  It never decides
+legality and cannot commit state.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from typing import Any
+
+from experiments.world_runtime_writer_canary.delta_shadow_wr2a import EvidenceSpan
+from experiments.world_runtime_writer_canary.delta_shadow_wr2b import (
+    ProposedChangeV2,
+    ProposedTypedDeltaV2,
+)
+from experiments.world_runtime_writer_canary.semantic_extractor_wr2c import (
+    DroppedEvent,
+    RawEvidence,
+    _find_span,
+)
+
+
+PROJECTOR_VERSION = "world-runtime-projector-wr2c3-v1"
+
+CHARACTER_ALIASES = {
+    "林晚": "character:lin-wan",
+    "周野": "character:zhou-ye",
+    "季晴": "character:ji-qing",
+    "阿吴": "character:coworker",
+    "老吴": "character:coworker",
+    "吴姐": "character:coworker",
+}
+
+LOCATION_ALIASES = {
+    "操作间": "bakery:wild-bread:workshop",
+    "库房": "bakery:wild-bread:workshop",
+    "工坊": "bakery:wild-bread:workshop",
+    "后厨": "bakery:wild-bread:workshop",
+    "临街门": "bakery:wild-bread:storefront",
+    "侧门": "bakery:wild-bread:storefront",
+    "柜台": "bakery:wild-bread:storefront",
+    "店堂": "bakery:wild-bread:storefront",
+    "门店": "bakery:wild-bread:storefront",
+    "客厅": "lin-wan-home:living-room",
+    "茶几": "lin-wan-home:coffee-table",
+    "橱柜": "lin-wan-home:kitchen-cabinet",
+    "厨房": "lin-wan-home:kitchen",
+}
+
+OBJECT_ALIASES = {
+    "碗": "object:green-bean-soup-bowl",
+    "绿豆汤": "object:green-bean-soup-bowl",
+    "餐包": "object:bread-bag",
+    "可颂": "object:bread-bag",
+    "牛角包": "object:bread-bag",
+}
+
+ROLE_VALUES = {
+    "采购主管": "bakery_procurement_supervisor",
+    "排班员": "shift_scheduler",
+    "店长": "shop_manager",
+    "收银员": "cashier",
+}
+
+NAME_IDS = {
+    "韩冰": "han-bing",
+    "孙岚": "sun-lan",
+    "赵敏": "zhao-min",
+    "陈青": "chen-qing",
+}
+
+_FIXED_SHAPES: dict[str, tuple[str | None, tuple[str, ...]]] = {
+    "storefront_public_sale": ("bakery:wild-bread:storefront", ("public_sale_event",)),
+    "storefront_public_handoff": ("bakery:wild-bread:storefront", ("public_goods_handoff",)),
+    "knowledge_state": (None, ("article_knowledge",)),
+    "resignation_acknowledgement": ("company:lin-wan", ("resignation_acknowledged",)),
+    "unsourced_project_fact": (None, ("identity_role", "communication_recipient")),
+    "object_state": (None, ("content_state", "temperature_state", "location_state")),
+    "repeated_completed_event": ("article:lin-wan", ("publication_event",)),
+    "employment_state": ("employment:lin-wan", ("status",)),
+    "publication_state": ("article:lin-wan", ("publication_state",)),
+    "resignation_delivery": ("resignation:lin-wan", ("lifecycle_state",)),
+    "resignation_personal_record": ("resignation:lin-wan", ("personal_record_state",)),
+    "clock_state": ("world_clock", ("time",)),
+    "location_state": (None, ("location",)),
+}
+
+_CHAIN_RANK = {
+    "resignation_acknowledgement": 0,
+    "employment_state": 1,
+}
+
+
+def _cn_number(token: str | None) -> int | None:
+    if token is None:
+        return None
+    token = token.strip()
+    if token.isdigit():
+        return int(token)
+    digits = {
+        "零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
+        "五": 5, "六": 6, "七": 7, "八": 8, "九": 9,
+    }
+    if token == "十":
+        return 10
+    if "十" in token:
+        left, _, right = token.partition("十")
+        tens = digits.get(left, 1) if left else 1
+        ones = digits.get(right, 0) if right else 0
+        return tens * 10 + ones
+    if len(token) == 1:
+        return digits.get(token)
+    return None
+
+
+_CLOCK_PATTERNS = (
+    re.compile(r"(\d{1,2})[:：](\d{1,2})"),
+    re.compile(r"([零一二三四五六七八九十两\d]{1,3})点(?:([零一二三四五六七八九十两\d]{1,3})(?:分)?|一刻)?"),
+)
+
+
+def _parse_clock(text: str) -> str | None:
+    for pattern in _CLOCK_PATTERNS:
+        match = pattern.search(text)
+        if not match:
+            continue
+        groups = match.groups()
+        if ":" in match.group(0) or "：" in match.group(0):
+            hour, minute = int(groups[0]), int(groups[1])
+        else:
+            hour = _cn_number(groups[0])
+            if hour is None:
+                continue
+            minute = 15 if "一刻" in text[match.start():match.end()] else _cn_number(groups[1])
+            if minute is None:
+                minute = 0
+        if hour > 23 or minute > 59:
+            continue
+        return f"{hour:02d}:{minute:02d}"
+    return None
+
+
+def _find_character(text: str) -> str | None:
+    for alias, canonical in CHARACTER_ALIASES.items():
+        if alias in text:
+            return canonical
+    return None
+
+
+def _find_knowledge_subject(excerpts: list[str]) -> str | None:
+    perception_tokens = ("引用", "回复", "问", "读到", "看到", "看完", "说", "念")
+    for excerpt in excerpts:
+        if not _has_any(excerpt, perception_tokens):
+            continue
+        for alias, canonical in CHARACTER_ALIASES.items():
+            if alias in excerpt:
+                return canonical
+    for alias, canonical in CHARACTER_ALIASES.items():
+        if any(alias in excerpt for excerpt in excerpts):
+            return canonical
+    return None
+
+
+def _find_location(text: str) -> str | None:
+    hits = [(alias, canonical) for alias, canonical in LOCATION_ALIASES.items() if alias in text]
+    if not hits:
+        return None
+    hits.sort(key=lambda item: len(item[0]), reverse=True)
+    return hits[0][1]
+
+
+def _find_object(text: str) -> str | None:
+    hits = [(alias, canonical) for alias, canonical in OBJECT_ALIASES.items() if alias in text]
+    if not hits:
+        return None
+    hits.sort(key=lambda item: len(item[0]), reverse=True)
+    return hits[0][1]
+
+
+def _evidence_text(excerpts: list[str]) -> str:
+    return "".join(excerpts)
+
+
+def _has_any(text: str, tokens: tuple[str, ...]) -> bool:
+    return any(token in text for token in tokens)
+
+
+def _resolve_sale(evidence: str) -> str:
+    if _has_any(evidence, ("收款码", "扫码", "付款", "支付", "转账", "收银机")):
+        return "digital_payment_exchange"
+    if _has_any(evidence, ("现金", "硬币", "零钱")):
+        return "cash_exchange"
+    return "cash_exchange"
+
+
+def _resolve_knowledge_mechanism(evidence: str) -> str:
+    if _has_any(evidence, ("链接", "私聊")):
+        return "private_link_send_and_body_response"
+    if _has_any(evidence, ("文件", "文档", "全文")) and "群" in evidence:
+        return "group_file_send_and_body_response"
+    if "群" in evidence:
+        return "explicit_group_send_and_body_response"
+    return "missing_transmission_path"
+
+
+def _resolve_employment_mechanism(evidence: str) -> str:
+    if _has_any(evidence, ("人事", "邮件", "确认", "受理", "回执", "系统")):
+        return "acknowledged_effective_resignation"
+    return "self_assumed_effective"
+
+
+def _resolve_unsourced(evidence: str) -> tuple[str, str, str] | None:
+    for role in ROLE_VALUES:
+        match = re.search(role + r"([\u4e00-\u9fff]{2})", evidence)
+        if match:
+            name = match.group(1)
+            return f"character:{NAME_IDS.get(name, name)}", "identity_role", ROLE_VALUES[role]
+    match = re.search(r"(?:新来的|新任|新招的|新)?(?:主管|店员|排班员|店长|收银员)([\u4e00-\u9fff]{2})", evidence)
+    if match:
+        name = match.group(1)
+        return f"character:{name}", "communication_recipient", match.group(0)
+    return None
+
+
+def _resolve_object(evidence: str, after_value: Any) -> tuple[str, str, Any, str, str] | None:
+    subject = _find_object(evidence)
+    if subject is None:
+        return None
+    clean = _has_any(evidence, ("洗净", "洗好", "洗干净", "洗过"))
+    stored = _has_any(evidence, ("收进", "收好", "放进", "摆进", "橱柜", "柜子"))
+    empty = _has_any(evidence, ("倒", "泼", "喝光", "喝掉", "倒掉"))
+    no_actor = _has_any(evidence, ("没人", "无人", "整夜", "清晨", "早晨", "已经"))
+    actor_present = _find_character(evidence) is not None
+    if (after_value == "clean_and_stored") or (clean and stored):
+        mechanism = "missing_actor_or_event" if (no_actor or not actor_present) else "explicit_action"
+        return subject, "content_state", "clean_and_stored", "narrator/unknown" if mechanism == "missing_actor_or_event" else str(_find_character(evidence)), mechanism
+    if empty or after_value == "empty":
+        mechanism = "actor_pours_out" if (actor_present and empty) else "missing_actor_or_event"
+        return subject, "content_state", "empty", str(_find_character(evidence)) if actor_present else "narrator/unknown", mechanism
+    if _has_any(evidence, ("冷", "热", "凉", "温")):
+        value = "cold" if _has_any(evidence, ("冷", "凉")) else "hot"
+        return subject, "temperature_state", value, str(_find_character(evidence) or "narrator/unknown"), "explicit_observation"
+    if _has_any(evidence, ("放回", "挪", "摆进", "收进", "留下", "原处", "原位")):
+        location = _find_location(evidence)
+        if location is None and not _has_any(evidence, ("原位", "原处")):
+            return None
+        return subject, "location_state", location, str(_find_character(evidence) or "narrator/unknown"), "explicit_action"
+    return None
+
+
+def _resolve_judgment(
+    change_type: str,
+    evidence_text: str,
+    after_value: Any,
+    excerpts: list[str] | None = None,
+    state=None,
+) -> tuple[str, str, Any, str, str] | None:
+    """Return (subject, predicate, after_value, actor, mechanism) or None."""
+    fixed_subject, predicates = _FIXED_SHAPES[change_type]
+    predicate = predicates[0]
+    actor = str(_find_character(evidence_text) or "narrator")
+    if change_type == "storefront_public_sale":
+        return fixed_subject, predicate, "occurred", actor, _resolve_sale(evidence_text)
+    if change_type == "storefront_public_handoff":
+        return fixed_subject, predicate, "occurred", actor, "free_handoff"
+    if change_type == "knowledge_state":
+        subject = _find_knowledge_subject(excerpts or [evidence_text])
+        if subject is None:
+            return None
+        return subject, predicate, "perceived", actor, _resolve_knowledge_mechanism(evidence_text)
+    if change_type == "resignation_acknowledgement":
+        return fixed_subject, predicate, True, "company:hr-system", "institutional_reply"
+    if change_type == "unsourced_project_fact":
+        resolved = _resolve_unsourced(evidence_text)
+        if resolved is None:
+            return None
+        return resolved[0], resolved[1], resolved[2], "narrator", "text_assertion"
+    if change_type == "object_state":
+        resolved = _resolve_object(evidence_text, after_value)
+        if (
+            resolved is not None
+            and resolved[1] == "location_state"
+            and (resolved[2] is None or _has_any(evidence_text, ("原位", "原处")))
+            and state is not None
+        ):
+            fact = next(
+                (
+                    item
+                    for item in state.facts
+                    if item.subject == resolved[0] and item.predicate == "location"
+                ),
+                None,
+            )
+            if fact is not None and fact.epistemic_status == "confirmed_true":
+                resolved = (resolved[0], resolved[1], fact.value, resolved[3], resolved[4])
+            elif resolved[2] is None:
+                return None
+        return resolved
+    if change_type == "repeated_completed_event":
+        return fixed_subject, predicate, "repeated", actor, "explicit_repeat_marker"
+    if change_type == "employment_state":
+        return fixed_subject, predicate, "ended", actor, _resolve_employment_mechanism(evidence_text)
+    if change_type == "publication_state":
+        return fixed_subject, predicate, "published", actor, "submit_and_platform_publish"
+    if change_type == "resignation_delivery":
+        return fixed_subject, predicate, "delivered", actor, "institutional_email_delivery"
+    if change_type == "resignation_personal_record":
+        return fixed_subject, predicate, "saved", actor, "private_email_copy"
+    if change_type == "clock_state":
+        parsed = _parse_clock(evidence_text) or (after_value if isinstance(after_value, str) and re.fullmatch(r"\d{2}:\d{2}", after_value) else None)
+        if parsed is None:
+            return None
+        return fixed_subject, predicate, parsed, "narrator", "explicit_time_progression"
+    if change_type == "location_state":
+        subject = _find_character(evidence_text)
+        location = _find_location(evidence_text)
+        if subject is None or location is None:
+            return None
+        return subject, predicate, location, subject, "explicit_entry"
+    return None
+
+
+def _prior(change_type: str, subject: str, predicate: str, state) -> tuple[Any, str]:
+    if change_type in {
+        "storefront_public_sale",
+        "storefront_public_handoff",
+        "unsourced_project_fact",
+    }:
+        return None, "unknown"
+    if change_type == "repeated_completed_event":
+        return "completed", "confirmed_true"
+    if change_type == "object_state" and predicate == "location_state":
+        predicate = "location"
+    fact = next(
+        (
+            item
+            for item in state.facts
+            if item.subject == subject and item.predicate == predicate
+        ),
+        None,
+    )
+    if fact is None or fact.epistemic_status == "unknown":
+        return None, "unknown"
+    return fact.value, "confirmed_true"
+
+
+class ProjectedEvent:
+    __slots__ = (
+        "change_type", "subject", "predicate", "after_value", "actor",
+        "mechanism", "evidence", "span", "judgment_index",
+        "before_value", "before_status",
+    )
+
+    def __init__(
+        self, *, change_type, subject, predicate, after_value, actor,
+        mechanism, evidence, span, judgment_index, before_value, before_status,
+    ):
+        self.change_type = change_type
+        self.subject = subject
+        self.predicate = predicate
+        self.after_value = after_value
+        self.actor = actor
+        self.mechanism = mechanism
+        self.evidence = evidence
+        self.span = span
+        self.judgment_index = judgment_index
+        self.before_value = before_value
+        self.before_status = before_status
+
+
+def project(
+    *,
+    text: str,
+    state,
+    judgments: list[dict[str, Any]],
+) -> tuple[list[ProjectedEvent], list[DroppedEvent]]:
+    """Project model judgments into canonical events.
+
+    Returns (events, dropped).  Events are already ordered with chain
+    dependencies first.  No state mutation, no legality decision.
+    """
+    dropped: list[DroppedEvent] = []
+    events: list[ProjectedEvent] = []
+    signatures: set[tuple[str, str, str, str, str]] = set()
+    for index, judgment in enumerate(judgments):
+        change_type = judgment.get("change_type")
+        if change_type not in _FIXED_SHAPES:
+            dropped.append(DroppedEvent(index=index, reason="unsupported_change_type", change_type=change_type))
+            continue
+        if not judgment.get("occurred", False):
+            dropped.append(DroppedEvent(index=index, reason="judged_not_occurred", change_type=change_type))
+            continue
+        if judgment.get("mode") != "actual" or judgment.get("epistemic") != "asserted":
+            dropped.append(DroppedEvent(
+                index=index,
+                reason=f"non_actual_or_non_asserted:{judgment.get('mode')}:{judgment.get('epistemic')}",
+                change_type=change_type,
+            ))
+            continue
+        raw_evidence = judgment.get("evidence") or []
+        if not raw_evidence:
+            dropped.append(DroppedEvent(index=index, reason="evidence_missing", change_type=change_type))
+            continue
+        resolved: list[tuple[RawEvidence, tuple[int, int]]] = []
+        for item in raw_evidence:
+            evidence = RawEvidence.model_validate(item)
+            span = _find_span(text, evidence)
+            if span is None:
+                resolved = []
+                break
+            resolved.append((evidence, span))
+        if not resolved:
+            dropped.append(DroppedEvent(index=index, reason="evidence_not_found", change_type=change_type))
+            continue
+        excerpts = [item.excerpt for item, _ in resolved]
+        canonical = _resolve_judgment(
+            change_type,
+            _evidence_text(excerpts),
+            judgment.get("after_value"),
+            excerpts=excerpts,
+            state=state,
+        )
+        if canonical is None:
+            dropped.append(DroppedEvent(index=index, reason="projection_unresolved", change_type=change_type))
+            continue
+        subject, predicate, after_value, actor, mechanism = canonical
+        before_value, before_status = _prior(change_type, subject, predicate, state)
+        if before_status == "confirmed_true" and json.dumps(after_value, ensure_ascii=False, sort_keys=True) == json.dumps(before_value, ensure_ascii=False, sort_keys=True):
+            dropped.append(DroppedEvent(index=index, reason="no_state_change", change_type=change_type))
+            continue
+        signature = (
+            change_type,
+            subject,
+            predicate,
+            json.dumps(after_value, ensure_ascii=False, sort_keys=True),
+            mechanism,
+        )
+        if signature in signatures:
+            dropped.append(DroppedEvent(index=index, reason="duplicate_semantic_change", change_type=change_type))
+            continue
+        signatures.add(signature)
+        events.append(ProjectedEvent(
+            change_type=change_type,
+            subject=subject,
+            predicate=predicate,
+            after_value=after_value,
+            actor=actor,
+            mechanism=mechanism,
+            evidence=resolved,
+            span=(min(item[1][0] for item in resolved), max(item[1][1] for item in resolved)),
+            judgment_index=index,
+            before_value=before_value,
+            before_status=before_status,
+        ))
+    events.sort(key=lambda event: (_CHAIN_RANK.get(event.change_type, 9), event.judgment_index))
+    return events, dropped
+
+
+def build_delta(
+    *,
+    text: str,
+    sample_id: str,
+    scene_id: str,
+    state_variant: str,
+    base_revision: int,
+    events: list[ProjectedEvent],
+) -> tuple[ProposedTypedDeltaV2, list[EvidenceSpan]]:
+    evidence_spans: list[EvidenceSpan] = []
+    changes: list[ProposedChangeV2] = []
+    for sequence, event in enumerate(events, 1):
+        event_evidence_ids: list[str] = []
+        for evidence_index, (evidence, span) in enumerate(event.evidence, 1):
+            evidence_id = f"ev:wr2c3:{sample_id.lower()}:{event.judgment_index + 1}:{evidence_index}"
+            evidence_spans.append(EvidenceSpan(
+                evidence_id=evidence_id,
+                claim=f"semantic judgment for {event.change_type}",
+                start=span[0],
+                end=span[1],
+                excerpt=evidence.excerpt,
+            ))
+            event_evidence_ids.append(evidence_id)
+        changes.append(ProposedChangeV2(
+            change_id=f"change:wr2c3:{sample_id.lower()}:{sequence}",
+            sequence=sequence,
+            change_type=event.change_type,
+            subject=event.subject,
+            predicate=event.predicate,
+            before_value=event.before_value,
+            before_epistemic_status=event.before_status,
+            after_value=event.after_value,
+            actor=event.actor,
+            mechanism=event.mechanism,
+            event_id=None,
+            evidence_ids=tuple(event_evidence_ids),
+        ))
+    return ProposedTypedDeltaV2(
+        delta_id=f"delta:wr2c3:{sample_id.lower()}",
+        sample_id=sample_id,
+        scene_id=scene_id,
+        project_id="project:saturday-bakery",
+        state_variant=state_variant,
+        base_revision=base_revision,
+        output_hash=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        evidence=tuple(evidence_spans),
+        changes=tuple(changes),
+    ), evidence_spans

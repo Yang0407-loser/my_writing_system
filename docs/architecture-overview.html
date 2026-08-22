@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WriterAgent v0.9.1 — 泛小说写作引擎 · 技术架构</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root{--bg:#0d0d14;--card:#151520;--card2:#1a1a2a;--border:#252540;--accent:#7c8aff;--accent2:#a78bfa;--text:#d8d8e8;--dim:#8888a8;--warn:#f87171;--ok:#4ade80;--amber:#f59e0b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;line-height:1.6}
+header{background:linear-gradient(135deg,#1a1a2e,#0d0d14);border-bottom:1px solid var(--border);padding:1.8rem 2rem 0;text-align:center}
+header h1{font-size:1.8rem;letter-spacing:.04em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+header .sub{color:var(--dim);font-size:.88rem;margin:.4rem 0 1.2rem}
+nav{display:flex;justify-content:center;gap:0}
+nav button{background:none;border:none;color:var(--dim);padding:.7rem 1.5rem;font-size:.9rem;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-family:inherit}
+nav button:hover{color:var(--text)}
+nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+.tab{display:none}
+.tab.active{display:block}
+
+.mermaid-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;overflow-x:auto}
+.mermaid-wrap .lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
+.mermaid-wrap svg{max-width:100%;height:auto}
+.ag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.6rem;margin-bottom:1.5rem}
+.ag-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.8rem;cursor:pointer;transition:all .2s}
+.ag-card:hover{border-color:var(--accent);background:var(--card2)}
+.ag-card.core{border-color:var(--amber)}
+.ag-card .ph{font-size:.62rem;color:var(--accent);font-weight:700;letter-spacing:.08em;margin-bottom:.2rem}
+.ag-card.core .ph{color:var(--amber)}
+.ag-card .nm{font-weight:700;font-size:.85rem;margin-bottom:.2rem}
+.ag-card .rl{font-size:.7rem;color:var(--dim);line-height:1.35}
+.detail{background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:1.5rem;margin-top:1rem;display:none}
+.detail.show{display:block}
+.detail h4{color:var(--accent);margin-bottom:.4rem}
+.detail .txt{color:var(--dim);font-size:.82rem;line-height:1.7;margin-bottom:.6rem}
+.detail .tags{display:flex;flex-wrap:wrap;gap:4px}
+.detail .tags span{background:rgba(124,138,255,.1);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:.7rem}
+.detail .routes{font-size:.72rem;color:var(--dim);margin:.5rem 0}
+.detail .routes code{background:rgba(124,138,255,.08);color:#b8b8f0;padding:1px 5px;border-radius:3px;font-size:.66rem}
+.ds-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+@media(max-width:860px){.ds-grid{grid-template-columns:1fr}}
+.jb{margin-bottom:1.5rem}
+.jb h3{font-size:1rem;margin-bottom:.6rem;color:var(--accent);display:flex;align-items:center;gap:.5rem}
+.jb h3 .bd{font-size:.65rem;background:var(--accent);color:#fff;padding:.1rem .5rem;border-radius:4px;letter-spacing:.05em}
+.style-demo{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0;font-size:.74rem}
+.style-demo pre{background:#111;border:1px solid var(--border);border-radius:8px;padding:.8rem;color:var(--accent);font-size:.68rem;line-height:1.6;flex:1;min-width:260px;overflow-x:auto}
+.style-demo blockquote{flex:1;min-width:280px;border-left:3px solid var(--ok);margin:0;padding:.8rem 1rem;color:var(--text);font-style:italic;line-height:1.7;font-size:.78rem;display:flex;align-items:center}
+footer{text-align:center;color:var(--dim);font-size:.75rem;padding:2rem;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>WriterAgent v0.9.1</h1>
+  <p class="sub">泛小说写作引擎 · 10-Agent 串行流水线 · 多路径写作系统</p>
+  <nav>
+    <button class="active" onclick="switchTab('arch')">架构总览</button>
+    <button onclick="switchTab('journeys')">用户旅程</button>
+    <button onclick="switchTab('model')">信息模型</button>
+    <button onclick="switchTab('design')">设计决策</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ================================================================ -->
+<!-- TAB 1: ARCHITECTURE                                                -->
+<!-- ================================================================ -->
+<div id="tab-arch" class="tab active">
+
+  <div class="mermaid-wrap">
+    <div class="lbl">10-Agent 串行协作流水线 · v0.9.1</div>
+    <div class="mermaid">
+flowchart TB
+    subgraph INPUT["用户输入层"]
+        U1["主题 · 世界观 · 故事梗概"]
+        U2["参考文本 (风格提取)"]
+        U3["角色描述 / 大纲 (可选)"]
+    end
+    INPUT --> P0
+    subgraph P0["Phase 0-1 · 信息提取"]
+        A0["CharacterManager · 角色提取 → 16字段角色卡"]
+        A1["StyleAnalyzer · 50维风格 → 自然语言简报"]
+    end
+    U1 --> A0; U2 --> A1; A0 --> A1
+    P0 --> P2
+    subgraph P2["Phase 2 · 协作式大纲评审"]
+        A2["Planner 生成大纲 V1"] --> RV["StyleAnalyzer + Writer 交叉审查"] --> A2V["汇总反馈 → 大纲 V2"]
+    end
+    P2 --> P26
+    subgraph P26["Phase 2.5-2.6 · 叙事设计"]
+        A25["叙事节奏注入 · 正弦波 intensity 曲线"] --> A26["CharacterManager · 角色弧线规划"]
+    end
+    P26 --> P3
+    subgraph P3["Phase 3 · 继承制写作 ✍️ 核心"]
+        WR["✍️ Writer 主引擎 · 六源 Prompt 融合<br/>流式生成 · 字数自适应<br/>RAG来源标注 · 交接简报翻译"]
+        HO["交接笔记提取 · 独立 LLM · 伏笔/状态/线索"]
+        CK{"交互模式?"}
+        WR --> HO --> CK
+        CK -->|"是"| CP["检查点保存 · BLPOP等待审批<br/>支持修改大纲后继续"]
+        CP -->|"继续"| WR
+        CK -->|"否"| NEXT{"还有章节?"}
+        NEXT -->|"是"| WR
+        NEXT -->|"否"| P35
+    end
+    P3 --> P35
+    subgraph P35["Phase 3.5-5 · 质量保障"]
+        A35["一致性检查 · 正文 vs 角色卡"] --> A4["ContinuityEditor · 回溯修正分级"] --> A5["Reviewer · 分节评分 + 全局终审"]
+    end
+    P35 --> EXP["📄 Markdown 导出"]
+    subgraph INFRA["基础设施"]
+        REDIS[("Redis · 黑板/Stream/检查点/队列")]
+        CHROMA[("ChromaDB · BGE-M3 向量检索")]
+        SQLITE[("SQLite x11 · 角色/伏笔/规则/事件/支线/地图")]
+    end
+    WR -.->|"读写状态"| REDIS
+    WR -.->|"语义检索+来源标注"| CHROMA
+    WR -.->|"持久化"| SQLITE
+
+    style WR fill:#f59e0b,stroke:#d97706,color:#000,stroke-width:3px
+    style A0 fill:#7c8aff,stroke:#6366f1,color:#fff
+    style A1 fill:#7c8aff,stroke:#6366f1,color:#fff
+    style EXP fill:#4ade80,stroke:#22c55e,color:#000
+    style REDIS fill:#ef4444,color:#fff
+    style CHROMA fill:#8b5cf6,color:#fff
+    style SQLITE fill:#6366f1,color:#fff
+    </div>
+  </div>
+
+  <h3 style="margin-bottom:.8rem">Agent 详情 (点击展开)</h3>
+  <div class="ag-grid">
+    <div class="ag-card" onclick="showDetail('cm')"><div class="ph">Phase 0</div><div class="nm">CharacterManager</div><div class="rl">角色提取 · 弧线规划</div></div>
+    <div class="ag-card" onclick="showDetail('sa')"><div class="ph">Phase 1</div><div class="nm">StyleAnalyzer</div><div class="rl">50维风格 → 自然语言简报</div></div>
+    <div class="ag-card" onclick="showDetail('pl')"><div class="ph">Phase 2</div><div class="nm">Planner</div><div class="rl">大纲生成 · 交叉审查</div></div>
+    <div class="ag-card core" onclick="showDetail('wr')"><div class="ph">Phase 3 · 核心</div><div class="nm">✍️ Writer</div><div class="rl">六源融合 · 流式 · 交接简报 · RAG标注</div></div>
+    <div class="ag-card" onclick="showDetail('cc')"><div class="ph">Phase 3.5</div><div class="nm">一致性检查</div><div class="rl">角色矛盾检测</div></div>
+    <div class="ag-card" onclick="showDetail('ce')"><div class="ph">Phase 4</div><div class="nm">ContinuityEditor</div><div class="rl">回溯修正分级</div></div>
+    <div class="ag-card" onclick="showDetail('rv')"><div class="ph">Phase 5</div><div class="nm">Reviewer</div><div class="rl">分节评分 · 全局终审</div></div>
+    <div class="ag-card" onclick="showDetail('cm2')"><div class="ph">辅助系统</div><div class="nm">ContextManager</div><div class="rl">摘要压缩 · 窗口管理</div></div>
+    <div class="ag-card" onclick="showDetail('cd')"><div class="ph">辅助系统</div><div class="nm">CardDrawer</div><div class="rl">多方案生成 · 灵感库45+</div></div>
+    <div class="ag-card" onclick="showDetail('ws')"><div class="ph">辅助系统</div><div class="nm">WorldStateManager</div><div class="rl">双层事实验证 · 矛盾检测</div></div>
+    <div class="ag-card" onclick="showDetail('pm')"><div class="ph">v0.9.1新增</div><div class="nm">PromptRegistry</div><div class="rl">模板版本管理 · token监控</div></div>
+  </div>
+  <div id="detail-panel" class="detail"></div>
+
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 2: USER JOURNEYS                                               -->
+<!-- ================================================================ -->
+<div id="tab-journeys" class="tab">
+
+  <div class="jb">
+    <h3><span class="bd">路径 A</span> 抽卡模式 — 零构思快速起步</h3>
+    <div class="mermaid-wrap"><div class="mermaid">
+flowchart TD
+    S["用户输入：主题 + 题材"] --> GEN["AI 自动生成世界观设定"]
+    GEN --> CARD["CardDrawer · 45+ 灵感库<br/>生成 3-5 张差异化方案卡片"]
+    CARD --> PICK{"用户操作"}
+    PICK -->|"采纳"| FILL["卡片数据自动填入表单"]
+    PICK -->|"重抽"| CARD
+    PICK -->|"修改后采纳"| EDIT["用户编辑卡片内容"] --> FILL
+    FILL --> PIPE["进入 10-Agent 流水线"] --> OUT["📄 输出章节"]
+    style CARD fill:#8b5cf6,color:#fff
+    style OUT fill:#4ade80,color:#000
+    </div></div>
+  </div>
+
+  <div class="jb">
+    <h3><span class="bd">路径 B</span> 全手动定制 — 深度控制每一步</h3>
+    <div class="mermaid-wrap"><div class="mermaid">
+flowchart TD
+    U["用户填写完整配置"] --> W["AI 根据主题生成世界观"]
+    U --> CH["角色描述 → CharacterManager<br/>自然语言提取 16 字段角色卡"]
+    U --> ST["上传风格参考文本<br/>50维参数 → 风格简报"]
+    U --> SY["手动填写 / AI生成故事梗概"]
+    W --> MERGE["所有信息汇入 Coordinator"]
+    CH --> MERGE; ST --> MERGE; SY --> MERGE
+    MERGE --> PIPE["10-Agent 流水线"] --> OUT["📄 高质量定制输出"]
+    style U fill:#7c8aff,color:#fff
+    style OUT fill:#4ade80,color:#000
+    </div></div>
+  </div>
+
+  <div class="jb">
+    <h3><span class="bd">路径 C</span> 交互审批 — 边写边审边改大纲</h3>
+    <div class="mermaid-wrap"><div class="mermaid">
+flowchart TD
+    SUB["POST /write?mode=interactive"] --> PIPE["流水线运行"]
+    PIPE --> SEC["Writer 完成一节"] --> CKPT["检查点保存 Redis · BLPOP等待"]
+    CKPT --> FRONT["前端弹出审批面板"]
+    FRONT --> ACT{"用户操作"}
+    ACT -->|"approve"| NEXT{"还有章节?"}
+    ACT -->|"stop"| STOP["终止 · 检查点保留 · 可后续续写"]
+    ACT -->|"修改大纲"| EDIT["编辑大纲树节点"] --> MARK["受影响章节标记 dirty"] --> RELOAD["从最近检查点重跑"] --> NEXT
+    NEXT -->|"是"| SEC
+    NEXT -->|"否"| OUT["📄 完成导出"]
+    style CKPT fill:#f59e0b,color:#000
+    style OUT fill:#4ade80,color:#000
+    </div></div>
+  </div>
+
+  <div class="jb">
+    <h3><span class="bd">路径 D</span> 大纲先行 — 精细大纲 → 一键写作</h3>
+    <div class="mermaid-wrap"><div class="mermaid">
+flowchart TD
+    TXT["粘贴自然语言大纲文本"] --> AI["LLM 识别层级结构"] --> TREE["大纲树编辑器 · 任意深度 · 拖拽排序"]
+    TREE --> SPLIT["AI 逐节点拆分 粗→细"] --> SUBMIT["提交写作任务"] --> OUT["📄 严格按大纲生成"]
+    style TREE fill:#7c8aff,color:#fff
+    style OUT fill:#4ade80,color:#000
+    </div></div>
+  </div>
+
+  <div class="jb">
+    <h3><span class="bd">路径 E</span> P11 异步编辑 — 边写边改后续大纲</h3>
+    <div class="mermaid-wrap"><div class="mermaid">
+flowchart TD
+    W["Writer 按 queued 节点写作"] --> CHK{"下一节点状态?"}
+    CHK -->|"queued"| W
+    CHK -->|"draft"| STOP["停止 · awaiting_queue"]
+    STOP --> USER["用户编辑后续大纲<br/>draft → queued"]
+    USER --> DETECT["Coordinator 检测新增 queued"] --> W
+    style STOP fill:#f59e0b,color:#000
+    style USER fill:#7c8aff,color:#fff
+    </div></div>
+    <p style="font-size:.74rem;color:var(--dim)">大纲树每个节点三种状态: queued(排队待写) / draft(草稿未就绪) / done(已完成)。Writer 只写 queued 节点，遇到 draft 自动挂起。用户可随时切换后续节点状态，Coordinator 检测后自动继续。实现了真正的异步编辑——不需要一次性定好全部大纲再开始写作。</p>
+  </div>
+
+  <div class="jb">
+    <h3><span class="bd">路径 F</span> 断点续写 — 恢复 + 追加</h3>
+    <div class="mermaid-wrap"><div class="mermaid">
+flowchart TD
+    REQ["POST /tasks/[id]/continue"] --> LOAD["load_checkpoint 完整恢复<br/>draft · handover · arcs · world_state"] --> REBUILD["重建 ContextManager + ChromaDB"]
+    REBUILD --> RESUME["从断点 Phase 继续 · Writer 无缝接续"] --> OUT["📄 续写完成"]
+    style LOAD fill:#f59e0b,color:#000
+    style OUT fill:#4ade80,color:#000
+    </div></div>
+  </div>
+
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 3: INFORMATION MODEL                                           -->
+<!-- ================================================================ -->
+<div id="tab-model" class="tab">
+
+  <div class="mermaid-wrap">
+    <div class="lbl">Writer 多源 Prompt 融合模型 — 七种信息从哪里来、什么格式、解决什么问题</div>
+    <div class="mermaid">
+flowchart TB
+    subgraph PLANNED["规划层 · should happen"]
+        P0["Phase 2 Planner<br/>大纲梗概<br/>格式: 小节标题+要点+梗概<br/>作用: 告诉Writer这节该写什么"]
+        P1["Phase 2.6 CharacterManager<br/>角色弧线 JSON<br/>格式: 起→里程碑(到小节)→终<br/>作用: 角色在本节的情绪目标"]
+    end
+
+    subgraph ACTUAL["执行层 · actually happened"]
+        A0["Phase 3 Writer 事后提取<br/>交接简报 (自然语言)<br/>格式: 编辑口吻120-200字<br/>作用: 上节实际发生了什么的偏差"]
+        A1["EventGraph arc_milestone<br/>弧线追踪器 (运行时)<br/>格式: done/deviated/pending<br/>作用: 弧线实际完成度"]
+    end
+
+    subgraph RETRIEVED["检索层 · what you forgot"]
+        R0["ChromaDB RAG 检索<br/>语义召回+来源标注<br/>格式: 第5章·背叛 + 正文片段<br/>作用: 跟当前章节语义相关的前文"]
+        R1["EventGraph 因果扩展<br/>related_events 邻居一跳<br/>格式: [因果关联] 第5章·王五背叛<br/>作用: 补语义漏掉的因果链"]
+    end
+
+    subgraph ESTABLISHED["事实层 · what is true"]
+        E0["WorldStateManager<br/>不可变世界事实<br/>格式: '张三获得了火焰剑'<br/>作用: 跨章节逻辑一致性"]
+        E1["规则中心 + 约束<br/>规则库+伏笔+支线<br/>格式: '修真界渡劫需护法'<br/>作用: 题材规则兜底"]
+    end
+
+    subgraph STYLE["风格层 · how it feels"]
+        S0["Phase 1 StyleAnalyzer<br/>风格简报 (自然语言)<br/>格式: 编辑口吻200-500字<br/>作用: 全文文风统一"]
+    end
+
+    S0 --> WR["✍️ Writer Prompt 融合"]
+    P0 --> WR; P1 --> WR
+    A0 --> WR; A1 --> WR
+    R0 --> WR; R1 --> WR
+    E0 --> WR; E1 --> WR
+
+    WR --> OUT["输出: 纯正文 (无元数据)"]
+
+    style P0 fill:#7c8aff,stroke:#6366f1,color:#fff
+    style P1 fill:#7c8aff,stroke:#6366f1,color:#fff
+    style A0 fill:#f59e0b,stroke:#d97706,color:#000
+    style A1 fill:#f59e0b,stroke:#d97706,color:#000
+    style R0 fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style R1 fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style E0 fill:#4ade80,stroke:#22c55e,color:#000
+    style E1 fill:#4ade80,stroke:#22c55e,color:#000
+    style S0 fill:#ef4444,stroke:#dc2626,color:#fff
+    style WR fill:#f59e0b,stroke:#d97706,color:#000,stroke-width:3px
+    style OUT fill:#4ade80,stroke:#22c55e,color:#000
+    </div>
+  </div>
+
+  <div class="ds-grid">
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">关键区分: 大纲梗概 vs 交接简报 — 规划 ≠ 执行</div>
+      <div class="mermaid">
+flowchart LR
+    PLAN["大纲梗概 (Planner)<br/>should happen<br/>第5.2小节: 张三发现告密，离开营地"] --> W["Writer"]
+    W --> ACTUAL["交接简报 (Writer 事后)<br/>actually happened<br/>张三左臂受伤，带走火焰剑<br/>王五派人暗中跟踪"]
+    ACTUAL -->|"偏差注入"| NEXT["下一节 Writer<br/>知道实际发展 + 仍要达成的目标"]
+    style PLAN fill:#7c8aff,color:#fff
+    style ACTUAL fill:#f59e0b,color:#000
+    style NEXT fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem"><strong>互补而非重复:</strong> 大纲告诉Writer"该写什么"，交接简报告诉它"上节实际发生了什么"。Writer写作时会偏离大纲——角色做了计划外的事、情绪走向和弧线规划不一致。交接捕捉这些偏差，下一节Writer知道"现状是什么"+"目标是哪里"。</p>
+    </div>
+
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">关键区分: 弧线JSON vs EventGraph — 规划 ≠ 追踪</div>
+      <div class="mermaid">
+flowchart LR
+    JSON["角色弧线 JSON (Phase 2.6)<br/>PLANNED<br/>里程碑: 第5章 张三被背叛→愤怒"] --> WF["CharacterFormatter<br/>匹配当前小节<br/>注入Writer prompt"]
+    EG["EventGraph arc_milestone<br/>TRACKED<br/>运行时状态: pending/done/deviated"] --> RAG["因果扩展<br/>沿related_events召回"]
+    style JSON fill:#7c8aff,color:#fff
+    style EG fill:#f59e0b,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem"><strong>两套系统两种用途:</strong> CharacterFormatter 读弧线JSON 给 Writer 提供"本节角色应该是什么情绪"——这是写作指引。EventGraph 追踪弧线的运行时状态——哪些里程碑已达成、哪些偏离了——用于因果检索的扩展信号。</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB 4: DESIGN DECISIONS                                            -->
+<!-- ================================================================ -->
+<div id="tab-design" class="tab">
+
+  <div class="ds-grid">
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 1 · 风格简报 & 交接简报 — 二阶段翻译模式</div>
+      <div class="mermaid">
+flowchart TD
+    TXT["参考文本 / 交接JSON"] --> LLM1["LLM 调用 1 · 提取结构化参数"]
+    LLM1 --> JSON["50维参数 / 交接JSON"]
+    JSON --> LLM2["LLM 调用 2 · 翻译为自然语言简报<br/>t=0.3-0.5 max_tokens=300-800"]
+    LLM2 --> BRIEF["自然语言简报<br/>'文字像钝刀割肉，短句为主...'"]
+    BRIEF --> WR["注入 Writer Prompt"]
+    style LLM2 fill:#f59e0b,color:#000,stroke-width:2px
+    style BRIEF fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem"><strong>核心洞察:</strong> LLM 在自然语言上训练，对 JSON 数值参数几乎无感。{'emotion_intensity': 75} 和'文字像钝刀割肉'对生成质量的影响天壤之别。v0.9.1 将同一模式复用到交接笔记链——交接 JSON → 自然语言交接简报。</p>
+    </div>
+
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 2 · RAG 来源标注 — 碎片变记忆</div>
+      <div class="mermaid">
+flowchart TD
+    Q["章节标题+要点拼 query"] --> VS["ChromaDB 语义检索 · k=5"]
+    VS --> META["search_with_meta()<br/>返回 text + section/title"]
+    META --> FMT["格式化来源标注<br/>'参考 1: 第5章 · 背叛'"]
+    FMT --> INJ["注入 Writer Prompt"]
+    style META fill:#f59e0b,color:#000
+    style FMT fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem"><strong>v0.9.1 新增:</strong> RAG 召回的段落之前是裸文本碎片——Writer 不知道它来自第几章、什么情绪基调。加了来源标注后，每个召回片段带章节号和标题，碎片变成有上下文坐标的记忆。</p>
+    </div>
+  </div>
+
+  <div class="ds-grid">
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 3 · 正文与交接分离</div>
+      <div class="mermaid">
+flowchart TD
+    W1["Writer 完成第 N 节 · 输出纯正文"] --> EX["独立 LLM 调用<br/>HANDOVER_EXTRACTION_PROMPT"]
+    EX --> F1["伏笔: 神秘人身份未揭示"]; EX --> F2["人物状态: 受伤/愤怒"]; EX --> F3["开放线索: 失踪信件"]
+    F1 --> W2["Writer 第 N+1 节 · 交接简报注入 Prompt"]; F2 --> W2; F3 --> W2
+    style EX fill:#8b5cf6,color:#fff
+    style W1 fill:#f59e0b,color:#000
+    style W2 fill:#f59e0b,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem">Writer 出纯正文，交接提取走独立 LLM 调用。正文干净无元数据残留，提取 prompt 可独立调优，交接数据结构化可追溯。v0.9.1 交接 JSON 再经翻译变为自然语言简报后注入。</p>
+    </div>
+
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 4 · 上下文管理演化链</div>
+      <div class="mermaid">
+flowchart LR
+    S1["滑动窗口 · 超出的丢弃"] -->|"伏笔断裂"| S2["三道防线 · 交接笔记+RAG+世界状态"]
+    S2 -->|"prompt膨胀"| S3["ContextManager · LLM压缩旧内容为摘要"]
+    S3 -->|"风格简报+交接简报翻译"| S4["更稠密的上下文<br/>信息密度提升"]
+    style S2 fill:#7c8aff,color:#fff
+    style S3 fill:#f59e0b,color:#000
+    style S4 fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem"><strong>演化逻辑:</strong> 每个设计决策被前一步引入的新问题逼出来。v0.9.1 补了交接 JSON → 自然语言简报翻译，和 RAG 来源标注——让有限上下文窗口里的信息密度更高，而非单纯挤压长度。</p>
+    </div>
+  </div>
+
+  <div class="ds-grid">
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 5 · Agent 角色哲学 — "笔记员"而非"裁判"</div>
+      <div class="mermaid">
+flowchart TD
+    WR["Writer 生成正文"] --> CHK["一致性检查 · ContinuityEditor · Reviewer"]
+    CHK -->|"发现问题"| NOTE["记录事实 · 标注提醒 · warning 注入"]
+    NOTE --> INJ["注入 Writer Prompt"] --> DECIDE["Writer 结合大纲+伏笔自主裁决"]
+    DECIDE -->|"确认矛盾"| FIX["执行修正"] --> USER["用户最终审批"]
+    DECIDE -->|"伏笔/假动作"| SKIP["跳过"] --> USER
+    style DECIDE fill:#f59e0b,color:#000,stroke-width:2px
+    style USER fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem">下游 Agent 只做笔记员——记录事实、标注提醒，不做强制裁决。Agent 会误判(如大纲安排的假死被当成矛盾)，硬阻断会让系统不可用。Warning 注入 + Writer 自主裁决的容错率远高于硬阻断。</p>
+    </div>
+
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 6 · 串行 vs 并行 · 黑板 vs 消息传递</div>
+      <div class="mermaid">
+flowchart TD
+    subgraph WHY["为什么串行?"]
+        DEP["Agent 间强依赖 · Writer 耗80%+时间"] --> BOT["并行其他9个不改善延迟"]
+        BOT --> SAFE["串行 = 天然写屏障 · 黑板无需加锁"]
+    end
+    subgraph WHY2["为什么黑板?"]
+        MSG["消息传递: N×M 耦合"] --> BB["黑板: Agent 只和黑板交互"]
+        BB --> DEC["新增 Agent 不改其他代码"]
+    end
+    style SAFE fill:#4ade80,color:#000
+    style DEC fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem"><strong>串行不是偷懒，是分析后的选择。</strong>10 个 Agent 中 Writer 独占 80%+ 耗时。黑板模式解耦通信——每个 Agent 只和黑板交互，Coordinator 按需调度，低耦合、可独立替换。</p>
+    </div>
+  </div>
+
+  <div class="ds-grid">
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 7 · Prompt 版本管理 & Token 监控 (v0.9.1 新增)</div>
+      <div class="mermaid">
+flowchart TD
+    REG["PROMPT_REGISTRY · 14个模板"] --> VER["每个模板: version + used_by + changelog"]
+    VER --> CALL["LLMClient.chat_completion(prompt_name=...)"]
+    CALL --> LOG["日志: LLM [handover_brief v0.9.1] est_input=414tk"]
+    CALL --> ACCUM["累计token: ContextVar per-task隔离"]
+    ACCUM --> BB["每小节写完 → bb.set(task_id, token_usage)"]
+    BB --> UI["前端状态栏: 42K tokens"]
+    style REG fill:#7c8aff,color:#fff
+    style UI fill:#4ade80,color:#000
+      </div>
+      <p style="font-size:.74rem;color:var(--dim);margin-top:.5rem">每个 prompt 模板注册版本号和使用方，LLM 调用时自动记录哪个模板、哪个版本、预估多少 token。Token 累计消耗写入 Redis 黑板，前端轮询实时展示。</p>
+    </div>
+
+    <div class="mermaid-wrap" style="margin-bottom:0">
+      <div class="lbl">设计 8 · MVP 架构收敛 — 已知技术债 & 偿还路径</div>
+      <div style="font-size:.74rem;color:var(--dim);line-height:1.7">
+        <strong>Redis 五种角色 → 产品化拆分</strong><br>
+        broker → RabbitMQ · 状态存储 → PostgreSQL · 推送 → WebSocket · 检查点 → PG JSONB<br>
+        <strong>单体文件 → 组件拆分</strong><br>
+        writer.py 1308L → 按职责拆模块 · main.js 1063L → 按面板拆组件<br>
+        <strong>Prompt 管理 → 版本化</strong><br>
+        字符串常量 → 独立文件 + git diff + A/B 对照<br>
+        <strong>单模型 → 多模型</strong><br>
+        Writer 用 DeepSeek(创作) · Reviewer 用 Claude(严谨) —— 编排逻辑不变，换 LLMClient 的 model_name 即可<br>
+        <strong>单用户 → 多用户</strong><br>
+        JWT 鉴权 · per-user namespace · Rate limit · Prompt 注入防护
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</main>
+
+<footer>
+  WriterAgent v0.9.1 · 10-Agent 串行流水线 · FastAPI + Celery + Redis + ChromaDB + SQLite + DeepSeek V4 Pro · 阿里云 ECS
+</footer>
+
+<script>
+mermaid.initialize({
+  startOnLoad:false, theme:'dark',
+  themeVariables:{primaryColor:'#2e2e55',primaryTextColor:'#f0f0f5',primaryBorderColor:'#7c8aff',lineColor:'#5a5a7a',secondaryColor:'#1e1e38',tertiaryColor:'#151528',fontSize:'13px'},
+  flowchart:{useMaxWidth:true,htmlLabels:true,curve:'basis'},
+});
+
+document.querySelectorAll('.mermaid').forEach(el=>el.setAttribute('data-original',el.innerHTML));
+
+// Wait for CDN, then render active tab
+(async function(){
+  var retries = 0;
+  while (typeof mermaid === 'undefined' || !mermaid.run) {
+    await new Promise(r => setTimeout(r, 200));
+    if (++retries > 25) break;  // 5s timeout
+  }
+  try {
+    await mermaid.run({querySelector:'#tab-arch .mermaid'});
+  } catch(e) { console.warn('Mermaid init render failed:', e); }
+})();
+
+async function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  var tab=document.getElementById('tab-'+name);tab.classList.add('active');
+  event.target.classList.add('active');
+  tab.querySelectorAll('.mermaid').forEach(function(el){
+    el.removeAttribute('data-processed');
+    el.innerHTML = el.getAttribute('data-original') || '';
+  });
+  if (typeof mermaid !== 'undefined' && mermaid.run) {
+    try {
+      await mermaid.run({querySelector:'#tab-'+name+' .mermaid'});
+    } catch(e) { console.warn('Mermaid tab render failed:', name, e); }
+  }
+}
+
+const details={
+  cm:{title:'CharacterManager — 角色提取 & 弧线规划 · Phase 0 & 2.6',
+    txt:'从自然语言描述中提取结构化角色信息，LLM 返回 16 字段 JSON。自动补齐缺失字段、生成 UUID。Phase 2.6 中规划角色弧线: starting_state → milestones(精确到小节级) → ending_state。<br><br><b>双表存储:</b> 单值字段(name/gender/age)存主表支持 LIKE 模糊检索，多值标签(personality/strengths/weaknesses)拆入 character_traits 关联表。<br><br><b>LLM:</b> 提取 t=0.3 max_tokens=4000 · 弧线 t=0.4 max_tokens=4000',
+    tags:['LLM提取','16字段','双表SQLite','弧线规划']},
+  sa:{title:'StyleAnalyzer — 50维风格分析 · Phase 1',
+    txt:'分析参考文本(截取6000字符)，LLM 输出 50 维风格参数: 情感基调13项 + 句式节奏16项 + 修辞用词21项。二次调用 LLM 将数值参数翻译为 200-500 字自然语言风格简报。<br><br><b>核心设计: 为什么不直接注入JSON?</b> LLM 在自然语言上训练，对参数表几乎无感。{"emotion_intensity":75} 和"文字像钝刀割肉"对生成质量的影响天壤之别。<br><br><b>LLM:</b> 分析 t=0.3 max_tokens=3000 · 简报 t=0.5 max_tokens=800',
+    tags:['50维参数','二次LLM翻译','风格简报','7个预设']},
+  pl:{title:'Planner — 协作式大纲评审 · Phase 2',
+    txt:'根据主题、目标字数和风格简报生成大纲 V1 → StyleAnalyzer 审查风格一致性 → Writer 审查结构可执行性 → Planner 汇总反馈修订生成 V2。支持交互式审批(5分钟超时自动通过)。前端树状编辑器支持任意深度、AI拆分节点、文本导入自动识别层级。<br><br><b>LLM:</b> 生成 t=0.4 max_tokens=4000 · 审查 t=0.3~0.5',
+    tags:['大纲生成','双Agent交叉审查','V1→V2修订']},
+  wr:{title:'✍️ Writer — 核心写作引擎 · Phase 3',
+    txt:'每小节写作循环: ①RAG检索(带来源标注) → ②角色上下文 → ③交接简报(自然语言) → ④运行摘要 → ⑤世界状态 → ⑥Prompt融合 → ⑦LLM流式生成 → ⑧正文/交接分离 → ⑨字数控制(expand/condense) → ⑩切块入库 → ⑪更新ContextManager + token计数。<br><br><b>v0.9.1 新增:</b> HANDOVER_BRIEF_PROMPT(交接JSON→自然语言) · RAG来源标注(每次召回带章节号+标题) · Token消耗写入黑板。<br><br><b>六源Prompt融合:</b> 交接简报 + 风格简报 + RAG检索(带标注) + 角色上下文 + 世界状态 + 规则约束 → 统一注入 WRITING_PROMPT。System prompt 从 writer.py 迁移到 prompt_templates.py 统一管理。<br><br><b>LLM:</b> t=0.4~0.7 max_tokens=2k~16k 动态计算',
+    tags:['六源融合','正文/交接分离','RAG来源标注','交接简报','流式+fallback','token监控']},
+  cc:{title:'一致性检查 · Phase 3.5',txt:'LLM 对比正文 vs 角色卡：性格矛盾(critical)·关系错误(critical)·口头禅遗漏(minor)·外貌不符(minor)。可通过 ENABLE_CONSISTENCY_CHECK=false 关闭。<br><br><b>设计哲学:</b> 只标注不阻断。',tags:['角色一致性','critical/minor']},
+  ce:{title:'ContinuityEditor · Phase 4',txt:'汇总回溯修正建议 + 一致性清单，LLM 分级为 critical(必须修)或 minor(可改可不改)，自动执行 critical 修正。<br><br><b>LLM:</b> t=0.3 max_tokens=2000',tags:['回溯修正','分级判定']},
+  rv:{title:'Reviewer · 分段审阅 + 全局终审 · Phase 5',txt:'分节审阅: 每3小节/8000字触发一次，fire-and-forget 不阻塞写作。全局终审: 注入各节摘要+交接笔记链+修正清单+人物一致性。<br><br><b>LLM:</b> 分节 t=0.3~0.4 max_tokens=1000~1500',tags:['分节评分','全局终审','fire-and-forget']},
+  cm2:{title:'ContextManager · 上下文管理',txt:'维护 Writer 的跨节运行摘要。超6000字自动触发 LLM 压缩为~500字摘要。get_summary()返回"前文摘要+最近3小节原文"。压缩失败不阻塞写作。<br><br><b>设计要点:</b> 整个写作周期共享一个实例，finalize() 提供最终全篇摘要。',tags:['摘要压缩','窗口管理']},
+  cd:{title:'CardDrawer · 抽卡Agent',txt:'AI 一次性生成 3-5 张差异化故事方向卡片。灵感库内置 45+ 套路模板。用户可采纳、重抽、修改或跳过。<br><br><b>LLM:</b> t=0.7 max_tokens=2000',tags:['多方案生成','45+灵感库']},
+  ws:{title:'WorldStateManager · 世界状态管理',txt:'双层事实验证: 规则层正则预过滤(零LLM成本) + LLM层交叉验证。矛盾检测: 同category+实体交集→LLM精判。query_relevant() 按关键词+recency排序注入prompt。<br><br><b>设计哲学:</b> 矛盾以warning注入而非硬阻断。',tags:['双层验证','零LLM成本规则层','矛盾检测']},
+  pm:{title:'PromptRegistry & Token监控 · v0.9.1新增',txt:'<b>Prompt版本管理:</b> PROMPT_REGISTRY 注册14个模板的 version/used_by/changelog。LLMClient.chat_completion() 接受 prompt_name 参数，调用前自动打版本日志。<br><br><b>Token利用率:</b> estimate_tokens() 预估 + API返回真实值累加到 ContextVar(per-task隔离) → 每小节写完写入Redis黑板 → 前端状态栏实时展示"42K tokens"。',tags:['PromptRegistry','token监控','版本日志','前端展示']}
+};
+function showDetail(key){const p=document.getElementById('detail-panel');const d=details[key];if(!d)return;let h='<h4>'+d.title+'</h4>';h+='<div class="txt">'+d.txt+'</div>';h+='<div class="tags">'+d.tags.map(t=>'<span>'+t+'</span>').join(' ')+'</div>';p.innerHTML=h;p.classList.add('show');p.scrollIntoView({behavior:'smooth',block:'nearest'});}
+</script>
+</body>
+</html>

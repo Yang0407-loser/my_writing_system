@@ -11,10 +11,9 @@ class TestStylePresets:
 
     def test_preset_has_required_fields(self):
         for name, preset in STYLE_PRESETS.items():
-            assert "primary_emotion" in preset
-            assert "emotion_intensity" in preset
-            assert "narrative_density" in preset
-            assert isinstance(preset["narrative_density"], (int, float))
+            assert {"emotion_intensity", "dialogue_ratio", "sentence_preference", "sensory_density"} <= preset.keys()
+            assert 10 <= preset["emotion_intensity"] <= 90
+            assert 0 <= preset["dialogue_ratio"] <= 1
 
     def test_list_presets(self):
         names = StyleAnalyzer.list_presets()
@@ -30,17 +29,18 @@ class TestStylePresets:
 
     def test_get_preset_unknown_falls_back(self):
         preset = StyleAnalyzer.get_preset("不存在的风格")
-        assert preset["primary_emotion"] == "中性"
+        assert preset == STYLE_PRESETS["中性"]
 
 
 class TestFillDefaults:
     def test_fills_missing_fields(self):
         sa = StyleAnalyzer()
-        result = sa._fill_defaults({"primary_emotion": "激昂"})
-        assert result["primary_emotion"] == "激昂"
-        assert "emotion_intensity" in result
-        assert "short_sentence_ratio" in result
-        assert result["emotion_intensity"] == 50  # from neutral default
+        result = sa._fill_defaults({"sentence_preference": "short"})
+        assert result["sentence_preference"] == "short"
+        assert result["emotion_intensity"] == 50
+        assert result["dialogue_ratio"] == 0.3
+        assert result["sensory_density"] == "medium"
+        assert "primary_emotion" not in result
 
     def test_preserves_provided_fields(self):
         sa = StyleAnalyzer()

@@ -5,8 +5,8 @@ from ..utils.llm_client import get_llm_client
 class BaseAgent(ABC):
     """所有智能体的基类。提供 LLM 客户端的统一访问入口。"""
 
-    def __init__(self):
-        self.llm = get_llm_client()
+    def __init__(self, model: str | None = None):
+        self.llm = get_llm_client(model=model)
         self.last_raw_response: str = ""
 
     @abstractmethod

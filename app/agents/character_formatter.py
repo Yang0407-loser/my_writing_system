@@ -106,10 +106,22 @@ class CharacterFormatter:
                 m for m in a.get("key_milestones", [])
                 if m.get("section") == section and m.get("subsection") == subsection
             ]
+            is_v2 = any(m.get("contract_version") == "v2" for m in matches)
+            if is_v2:
+                matches = [
+                    m for m in matches
+                    if m.get("classification") in {"hard_arc_transition", "soft_arc_progress"}
+                ]
             if not matches:
                 # 找最近的前一个里程碑（角色当前状态）
                 prev = None
-                for m in sorted(a.get("key_milestones", []), key=lambda x: (x.get("section",0), x.get("subsection",0))):
+                previous_candidates = a.get("key_milestones", [])
+                if any(m.get("contract_version") == "v2" for m in previous_candidates):
+                    previous_candidates = [
+                        m for m in previous_candidates
+                        if m.get("classification") in {"hard_arc_transition", "soft_arc_progress"}
+                    ]
+                for m in sorted(previous_candidates, key=lambda x: (x.get("section",0), x.get("subsection",0))):
                     if (m.get("section",0) < section) or (m.get("section",0) == section and m.get("subsection",0) < subsection):
                         prev = m
                 if prev:
@@ -118,7 +130,11 @@ class CharacterFormatter:
                     lines.append(f"- {name}: 本小节暂未出场（当前状态：{a.get('current_state', a.get('starting_state', '?'))}）")
             else:
                 for m in matches:
-                    parts = [f"- {name}: 【本小节关键事件】{m.get('event','?')}"]
+                    if m.get("contract_version") == "v2":
+                        label = "本小节硬弧线转变" if m.get("requiredness") == "hard" else "非强制弧线参考"
+                    else:
+                        label = "本小节关键事件"
+                    parts = [f"- {name}: 【{label}】{m.get('event','?')}"]
                     if m.get("location"):
                         parts.append(f"  地点: {m['location']}")
                     if m.get("time"):

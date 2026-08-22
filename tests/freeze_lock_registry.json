@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "bindings": [
+    {
+      "audit_id": "r1-protocol-design",
+      "lock_path": "experiments/writer_boundary_v12_r2/fixtures/v1_2_r2_design.json",
+      "expected_sha256_pointer": "/base_r1_protocol_sha256",
+      "source_path": "experiments/writer_boundary_v12_r1/fixtures/v1_2_r1_protocol.json"
+    },
+    {
+      "audit_id": "style-baseline",
+      "lock_path": "tests/quality/style_baseline_registry.v1.json",
+      "expected_sha256_pointer": "/baselines/0/artifact_sha256",
+      "source_path": "tests/quality/style_baseline.json"
+    },
+    {
+      "audit_id": "wr1e-evaluator-source",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr1e_evaluator_v2_freeze_manifest.json",
+      "expected_sha256_pointer": "/evaluator_source_sha256",
+      "source_path": "experiments/world_runtime_writer_canary/evaluator_v2_wr1e.py"
+    },
+    {
+      "audit_id": "wr2a-adversarial-extractor",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2a_extractor_adversarial_lock_v1.json",
+      "expected_sha256_pointer": "/extractor_sha256",
+      "source_path": "experiments/world_runtime_writer_canary/extractor_shadow_wr2a.py"
+    },
+    {
+      "audit_id": "wr2a-adversarial-fixture",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2a_extractor_adversarial_lock_v1.json",
+      "expected_sha256_pointer": "/fixture_sha256",
+      "source_path": "experiments/world_runtime_writer_canary/fixtures/wr2a_extractor_adversarial_v1.json"
+    },
+    {
+      "audit_id": "wr2a-adversarial-validator",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2a_extractor_adversarial_lock_v1.json",
+      "expected_sha256_pointer": "/validator_sha256",
+      "source_path": "experiments/world_runtime_writer_canary/delta_shadow_wr2a.py"
+    },
+    {
+      "audit_id": "wr2a-holdout-source",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2a_extractor_holdout_expected_v1.json",
+      "expected_sha256_pointer": "/source_fixture_sha256",
+      "source_path": "experiments/world_runtime_writer_canary/fixtures/wr1e_evaluator_holdout_v1.json"
+    },
+    {
+      "audit_id": "wr2b-development-runner",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2b_v2_source_lock_v1.json",
+      "expected_sha256_pointer": "/sources/development_runner/sha256",
+      "source_path": "experiments/world_runtime_writer_canary/development_wr2b.py"
+    },
+    {
+      "audit_id": "wr2b-layered-extractor",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2b_v2_source_lock_v1.json",
+      "expected_sha256_pointer": "/sources/layered_extractor/sha256",
+      "source_path": "experiments/world_runtime_writer_canary/layered_extractor_wr2b.py"
+    },
+    {
+      "audit_id": "wr2b-ontology-validator",
+      "lock_path": "experiments/world_runtime_writer_canary/fixtures/wr2b_v2_source_lock_v1.json",
+      "expected_sha256_pointer": "/sources/ontology_validator/sha256",
+      "source_path": "experiments/world_runtime_writer_canary/delta_shadow_wr2b.py"
+    }
+  ]
+}

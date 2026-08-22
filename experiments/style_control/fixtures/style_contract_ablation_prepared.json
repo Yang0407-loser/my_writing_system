@@ -1,0 +1,243 @@
+{
+  "schema_version": "2.0",
+  "created_from": "style-control-experiment-real/prepared-style-inputs.json",
+  "demonstration_policy": {
+    "different_people_places_objects_events": true,
+    "positive_cjk_chars": [40, 100],
+    "exact_sentence_copy_max": 0,
+    "shared_12gram_max": 0,
+    "longest_common_contiguous_chars_max": 10,
+    "shared_8gram_is_locator_only": true,
+    "unsafe_demonstrations_must_be_regenerated": true
+  },
+  "styles": {
+    "S1": {
+      "schema_version": "2.0",
+      "style_id": "S1",
+      "style_signature": {
+        "schema_version": "2.0",
+        "style_id": "S1",
+        "active_dimensions": [
+          "narrative_distance",
+          "sentence_rhythm",
+          "paragraph_rhythm",
+          "dialogue_function",
+          "emotional_mediation",
+          "diction_register"
+        ],
+        "narrative_distance": "第三人称中远距离，只记录可见行为与可核实环境，不贴入感官流。",
+        "viewpoint_permissions": "可观察动作、沉默和物件状态；不可解释动机或切入内心独白。",
+        "sentence_rhythm": "短而完整的陈述句占主导，停顿服务于犹豫与关系张力，不拆碎过程动作。",
+        "paragraph_rhythm": "短段落、慢推进；每次换段落在选择、沉默或物件状态发生变化处。",
+        "dialogue_function": "对白稀疏，不承担主要情节推进；开口的分量来自此前动作和沉默。",
+        "dialogue_turn_pattern": "少轮次、允许回避，但不连续机锋，不靠反问抢节奏。",
+        "emotional_mediation": "用克制的行动选择与不行动承载情绪，叙述不替人物命名感受。",
+        "diction_register": "常用词、准确名词和动词，修辞密度低。",
+        "imagery_domain": "日常劳动、损耗和城市旧物。",
+        "sensory_priority": "视觉与触觉为主，感官只为确认物件状态。",
+        "distinctive_prohibitions": [
+          "不得把动作拆成连续搬运步骤清单。",
+          "不得用密集对白替代动作与沉默。",
+          "不得以陌生化意象主导段落。"
+        ],
+        "discriminators": [
+          "区别 S2：同样克制，但 S1 的情绪由选择和沉默承担，不由感官意象流动承担。",
+          "区别 S3：S1 的对白不是主要推进器；若连续问答改变权力位置，已经滑向 S3。",
+          "正文体现为少量关键动作后的留白，而不是短句、雨景和旧物的表面拼贴。"
+        ]
+      },
+      "style_demonstrations": {
+        "schema_version": "2.0",
+        "positive_demonstrations": [
+          {
+            "demonstration_id": "S1-P1",
+            "mechanism": "用未执行的动作承载关系选择",
+            "text": "陈珂把辞呈压在订书机下面，没有推向主管。空调停了，纸角仍轻轻抖。他收回手，只问明天的值班表要不要重排。"
+          }
+        ],
+        "negative_demonstrations": [
+          {
+            "demonstration_id": "S1-N1",
+            "mechanism": "直接命名情绪并解释动机",
+            "text": "陈珂十分失望，因为主管不理解他的牺牲，他决定用沉默表达愤怒。"
+          }
+        ],
+        "negative_reasons": [
+          "直接命名情绪和因果，抹掉了动作与沉默供读者判断的空间。"
+        ],
+        "max_demonstration_tokens": 500
+      },
+      "evidence": {
+        "schema_version": "2.0",
+        "reference_sha256": "2edafe606c2dbc14f34344b1092aefd1a03f595bba9aa7e00f62b383afe714dc",
+        "items": [
+          {
+            "principle_id": "dialogue_function",
+            "excerpt": "“你想怎么办？”\n“先把今晚的货收完。”",
+            "explanation": "对白稀疏且回避直接回答，关系张力更多由前后动作与沉默承担。"
+          }
+        ],
+        "protected_terms": ["许栀", "沈闻", "仓库钥匙", "咖啡机", "送货单", "围裙手套"]
+      }
+    },
+    "S2": {
+      "schema_version": "2.0",
+      "style_id": "S2",
+      "style_signature": {
+        "schema_version": "2.0",
+        "style_id": "S2",
+        "active_dimensions": [
+          "narrative_distance",
+          "viewpoint_permissions",
+          "sentence_rhythm",
+          "paragraph_rhythm",
+          "emotional_mediation",
+          "imagery_domain",
+          "sensory_priority"
+        ],
+        "narrative_distance": "第三人称近距离，稳定贴随单一人物当下可感知的信息。",
+        "viewpoint_permissions": "允许呈现身体感觉和注意力转移；不进入另一人物内心，不作全知判断。",
+        "sentence_rhythm": "以中长句承载感官关系，穿插少量短句收束；不以碎片短句作为主节奏。",
+        "paragraph_rhythm": "两三句构成一个感官单元，随注意力从一种感官过渡到另一种。",
+        "dialogue_function": "对白占比较低，只提供触发注意力或情绪回声的支点。",
+        "dialogue_turn_pattern": "短而少轮，避免连续问答主导页面。",
+        "emotional_mediation": "情绪通过多感官细节之间的变化流动，不靠动作清单或直接命名。",
+        "diction_register": "偏书面但不炫技，词汇精确，修辞点到即止。",
+        "imagery_domain": "从场景内具体材质、气味、光线和声音生长出的新鲜联系。",
+        "sensory_priority": "触觉、嗅觉、听觉与视觉交织，至少一个非视觉感官参与关键段落。",
+        "distinctive_prohibitions": [
+          "不得连续使用短句和碎片段落冒充抒情呼吸。",
+          "不得复用参考文本的独特比喻、物件组合或专名。",
+          "不得让对白承担主要信息与权力变化。"
+        ],
+        "discriminators": [
+          "区别 S1：S2 允许近距离感官流和低密度隐喻；S1 保持中远观察与低修辞。",
+          "区别 S3：S2 的情绪在感官关系中移动，对话只是支点，不是冲突发动机。",
+          "正文应以中长句连接材质、气味或声音，不能只复制克制、短段和留白的共同表面。"
+        ]
+      },
+      "style_demonstrations": {
+        "schema_version": "2.0",
+        "positive_demonstrations": [
+          {
+            "demonstration_id": "S2-P1",
+            "mechanism": "以非视觉感官串联情绪变化",
+            "text": "唐雁掀开琴盒，松香的干涩气味先碰到鼻尖，随后才是绒布上浅浅的压痕；窗缝送来一阵车铃声，她的手停在空着的位置。"
+          }
+        ],
+        "negative_demonstrations": [
+          {
+            "demonstration_id": "S2-N1",
+            "mechanism": "堆砌抽象华丽比喻",
+            "text": "悲伤像璀璨星河席卷灵魂，整个世界都在替她哭泣。"
+          }
+        ],
+        "negative_reasons": [
+          "意象脱离现场物质来源，且直接替人物宣布情绪。"
+        ],
+        "max_demonstration_tokens": 500
+      },
+      "evidence": {
+        "schema_version": "2.0",
+        "reference_sha256": "7244f5612a215cbf68c7a7f4366622ba0668d33e09a84ec7d9c899f872011de1",
+        "items": [
+          {
+            "principle_id": "sentence_rhythm",
+            "excerpt": "许栀从口袋里摸出仓库钥匙，铜齿还留着掌心的温度。",
+            "explanation": "历史简报显示中长句为主，感官信息在完整句中展开。"
+          }
+        ],
+        "protected_terms": ["许栀", "沈闻", "薄银", "没有寄出的雪", "仓库钥匙", "柠檬皮", "砂糖"]
+      }
+    },
+    "S3": {
+      "schema_version": "2.0",
+      "style_id": "S3",
+      "style_signature": {
+        "schema_version": "2.0",
+        "style_id": "S3",
+        "active_dimensions": [
+          "narrative_distance",
+          "sentence_rhythm",
+          "paragraph_rhythm",
+          "dialogue_function",
+          "dialogue_turn_pattern",
+          "emotional_mediation",
+          "diction_register",
+          "imagery_domain"
+        ],
+        "narrative_distance": "第三人称中远距离冷眼观察；叙述压缩成必要舞台指示，不贴入人物感官流。",
+        "viewpoint_permissions": "可记录可见动作、可听对白与局面变化；不可解释动机、扩写心理或替人物总结关系。",
+        "sentence_rhythm": "对白与舞台指示均短而完整；短句服务于应答压力，不把连续过程动作逐项切碎。",
+        "paragraph_rhythm": "一至两轮对白形成一个推进单元；换段应对应信息、承诺、拒绝或权力位置变化。",
+        "dialogue_function": "对话承担主要情节信息和关系变化；每轮关键对白必须改变信息、承诺、拒绝或权力位置。",
+        "dialogue_turn_pattern": "短轮次，允许反问、打断、答非所问和省略；避免礼貌地完整解释。",
+        "emotional_mediation": "冲突藏在措辞选择、回避和反击中；动作只作为对白压力或局面变化的证据。",
+        "diction_register": "口语、冷硬、少修饰；允许低密度黑色幽默、冷观察和潜台词。",
+        "imagery_domain": "功能性都市细节为主，偶尔一个冷硬或荒诞比拟；环境不得替代冲突。",
+        "sensory_priority": "听觉和视觉只确认说话压力与场面变化，不铺陈感官氛围。",
+        "distinctive_prohibitions": [
+          "禁止连续清点搬运、开门、拿起、放下等过程动作。",
+          "禁止用大量环境意象替代对白冲突。",
+          "禁止把短句理解为将动作拆碎。",
+          "禁止把风格收敛成只有克制、现实和留白而没有黑色幽默或权力变化。"
+        ],
+        "discriminators": [
+          "区别 S1：S1 由动作和沉默承担关系张力；S3 必须由对白承担信息与权力变化。",
+          "区别 S2：S2 由感官和意象承载情绪流动且对白低占比；S3 压低感官铺陈，让连续应答主导。",
+          "正文中若删掉对白仍能保留大部分情节，说明没有写成 S3。",
+          "表面短句若只是在搬运、开门或观察环境，属于机械动作碎片，不是 S3 的断奏。"
+        ]
+      },
+      "style_demonstrations": {
+        "schema_version": "2.0",
+        "positive_demonstrations": [
+          {
+            "demonstration_id": "S3-P1",
+            "mechanism": "每轮对白改变信息或责任位置",
+            "text": "“顾客取消订单了。”黎舟把通知推过去。“取消的是订单，还是付款？”“目前只取消了耐心。”“那你留下什么？”“账单。它从不失约。”"
+          },
+          {
+            "demonstration_id": "S3-P2",
+            "mechanism": "用答非所问和反击揭开被隐瞒的信息",
+            "text": "“今晚签吗？”“笔坏了。”“桌上有三支。”“我说的是签字的人。”经理抬起眼。“所以？”“所以先谈你删掉的那一行，以及是谁批准删的。”"
+          }
+        ],
+        "negative_demonstrations": [
+          {
+            "demonstration_id": "S3-N1",
+            "mechanism": "把短句误写成过程动作清单",
+            "text": "黎舟起身。走到柜边。拉开抽屉。拿出文件。转身。把文件放下。"
+          },
+          {
+            "demonstration_id": "S3-N2",
+            "mechanism": "用环境抒情替代冲突",
+            "text": "夜色沉重地压住办公室，灯光诉说着无人能够理解的疲惫。"
+          }
+        ],
+        "negative_reasons": [
+          "短句没有改变信息或权力，只把连续动作切碎，形成机械清单。",
+          "抽象环境意象代替了人物之间的交锋，也没有产生新的承诺、拒绝或信息。"
+        ],
+        "max_demonstration_tokens": 500
+      },
+      "evidence": {
+        "schema_version": "2.0",
+        "reference_sha256": "bb16eef0de8647ca19cdc91a3d261e101f868aebe7183f7a7ded67c7bedfb278",
+        "items": [
+          {
+            "principle_id": "dialogue_function",
+            "excerpt": "“锁换了。”她说，“人也要换。” “换谁？” “你猜。”",
+            "explanation": "对白直接改变信息和权力位置；叙述不承担解释。"
+          },
+          {
+            "principle_id": "narrative_distance",
+            "excerpt": "房东的签名像条翻肚的鱼。",
+            "explanation": "历史简报判断为较远的冷眼观察，而非贴身感官流。"
+          }
+        ],
+        "protected_terms": ["许栀", "沈闻", "仓库钥匙", "暂停营业牌", "咖啡机", "翻肚的鱼", "水泥封进桥墩"]
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "date": "2026-07-20",
+  "status": "integrated_default_off_no_real_canary_samples",
+  "default_mode": "off",
+  "production_input": "legacy_full",
+  "modes": ["off", "shadow", "canary"],
+  "canary_scope": "explicit_task_id_allowlist",
+  "injection_position": "after_prompt_builder_before_generation_controller",
+  "token_cap": 400,
+  "golden_regression": {
+    "matched": 4,
+    "total": 4,
+    "hashes": [
+      "8f59121b834a7587b3e42eb75cc91a976d580d159ef5cce3c828c075cb46a2d8",
+      "3d144ed009b624331321c5c40daa519c4bfe4ca92c0b5626e03a07a64a0ba7d2",
+      "5150786e3fcd504e42e4bc56282cb4cc8ce15a43d29afebc2098515363249f9b",
+      "6e4b3567c391777b8f2736ce5fd5518fbfd95cc6e7f39879c06fc3927e460459"
+    ],
+    "estimated_tokens": [230, 351, 277, 93]
+  },
+  "legacy_invariants": {
+    "off_provider_calls": 0,
+    "off_messages_unchanged": true,
+    "shadow_messages_unchanged": true,
+    "system_prompt_unchanged": true,
+    "generation_parameters_unchanged": true,
+    "retry_policy_unchanged": true,
+    "checkpoint_order_unchanged": true,
+    "idempotency_key_unchanged": true
+  },
+  "fallback": {
+    "returns_legacy_prompt": true,
+    "blocks_writer": false,
+    "triggers_retry": false,
+    "conditions": [
+      "task_not_allowlisted",
+      "current_outline_missing",
+      "non_terminal_next_outline_missing_or_non_consecutive",
+      "target_missing",
+      "provider_or_injection_error",
+      "scene_spec_over_token_cap",
+      "source_manifest_untraceable"
+    ]
+  },
+  "verification": {
+    "targeted_scene_spec_writer_tests_passed": 59,
+    "related_writer_and_post_commit_tests_passed": 9,
+    "compileall": "passed",
+    "writer_llm_calls": 0,
+    "real_canary_samples": 0,
+    "private_prose_in_public_artifacts": 0
+  },
+  "paused_or_disabled": {
+    "state_frame": "paused_by_upstream_state_contract",
+    "boundary_validator_default": false,
+    "context_broker": "not_started",
+    "repair": "not_started",
+    "phase5": "paused",
+    "phase6": "paused"
+  },
+  "authorization": "limited_task_id_canary_only"
+}

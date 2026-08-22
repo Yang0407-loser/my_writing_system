@@ -1,0 +1,47 @@
+{
+  "schema_version": "world-runtime-typed-delta-extractor-adversarial-v1",
+  "status": "frozen_before_first_run_no_same_partition_tuning",
+  "project_id": "project:saturday-bakery",
+  "protocol": {
+    "extractor_runs": 1,
+    "model_calls": 0,
+    "state_commit": "forbidden",
+    "same_partition_rule_tuning_after_result": "forbidden",
+    "purpose": "diagnostic_not_production_promotion"
+  },
+  "cases": [
+    {"case_id":"ADV-C-S01","class":"control","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"四点四十分，林晚接过现金，把装着面包的纸袋递给门外来客。","changes":[{"change_type":"storefront_public_sale","subject":"bakery:wild-bread:storefront","predicate":"public_sale_event","after_value":"occurred","mechanism":"cash_exchange","expected_validation":"invalid"}]},
+    {"case_id":"ADV-C-K01","class":"control","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"林晚把一段正文贴到公司群，同事回复说第三段的结尾太急。","changes":[{"change_type":"knowledge_state","subject":"character:coworker","predicate":"article_knowledge","after_value":"perceived","mechanism":"explicit_group_send_and_body_response","expected_validation":"valid"}]},
+    {"case_id":"ADV-C-O01","class":"control","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"系统自动回复，确认她的辞职信已经进入人事流程。","changes":[{"change_type":"resignation_acknowledgement","subject":"company:lin-wan","predicate":"resignation_acknowledged","after_value":true,"mechanism":"institutional_reply","expected_validation":"valid"}]},
+
+    {"case_id":"ADV-S01","class":"negation","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"来客把钞票伸进门缝，林晚原样推了回去；面包始终留在冷却架上。","changes":[]},
+    {"case_id":"ADV-S02","class":"unseen_transition","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"林晚没收钱，却把一只欧包塞进门外那人的怀里，让他快走。","changes":[{"change_type":"storefront_public_handoff","subject":"bakery:wild-bread:storefront","predicate":"public_goods_handoff","after_value":"occurred","mechanism":"free_handoff","expected_validation":"invalid"}]},
+    {"case_id":"ADV-S03","class":"future_plan","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"她把纸袋放到柜台下面，打算六点开门后再卖给那位来客。","changes":[]},
+    {"case_id":"ADV-S04","class":"paraphrase","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"手机响起到账提示，周野随后把装好的早餐搁到门外；挂钟还不到五点。","changes":[{"change_type":"storefront_public_sale","subject":"bakery:wild-bread:storefront","predicate":"public_sale_event","after_value":"occurred","mechanism":"digital_payment_exchange","expected_validation":"invalid"}]},
+
+    {"case_id":"ADV-K01","class":"cross_channel","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"林晚把链接私发给季晴。几分钟后，季晴引用第四段那句雨声，问她为什么删掉主语。","changes":[{"change_type":"knowledge_state","subject":"character:ji-qing","predicate":"article_knowledge","after_value":"perceived","mechanism":"private_link_send_and_body_response","expected_validation":"valid"}]},
+    {"case_id":"ADV-K02","class":"negation","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"季晴只扫了一眼标题，正文一个字也没读。","changes":[]},
+    {"case_id":"ADV-K03","class":"cross_sentence","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"她把全文作为文件丢进工作群。过了一会儿，同事发来语音，准确复述了第二节的最后一句。","changes":[{"change_type":"knowledge_state","subject":"character:coworker","predicate":"article_knowledge","after_value":"perceived","mechanism":"group_file_send_and_body_response","expected_validation":"valid"}]},
+    {"case_id":"ADV-K04","class":"future_plan","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"林晚答应等改完以后把全文发给同事，现在仍没有发送。","changes":[]},
+    {"case_id":"ADV-K05","class":"hearsay","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"陈姐转述说，别人好像已经看过那篇文章；她自己并不知道是谁。","changes":[]},
+
+    {"case_id":"ADV-O01","class":"explicit_actor","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"林晚回到家，把绿豆汤倒进水槽，空碗留在茶几上。","changes":[{"change_type":"object_state","subject":"object:green-bean-soup-bowl","predicate":"content_state","after_value":"empty","mechanism":"actor_pours_out","expected_validation":"valid"}]},
+    {"case_id":"ADV-O02","class":"implicit_violation","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"门锁一整夜没有动过。清晨林晚回来时，茶几上的碗已经洗净并收进橱柜。","changes":[{"change_type":"object_state","subject":"object:green-bean-soup-bowl","predicate":"content_state","after_value":"clean_and_stored","mechanism":"missing_actor_or_event","expected_validation":"invalid"}]},
+    {"case_id":"ADV-O03","class":"natural_mechanism","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"阳光晒了两个小时，碗里的汤从冰凉变成温热。","changes":[{"change_type":"object_state","subject":"object:green-bean-soup-bowl","predicate":"temperature_state","after_value":"warm","mechanism":"sunlight_warming","expected_validation":"valid"}]},
+    {"case_id":"ADV-R01","class":"paraphrase","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"她明知后台已经显示发布成功，仍又按了一遍发布键。","changes":[{"change_type":"repeated_completed_event","subject":"article:lin-wan","predicate":"publication_event","after_value":"repeated","mechanism":"explicit_repeat_marker","expected_validation":"invalid"}]},
+    {"case_id":"ADV-R02","class":"state_check","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"她打开已发布页面确认状态，没有再次点击任何按钮。","changes":[]},
+
+    {"case_id":"ADV-E01","class":"valid_prerequisite","scene_id":"adversarial-employment-transition","state_variant":"after","text":"人事发来正式确认：辞职今天生效。林晚完成交接后，劳动关系于下午结束。","changes":[{"change_type":"resignation_acknowledgement","subject":"company:lin-wan","predicate":"resignation_acknowledged","after_value":true,"mechanism":"institutional_reply","expected_validation":"valid"},{"change_type":"employment_state","subject":"employment:lin-wan","predicate":"status","after_value":"ended","mechanism":"acknowledged_effective_resignation","expected_validation":"valid"}]},
+    {"case_id":"ADV-E02","class":"conditional","scene_id":"adversarial-employment-transition","state_variant":"after","text":"如果人事批准，她明天就不再上班；现在邮箱里仍然没有回复。","changes":[]},
+    {"case_id":"ADV-E03","class":"paraphrase","scene_id":"adversarial-employment-transition","state_variant":"after","text":"人事没回信，林晚却把工牌剪断，说从今天起自己不再是公司员工。","changes":[{"change_type":"employment_state","subject":"employment:lin-wan","predicate":"status","after_value":"ended","mechanism":"self_assumed_effective","expected_validation":"invalid"}]},
+
+    {"case_id":"ADV-U01","class":"unseen_entity","scene_id":"adversarial-object-and-repeat","state_variant":"after_augmented","text":"负责排班的赵敏走到柜台后，叫周野提前下班。","changes":[{"change_type":"unsourced_project_fact","subject":"character:zhao-min","predicate":"identity_role","after_value":"bakery_scheduler","mechanism":"text_assertion","expected_validation":"unresolved"}]},
+    {"case_id":"ADV-U02","class":"fiction_within_fiction","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"林晚把小说里的配角改名为赵敏，然后继续修改正文。","changes":[]},
+
+    {"case_id":"ADV-P01","class":"unseen_transition","scene_id":"adversarial-unpublished-knowledge","state_variant":"before","text":"林晚提交终稿，后台审核通过，页面状态随即变成已发布。","changes":[{"change_type":"publication_state","subject":"article:lin-wan","predicate":"publication_state","after_value":"published","mechanism":"submit_and_platform_publish","expected_validation":"valid"}]},
+    {"case_id":"ADV-D01","class":"unseen_transition","scene_id":"adversarial-employment-transition","state_variant":"before","text":"她把辞职通知发送到公司人事邮箱，投递记录显示成功。","changes":[{"change_type":"resignation_delivery","subject":"resignation:lin-wan","predicate":"lifecycle_state","after_value":"delivered","mechanism":"institutional_email_delivery","expected_validation":"valid"}]},
+    {"case_id":"ADV-D02","class":"private_record","scene_id":"adversarial-employment-transition","state_variant":"before","text":"她只把辞职信转发到自己的私人邮箱留档，公司没有收到。","changes":[{"change_type":"resignation_personal_record","subject":"resignation:lin-wan","predicate":"personal_record_state","after_value":"saved","mechanism":"private_email_copy","expected_validation":"valid"}]},
+    {"case_id":"ADV-T01","class":"clock_transition","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"他们继续揉面，直到墙上的钟越过五点十分。","changes":[{"change_type":"clock_state","subject":"world_clock","predicate":"time","after_value":"05:10","mechanism":"explicit_time_progression","expected_validation":"valid"}]},
+    {"case_id":"ADV-L01","class":"location_transition","scene_id":"adversarial-storefront-hours","state_variant":"before","text":"周野打开侧门，林晚跨过门槛，留在操作间帮他折面。","changes":[{"change_type":"location_state","subject":"character:lin-wan","predicate":"location","after_value":"bakery:wild-bread:workshop","mechanism":"explicit_entry","expected_validation":"valid"}]}
+  ]
+}

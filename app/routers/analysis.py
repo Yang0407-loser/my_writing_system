@@ -1,11 +1,30 @@
 """任务分析与审阅 API。"""
 
+import logging
+
 from fastapi import APIRouter, Header, HTTPException
+from redis.exceptions import RedisError
 from ..dependencies import bb
+from ..task_store import TaskStore
 from ..utils.endpoint_helpers import assemble_draft_from_checkpoint
 from ..utils.llm_client import set_api_key
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["analysis"])
+
+
+def _event_summary(events: list[dict]) -> dict:
+    arc_events = [event for event in events if event.get("type") == "arc_milestone"]
+    return {
+        "arc_milestones_total": len(arc_events),
+        "arc_milestones_done": len(
+            [event for event in arc_events if event.get("status") == "done"]
+        ),
+        "arc_milestones_deviated": len(
+            [event for event in arc_events if event.get("status") == "deviated"]
+        ),
+    }
 
 
 @router.post("/tasks/{task_id}/review/continuity")
@@ -45,10 +64,33 @@ def review_continuity(task_id: str, x_api_key: str = Header("", alias="X-API-Key
 def get_task_events(task_id: str):
     """获取任务的叙事事件图谱。"""
     from ..narrative_event import EventGraph
-    eg = EventGraph(bb, task_id)
-    events = [e.to_dict() for e in eg._events.values()]
-    summary = eg.get_summary()
-    return {"events": events, "summary": summary}
+    try:
+        eg = EventGraph(bb, task_id)
+        events = [e.to_dict() for e in eg._events.values()]
+        summary = eg.get_summary()
+        return {
+            "events": events,
+            "summary": summary,
+            "runtime_available": True,
+            "data_source": "runtime",
+        }
+    except RedisError:
+        logger.warning(
+            "Redis unavailable while loading event graph for task %s",
+            task_id,
+        )
+        with TaskStore() as store:
+            stored = store.get(task_id)
+            workspace = store.find_workspace_for_task(task_id)
+        if not stored and not workspace:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        events = list((stored or {}).get("events_json") or [])
+        return {
+            "events": events,
+            "summary": _event_summary(events),
+            "runtime_available": False,
+            "data_source": "durable_task_history",
+        }
 
 
 @router.post("/tasks/{task_id}/analyze")
@@ -64,7 +106,6 @@ def analyze_task(task_id: str, x_api_key: str = Header("", alias="X-API-Key")):
     if not draft:
         raise HTTPException(status_code=400, detail="无可分析的草稿")
 
-    from ..task_store import TaskStore
     from ..utils.llm_client import get_llm_client
     from ..utils.json_parser import parse_json
     import json as _json
@@ -110,29 +151,29 @@ def analyze_task(task_id: str, x_api_key: str = Header("", alias="X-API-Key")):
 
     # 持久化到 SQLite
     try:
-        ts = TaskStore()
-        existing = ts.get(task_id)
-        if existing:
-            ts.save(task_id, {**{
-                "topic": existing.get("topic", ""),
-                "word_count": existing.get("word_count", 0),
-                "section_count": existing.get("section_count", 0),
-                "status": existing.get("status", "completed"),
-                "mode": existing.get("mode", "celery"),
-                "style": existing.get("style_json", {}),
-                "outline": existing.get("outline_json", []),
-                "handover_notes": existing.get("handover_json", []),
-                "characters": existing.get("characters_json", []),
-                "review": existing.get("review_json", {}),
-                "world_setting": existing.get("world_setting", ""),
-                "story_synopsis": existing.get("story_synopsis", ""),
-                "target_words": existing.get("target_words", 0),
-                "world_state": existing.get("world_state_json", {}),
-                "draft": existing.get("draft_preview", ""),
-                "output_file": existing.get("output_file", ""),
-                "events": existing.get("events_json", []),
-            }, "analysis": analysis})
+        with TaskStore() as ts:
+            existing = ts.get(task_id)
+            if existing:
+                ts.save(task_id, {**{
+                    "topic": existing.get("topic", ""),
+                    "word_count": existing.get("word_count", 0),
+                    "section_count": existing.get("section_count", 0),
+                    "status": existing.get("status", "completed"),
+                    "mode": existing.get("mode", "celery"),
+                    "style": existing.get("style_json", {}),
+                    "outline": existing.get("outline_json", []),
+                    "handover_notes": existing.get("handover_json", []),
+                    "characters": existing.get("characters_json", []),
+                    "review": existing.get("review_json", {}),
+                    "world_setting": existing.get("world_setting", ""),
+                    "story_synopsis": existing.get("story_synopsis", ""),
+                    "target_words": existing.get("target_words", 0),
+                    "world_state": existing.get("world_state_json", {}),
+                    "draft": existing.get("draft_preview", ""),
+                    "output_file": existing.get("output_file", ""),
+                    "events": existing.get("events_json", []),
+                }, "analysis": analysis})
     except Exception:
-        pass
+        logger.warning(f"分析结果缓存写入失败 for task {task_id}", exc_info=True)
 
     return analysis

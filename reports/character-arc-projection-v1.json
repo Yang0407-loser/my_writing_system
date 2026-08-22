@@ -1,0 +1,75 @@
+{
+  "schema_version": "character-arc-projection-report-v1",
+  "projection_version": "character-arc-projection-v1",
+  "date": "2026-07-24",
+  "status": "offline_projection_ready_not_promoted",
+  "writer_or_llm_calls": 0,
+  "production_effect": false,
+  "authority_chain": [
+    "OutlineEventContract proposed or confirmed fact",
+    "CharacterArcProjection proposed classification",
+    "explicit arc confirmation with state transition fields",
+    "future V2 CharacterArc export"
+  ],
+  "promotion_rules": {
+    "unconfirmed_outline_event_can_be_authoritative": false,
+    "ordinary_plot_event_auto_becomes_arc": false,
+    "decision_or_state_transition_auto_becomes_hard": false,
+    "hard_required_fields": [
+      "before_state",
+      "trigger",
+      "after_state",
+      "observable_evidence",
+      "rationale"
+    ],
+    "exact_character_matching_only": true,
+    "implicit_event_graph_edges": 0
+  },
+  "fixed_real_case": {
+    "task_id": "019fc0c8-1a20-4be3-8252-54aaf1c5aa27",
+    "outline_contract_status": "legacy_proposed",
+    "character_count": 5,
+    "projection_candidate_count": 8,
+    "authoritative_candidate_count": 0,
+    "hard_candidate_count": 0,
+    "excluded_event_count": 9,
+    "classification_counts": {
+      "ordinary_plot_event": 6,
+      "observational_texture": 1,
+      "unsupported_planning_inference": 1,
+      "soft_arc_progress": 0,
+      "hard_arc_transition": 0
+    },
+    "candidate_counts_by_character": {
+      "林晚": 4,
+      "周野": 3,
+      "顾衍": 1,
+      "季晴": 0,
+      "吴阿姨": 0
+    },
+    "source_traceability": 1.0,
+    "duplicate_projection_ids": 0,
+    "finding": "The real legacy outline does not explicitly bind its decision/state-transition clauses to named actors strongly enough to justify an authoritative arc transition."
+  },
+  "incremental_behavior": {
+    "unchanged_confirmed_candidate_preserved": true,
+    "event_or_character_source_change": "stale",
+    "source_event_removed": "superseded",
+    "new_subsection_rebuilds_existing_ids": false,
+    "old_event_graph_rebuilt": false
+  },
+  "production_isolation": {
+    "character_manager_imports_projection": false,
+    "writer_imports_projection": false,
+    "coordinator_imports_projection": false,
+    "event_graph_imports_projection": false,
+    "character_arc_contract_default": "v1",
+    "database_or_redis_writes": 0
+  },
+  "decision": {
+    "projection_contract_gate_passed": true,
+    "eligible_for_production_arc_replacement": false,
+    "reason": "No real author-confirmed outline events or complete before/trigger/after transition records exist yet.",
+    "next_step": "Design a compact author-assisted arc review or a separately authorized contract-grounded planner shadow; do not wire projection into Writer/EventGraph."
+  }
+}

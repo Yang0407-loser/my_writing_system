@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-07-27T00:00:00+00:00",
+  "backend": "mock",
+  "historical_contract_label": "50D",
+  "historical_recovered_field_count": 49,
+  "mock_results_are_route_evidence": false,
+  "styles": {
+    "S1": {
+      "style_id": "S1",
+      "reference_sha256": "2edafe606c2dbc14f34344b1092aefd1a03f595bba9aa7e00f62b383afe714dc",
+      "source": "mock",
+      "four_dimensional": {
+        "emotion_intensity": 35,
+        "dialogue_ratio": 0.22,
+        "sentence_preference": "balanced",
+        "sensory_density": "sparse",
+        "style_brief": "保持克制的近距离叙述，以动作、停顿和物件位置承载关系压力。句子朴素，段落不过度修饰，对话简短，不替人物解释感受。"
+      },
+      "historical_profile": {
+        "primary_emotion": "克制",
+        "dialogue_ratio": 0.22,
+        "short_sentence_ratio": 0.3,
+        "paragraph_length_avg": 90,
+        "metaphor_frequency": "极少"
+      },
+      "historical_unavailable_fields": [],
+      "historical_brief": "叙述保持冷静、贴近人物但不进入解释性独白。用物件的放置、未完成的动作和短促对话推动压力。句段长短适中，修辞克制，避免总结关系。",
+      "style_contract": {
+        "contract_version": "1.0",
+        "positive_principles": [
+          "用可见动作和物件位置承载关系变化",
+          "对话短而留有未说完的部分",
+          "叙述保持克制，不替人物解释结论"
+        ],
+        "prohibitions": [
+          "禁止逐项清点动作",
+          "禁止段尾总结情感意义",
+          "禁止脱离场景的通用比喻"
+        ],
+        "narrative_distance_and_viewpoint": "第三人称有限视角，贴近当下知觉但不直接命名情绪。",
+        "sentence_and_paragraph_rhythm": "中短句为主，关键动作单独成句，段落保持紧凑。",
+        "diction_imagery_and_sensory_sources": "使用店铺、账本、钥匙、雨水等现场物件，词语具体朴素。",
+        "emotional_expression": "让犹豫表现为停顿、回避和物件处理，不写心理结论。",
+        "scene_adaptation": {
+          "dialogue": "让信息和权力边界通过短对话显现。",
+          "action": "动作必须改变物件或局面，避免空转。",
+          "introspection": "只保留贴近感官的瞬间念头。"
+        },
+        "positive_examples": [
+          "她把钥匙放在桌边，没有往他那边推。",
+          "咖啡机停了，两个人仍旧没动。"
+        ],
+        "negative_examples": [
+          {
+            "text": "她先拿出钥匙，然后放下钥匙，接着看向他。",
+            "reason": "机械清点动作，没有让动作承担关系意义。"
+          }
+        ],
+        "evidence": [
+          {
+            "principle_id": "P1",
+            "excerpt": "没有往沈闻那边推",
+            "explanation": "物件位置表达是否交付的边界。"
+          }
+        ]
+      }
+    },
+    "S2": {
+      "style_id": "S2",
+      "reference_sha256": "7244f5612a215cbf68c7a7f4366622ba0668d33e09a84ec7d9c899f872011de1",
+      "source": "mock",
+      "four_dimensional": {
+        "emotion_intensity": 55,
+        "dialogue_ratio": 0.14,
+        "sentence_preference": "long",
+        "sensory_density": "rich",
+        "style_brief": "以多感官细节和流动长句组织场景，让天气、气味、触感与人物选择互相映照。意象必须来自现场，避免装饰性堆叠。"
+      },
+      "historical_profile": {
+        "primary_emotion": "潮湿而迟疑",
+        "dialogue_ratio": 0.14,
+        "long_sentence_ratio": 0.42,
+        "sensory_density": "丰富",
+        "imagery_domain": "城市与身体"
+      },
+      "historical_unavailable_fields": [],
+      "historical_brief": "以较长、流动的句子牵引视线，多使用潮气、温度、气味和光线，但每个意象都要与人物选择相连。对话稀疏，情绪通过感官变化慢慢显影。",
+      "style_contract": {
+        "contract_version": "1.0",
+        "positive_principles": [
+          "让感官变化与人物选择同步",
+          "使用流动长句连接环境和动作",
+          "意象只从当前空间和物件生长"
+        ],
+        "prohibitions": [
+          "禁止无功能的形容词堆叠",
+          "禁止意象之后追加解释",
+          "禁止连续使用通用明喻"
+        ],
+        "narrative_distance_and_viewpoint": "第三人称有限视角，知觉细密但不越过人物所见所闻。",
+        "sentence_and_paragraph_rhythm": "长句铺展知觉，短句用于选择发生的瞬间，段落有呼吸。",
+        "diction_imagery_and_sensory_sources": "雨水、纸张、金属、霉味、温度和光线，强调触觉与嗅觉。",
+        "emotional_expression": "不直说情绪，让感官阈值和注意力变化显露压力。",
+        "scene_adaptation": {
+          "dialogue": "对话稀疏，周围声音和物件回应话语。",
+          "action": "动作和环境阻力同时展开。",
+          "introspection": "以内感受和外界细节的交叉替代解释。"
+        },
+        "positive_examples": [
+          "铜齿还留着掌心的温度。",
+          "纸页吸足潮气，手指一压就留下弯曲的痕。"
+        ],
+        "negative_examples": [
+          {
+            "text": "潮湿、阴冷、灰暗而忧伤的仓库令人窒息。",
+            "reason": "抽象形容词堆叠，没有具体感官路径。"
+          }
+        ],
+        "evidence": [
+          {
+            "principle_id": "P1",
+            "excerpt": "酸香被热气托起来",
+            "explanation": "气味和温度共同参与场景关系。"
+          }
+        ]
+      }
+    },
+    "S3": {
+      "style_id": "S3",
+      "reference_sha256": "bb16eef0de8647ca19cdc91a3d261e101f868aebe7183f7a7ded67c7bedfb278",
+      "source": "mock",
+      "four_dimensional": {
+        "emotion_intensity": 65,
+        "dialogue_ratio": 0.48,
+        "sentence_preference": "short",
+        "sensory_density": "sparse",
+        "style_brief": "以高比例短对话和少量硬质环境细节推进冲突。人物不解释动机，回答常有偏移和反问。叙述像剪辑点，只留下必要动作。"
+      },
+      "historical_profile": {
+        "primary_emotion": "冷硬紧张",
+        "dialogue_ratio": 0.48,
+        "short_sentence_ratio": 0.62,
+        "dialogue_tag_style": "零标记",
+        "pacing": "紧凑"
+      },
+      "historical_unavailable_fields": [],
+      "historical_brief": "用短对话、反问和信息错位形成压力，叙述只在动作转折处落笔。环境细节少而硬，句子短，段落切换快，不解释笑、沉默或回避的含义。",
+      "style_contract": {
+        "contract_version": "1.0",
+        "positive_principles": [
+          "用短对话交换信息和压力",
+          "回答可以偏移但必须推进冲突",
+          "环境细节少而具有硬质触感"
+        ],
+        "prohibitions": [
+          "禁止解释人物潜台词",
+          "禁止密集使用他说她说",
+          "禁止用长段背景介绍打断现场"
+        ],
+        "narrative_distance_and_viewpoint": "第三人称外部聚焦，只记录可见动作、声音和必要事实。",
+        "sentence_and_paragraph_rhythm": "短句和单行对话为主，少量中句连接空间变化。",
+        "diction_imagery_and_sensory_sources": "灯管、钥匙、玻璃、金属、账本等硬质城市物件。",
+        "emotional_expression": "让停顿、反问、重复和拒答承担情绪。",
+        "scene_adaptation": {
+          "dialogue": "快速交换，每一句带来新信息或改变权力位置。",
+          "action": "只保留会改变局面的动作。",
+          "introspection": "原则上不写解释性内心独白。"
+        },
+        "positive_examples": [
+          "“钥匙。”她把它扔到桌上。",
+          "“公平。”“不公平。”"
+        ],
+        "negative_examples": [
+          {
+            "text": "他沉默了，因为他内心非常矛盾，不知道应该如何选择。",
+            "reason": "直接解释潜台词，破坏外部聚焦。"
+          }
+        ],
+        "evidence": [
+          {
+            "principle_id": "P1",
+            "excerpt": "“钥匙。”",
+            "explanation": "极短对白直接投放冲突物件。"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "backend": "postgresql",
+  "final_health": {
+    "lag_events": 0
+  },
+  "gate_eligible": true,
+  "postgres_tests": {
+    "failed": 0,
+    "passed": 16,
+    "skipped": 0
+  },
+  "projectors": {
+    "analytics": {
+      "actual_manifest_digest": "41ba2421f62f7cd07f19162873b63ac2915bf70ff732bcecdebc8c72489e58bf",
+      "deleted": true,
+      "expected_manifest_digest": "41ba2421f62f7cd07f19162873b63ac2915bf70ff732bcecdebc8c72489e58bf",
+      "rebuilt": true,
+      "reconciled": true
+    },
+    "chroma_story_chunks": {
+      "actual_manifest_digest": "122cc3e61d6c3f1654b862e7ea40d44b8c2810674b170b12c72239998e1dedae",
+      "deleted": true,
+      "expected_manifest_digest": "122cc3e61d6c3f1654b862e7ea40d44b8c2810674b170b12c72239998e1dedae",
+      "rebuilt": true,
+      "reconciled": true
+    },
+    "handover_context": {
+      "actual_manifest_digest": "b32e814c0e2854e7a2820dd89d263346d032bda78a935f76295187b55a672e60",
+      "deleted": true,
+      "expected_manifest_digest": "b32e814c0e2854e7a2820dd89d263346d032bda78a935f76295187b55a672e60",
+      "rebuilt": true,
+      "reconciled": true
+    },
+    "legacy_world_event": {
+      "actual_manifest_digest": "9afbf65dc65512abbe3541211d07ae37c388bab7e399a58618fd1c51534165d7",
+      "deleted": true,
+      "expected_manifest_digest": "9afbf65dc65512abbe3541211d07ae37c388bab7e399a58618fd1c51534165d7",
+      "rebuilt": true,
+      "reconciled": true
+    },
+    "markdown_export": {
+      "actual_manifest_digest": "a1489a620c8407377f1460abc94108c786140ead78acd6307d174fb1f549bee7",
+      "deleted": true,
+      "expected_manifest_digest": "a1489a620c8407377f1460abc94108c786140ead78acd6307d174fb1f549bee7",
+      "rebuilt": true,
+      "reconciled": true
+    },
+    "redis_stream": {
+      "actual_manifest_digest": "27008dd8aa4d313b096fec05813d75fcb8f90d81a462195eeff25b8826e6217a",
+      "deleted": true,
+      "expected_manifest_digest": "27008dd8aa4d313b096fec05813d75fcb8f90d81a462195eeff25b8826e6217a",
+      "rebuilt": true,
+      "reconciled": true
+    },
+    "task_preview": {
+      "actual_manifest_digest": "6c088e3e35f45595dc6924e999667663f076904db3dea7ab6aa999f658184ac0",
+      "deleted": true,
+      "expected_manifest_digest": "6c088e3e35f45595dc6924e999667663f076904db3dea7ab6aa999f658184ac0",
+      "rebuilt": true,
+      "reconciled": true
+    }
+  },
+  "scenarios": {
+    "activation_gap_race": {
+      "duration_ms": 3802.112,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "cdb91ca9ffd0340dcae7b09756dd0ca06310dfe1693d09cad3ca0b3c431e59d2",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "audited_operator_requeue": {
+      "duration_ms": 3220.717,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "8f9bfbbdca5f047fd0f3239acb833235b8a7e26e3d7e4dee6caae1f0e329c4c5",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "canon_commits_during_rebuild": {
+      "duration_ms": 3576.739,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "69b3adb794042cc8ebc996976aadef8692f5fa0c967407e65511ef24c0786b95",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "celery_redis_outage_scanner_recovery": {
+      "duration_ms": 3789.253,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "0bf043f4bbfedf5592b601819d43433aa8fa923ed37562e89f1b3277936df24f",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "critical_dead_letter_barrier": {
+      "duration_ms": 3238.644,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "dc33c684062e4e7d8731d0cccef7e7dc9192c20b6145c859228cc559cfaafac2",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "duplicate_wakeup_50x": {
+      "duration_ms": 3713.303,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "164931ea758b2b9326106299ccc377075079128752a71532bc5511fc5aeabab1",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "expired_lease_reclaim": {
+      "duration_ms": 1591.429,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "5113d7f96be917d0aae0b6739667d90b51381a4d11c804930673a2246cc0e3d4",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "final_lag_zero": {
+      "duration_ms": 3684.683,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "aba478915b2f962cfaea2b79b2e4dd4405793d38542c940ab8617077f8eac03d",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "lease_contention": {
+      "duration_ms": 1735.074,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "f278c5c942ae38fd6b959f84772e70e0e3aa57e16bae6c5589459008112f28d5",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "new_projector_no_history_backfill": {
+      "duration_ms": 3277.758,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "cc352a7010e30c578896e1e9d5972ae16cd8b74d48e83e8b1772b6a4e99eb873",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "nonblocking_dead_letter_degraded": {
+      "duration_ms": 3215.508,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "07d25a80bce185dadcf8f480f11d7d0af546e92764f4adda9f87607e917ab907",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "rebuild_crash_resume": {
+      "duration_ms": 3595.05,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "d5015974764ea878969d468cd370c8efff7f7086c0b351ea6c3355f6a79cebbf",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "reconciliation_missing_extra_corrupt": {
+      "duration_ms": 3873.839,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "aba478915b2f962cfaea2b79b2e4dd4405793d38542c940ab8617077f8eac03d",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "seven_projection_delete_rebuild": {
+      "duration_ms": 3742.344,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "8c03e1cbb529e0eb7040bb02d8867f92bd0ee4cf691a6df902f26c8d9b6672bf",
+      "passed": 1,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "stale_token_rejected": {
+      "duration_ms": 2255.194,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "dfbf2a28dbfc08fabf1e6bcc152ffc445bfd2229080a5d2ee5268fb826809992",
+      "passed": 3,
+      "skipped": 0,
+      "status": "passed"
+    },
+    "strict_partition_order": {
+      "duration_ms": 2599.245,
+      "exit_code": 0,
+      "failed": 0,
+      "output_digest": "e6b92f44e32f67090c4edace103c5834efc17725d99d9d924b2e9bedbcdfc751",
+      "passed": 3,
+      "skipped": 0,
+      "status": "passed"
+    }
+  },
+  "schema_version": "p3a-projection-gate-v1",
+  "secret_scan": {
+    "contains_secret": false,
+    "findings": []
+  }
+}

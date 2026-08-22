@@ -1,0 +1,341 @@
+{
+  "schema_version": "1.2-design",
+  "experiment_id": "writer-boundary-v1-2",
+  "enabled": false,
+  "routes": ["W0", "W1"],
+  "repeats_per_route": 3,
+  "base_seed": 20260820,
+  "primary_pair_rule": "same_scene_repeat_and_observed_solution",
+  "unmatched_pair_policy": "retain_as_route_diagnostic_exclude_from_preference_denominator",
+  "model_calls_allowed": false,
+  "scenes": [
+    {
+      "schema_version": "1.2-design",
+      "scene_id": "SC5",
+      "structural_axis": "heat_deterioration",
+      "scene": "闭店后的面包房冷藏柜突然停止制冷。柜里同时放着顾客次日清晨取走的定制冰淇淋蛋糕，以及店里自养、用于后续生产的天然酵种。现有冰袋只够让蛋糕安全撑到维修人员天亮后到场，两人必须优先保住顾客订单，并从白名单中为酵种选择一种临时处理。长期制冷故障留待天亮处理。",
+      "characters": {
+        "林乔": "值夜烘焙师，重视已经承诺给顾客的交付责任。",
+        "周砚": "同班助手，动作利落，但不会用私人关系替代现场判断。"
+      },
+      "world_facts": [
+        "店内只有林乔与周砚，没有可立即联系并赶到的第三人。",
+        "现有冰袋只够完整保护定制蛋糕，不能同时维持酵种的理想温度。",
+        "后仓石台和一条干净棉布已经在现场，可用于白名单内的临时处理。"
+      ],
+      "primary_obligation": "把唯一足量冰袋用于顾客的定制冰淇淋蛋糕。",
+      "resource_constraint": "冰袋只够完整保护一项对象，不能复制、补充或无代价分用。",
+      "long_term_problem": "冷藏柜的维修、持续温控与酵种后续状态确认必须留到天亮。",
+      "mandatory_events": [
+        "M1 冷藏柜停止制冷，柜内温度开始上升。",
+        "M2 顾客蛋糕与店内酵种同时面临受热风险。",
+        "M3 唯一足量冰袋只能完整保护一项对象。",
+        "M4 两人优先把冰袋用于顾客蛋糕。",
+        "M5 酵种只采用一个获准的白名单临时方案。",
+        "M6 结尾不解决冷柜维修、长期温控和酵种后续确认。"
+      ],
+      "forbidden_events": [
+        "F1 不得让蛋糕与酵种都无代价地获得完整冷藏保护。",
+        "F2 不得突然恢复供电、修好冷柜或出现第二批冰袋。",
+        "F3 不得引入第三人、外卖骑手、邻店或电话援助解决问题。",
+        "F4 不得产生新的关系承诺、和解、情感确认或责任转移。",
+        "F5 不得引入白名单外的酵种保存方案。",
+        "F6 不得在结尾解决长期制冷和维修问题。",
+        "F7 不得用长篇心理独白解释两人的关系。",
+        "F8 不得把临时处理写成说明书或流程日志。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，不使用长篇内心独白。",
+        "sentence_rhythm": "短句与中等长度句交替，决定处允许停顿。",
+        "paragraph_rhythm": "围绕升温、取舍与物品状态变化推进。",
+        "dialogue_function": "对话服务现场协作，不逐项朗读规则。",
+        "emotional_mediation": "情绪通过动作、停顿和未完成状态呈现。",
+        "diction_register": "克制、具体，避免抽象主题总结。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-design",
+        "scene_id": "SC5",
+        "decision_id": "starter_temporary_handling",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "cool_stone_bench",
+            "definition": "把密封的酵种罐移到后仓现有的阴凉石台，作为到天亮前的唯一临时处理。",
+            "allowed_implementation_details": [
+              "调整罐子在石台上的具体位置，使其远离烤炉余热。",
+              "擦干罐身并确认原有盖子已经旋紧。"
+            ]
+          },
+          {
+            "value": "single_damp_cloth_wrap",
+            "definition": "用现场已有的一条干净棉布蘸湿后单层包住密封酵种罐，作为到天亮前的唯一临时处理。",
+            "allowed_implementation_details": [
+              "拧去棉布多余水分，避免水流入罐口。",
+              "调整单层棉布的折角和松紧，但不得增加第二层材料。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选方案的放置、固定、折叠、数量或操作顺序，且不独立改变风险、资源、权限、处置路径或长期问题。",
+          "additional_candidate_definition": "出现至少一个超出已选白名单方案、能够独立改变处置结果的机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    },
+    {
+      "schema_version": "1.2-design",
+      "scene_id": "SC6",
+      "structural_axis": "power_service_continuity",
+      "scene": "暴雨夜里，社区广播站突然断电。唯一充足的备用电池既可以维持应急天气接收与转播链路，也可以给工作站供电导出一段尚未交付的口述史采访。两人必须把电池留给公共应急广播，并从白名单中选择一种方式暂存采访数据。长期供电和节目恢复留待天亮。",
+      "characters": {
+        "顾遥": "夜班编辑，优先维护广播站对社区的公共职责。",
+        "韩松": "技术值班员，习惯用有限资源做清楚的现场取舍。"
+      },
+      "world_facts": [
+        "站内只有顾遥与韩松，外部线路在暴雨中中断。",
+        "唯一备用电池只够维持一条完整用电链路。",
+        "工作站仍有不足两分钟的内部余电，现有可拆卸固态盘、抗静电袋和纸质播出记录册都在桌边。"
+      ],
+      "primary_obligation": "把唯一备用电池用于应急天气接收与转播链路。",
+      "resource_constraint": "备用电池不能同时维持应急链路和采访导出工作站。",
+      "long_term_problem": "市电恢复、设备检查和采访节目的正式恢复必须留到天亮。",
+      "mandatory_events": [
+        "M1 暴雨导致广播站断电。",
+        "M2 应急天气链路与未交付采访数据同时需要处理。",
+        "M3 唯一备用电池只能维持一条完整用电链路。",
+        "M4 两人优先维持公共应急广播。",
+        "M5 采访数据只采用一个获准的白名单临时方案。",
+        "M6 结尾不解决市电、设备检查和节目恢复问题。"
+      ],
+      "forbidden_events": [
+        "F1 不得让两条用电链路都获得完整持续供电。",
+        "F2 不得突然来电、修好线路或出现第二块电池。",
+        "F3 不得引入第三人、远程技术员或其他外力完成导出。",
+        "F4 不得产生新的关系承诺、和解、情感确认或责任转移。",
+        "F5 不得引入白名单外的数据保存方案。",
+        "F6 不得在结尾解决长期供电与节目恢复问题。",
+        "F7 不得用长篇心理独白解释两人的关系。",
+        "F8 不得把设备操作写成教程或过程日志。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，视角贴近值班现场。",
+        "sentence_rhythm": "广播声与短句形成间歇，中等长度句承接选择。",
+        "paragraph_rhythm": "围绕余电倒计时、公共播报和数据状态推进。",
+        "dialogue_function": "对话承担协作与必要确认，不朗读技术清单。",
+        "emotional_mediation": "压力通过声音中断、手势和设备灯光呈现。",
+        "diction_register": "准确但不过度技术化，避免抽象升华。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-design",
+        "scene_id": "SC6",
+        "decision_id": "interview_data_temporary_handling",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "remove_drive_to_antistatic_sleeve",
+            "definition": "利用工作站剩余内部电量正常结束写入，取下现有可拆卸固态盘并放入桌边抗静电袋，作为唯一临时处理。",
+            "allowed_implementation_details": [
+              "确认写入指示灯熄灭后再取下固态盘。",
+              "折好抗静电袋开口并把它放在干燥桌面。"
+            ]
+          },
+          {
+            "value": "record_checkpoint_then_power_off",
+            "definition": "在纸质播出记录册记下屏幕现有的最后保存时间与文件状态，随后关闭工作站，作为唯一临时处理。",
+            "allowed_implementation_details": [
+              "在同一条记录旁写明设备编号。",
+              "合上记录册并把它留在既有值班抽屉内。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选方案的放置、固定、折叠、数量或操作顺序，且不独立改变风险、资源、权限、处置路径或长期问题。",
+          "additional_candidate_definition": "出现至少一个超出已选白名单方案、能够独立改变处置结果的机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    },
+    {
+      "schema_version": "1.2-design",
+      "scene_id": "SC7",
+      "structural_axis": "contamination_safety",
+      "scene": "夜间清点时，社区陶艺工坊的一只釉料桶开裂，液体正沿地面流向排水沟。现场唯一合格的吸附围挡必须完整用于阻止污染扩散；旁边一套等待次日登记的教学色样也处在飞溅范围内。两人必须先完成围堵，并从白名单中为色样选择一个临时处理。桶体更换、地面清理和环境确认留待天亮。",
+      "characters": {
+        "程沐": "工坊管理员，首先维护现场安全与公共环境责任。",
+        "许至": "课程助教，熟悉材料位置，但不会擅自扩大处置权限。"
+      },
+      "world_facts": [
+        "工坊内只有程沐与许至，夜间没有其他值班人员。",
+        "唯一合格吸附围挡必须整套使用，拆分后不能可靠阻止釉料流入排水沟。",
+        "干净的高层金属托盘和一个现有透明样品罩都在未污染工作台上。"
+      ],
+      "primary_obligation": "把整套吸附围挡用于阻止釉料进入排水沟。",
+      "resource_constraint": "吸附围挡不能拆分给色样，也不存在第二套合格围挡。",
+      "long_term_problem": "破裂桶更换、污染清理与环境安全确认必须留到天亮。",
+      "mandatory_events": [
+        "M1 釉料桶开裂并向排水沟方向泄漏。",
+        "M2 排水沟与待登记教学色样同时面临风险。",
+        "M3 唯一合格围挡必须整套用于一项处置。",
+        "M4 两人优先围堵釉料、保护公共环境。",
+        "M5 教学色样只采用一个获准的白名单临时方案。",
+        "M6 结尾不解决换桶、彻底清理和环境确认。"
+      ],
+      "forbidden_events": [
+        "F1 不得让围堵与色样保护都获得完整吸附材料。",
+        "F2 不得让泄漏自行停止、污染消失或出现第二套围挡。",
+        "F3 不得引入第三人、消防人员或外部机构即时解决问题。",
+        "F4 不得产生新的关系承诺、和解、情感确认或责任转移。",
+        "F5 不得引入白名单外的色样保护方案。",
+        "F6 不得在结尾解决换桶、彻底清理或环境确认。",
+        "F7 不得用长篇心理独白解释两人的关系。",
+        "F8 不得把围堵动作写成安全手册或过程日志。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，避免全知式安全评述。",
+        "sentence_rhythm": "动作处使用短句，空间变化用中等长度句连接。",
+        "paragraph_rhythm": "沿液体移动、围挡落位和色样状态推进。",
+        "dialogue_function": "对话用于现场配合，不替代可见动作。",
+        "emotional_mediation": "紧张感通过距离、气味、手部动作和停顿呈现。",
+        "diction_register": "具体、节制，不堆砌专业术语。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-design",
+        "scene_id": "SC7",
+        "decision_id": "color_sample_temporary_handling",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "move_to_upper_metal_tray",
+            "definition": "把整套教学色样移到未污染工作台的高层金属托盘，作为到天亮前的唯一临时处理。",
+            "allowed_implementation_details": [
+              "调整色样在托盘内的间距，避免彼此碰撞。",
+              "把托盘推到工作台靠墙一侧，但不增加遮挡材料。"
+            ]
+          },
+          {
+            "value": "single_existing_sample_cover",
+            "definition": "把工作台上现有的一个透明样品罩扣在整套教学色样上，作为到天亮前的唯一临时处理。",
+            "allowed_implementation_details": [
+              "调整罩体位置，使边缘完整落在原有底板上。",
+              "擦去罩体外侧已有的干燥灰尘，但不增加第二层罩体。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选方案的放置、固定、折叠、数量或操作顺序，且不独立改变风险、资源、权限、处置路径或长期问题。",
+          "additional_candidate_definition": "出现至少一个超出已选白名单方案、能够独立改变处置结果的机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    },
+    {
+      "schema_version": "1.2-design",
+      "scene_id": "SC8",
+      "structural_axis": "confidentiality_custody",
+      "scene": "夜间消防检查要求社区法律援助站立即撤出当前办公室。唯一带锁的硬质文件箱只能完整容纳一组材料：等待次日归还的当事人原始证件，或援助站自有、带内部批注的判例活页册。两人必须优先把当事人原件装箱，并从白名单中为活页册选择一种临时保管方式。办公室复用、安全检查和长期存放安排留待天亮。",
+      "characters": {
+        "苏禾": "夜班项目协调员，严格看待当事人原件的保管责任。",
+        "邵原": "同行值班志愿者，做事稳妥，不擅自替机构作长期承诺。"
+      },
+      "world_facts": [
+        "办公室内只有苏禾与邵原，必须在检查人员返回前完成撤出。",
+        "唯一硬质文件箱只能完整容纳一组材料。",
+        "站内原有的带锁内抽屉和一个编号防拆文件袋均可用于白名单内的临时保管。"
+      ],
+      "primary_obligation": "把唯一带锁硬质文件箱用于当事人原始证件。",
+      "resource_constraint": "文件箱不能同时完整容纳原件与判例活页册，也不能拆成两套锁闭空间。",
+      "long_term_problem": "办公室复用、安全检查和材料长期存放安排必须留到天亮。",
+      "mandatory_events": [
+        "M1 消防检查要求两人夜间立即撤出办公室。",
+        "M2 当事人原件与内部批注活页册同时需要受控保管。",
+        "M3 唯一带锁文件箱只能完整容纳一组材料。",
+        "M4 两人优先把文件箱用于当事人原件。",
+        "M5 判例活页册只采用一个获准的白名单临时方案。",
+        "M6 结尾不解决办公室复用、安全检查和长期存放安排。"
+      ],
+      "forbidden_events": [
+        "F1 不得让两组材料都无代价地进入同等级硬质锁箱。",
+        "F2 不得取消撤离、完成消防整改或出现第二只锁箱。",
+        "F3 不得引入第三人、律师主管或外部保管机构即时解决问题。",
+        "F4 不得产生新的关系承诺、和解、情感确认或责任转移。",
+        "F5 不得引入白名单外的活页册保管方案。",
+        "F6 不得在结尾解决办公室复用和长期存放问题。",
+        "F7 不得用长篇心理独白解释两人的关系。",
+        "F8 不得把材料保管写成制度说明或过程日志。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，保持人物所见所闻的边界。",
+        "sentence_rhythm": "撤离压力处用短句，取舍和封存动作允许停顿。",
+        "paragraph_rhythm": "围绕时间限制、材料归属与空间变化推进。",
+        "dialogue_function": "对话服务必要核对，不宣讲保密制度。",
+        "emotional_mediation": "责任压力通过目光、动作和未说完的话呈现。",
+        "diction_register": "冷静、具体，避免法律术语堆叠和主题总结。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-design",
+        "scene_id": "SC8",
+        "decision_id": "annotated_binder_temporary_custody",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "locked_inner_drawer",
+            "definition": "把援助站自有的批注活页册留在办公室原有的带锁内抽屉，并由两人确认抽屉锁闭，作为唯一临时保管。",
+            "allowed_implementation_details": [
+              "整理活页册位置，使抽屉能够正常闭合。",
+              "拉动一次抽屉确认原有锁舌已经扣住。"
+            ]
+          },
+          {
+            "value": "numbered_tamper_evident_bag",
+            "definition": "把批注活页册装入站内现有的一个编号防拆文件袋并封口，作为唯一临时保管。",
+            "allowed_implementation_details": [
+              "在既有值班记录上抄下文件袋编号。",
+              "压实文件袋原有封条，但不增加第二层容器。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选方案的放置、固定、折叠、数量或操作顺序，且不独立改变风险、资源、权限、处置路径或长期问题。",
+          "additional_candidate_definition": "出现至少一个超出已选白名单方案、能够独立改变处置结果的机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    }
+  ]
+}

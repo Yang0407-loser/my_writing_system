@@ -1,0 +1,201 @@
+{
+  "schema_version": "character_arc_contract_impact_audit.v1",
+  "date": "2026-07-21",
+  "scope": {
+    "writer_llm_calls": 0,
+    "new_generation_runs": 0,
+    "private_prose_committed": false,
+    "data_source": "read-only tasks.db events_json; no review or candidate files",
+    "excluded_cost_sample": "6d8187a1-8a53-47b3-9d90-1f3e4bdc3961",
+    "excluded_reason": "worker interruption caused Redis redelivery"
+  },
+  "decision_gate": {
+    "contract_v2_implementation_allowed": true,
+    "reason": "milestones enter Writer arc context and mandatory event context; EventGraph edges affect causal expansion and handover extraction"
+  },
+  "production_impact_chain": [
+    {
+      "stage": "planning",
+      "module": "app/agents/character_manager.py::plan_arcs",
+      "output": "character_arcs",
+      "changes_writer_messages": false,
+      "changes_generation_count": true,
+      "production_effect": true
+    },
+    {
+      "stage": "formatting",
+      "module": "app/agents/character_formatter.py::build_arc_context",
+      "output": "arc_context",
+      "changes_writer_messages": true,
+      "changes_generation_count": false,
+      "production_effect": true
+    },
+    {
+      "stage": "graph_query",
+      "module": "app/agents/writer.py::Writer.run",
+      "output": "ranked_events_str",
+      "changes_writer_messages": true,
+      "changes_generation_count": false,
+      "production_effect": true
+    },
+    {
+      "stage": "pre_check",
+      "module": "app/rule_checks.py::pre_check",
+      "output": "required event prompt",
+      "changes_writer_messages": true,
+      "changes_generation_count": false,
+      "production_effect": true
+    },
+    {
+      "stage": "causal_expansion",
+      "module": "app/narrative_event.py::EventGraph.expand_causal",
+      "output": "causal RAG appendix",
+      "changes_writer_messages": true,
+      "changes_generation_count": false,
+      "production_effect": true
+    },
+    {
+      "stage": "handover",
+      "module": "app/agents/writer.py::_extract_handover",
+      "output": "open_threads prompt",
+      "changes_writer_messages": false,
+      "changes_generation_count": true,
+      "production_effect": true
+    },
+    {
+      "stage": "post_check",
+      "module": "app/rule_checks.py::post_check",
+      "output": "warning",
+      "changes_writer_messages": false,
+      "changes_generation_count": false,
+      "production_effect": false
+    },
+    {
+      "stage": "commit",
+      "module": "app/writing/state_committer.py::commit_handover_effects",
+      "output": "event status",
+      "changes_writer_messages": false,
+      "changes_generation_count": false,
+      "changes_checkpoint": true,
+      "production_effect": true
+    }
+  ],
+  "task_results": {
+    "e7cb9ac2-c76c-44e8-a9de-4d470c238872": {
+      "availability": "available",
+      "milestones": 15,
+      "milestones_by_character_id_count": {
+        "12087418-9bb3-4169-a9c0-fe7c4f34bd3d": 4,
+        "3d685632-bdb4-42ce-a569-b5e9beb98910": 3,
+        "69bcba28-db31-4147-be67-4b12c66c6e75": 2,
+        "8956f425-2c02-4afa-a157-ad0b6cf89779": 2,
+        "c59618bf-0e47-4e6f-9902-0d7520f7ae35": 4
+      },
+      "milestones_by_section": {
+        "1": 15
+      },
+      "legacy_link_operations": 115,
+      "same_character_consecutive_links": 10,
+      "same_section_pairwise_links": 105,
+      "stored_unique_undirected_edges": 105,
+      "edges_with_explicit_metadata": 0,
+      "proven_causal_edges": 0,
+      "legacy_unclassified": 15,
+      "v2_compatibility_view": {
+        "soft_arc_progress": 15,
+        "legacy_unclassified": 15,
+        "hard_arc_transition": 0
+      },
+      "offline_evidence_classification": {
+        "unresolved": 15,
+        "structurally_proven_hard": 0
+      },
+      "v2_legal_edges_from_existing_metadata": 0,
+      "writer_visible_arc_event_estimated_tokens": 952,
+      "task_status": "completed"
+    },
+    "b5ddb41c-da52-47a1-a03e-9278a0b2ab12": {
+      "availability": "available",
+      "milestones": 12,
+      "milestones_by_character_id_count": {
+        "12087418-9bb3-4169-a9c0-fe7c4f34bd3d": 4,
+        "3d685632-bdb4-42ce-a569-b5e9beb98910": 2,
+        "69bcba28-db31-4147-be67-4b12c66c6e75": 2,
+        "8956f425-2c02-4afa-a157-ad0b6cf89779": 1,
+        "c59618bf-0e47-4e6f-9902-0d7520f7ae35": 3
+      },
+      "milestones_by_section": {
+        "1": 12
+      },
+      "legacy_link_operations": 73,
+      "same_character_consecutive_links": 7,
+      "same_section_pairwise_links": 66,
+      "stored_unique_undirected_edges": 66,
+      "edges_with_explicit_metadata": 0,
+      "proven_causal_edges": 0,
+      "legacy_unclassified": 12,
+      "v2_compatibility_view": {
+        "soft_arc_progress": 12,
+        "legacy_unclassified": 12,
+        "hard_arc_transition": 0
+      },
+      "offline_evidence_classification": {
+        "unresolved": 12,
+        "structurally_proven_hard": 0
+      },
+      "v2_legal_edges_from_existing_metadata": 0,
+      "writer_visible_arc_event_estimated_tokens": 843,
+      "task_status": "completed"
+    }
+  },
+  "totals": {
+    "tasks_available": 2,
+    "legacy_milestones": 27,
+    "legacy_link_operations": 188,
+    "legacy_same_section_pairwise_links": 171,
+    "stored_unique_undirected_edges": 171,
+    "proven_causal_edges": 0,
+    "structurally_proven_hard": 0,
+    "unresolved_without_new_inference": 27,
+    "v2_legal_edges_from_existing_metadata": 0,
+    "writer_visible_arc_event_estimated_tokens": 1795
+  },
+  "contract_v2": {
+    "default_version": "v1",
+    "legacy_unclassified_runtime_view": "soft_arc_progress",
+    "legacy_storage_rewritten": false,
+    "hard_limit_per_character_section": 2,
+    "hard_requires_complete_transition_and_provenance": true,
+    "non_injectable": [
+      "observational_texture",
+      "ordinary_plot_event",
+      "unsupported_planning_inference",
+      "unresolved"
+    ],
+    "allowed_edge_types": [
+      "explicit_causal",
+      "explicit_dependency",
+      "ordered_hard_transition"
+    ],
+    "same_section_pairwise_edges": false
+  },
+  "conclusions": {
+    "enters_writer": true,
+    "adds_writer_tokens": true,
+    "arc_post_check_causes_retry": false,
+    "edges_have_real_causal_evidence": false,
+    "true_hard_count": "unavailable from legacy structure; zero structurally provable without reusing evaluation labels",
+    "v2_worth_implementing": true,
+    "v1_preserved_by_default": true,
+    "next_demo_authorization": "eligible after directed tests pass; one real task only"
+  },
+  "next_demo_metrics": [
+    "EventGraph edge count",
+    "hard/soft/observational counts",
+    "Writer call count",
+    "arc warning count",
+    "input tokens",
+    "subsection goal completion",
+    "user usability"
+  ]
+}

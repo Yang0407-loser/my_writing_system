@@ -1,0 +1,545 @@
+{
+  "schema_version": 1,
+  "purpose": "Event assembly evidence review; Codex-assisted diagnostic, not independent human gold.",
+  "summary": {
+    "item_count": 11,
+    "independently_verifiable_items": 9,
+    "reviewed": 11,
+    "independently_verifiable_preserved": 9,
+    "status": "complete"
+  },
+  "items": [
+    {
+      "review_item_id": "q04-8e9a3ccc",
+      "query_index": 4,
+      "source_id": "8e9a3ccc-21e3-4f1c-bd19-dcd13088d7b7",
+      "supported_facts": [
+        "林晚联合季晴、顾衍和吴阿姨筹集三十万"
+      ],
+      "original_evidence_text": "交上两人并排坐着。周野看窗外，手指在膝盖上敲。林晚手机屏幕亮着，银行APP余额停在四位数。她退出，点开通讯录。\n\n季晴接电话时背景音是键盘声。\n\n“季晴，我需要钱。”\n\n“多少。”\n\n“你能拿多少。”\n“五万。年终奖刚发。”键盘声没停。“什么时候要。”\n\n“这周。”\n\n电话挂断。林晚又拨顾衍的号码。翻书声沙沙响。\n\n“顾衍，周野看中一个仓库。”\n\n“我知道。”翻书声停了。“差三十万。”\n\n“我拿八万。书店流水还行。”\n\n“算入股。”顾衍说。“那家面包店值得。”\n\n林晚点开吴阿姨的微信。打字到一半，吴阿姨直接拨过来。\n\n“小林，啥事。”\n\n“周野想开面包工坊，差钱。”\n\n“差多少。”\n\n“三十万。季晴拿了五万，顾衍八万。”\n\n麻将牌磕在桌上。有人喊“碰”。她压低声音。\n\n“我拿三万。别跟周野说是我出的。那孩子倔。”\n\n“为什么。”\n\n“他妈走那年他十九岁。一个人撑到现在。你让他觉得是借的就行。”\n\n电话挂断。\n\n周六早上六点，林晚推开面包店门。周野在操作间揉面，掌根压进面团，往前推，折回来。她从口袋掏出一张银行卡，搁在面粉袋旁。\n\n周野停下手。\n\n“什么。”\n\n“三十万。”\n\n他拿起卡，翻过来看背面。签名条空着。面粉沾在卡面上，他用拇指擦掉。\n\n“哪来的。”\n\n“季晴、顾衍、吴阿姨。还有我。”林晚系上围裙。“我拿四万。”\n\n周野把卡搁回案板。手掌撑在台面上，指关节泛白。窗外槐树叶子沙沙响。",
+      "selected_events": [
+        {
+          "source_id": "event-8e9a3ccc-21e3-4f1c-bd19-dcd13088d7b7-135-404-981aa191ff",
+          "parent_source_id": "8e9a3ccc-21e3-4f1c-bd19-dcd13088d7b7",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 16,
+          "subsection": 1,
+          "title": "三十万缺口",
+          "event_index": 1,
+          "event_type": "money_or_funding",
+          "start": 135,
+          "end": 404,
+          "text": "电话挂断。林晚又拨顾衍的号码。翻书声沙沙响。\n\n“顾衍，周野看中一个仓库。”\n\n“我知道。”翻书声停了。“差三十万。”\n\n“我拿八万。书店流水还行。”\n\n“算入股。”顾衍说。“那家面包店值得。”\n\n林晚点开吴阿姨的微信。打字到一半，吴阿姨直接拨过来。\n\n“小林，啥事。”\n\n“周野想开面包工坊，差钱。”\n\n“差多少。”\n\n“三十万。季晴拿了五万，顾衍八万。”\n\n麻将牌磕在桌上。有人喊“碰”。她压低声音。\n\n“我拿三万。别跟周野说是我出的。那孩子倔。”\n\n“为什么。”\n\n“他妈走那年他十九岁。一个人撑到现在。你让他觉得是借的就行。”\n\n",
+          "actors": [
+            "林晚",
+            "周野",
+            "季晴",
+            "顾衍",
+            "吴阿姨"
+          ],
+          "content_hash": "981aa191ff6e3f28b1300e28497f22dfb428b7c55f0733cdd8472e05fb0142ac",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "explicit_time_or_scene_change"
+          ],
+          "overlap_with_previous_chars": 0
+        },
+        {
+          "source_id": "event-8e9a3ccc-21e3-4f1c-bd19-dcd13088d7b7-404-603-7c9620f76f",
+          "parent_source_id": "8e9a3ccc-21e3-4f1c-bd19-dcd13088d7b7",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 16,
+          "subsection": 1,
+          "title": "三十万缺口",
+          "event_index": 2,
+          "event_type": "money_or_funding",
+          "start": 404,
+          "end": 603,
+          "text": "电话挂断。\n\n周六早上六点，林晚推开面包店门。周野在操作间揉面，掌根压进面团，往前推，折回来。她从口袋掏出一张银行卡，搁在面粉袋旁。\n\n周野停下手。\n\n“什么。”\n\n“三十万。”\n\n他拿起卡，翻过来看背面。签名条空着。面粉沾在卡面上，他用拇指擦掉。\n\n“哪来的。”\n\n“季晴、顾衍、吴阿姨。还有我。”林晚系上围裙。“我拿四万。”\n\n周野把卡搁回案板。手掌撑在台面上，指关节泛白。窗外槐树叶子沙沙响。",
+          "actors": [
+            "林晚",
+            "周野",
+            "季晴",
+            "顾衍",
+            "吴阿姨"
+          ],
+          "content_hash": "7c9620f76fa984f953836614abbf2d6e017cf48f9173805d9d60c57a19185aeb",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "explicit_time_or_scene_change"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "电话挂断。林晚又拨顾衍的号码。翻书声沙沙响。\n\n“顾衍，周野看中一个仓库。”\n\n“我知道。”翻书声停了。“差三十万。”\n\n“我拿八万。书店流水还行。”\n\n“算入股。”顾衍说。“那家面包店值得。”\n\n林晚点开吴阿姨的微信。打字到一半，吴阿姨直接拨过来。\n\n“小林，啥事。”\n\n“周野想开面包工坊，差钱。”\n\n“差多少。”\n\n“三十万。季晴拿了五万，顾衍八万。”\n\n麻将牌磕在桌上。有人喊“碰”。她压低声音。\n\n“我拿三万。别跟周野说是我出的。那孩子倔。”\n\n“为什么。”\n\n“他妈走那年他十九岁。一个人撑到现在。你让他觉得是借的就行。”\n\n\n…\n电话挂断。\n\n周六早上六点，林晚推开面包店门。周野在操作间揉面，掌根压进面团，往前推，折回来。她从口袋掏出一张银行卡，搁在面粉袋旁。\n\n周野停下手。\n\n“什么。”\n\n“三十万。”\n\n他拿起卡，翻过来看背面。签名条空着。面粉沾在卡面上，他用拇指擦掉。\n\n“哪来的。”\n\n“季晴、顾衍、吴阿姨。还有我。”林晚系上围裙。“我拿四万。”\n\n周野把卡搁回案板。手掌撑在台面上，指关节泛白。窗外槐树叶子沙沙响。",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembled funding event retains Lin Wan, Ji Qing, Gu Yan, Wu Aunt, their contributions and the 300,000 total.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q05-2c933962",
+      "query_index": 5,
+      "source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+      "supported_facts": [
+        "林晚决定不再只做旁观者"
+      ],
+      "original_evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n她没按快门。\n\n周六早上六点，她会站在柜台后面，从取景器后面走出来，走进那个橘色光的房间。",
+      "selected_events": [
+        {
+          "source_id": "event-2c933962-1baf-448f-ad53-55ef299f6668-0-405-fe8b12183f",
+          "parent_source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 0,
+          "event_type": "money_or_funding",
+          "start": 0,
+          "end": 405,
+          "text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "fe8b12183f3c2d0d8cf5bbd0419b26457126ab368ddbf270305074e52d2da112",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The event assembly retains Zhou Ye's invitation, Lin Wan's acceptance and her transition from behind the viewfinder into participation.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q05-91e847dc",
+      "query_index": 5,
+      "source_id": "91e847dc-4855-4365-9ba6-47eb7a3a4a96",
+      "supported_facts": [
+        "林晚决定不再只做旁观者"
+      ],
+      "original_evidence_text": "。\n\n她合上笔记本。啪地一声，像快门落下。\n\n以前合上是收工。这次不是。她站起来，走到操作间门口。\n\n周野在擦案板，抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味。\n\n“下周六我早点来。”\n\n他停下手。\n“三点半。”她靠在门框上，围裙还系着。“揉面你教，烤面包你教，收钱我会。”\n\n周野把抹布搭在水池边，转过身，手臂交叉。袖口沾着面粉，灰长袖洗得发白。\n\n“揉面一百下。翻面，再一百下。手劲要匀。”\n\n“我知道。看你揉了六周。”\n\n他点头。不是冷淡，是刻度。\n\n林晚摸出笔记本，翻到最后一页。上面写着“第五周。不只是面包店。整条街。凌晨三点半到七点。先拍，不发。”她在这行下加了一句。\n\n“第七周。三点半到店。揉面一百下。”\n\n笔尖顿住，又加一句。\n\n“从取景器后面走出来。”\n\n她合上笔记本。这次不是收工，是开始。\n\n周野从架上拿下新围裙，放在案板边。\n\n“你的。”\n\n林晚接过来。米白色，棉布，系带还没打结。左下角绣着“野面包”。\n\n“什么时候准备的。”\n\n“上周。”他拿起刮板铲面粉。“你记笔记的时候。”\n\n烤箱嘀一声。操作间安静下来，只有压缩机低鸣。林晚把围裙叠好放进包里，挨着笔记本。油纸还夹在里面，小圆面包的咸味散了，只剩纸的味道。\n\n她走到门口，回头。周野站在案板前，手插在围裙口袋里。橘光下，面粉扬起像凝固的雪。\n\n“周六见。”\n\n他点头。",
+      "selected_events": [
+        {
+          "source_id": "event-91e847dc-4855-4365-9ba6-47eb7a3a4a96-0-378-0d381002df",
+          "parent_source_id": "91e847dc-4855-4365-9ba6-47eb7a3a4a96",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 5,
+          "subsection": 3,
+          "title": "沉默的重量",
+          "event_index": 0,
+          "event_type": "money_or_funding",
+          "start": 0,
+          "end": 378,
+          "text": "。\n\n她合上笔记本。啪地一声，像快门落下。\n\n以前合上是收工。这次不是。她站起来，走到操作间门口。\n\n周野在擦案板，抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味。\n\n“下周六我早点来。”\n\n他停下手。\n“三点半。”她靠在门框上，围裙还系着。“揉面你教，烤面包你教，收钱我会。”\n\n周野把抹布搭在水池边，转过身，手臂交叉。袖口沾着面粉，灰长袖洗得发白。\n\n“揉面一百下。翻面，再一百下。手劲要匀。”\n\n“我知道。看你揉了六周。”\n\n他点头。不是冷淡，是刻度。\n\n林晚摸出笔记本，翻到最后一页。上面写着“第五周。不只是面包店。整条街。凌晨三点半到七点。先拍，不发。”她在这行下加了一句。\n\n“第七周。三点半到店。揉面一百下。”\n\n笔尖顿住，又加一句。\n\n“从取景器后面走出来。”\n\n她合上笔记本。这次不是收工，是开始。\n\n周野从架上拿下新围裙，放在案板边。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "0d381002df6954fe585e1ce59c4b303376b8ac93af73536737ea7610c427d143",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "。\n\n她合上笔记本。啪地一声，像快门落下。\n\n以前合上是收工。这次不是。她站起来，走到操作间门口。\n\n周野在擦案板，抹布一圈圈把面粉拢成堆。烤箱余温里浮着焦糖味。\n\n“下周六我早点来。”\n\n他停下手。\n“三点半。”她靠在门框上，围裙还系着。“揉面你教，烤面包你教，收钱我会。”\n\n周野把抹布搭在水池边，转过身，手臂交叉。袖口沾着面粉，灰长袖洗得发白。\n\n“揉面一百下。翻面，再一百下。手劲要匀。”\n\n“我知道。看你揉了六周。”\n\n他点头。不是冷淡，是刻度。\n\n林晚摸出笔记本，翻到最后一页。上面写着“第五周。不只是面包店。整条街。凌晨三点半到七点。先拍，不发。”她在这行下加了一句。\n\n“第七周。三点半到店。揉面一百下。”\n\n笔尖顿住，又加一句。\n\n“从取景器后面走出来。”\n\n她合上笔记本。这次不是收工，是开始。\n\n周野从架上拿下新围裙，放在案板边。\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains the early-arrival plan, learning work and explicit line about stepping out from behind the viewfinder.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q05-85cda2bd",
+      "query_index": 5,
+      "source_id": "85cda2bd-f853-41d2-bff0-b76520368fb9",
+      "supported_facts": [
+        "林晚决定不再只做旁观者"
+      ],
+      "original_evidence_text": "周六清晨五点二十，林晚站在野面包店门口。\n\n卷帘门半拉着，橘色光从底下漏出来。她蹲下，手指扣住门边。操作间里烤箱低鸣，发酵的酸味混着焦糖香。她比约定的三点半早了十分钟。\n\n周野推起卷帘门。他看了她一眼，从架上拿下围裙递过来。米白色，左下角绣着“野面包”。\n\n“系上。六点开门。”\n\n他转身回了操作间。没有多余的话。\n\n林晚系好围裙，带子在腰后打了个结。围裙有点长，她折了一道。操作间里案板上搁着分割好的面团，周野手掌压进面里，肩胛骨起伏。她站到案板对面。\n\n“揉面。”\n\n周野推过来一块面团。手掌示范——掌根压下去，往前推，折回来，再压。节奏像钟摆。\n\n林晚把手伸进面团。面粘在指缝里，她用力压下去，面团滑开，歪成椭圆形。她抓回来再压，手指陷得太深，面粘在案板上。周野伸手把面团翻过来，指节敲了敲案板。\n\n“轻点。掌根用力。”\n\n她又压下去。这次面团往前推开，折回来时边缘裂了。周野没说话，继续揉自己的面。操作间里只有手掌压面的闷响和压缩机低鸣。\n\n六点整，卷帘门哗啦推上去。\n\n吴阿姨排在第一个，后面跟着两个拎布袋的大姐。她跨进门，目光在林晚身上停住。\n\n“哟，换人了？”",
+      "selected_events": [
+        {
+          "source_id": "event-85cda2bd-f853-41d2-bff0-b76520368fb9-0-365-636c4a27aa",
+          "parent_source_id": "85cda2bd-f853-41d2-bff0-b76520368fb9",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 7,
+          "subsection": 2,
+          "title": "忐忑的赴约",
+          "event_index": 0,
+          "event_type": "dialogue",
+          "start": 0,
+          "end": 365,
+          "text": "周六清晨五点二十，林晚站在野面包店门口。\n\n卷帘门半拉着，橘色光从底下漏出来。她蹲下，手指扣住门边。操作间里烤箱低鸣，发酵的酸味混着焦糖香。她比约定的三点半早了十分钟。\n\n周野推起卷帘门。他看了她一眼，从架上拿下围裙递过来。米白色，左下角绣着“野面包”。\n\n“系上。六点开门。”\n\n他转身回了操作间。没有多余的话。\n\n林晚系好围裙，带子在腰后打了个结。围裙有点长，她折了一道。操作间里案板上搁着分割好的面团，周野手掌压进面里，肩胛骨起伏。她站到案板对面。\n\n“揉面。”\n\n周野推过来一块面团。手掌示范——掌根压下去，往前推，折回来，再压。节奏像钟摆。\n\n林晚把手伸进面团。面粘在指缝里，她用力压下去，面团滑开，歪成椭圆形。她抓回来再压，手指陷得太深，面粘在案板上。周野伸手把面团翻过来，指节敲了敲案板。\n\n“轻点。掌根用力。”\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "636c4a27aa1fe0ce20290503832ac2fb7a7e0bd9a2550d61478d857b86814316",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "周六清晨五点二十，林晚站在野面包店门口。\n\n卷帘门半拉着，橘色光从底下漏出来。她蹲下，手指扣住门边。操作间里烤箱低鸣，发酵的酸味混着焦糖香。她比约定的三点半早了十分钟。\n\n周野推起卷帘门。他看了她一眼，从架上拿下围裙递过来。米白色，左下角绣着“野面包”。\n\n“系上。六点开门。”\n\n他转身回了操作间。没有多余的话。\n\n林晚系好围裙，带子在腰后打了个结。围裙有点长，她折了一道。操作间里案板上搁着分割好的面团，周野手掌压进面里，肩胛骨起伏。她站到案板对面。\n\n“揉面。”\n\n周野推过来一块面团。手掌示范——掌根压下去，往前推，折回来，再压。节奏像钟摆。\n\n林晚把手伸进面团。面粘在指缝里，她用力压下去，面团滑开，歪成椭圆形。她抓回来再压，手指陷得太深，面粘在案板上。周野伸手把面团翻过来，指节敲了敲案板。\n\n“轻点。掌根用力。”\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains Lin Wan arriving early, receiving the bakery apron and entering the worker role.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q05-097053c9",
+      "query_index": 5,
+      "source_id": "097053c9-e158-4bc3-b103-4e305e1c5bd2",
+      "supported_facts": [
+        "林晚决定不再只做旁观者"
+      ],
+      "original_evidence_text": "“我删了。”林晚站起来。“那篇图文。彻底删了。”\n\n周野没说话。\n\n“下周三点半。”她把笔记本塞回口袋。“揉面一百下。翻面，再一百下。你教，我学。”\n\n周野看了她片刻。然后点头。\n\n不是冷淡。是刻度。\n林晚转身往楼上走。槐树叶子沙沙响，天光从枝叶缝隙漏下来，在人行道上铺成碎金。笔记本在口袋里沉甸甸的。那些字不是记录，是重量。一个老爷爷，两个菠萝包，一趟头班车。还有一个人，话少，每个字都卡在刻度上。\n\n她摸到笔记本封面，还温热。",
+      "selected_events": [
+        {
+          "source_id": "event-097053c9-e158-4bc3-b103-4e305e1c5bd2-0-215-e66c37941a",
+          "parent_source_id": "097053c9-e158-4bc3-b103-4e305e1c5bd2",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 6,
+          "subsection": 3,
+          "title": "错位镜头",
+          "event_index": 0,
+          "event_type": "cause_or_consequence",
+          "start": 0,
+          "end": 215,
+          "text": "“我删了。”林晚站起来。“那篇图文。彻底删了。”\n\n周野没说话。\n\n“下周三点半。”她把笔记本塞回口袋。“揉面一百下。翻面，再一百下。你教，我学。”\n\n周野看了她片刻。然后点头。\n\n不是冷淡。是刻度。\n林晚转身往楼上走。槐树叶子沙沙响，天光从枝叶缝隙漏下来，在人行道上铺成碎金。笔记本在口袋里沉甸甸的。那些字不是记录，是重量。一个老爷爷，两个菠萝包，一趟头班车。还有一个人，话少，每个字都卡在刻度上。\n\n她摸到笔记本封面，还温热。",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "e66c37941a6da610bc8a3b7a8d8f416dda74edde78166ebf764c97c384bcf594",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "“我删了。”林晚站起来。“那篇图文。彻底删了。”\n\n周野没说话。\n\n“下周三点半。”她把笔记本塞回口袋。“揉面一百下。翻面，再一百下。你教，我学。”\n\n周野看了她片刻。然后点头。\n\n不是冷淡。是刻度。\n林晚转身往楼上走。槐树叶子沙沙响，天光从枝叶缝隙漏下来，在人行道上铺成碎金。笔记本在口袋里沉甸甸的。那些字不是记录，是重量。一个老爷爷，两个菠萝包，一趟头班车。还有一个人，话少，每个字都卡在刻度上。\n\n她摸到笔记本封面，还温热。",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains the explicit 'you teach, I learn' participation commitment.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q06-2c933962",
+      "query_index": 6,
+      "source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+      "supported_facts": [
+        "周野主动邀请她再来"
+      ],
+      "original_evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n她没按快门。\n\n周六早上六点，她会站在柜台后面，从取景器后面走出来，走进那个橘色光的房间。",
+      "selected_events": [
+        {
+          "source_id": "event-2c933962-1baf-448f-ad53-55ef299f6668-0-405-fe8b12183f",
+          "parent_source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 0,
+          "event_type": "money_or_funding",
+          "start": 0,
+          "end": 405,
+          "text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "fe8b12183f3c2d0d8cf5bbd0419b26457126ab368ddbf270305074e52d2da112",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains Zhou Ye's staffing request and explicit invitation for Lin Wan to come inside and help.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q06-679a7aa0",
+      "query_index": 6,
+      "source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+      "supported_facts": [
+        "周野主动邀请她再来"
+      ],
+      "original_evidence_text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。",
+      "selected_events": [
+        {
+          "source_id": "event-679a7aa0-5f71-4227-94fe-87ccde458284-0-131-47c27f5049",
+          "parent_source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 0,
+          "event_type": "money_or_funding",
+          "start": 0,
+          "end": 131,
+          "text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n",
+          "actors": [
+            "林晚",
+            "季晴"
+          ],
+          "content_hash": "47c27f504930cc29b0d3031e9703a2e5d03be8cb575346b569eb478211ca005b",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        },
+        {
+          "source_id": "event-679a7aa0-5f71-4227-94fe-87ccde458284-131-439-5a53c45404",
+          "parent_source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 1,
+          "event_type": "cause_or_consequence",
+          "start": 131,
+          "end": 439,
+          "text": "周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "5a53c45404473a20bebb80d1ca5fd04fee26285fc9cc05380aa637cda9fbc536",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "explicit_time_or_scene_change"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n\n…\n周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n",
+      "codex_assisted_evidence_preserved": false,
+      "codex_review_note": "Baseline annotation ceiling, not an EventChunker loss: the original parent contains no active invitation from Zhou Ye.",
+      "baseline_annotation_ceiling": true,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q07-679a7aa0",
+      "query_index": 7,
+      "source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+      "supported_facts": [
+        "林晚因记录造成的后果而愧疚",
+        "她决定删帖并直面周野"
+      ],
+      "original_evidence_text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。",
+      "selected_events": [
+        {
+          "source_id": "event-679a7aa0-5f71-4227-94fe-87ccde458284-0-131-47c27f5049",
+          "parent_source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 0,
+          "event_type": "money_or_funding",
+          "start": 0,
+          "end": 131,
+          "text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n",
+          "actors": [
+            "林晚",
+            "季晴"
+          ],
+          "content_hash": "47c27f504930cc29b0d3031e9703a2e5d03be8cb575346b569eb478211ca005b",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        },
+        {
+          "source_id": "event-679a7aa0-5f71-4227-94fe-87ccde458284-131-439-5a53c45404",
+          "parent_source_id": "679a7aa0-5f71-4227-94fe-87ccde458284",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 1,
+          "event_type": "cause_or_consequence",
+          "start": 131,
+          "end": 439,
+          "text": "周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "5a53c45404473a20bebb80d1ca5fd04fee26285fc9cc05380aa637cda9fbc536",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "explicit_time_or_scene_change"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "林晚凌晨四点半发出第一篇记录，九张照片配笔记本上的文字。醒来是下午两点，手机被通知塞满：点赞破万，转发三千，评论两千条。“求地址”“拍得好好哭”“凌晨三点半揉面的人”。胸口涌上来的不是喜悦，是某种更尖锐的东西。\n\n季晴消息弹出来：“我们公司HR群里都在转。”\n\n\n…\n周六清晨六点，她下楼。野面包店门口排着队，十几个人举着手机，三脚架、补光灯、自拍杆。有人端着咖啡摆出她照片里的姿势，朋友蹲在地上找角度。\n\n卷帘门哗啦推上去。周野端着烤盘出来，手套停在半空。人群往前涌，补光灯的白光打在面包上。他转身进了操作间。\n\n林晚站在槐树后面，手指扣在相机边缘。\n\n周野从操作间出来，手臂交叉在胸前，目光扫过那些设备，落在摆姿势的女孩身上。“面包是给人吃的。”人群安静下来。“不是给人拍的。”他视线穿过人群，落在槐树后面。那双眼睛没有愤怒，只是某种更沉的东西。\n\n她转身往楼上走。打开手机，点进编辑页面，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n",
+      "codex_assisted_evidence_preserved": false,
+      "codex_review_note": "Baseline annotation ceiling, not an EventChunker loss: the original parent stops before Lin Wan directly faces Zhou Ye.",
+      "baseline_annotation_ceiling": true,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q07-7714910d",
+      "query_index": 7,
+      "source_id": "7714910d-01ee-478f-bd4a-c836a292fc4f",
+      "supported_facts": [
+        "林晚因记录造成的后果而愧疚",
+        "她决定删帖并直面周野"
+      ],
+      "original_evidence_text": "作间。门帘晃了一下。\n\n林晚跟进去。\n\n周野站在案板前，手掌撑在台面上，指关节泛白。\n\n“那些照片。”他开口，声音压在嗓子眼里。“上周你拍的。发到网上了。”\n\n林晚的手停在围裙系带上。\n\n“我删了。”\n周野转过身。手臂交叉在胸前，袖口沾着面粉。那双眼睛没有愤怒，只是某种更沉的东西。\n\n“删了没用。别人存了，转了。”他往门外看了一眼。补光灯的白光透过门帘缝隙，在墙上投下晃动的影子。“今天这些人，下周六还会来。”\n\n林晚靠在门框上。笔记本在围裙口袋里，封面硌着肋骨。\n\n“我去跟他们说。”\n\n“说什么。”\n\n“说面包店不是景点。”\n\n周野摇头。拿起刮板，铲起案板上的面粉，倒进垃圾桶。\n\n“不用说。限购就行。面包卖完，他们就走了。”\n\n他推开门帘，走回柜台。林晚看着他的背影。灰色长袖洗得发白，肩胛骨在布料下起伏。他拿起油纸，包好两个菠萝包，递给下一个顾客。折袋口的手指比平时用力，纸袋边缘压出折痕。\n\n老爷爷终于排到柜台前。\n\n“两个菠萝包。”\n\n周野拿油纸的手停了一下。包好两个，搁在柜台上。老爷爷从兜里掏出零钱，手指关节粗大，指甲缝里有洗不掉的灰。\n\n“今天人多。”\n\n周野点头。\n\n老爷爷把纸袋放进布袋里，布袋上印着“朝阳医院”的红字。他往门口走，经过三脚架时侧身让了一下。布鞋底踩在槐花上，右脚外侧磨得厉害。\n\n林晚看着他的背影拐过街角。",
+      "selected_events": [
+        {
+          "source_id": "event-7714910d-01ee-478f-bd4a-c836a292fc4f-0-402-486361802b",
+          "parent_source_id": "7714910d-01ee-478f-bd4a-c836a292fc4f",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 6,
+          "subsection": 1,
+          "title": "排队长龙",
+          "event_index": 0,
+          "event_type": "cause_or_consequence",
+          "start": 0,
+          "end": 402,
+          "text": "作间。门帘晃了一下。\n\n林晚跟进去。\n\n周野站在案板前，手掌撑在台面上，指关节泛白。\n\n“那些照片。”他开口，声音压在嗓子眼里。“上周你拍的。发到网上了。”\n\n林晚的手停在围裙系带上。\n\n“我删了。”\n周野转过身。手臂交叉在胸前，袖口沾着面粉。那双眼睛没有愤怒，只是某种更沉的东西。\n\n“删了没用。别人存了，转了。”他往门外看了一眼。补光灯的白光透过门帘缝隙，在墙上投下晃动的影子。“今天这些人，下周六还会来。”\n\n林晚靠在门框上。笔记本在围裙口袋里，封面硌着肋骨。\n\n“我去跟他们说。”\n\n“说什么。”\n\n“说面包店不是景点。”\n\n周野摇头。拿起刮板，铲起案板上的面粉，倒进垃圾桶。\n\n“不用说。限购就行。面包卖完，他们就走了。”\n\n他推开门帘，走回柜台。林晚看着他的背影。灰色长袖洗得发白，肩胛骨在布料下起伏。他拿起油纸，包好两个菠萝包，递给下一个顾客。折袋口的手指比平时用力，纸袋边缘压出折痕。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "486361802bc9884b7b9e8f10bcf3057711972414fa877545ef1e73e61d3442b8",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "作间。门帘晃了一下。\n\n林晚跟进去。\n\n周野站在案板前，手掌撑在台面上，指关节泛白。\n\n“那些照片。”他开口，声音压在嗓子眼里。“上周你拍的。发到网上了。”\n\n林晚的手停在围裙系带上。\n\n“我删了。”\n周野转过身。手臂交叉在胸前，袖口沾着面粉。那双眼睛没有愤怒，只是某种更沉的东西。\n\n“删了没用。别人存了，转了。”他往门外看了一眼。补光灯的白光透过门帘缝隙，在墙上投下晃动的影子。“今天这些人，下周六还会来。”\n\n林晚靠在门框上。笔记本在围裙口袋里，封面硌着肋骨。\n\n“我去跟他们说。”\n\n“说什么。”\n\n“说面包店不是景点。”\n\n周野摇头。拿起刮板，铲起案板上的面粉，倒进垃圾桶。\n\n“不用说。限购就行。面包卖完，他们就走了。”\n\n他推开门帘，走回柜台。林晚看着他的背影。灰色长袖洗得发白，肩胛骨在布料下起伏。他拿起油纸，包好两个菠萝包，递给下一个顾客。折袋口的手指比平时用力，纸袋边缘压出折痕。\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains the photo consequences, deletion, direct exchange with Zhou Ye and Lin Wan's proposal to address the crowd.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q07-2c933962",
+      "query_index": 7,
+      "source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+      "supported_facts": [
+        "林晚因记录造成的后果而愧疚",
+        "她决定删帖并直面周野"
+      ],
+      "original_evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n她没按快门。\n\n周六早上六点，她会站在柜台后面，从取景器后面走出来，走进那个橘色光的房间。",
+      "selected_events": [
+        {
+          "source_id": "event-2c933962-1baf-448f-ad53-55ef299f6668-0-405-fe8b12183f",
+          "parent_source_id": "2c933962-1baf-448f-ad53-55ef299f6668",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 2,
+          "title": "暗涌初现",
+          "event_index": 0,
+          "event_type": "money_or_funding",
+          "start": 0,
+          "end": 405,
+          "text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "fe8b12183f3c2d0d8cf5bbd0419b26457126ab368ddbf270305074e52d2da112",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "，拇指悬在删除键上。照片里周野的背影，面粉在暖光里浮沉。她按下删除。“确定删除？”确定。\n\n晚上七点，她下楼倒垃圾。野面包店门口空了，卷帘门半拉着，橘色光漏出来。周野推起卷帘门，蹲下来，视线和她平齐。\n“删了。”不是问句。\n\n“你怎么知道。”\n\n“隔壁书店老板说的。”他站起来，“进来。”\n\n操作间还是老样子，烤箱余温还在。周野从架子上取下一个藤编筐。“周六缺个人。早上六点到十点，摆面包，收钱，端烤盘。”他拿油纸包了个小圆面包递给她。\n\n“为什么。”\n\n“你拍了三周。第一周躲在槐树后面，第二周躲在楼道口，第三周站到门口。”他把手臂交叉在胸前，“现在该进来了。”\n\n林晚掰开面包，蒸汽涌出来，咸味藏在麦香后面。她咬了一口，外壳碎裂的声音很轻。\n\n“好。”\n\n周野转身继续擦案板，节奏没变。林晚站在操作间门口，取景器挂在脖子上，但她没举起来。烤箱嘀了一声，最后一炉法棍裂纹像干涸的河床，蒸汽模糊了他的轮廓。\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains deletion and the ensuing face-to-face exchange with Zhou Ye.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    },
+    {
+      "review_item_id": "q08-890a929d",
+      "query_index": 8,
+      "source_id": "890a929d-ec95-4879-a46b-813607b3b827",
+      "supported_facts": [
+        "小圆面包具有微咸余味"
+      ],
+      "original_evidence_text": "不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”\n“什么病。”\n\n周野没回答。他转身从架子上取下一个藤编筐，拿油纸包了个小圆面包，递给她。“采访费。”\n\n林晚接过面包。油纸透出热度，面包壳硬挺，手指按下去能感觉到外壳的阻力。她掰开，里面是浅黄色的组织，气孔大小不一，蒸汽从断面涌出来。咬了一口，外壳碎裂的声音很轻，里面软得几乎不用嚼。咸味是慢慢渗出来的，藏在麦香后面，像海风混进面粉里。\n\n“盐。”\n\n“海盐。”周野靠在案板边，“揉面的时候加进去，烤完就融在组织里。”\n\n林晚吃完半个面包，把油纸折好。相机还挂在脖子上，第三个问题卡在喉咙里。她看着周野转身继续摆面包，肩胛骨在灰色长袖下起伏，节奏没变。\n\n“我还有一个问题。”\n\n周野回头看她。\n\n“下周问。”林晚把相机盖摘下来，“今天先拍。”她举起相机，取景框里周野正把一炉新面包拖出来，热气模糊了他的轮廓。",
+      "selected_events": [
+        {
+          "source_id": "event-890a929d-ec95-4879-a46b-813607b3b827-0-379-f58a229ca2",
+          "parent_source_id": "890a929d-ec95-4879-a46b-813607b3b827",
+          "task_id": "07d1391e-06ff-4af3-8bd7-6a404d2f4fd6",
+          "section": 4,
+          "subsection": 1,
+          "title": "破晓等候",
+          "event_index": 0,
+          "event_type": "dialogue",
+          "start": 0,
+          "end": 379,
+          "text": "不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”\n“什么病。”\n\n周野没回答。他转身从架子上取下一个藤编筐，拿油纸包了个小圆面包，递给她。“采访费。”\n\n林晚接过面包。油纸透出热度，面包壳硬挺，手指按下去能感觉到外壳的阻力。她掰开，里面是浅黄色的组织，气孔大小不一，蒸汽从断面涌出来。咬了一口，外壳碎裂的声音很轻，里面软得几乎不用嚼。咸味是慢慢渗出来的，藏在麦香后面，像海风混进面粉里。\n\n“盐。”\n\n“海盐。”周野靠在案板边，“揉面的时候加进去，烤完就融在组织里。”\n\n林晚吃完半个面包，把油纸折好。相机还挂在脖子上，第三个问题卡在喉咙里。她看着周野转身继续摆面包，肩胛骨在灰色长袖下起伏，节奏没变。\n\n",
+          "actors": [
+            "林晚",
+            "周野"
+          ],
+          "content_hash": "f58a229ca21b99f962b51575c6dcf454ff0701a2f2a9d192780f1d45f2efaaeb",
+          "schema_version": 1,
+          "chunk_level": "event",
+          "boundary_reasons": [
+            "parent_start"
+          ],
+          "overlap_with_previous_chars": 0
+        }
+      ],
+      "assembled_evidence_text": "不了。”\n\n林晚端起相机。取景器里，周野靠在案板边，手臂交叉在胸前。“你以前是建筑师。”\n\n他手指在袖口上蹭了一下，面粉沾在指尖。“画了五年图。后来住了三个月院。”他把手放下来，“出院之后就不画了。”\n“什么病。”\n\n周野没回答。他转身从架子上取下一个藤编筐，拿油纸包了个小圆面包，递给她。“采访费。”\n\n林晚接过面包。油纸透出热度，面包壳硬挺，手指按下去能感觉到外壳的阻力。她掰开，里面是浅黄色的组织，气孔大小不一，蒸汽从断面涌出来。咬了一口，外壳碎裂的声音很轻，里面软得几乎不用嚼。咸味是慢慢渗出来的，藏在麦香后面，像海风混进面粉里。\n\n“盐。”\n\n“海盐。”周野靠在案板边，“揉面的时候加进去，烤完就融在组织里。”\n\n林晚吃完半个面包，把油纸折好。相机还挂在脖子上，第三个问题卡在喉咙里。她看着周野转身继续摆面包，肩胛骨在灰色长袖下起伏，节奏没变。\n\n",
+      "codex_assisted_evidence_preserved": true,
+      "codex_review_note": "The assembly retains the slowly emerging salty aftertaste, wheat aroma and explicit sea-salt explanation.",
+      "baseline_annotation_ceiling": false,
+      "review_provenance": "codex_assisted_review",
+      "independent_human_confirmation": false
+    }
+  ]
+}

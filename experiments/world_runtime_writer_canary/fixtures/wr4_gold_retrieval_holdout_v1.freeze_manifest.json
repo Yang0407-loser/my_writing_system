@@ -1,0 +1,14 @@
+{
+  "schema_version": "wr4-gold-retrieval-holdout-freeze-manifest-v1",
+  "fixture": "wr4_gold_retrieval_holdout_v1.json",
+  "fixture_sha256": "82e1c68ee7c07af97c9e580e381879d1fcad33ea9f8559f8ec86fb63f3fcbf75",
+  "corpus_snapshot": "gold_retrieval_corpus_snapshot_v1.json",
+  "corpus_snapshot_sha256": "4ffb28d6f7d088b6b20777d8a07957bd039be6488b0ee37e937c2ab77a3d3e1f",
+  "entry_count": 20,
+  "tiers": {
+    "story_fact": 12,
+    "wr_key_evidence": 8
+  },
+  "llm_calls": 0,
+  "production_authorized": false
+}

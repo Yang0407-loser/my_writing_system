@@ -1,0 +1,149 @@
+{
+  "schema_version": "realization-policy-canary-v1",
+  "experiment_id": "realization-policy-canary-v1",
+  "provider": {
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "max_tokens": 2400,
+    "json_mode": false,
+    "transport_max_retries": 0
+  },
+  "preregistered_gates": {
+    "target_character_band": [750, 1350],
+    "paired_length_difference_max_fraction": 0.2,
+    "arm_mean_length_ratio_max": 1.1,
+    "hard_task_pass_required": "16_of_16",
+    "unauthorized_content_required": 0,
+    "exact_copied_sentence_required": 0,
+    "primary_metrics": ["naturalness", "less_template", "overall_quality"],
+    "promotion_rule": "B must beat A on at least two primary mean scores and at least three of four scenes on naturalness or less_template; B must not be selected more often as most_mechanical; all hard and copy gates must pass.",
+    "tie_rule": "Ties split one winner vote equally.",
+    "length_confound_rule": "If any pair exceeds 20% or arm mean ratio exceeds 1.10, quality result is confounded and cannot promote."
+  },
+  "scenes": [
+    {
+      "scene_id": "RP-SC01",
+      "scene_type": "relationship_conflict_dialogue",
+      "title": "未拆的信",
+      "style": {
+        "emotion_intensity": 42,
+        "dialogue_ratio": 0.42,
+        "sentence_preference": "balanced",
+        "sensory_density": "sparse"
+      },
+      "premise": "停电后的旧档案馆里，纪岚把沈砚三年前留下、如今又要求取回的未拆信封推回给他。两人曾经亲近，如今只剩必要往来。",
+      "characters": [
+        "纪岚：档案修复员，谨慎，不替别人完成迟到的决定。",
+        "沈砚：纪录片导演，习惯用解释夺回主动，此刻并没有准备好承认真正来意。"
+      ],
+      "content_boundaries": [
+        "纪岚最终把未拆信封还给沈砚。",
+        "沈砚没有拆信，也没有解释信里写了什么。",
+        "两人没有道歉、和解或恢复关系。",
+        "场景结束时信封仍然未拆，真正来意仍未说出口。"
+      ],
+      "required_term_groups": [["信封"], ["未拆", "没拆", "没有拆"]],
+      "forbidden_terms": ["拆开信封", "打开信封", "两人和解", "重归于好"],
+      "kernel": {
+        "irreversible_micro_choice": "纪岚把未拆信封交还沈砚，不再替他保管。",
+        "must_remain_unsaid": "沈砚取回信封的真正来意，以及信中内容。",
+        "relationship_pressure": "纪岚拒绝继续替沈砚保存迟到的决定；沈砚无法靠解释恢复旧有亲近。",
+        "forbidden_shortcut": "不拆信、不道歉、不和解、不用回忆段落替代现场互动。",
+        "ending_residue": "信封回到沈砚手里但仍未拆，两人的关系没有获得结论。"
+      }
+    },
+    {
+      "scene_id": "RP-SC02",
+      "scene_type": "action",
+      "title": "旧闸门",
+      "style": {
+        "emotion_intensity": 82,
+        "dialogue_ratio": 0.08,
+        "sentence_preference": "short",
+        "sensory_density": "medium"
+      },
+      "premise": "暴雨倒灌进废弃地铁联络道。维修员周衡必须手动落下旧闸门，让实习生梅澈先越过安全线；工具箱会留在水里，闸门落下后不能当场重新开启。",
+      "characters": [
+        "周衡：老维修员，熟悉设备，但膝伤使动作迟缓。",
+        "梅澈：实习生，反应快，第一次面对真正失控的现场。"
+      ],
+      "content_boundaries": [
+        "梅澈先越过安全线。",
+        "周衡手动落下旧闸门，并放弃水里的工具箱。",
+        "两人都脱离眼前危险，但联络道和设备没有被修好。",
+        "不出现第三人救援，不把事故扩大成英雄营救。"
+      ],
+      "required_term_groups": [["闸门"], ["工具箱"], ["安全线"]],
+      "forbidden_terms": ["隧道彻底修好", "设备完全修复", "救出所有人", "救援队赶到"],
+      "kernel": {
+        "irreversible_micro_choice": "周衡让梅澈先越线，随后落闸并放弃工具箱。",
+        "must_remain_unsaid": "周衡没有告诉梅澈，落闸也意味着承认这段设备已失守。",
+        "relationship_pressure": "梅澈想回来帮忙，周衡必须让她服从一次没有解释时间的命令。",
+        "forbidden_shortcut": "不求援、不重新开闸、不修好设备、不增加英雄式营救。",
+        "ending_residue": "眼前的人安全了，联络道仍在进水，工具和未完成检修留在闸门另一侧。"
+      }
+    },
+    {
+      "scene_id": "RP-SC03",
+      "scene_type": "solitude_or_interior",
+      "title": "停摆的钟",
+      "style": {
+        "emotion_intensity": 28,
+        "dialogue_ratio": 0.02,
+        "sentence_preference": "long",
+        "sensory_density": "rich"
+      },
+      "premise": "林析深夜独自在父亲废弃的修表铺整理遗物。手机里有姐姐刚发来的语音，桌上是一只父亲没修完的老钟。她决定今晚不听语音，只给钟罩上布。",
+      "characters": [
+        "林析：声音设计师，擅长分辨细小声响，却回避家人对父亲最后几天的叙述。"
+      ],
+      "content_boundaries": [
+        "林析看见或注意到姐姐的语音，但没有播放。",
+        "她没有修好、启动或丢弃老钟，只给它罩上布。",
+        "她没有得知新的死亡真相，也没有完成对父亲的原谅或告别。",
+        "结尾保留钟的停摆和未听语音。"
+      ],
+      "required_term_groups": [["语音"], ["钟"], ["布", "罩"]],
+      "forbidden_terms": ["播放了语音", "按下播放", "钟重新走了", "原谅了父亲", "完成告别"],
+      "kernel": {
+        "irreversible_micro_choice": "林析今晚不听姐姐的语音，只把未修完的钟罩起来。",
+        "must_remain_unsaid": "父亲最后几天发生了什么，以及林析是否想知道。",
+        "relationship_pressure": "姐姐的语音要求她进入共同记忆；林析暂时选择停在门外。",
+        "forbidden_shortcut": "不播放语音、不修钟、不发现新真相、不完成原谅或告别。",
+        "ending_residue": "钟和语音都停在可被继续的位置，但今晚没有继续。"
+      }
+    },
+    {
+      "scene_id": "RP-SC04",
+      "scene_type": "information_dense_daily",
+      "title": "四十八小时",
+      "style": {
+        "emotion_intensity": 55,
+        "dialogue_ratio": 0.28,
+        "sentence_preference": "balanced",
+        "sensory_density": "medium"
+      },
+      "premise": "社区诊所冰箱故障，护士顾遥和药剂师陈泊必须在关门前安排一批需冷藏药物。两人只能借隔壁餐馆冰箱保存四十八小时，并逐盒记录温度；维修日期仍未知。",
+      "characters": [
+        "顾遥：社区护士，习惯先让病人安心，但不愿作无法兑现的保证。",
+        "陈泊：药剂师，重视记录与责任边界，对临时方案保持警惕。"
+      ],
+      "content_boundaries": [
+        "两人采用隔壁餐馆冰箱保存四十八小时的临时方案。",
+        "药物逐盒记录并转移，眼前损失被避免。",
+        "冰箱没有修好，维修日期仍未知。",
+        "没人承诺问题已经永久解决，也没有采购新设备。"
+      ],
+      "required_term_groups": [["四十八小时", "两天"], ["冰箱", "冷藏"], ["记录"]],
+      "forbidden_terms": ["冰箱修好了", "彻底解决", "永久解决", "买了新冰箱", "采购新设备"],
+      "kernel": {
+        "irreversible_micro_choice": "两人把药物逐盒记录后转移到餐馆冰箱，只锁定四十八小时。",
+        "must_remain_unsaid": "顾遥担心临时方案会被管理方当成可以长期拖延的理由。",
+        "relationship_pressure": "顾遥需要先保住药物，陈泊需要防止临时措施被说成完成解决。",
+        "forbidden_shortcut": "不修好冰箱、不确定维修日期、不采购设备、不承诺永久解决。",
+        "ending_residue": "药物暂时安全，四十八小时开始倒计时，下一步仍没有着落。"
+      }
+    }
+  ]
+}

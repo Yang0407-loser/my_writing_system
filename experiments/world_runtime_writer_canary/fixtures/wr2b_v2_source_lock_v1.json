@@ -1,0 +1,30 @@
+{
+  "schema_version": "world-runtime-wr2b-source-lock-v1",
+  "status": "implementation_frozen_before_unseen_holdout_authoring",
+  "sources": {
+    "ontology_validator": {
+      "path": "experiments/world_runtime_writer_canary/delta_shadow_wr2b.py",
+      "sha256": "eec319059d4b35ddff3fa0840bba0f6d1cee5258cccafa2506c608097f9e6607"
+    },
+    "layered_extractor": {
+      "path": "experiments/world_runtime_writer_canary/layered_extractor_wr2b.py",
+      "sha256": "90ca6e4222ddc15b74719db6aa1913ec472a64c74efbc31eb8257c7f4baea8eb"
+    },
+    "development_runner": {
+      "path": "experiments/world_runtime_writer_canary/development_wr2b.py",
+      "sha256": "c4b115fe6c985bacb489f3799964afada93d068fe830f100f9c5a8662ae5823f"
+    }
+  },
+  "holdout": {
+    "created": false,
+    "read_by_implementer": false,
+    "required_author": "independent_agent_not_involved_in_wr2b_implementation"
+  },
+  "run_policy": {
+    "execution_count": 1,
+    "same_partition_tuning": false,
+    "model_generation": false,
+    "state_commit": false,
+    "production_promotion_from_run": false
+  }
+}

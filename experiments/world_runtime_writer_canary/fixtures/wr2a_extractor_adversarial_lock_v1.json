@@ -1,0 +1,19 @@
+{
+  "schema_version": "world-runtime-extractor-adversarial-lock-v1",
+  "status": "locked_before_first_run",
+  "fixture_path": "experiments/world_runtime_writer_canary/fixtures/wr2a_extractor_adversarial_v1.json",
+  "fixture_sha256": "c380b880b7f3f4f61c6cef98230c29729643af16d0b63ad3a0f611e71d100bed",
+  "extractor_path": "experiments/world_runtime_writer_canary/extractor_shadow_wr2a.py",
+  "extractor_sha256": "e7199ff4027050fc0d9163c7473db12c9239825948d364b71bf19c621b717b19",
+  "validator_path": "experiments/world_runtime_writer_canary/delta_shadow_wr2a.py",
+  "validator_sha256": "7da946442c3337b7ba33a447feeb8d775c46471f1f97b221c4f2b05045b777b8",
+  "run_policy": {
+    "generation": false,
+    "model_calls": 0,
+    "extractor_execution_count": 1,
+    "transport_retries": 0,
+    "same_partition_tuning": false,
+    "production_promotion_from_run": false,
+    "state_commit": false
+  }
+}

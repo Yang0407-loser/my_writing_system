@@ -1,0 +1,80 @@
+{
+  "schema_version": "writer_boundary_v1_2_r3_4_1_targeted_review_aggregate_v1",
+  "experiment_id": "writer-boundary-v1-2-r3-4-1-review-protocol",
+  "aggregation_status": "completed",
+  "input_gate": {
+    "passed": true,
+    "reviewer_count": 3,
+    "distinct_reviewer_ids": true,
+    "all_machine_schema_valid": true,
+    "all_independence_declarations_valid": true,
+    "all_severity_counts_mechanical": true,
+    "all_authorization_fields_frozen_false": true,
+    "reviewer_outputs_modified": false
+  },
+  "reviewers": [
+    {
+      "reviewer_id": "R341-INDEPENDENT-REVIEWER-01",
+      "file_sha256": "bce31a2c082c8f0dc336a2bcfeafc38ea182f112f87ab4ff6884bfed25d3bbf4",
+      "verdict": "pass",
+      "tests_run": 13,
+      "failed_tests": 0,
+      "severity_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 0
+      },
+      "capability_probe_layer_build_recommended": true
+    },
+    {
+      "reviewer_id": "R341-INDEPENDENT-REVIEWER-02",
+      "file_sha256": "ddaa92a495516c554fca25d6daaae81af612891d60d00d3765b9941a884e8ac7",
+      "verdict": "pass",
+      "tests_run": 6,
+      "failed_tests": 0,
+      "severity_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 0
+      },
+      "capability_probe_layer_build_recommended": true
+    },
+    {
+      "reviewer_id": "R341-INDEPENDENT-REVIEWER-03",
+      "file_sha256": "ad4357a88ad1dc65751982c56a37e9b6e2d46321bf750d9da1704dc186762ff9",
+      "verdict": "pass",
+      "tests_run": 15,
+      "failed_tests": 0,
+      "severity_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 0
+      },
+      "capability_probe_layer_build_recommended": true
+    }
+  ],
+  "raw_finding_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "recommendation_tally": {
+    "recommend_layer_build": 3,
+    "do_not_recommend_layer_build": 0,
+    "recommendation_share": 1.0
+  },
+  "aggregate_verdict": "recommend_user_authorize_capability_probe_layer_build_only",
+  "single_total_score": null,
+  "authorization": {
+    "capability_probe_layer_build_authorized": false,
+    "capability_probe_call_authorized": false,
+    "real_generation_authorized": false,
+    "model_call_authorized": false,
+    "authorized_next_stage": "await_explicit_user_authorization_for_versioned_layer_build"
+  },
+  "boundary_note": "The unanimous reviewer recommendation is advisory. This aggregate does not itself grant build or call authority."
+}

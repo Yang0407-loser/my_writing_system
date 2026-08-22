@@ -61,7 +61,7 @@ echo [OK] Dependencies
 :: 4. Celery
 :: ==========================================
 echo [3/4] Starting Celery Worker...
-start "Writer-Celery" /d "%PROJDIR%" cmd /k "uv run celery -A app.celery_app worker --loglevel=info -P solo"
+start "Writer-Celery" /d "%PROJDIR%" cmd /k "uv run celery -A app.celery_app worker --loglevel=info -P solo -Q writing,celery"
 echo [OK] Celery launched
 
 :: ==========================================

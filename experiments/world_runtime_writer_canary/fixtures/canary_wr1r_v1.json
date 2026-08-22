@@ -1,0 +1,113 @@
+{
+  "schema_version": "world-runtime-writer-adversarial-canary-fixture-v1",
+  "experiment_id": "world-runtime-writer-adversarial-canary-2026-08-04-v1",
+  "evaluation_contract_authored_before_generation": true,
+  "provider": {
+    "temperature": 0.45,
+    "max_tokens": 1400,
+    "max_retries": 0
+  },
+  "preregistered_gates": {
+    "sample_count": 8,
+    "maximum_runtime_prompt_token_delta_mean": 1100,
+    "baseline_adversarial_activation_minimum_scenes": 2,
+    "runtime_hard_violation_count_lower": true,
+    "must_event_retention_non_inferior": true,
+    "field_leakage_forbidden": true,
+    "length_band": [450, 1000],
+    "human_or_owner_prose_review_required": true,
+    "silent_reruns_allowed": false,
+    "promotion_from_this_run_forbidden": true
+  },
+  "scenes": [
+    {
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "premise": "周六凌晨四点二十分，野面包的操作间已经开始制作，临街卷帘门仍关着，店面六点才正式营业。林晚从街边赶来，周野在操作间。一个早起路人反复敲临街门，把现金从门缝塞进来，坚持现在取走刚出炉的面包。写林晚进入操作间、两人当场处理这笔提前购买要求并继续制作；故事时间不得超过五点。不要新增人物姓名。",
+      "characters": "林晚、周野；路人只是临时来客。",
+      "required_event_id": "event:enter-workshop-and-handle-visitor",
+      "runtime_fact_ids": [
+        "fact:clock:weekday",
+        "fact:clock:time",
+        "fact:bakery:opens-at",
+        "fact:bakery:storefront",
+        "fact:bakery:workshop-access",
+        "fact:zhouye:location"
+      ],
+      "semantic_domains": ["bakery", "storefront"],
+      "must_event_patterns": [
+        "(?:林晚|她).{0,30}(?:进入|走进|进了|进到).{0,8}操作间",
+        "(?:敲门|路人|来客).{0,80}(?:周野|林晚|两人)"
+      ],
+      "violation_checks": ["storefront_public_open_before_0600"]
+    },
+    {
+      "scene_id": "adversarial-unpublished-knowledge",
+      "state_variant": "before",
+      "premise": "同一清晨，林晚的文章仍是私人草稿，公开评论数为零，季晴和公司同事起初都不知道正文。季晴私聊追问她最近在写什么，公司工作群也有人问她为何这么早在线。写林晚在两个对话之间处理草稿；结束前，工作群里必须有人针对文章正文作出具体回应。文章不必公开发布，正文自行交代这条信息如何到达对方。",
+      "characters": "林晚、季晴、未命名的公司同事；不得新增编辑关系或文章调查背景。",
+      "required_event_id": "event:handle-draft-and-two-channels",
+      "runtime_fact_ids": [
+        "fact:article:status",
+        "fact:article:comment-count",
+        "fact:jiqing:article-knowledge",
+        "fact:coworker:article-knowledge"
+      ],
+      "semantic_domains": ["publication"],
+      "must_event_patterns": [
+        "(?:草稿|文章)",
+        "季晴",
+        "(?:工作群|公司群|同事).{0,80}(?:回应|回复|写的|正文|文章)"
+      ],
+      "violation_checks": [
+        "public_reaction_before_publication",
+        "coworker_knows_without_transmission_path"
+      ]
+    },
+    {
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "premise": "第二天清晨，文章昨夜已经发布，辞职通知也已经发送到公司人事邮箱。林晚尚未收到公司确认。她离开住处后，家里没有其他人；茶几上的绿豆汤碗仍装着冷汤，位置没有变化。写她在面包房等待消息，并再次确认文章发布与辞职送达是否成功；结尾切回安静住处，让茶几上的碗承担时间流逝的视觉落点。不要概括重演上一小节。",
+      "characters": "林晚、周野；住处此刻无人。",
+      "required_event_id": "event:wait-for-aftermath-with-home-cutaway",
+      "runtime_fact_ids": [
+        "fact:article:status",
+        "fact:resignation:state",
+        "fact:company:acknowledgement",
+        "fact:event:publish-article:completion",
+        "fact:event:deliver-resignation:completion",
+        "fact:bowl:location",
+        "fact:bowl:content-state",
+        "fact:home:presence"
+      ],
+      "semantic_domains": ["event", "object", "publication", "employment"],
+      "must_event_patterns": [
+        "(?:等待|等着|消息|回复)",
+        "(?:绿豆汤|汤碗|碗)"
+      ],
+      "violation_checks": [
+        "object_changes_without_actor",
+        "completed_event_repeated"
+      ]
+    },
+    {
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "after",
+      "premise": "辞职通知昨夜已经发送到公司人事邮箱，但公司是否确认仍未知，林晚当前仍处于在职状态。第二天早晨，她的上班闹钟照常响起，同事发来一句‘你都离职了，今天还来吗？’，人事暂时没有回复。写她如何处理这个错误前提和今天是否到岗的问题；不要新增公司制度、批准结果或具体生效日期。",
+      "characters": "林晚、未命名同事；人事没有出场，也没有确认。",
+      "required_event_id": "event:handle-morning-before-acknowledgement",
+      "runtime_fact_ids": [
+        "fact:resignation:state",
+        "fact:company:acknowledgement",
+        "fact:employment:state"
+      ],
+      "semantic_domains": ["employment"],
+      "must_event_patterns": [
+        "(?:闹钟|上班|到岗)",
+        "(?:同事|消息)",
+        "(?:人事|回复|确认)"
+      ],
+      "violation_checks": ["employment_ended_without_acknowledgement"]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": "world-runtime-writer-prose-canary-fixture-v1",
+  "experiment_id": "world-runtime-writer-prose-canary-2026-08-04-v1",
+  "provider": {"temperature": 0.55, "max_tokens": 1800, "max_retries": 0},
+  "preregistered_gates": {
+    "sample_count": 8,
+    "length_band": [700, 1200],
+    "maximum_runtime_prompt_token_delta_mean": 1100,
+    "baseline_adversarial_activation_minimum_scenes": 2,
+    "runtime_hard_violation_lower": true,
+    "event_completion_non_inferior": true,
+    "task_evasion_non_inferior": true,
+    "unsourced_setting_non_inferior": true,
+    "length_non_inferior": true,
+    "single_owner_review_after_machine_pass": true,
+    "transport_retries": 0,
+    "silent_reruns_allowed": false,
+    "production_promotion_from_synthetic_run": false
+  },
+  "scenes": [
+    {
+      "scene_id": "adversarial-storefront-hours",
+      "state_variant": "before",
+      "public_premise": "凌晨四点二十分，野面包的操作间正在制作。林晚赶到时，一个准备乘早班车的路人不断拍门，把钱从门缝塞进来，坚持立刻拿走刚出炉的两个可颂。写林晚进入操作间，与周野在五点以前给这项要求一个不可含糊的结果，并继续制作。不要直接用规则说明代替行动。",
+      "characters": "林晚、周野、未命名路人。",
+      "runtime_event_description": "林晚进入操作间，两人在五点前处理来客的提前购买要求。",
+      "required_event_id": "event:enter-workshop-and-handle-visitor",
+      "runtime_fact_ids": ["fact:clock:weekday","fact:clock:time","fact:bakery:opens-at","fact:bakery:storefront","fact:bakery:workshop-access","fact:zhouye:location"],
+      "semantic_domains": ["bakery","storefront"]
+    },
+    {
+      "scene_id": "adversarial-unpublished-knowledge",
+      "state_variant": "before",
+      "public_premise": "同一清晨，林晚在电脑里修改尚未处理完的文字。季晴私聊追问她在写什么，公司工作群也有人问她为什么这么早在线。写她在两个对话之间作出选择；结束前，公司同事必须针对正文的一个具体细节作出回应，并让读者看见信息抵达对方的过程。不能用看见标题、状态或截图替代读到正文。",
+      "characters": "林晚、季晴、未命名公司同事。",
+      "runtime_event_description": "林晚处理私人草稿与两个沟通渠道，使同事经合法传播路径回应正文。",
+      "required_event_id": "event:handle-draft-and-two-channels",
+      "runtime_fact_ids": ["fact:article:status","fact:article:comment-count","fact:jiqing:article-knowledge","fact:coworker:article-knowledge"],
+      "semantic_domains": ["publication"]
+    },
+    {
+      "scene_id": "adversarial-object-and-repeat",
+      "state_variant": "after_augmented",
+      "public_premise": "第二天清晨，林晚离开住处，到面包房等待文章和辞职邮件的后续消息。写她确认昨夜操作是否成功，但不要概括昨天的完整过程；结尾切回无人住处，让茶几上的绿豆汤碗承担时间流逝的视觉落点。",
+      "characters": "林晚、周野；住处镜头中没有人物。",
+      "runtime_event_description": "林晚等待后续并检查已完成事件状态，结尾切回无人住处的绿豆汤碗。",
+      "required_event_id": "event:wait-for-aftermath-with-home-cutaway",
+      "runtime_fact_ids": ["fact:article:status","fact:resignation:state","fact:company:acknowledgement","fact:event:publish-article:completion","fact:event:deliver-resignation:completion","fact:bowl:location","fact:bowl:content-state","fact:home:presence"],
+      "semantic_domains": ["event","object","publication","employment"]
+    },
+    {
+      "scene_id": "adversarial-employment-transition",
+      "state_variant": "after",
+      "public_premise": "辞职邮件发出的第二天早晨，上班闹钟照常响起。同事发来一句‘你都离职了，今天还来吗？’，人事没有出场。写林晚如何判断这句话里的前提，并明确决定今天是否去公司。不要新增公司制度、批准结果或具体生效日期。",
+      "characters": "林晚、未命名同事。",
+      "runtime_event_description": "林晚核对辞职确认与当前在职状态，回应同事并决定是否到岗。",
+      "required_event_id": "event:handle-morning-before-acknowledgement",
+      "runtime_fact_ids": ["fact:resignation:state","fact:company:acknowledgement","fact:employment:state"],
+      "semantic_domains": ["employment"]
+    }
+  ]
+}

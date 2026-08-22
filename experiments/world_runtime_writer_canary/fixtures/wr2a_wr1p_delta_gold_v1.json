@@ -1,0 +1,90 @@
+{
+  "schema_version": "world-runtime-typed-delta-gold-wr2a-v1",
+  "source_runtime": ".world_runtime_wr1p_canary_runtime",
+  "status": "manual_evidence_gold_not_extractor_output",
+  "items": [
+    {
+      "sample_id": "WR1P-01", "scene_id": "adversarial-storefront-hours", "state_variant": "before", "base_revision": 7,
+      "output_hash": "583f37c5ae1bc68ae616dd44447b8b1c453b689d30e3f368937d3d9eeff6b705",
+      "evidence": [
+        {"evidence_id":"ev:01:goods","claim":"goods are delivered to the public visitor before five","excerpt":"她拉开一条门缝，把两个可颂递出去，用纸袋兜着"},
+        {"evidence_id":"ev:01:cash","claim":"visitor cash is retained","excerpt":"她把钱放进收银盒里"}
+      ],
+      "changes": [
+        {"change_id":"change:01:public-sale","sequence":1,"change_type":"storefront_public_sale","subject":"bakery:wild-bread:storefront","predicate":"public_sale_event","before_value":null,"before_epistemic_status":"unknown","after_value":"occurred","actor":"character:lin-wan","mechanism":"cash_exchange","event_id":"event:visitor-purchase","evidence_ids":["ev:01:goods","ev:01:cash"]}
+      ],
+      "expected_outcomes": {"change:01:public-sale":"invalid"}
+    },
+    {
+      "sample_id": "WR1P-02", "scene_id": "adversarial-storefront-hours", "state_variant": "before", "base_revision": 7,
+      "output_hash": "4454cf3368a90b826acf6365e682caa8d45316c5974f7f1b77e9a5dc96f28e73",
+      "evidence": [
+        {"evidence_id":"ev:02:goods","claim":"goods are handed through the storefront opening","excerpt":"她拉开铁栅栏门上的小窗，把纸袋递出去"},
+        {"evidence_id":"ev:02:cash","claim":"cash is accepted from the visitor","excerpt":"同时从那人手里接过纸币"}
+      ],
+      "changes": [
+        {"change_id":"change:02:public-sale","sequence":1,"change_type":"storefront_public_sale","subject":"bakery:wild-bread:storefront","predicate":"public_sale_event","before_value":null,"before_epistemic_status":"unknown","after_value":"occurred","actor":"character:lin-wan","mechanism":"cash_exchange","event_id":"event:visitor-purchase","evidence_ids":["ev:02:goods","ev:02:cash"]}
+      ],
+      "expected_outcomes": {"change:02:public-sale":"invalid"}
+    },
+    {
+      "sample_id": "WR1P-03", "scene_id": "adversarial-unpublished-knowledge", "state_variant": "before", "base_revision": 7,
+      "output_hash": "d7ef7d6a3a58bdf3928d362f79bf0686b329d59983532ac89b847a8ce17b2e08",
+      "evidence": [
+        {"evidence_id":"ev:03:send","claim":"Lin Wan transmits a body paragraph into the work group","excerpt":"还是选中了其中一段，复制，粘贴到群里"},
+        {"evidence_id":"ev:03:response","claim":"coworker perceives and responds to a specific sentence","excerpt":"这个细节很好。但我觉得，她不会数到第七个才注意到他动了"},
+        {"evidence_id":"ev:03:name","claim":"an unnamed coworker receives a persistent name","excerpt":"是同事陈屿"}
+      ],
+      "changes": [
+        {"change_id":"change:03:coworker-knowledge","sequence":1,"change_type":"knowledge_state","subject":"character:coworker","predicate":"article_knowledge","before_value":null,"before_epistemic_status":"unknown","after_value":"perceived","actor":"character:lin-wan","mechanism":"explicit_group_send_and_body_response","event_id":"event:group-text-transfer","evidence_ids":["ev:03:send","ev:03:response"]},
+        {"change_id":"change:03:named-coworker","sequence":2,"change_type":"unsourced_project_fact","subject":"character:chen-yu","predicate":"identity_role","before_value":null,"before_epistemic_status":"unknown","after_value":"company_coworker","actor":"narrator","mechanism":"text_assertion","event_id":null,"evidence_ids":["ev:03:name"]}
+      ],
+      "expected_outcomes": {"change:03:coworker-knowledge":"valid","change:03:named-coworker":"unresolved"}
+    },
+    {
+      "sample_id": "WR1P-04", "scene_id": "adversarial-unpublished-knowledge", "state_variant": "before", "base_revision": 7,
+      "output_hash": "72d0a8019b832baa59be8314673886fdc31b589d33aaf28884f7089eba7eb68e",
+      "evidence": [
+        {"evidence_id":"ev:04:name","claim":"an unnamed coworker receives a persistent name and department","excerpt":"行政部的陈姐"}
+      ],
+      "changes": [
+        {"change_id":"change:04:named-coworker","sequence":1,"change_type":"unsourced_project_fact","subject":"character:chen-jie","predicate":"identity_role","before_value":null,"before_epistemic_status":"unknown","after_value":"administration_coworker","actor":"narrator","mechanism":"text_assertion","event_id":null,"evidence_ids":["ev:04:name"]}
+      ],
+      "expected_outcomes": {"change:04:named-coworker":"unresolved"}
+    },
+    {
+      "sample_id": "WR1P-05", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented", "base_revision": 8,
+      "output_hash": "c2cabc725da8423759de30f29d75d9331bd19e5b769e6a5fd88f70c2dbad2cbc",
+      "evidence": [
+        {"evidence_id":"ev:05:ack","claim":"company system acknowledges receipt into HR process","excerpt":"系统自动回复，确认她的辞职信已进入人事流程"}
+      ],
+      "changes": [
+        {"change_id":"change:05:resignation-ack","sequence":1,"change_type":"resignation_acknowledgement","subject":"company:lin-wan","predicate":"resignation_acknowledged","before_value":null,"before_epistemic_status":"unknown","after_value":true,"actor":"company:hr-system","mechanism":"institutional_reply","event_id":"event:resignation-acknowledged","evidence_ids":["ev:05:ack"]}
+      ],
+      "expected_outcomes": {"change:05:resignation-ack":"valid"}
+    },
+    {
+      "sample_id": "WR1P-06", "scene_id": "adversarial-object-and-repeat", "state_variant": "after_augmented", "base_revision": 8,
+      "output_hash": "1925517d34008c33a69c3a6e52cb9e5b079fa5ce72b72da09c951de3be985909",
+      "evidence": [
+        {"evidence_id":"ev:06:owner","claim":"a persistent bakery owner role is introduced without project source","excerpt":"柜台后的老板娘"},
+        {"evidence_id":"ev:06:zhou-knows","claim":"Zhou Ye asserts article perception without a shown path","excerpt":"那篇文章我看了，写得很好"}
+      ],
+      "changes": [
+        {"change_id":"change:06:bakery-owner","sequence":1,"change_type":"unsourced_project_fact","subject":"character:bakery-owner","predicate":"identity_role","before_value":null,"before_epistemic_status":"unknown","after_value":"bakery_owner","actor":"narrator","mechanism":"text_assertion","event_id":null,"evidence_ids":["ev:06:owner"]},
+        {"change_id":"change:06:zhou-knowledge","sequence":2,"change_type":"knowledge_state","subject":"character:zhou-ye","predicate":"article_knowledge","before_value":null,"before_epistemic_status":"unknown","after_value":"perceived","actor":"character:zhou-ye","mechanism":"missing_transmission_path","event_id":"event:zhou-reads-article","evidence_ids":["ev:06:zhou-knows"]}
+      ],
+      "expected_outcomes": {"change:06:bakery-owner":"unresolved","change:06:zhou-knowledge":"invalid"}
+    },
+    {
+      "sample_id": "WR1P-07", "scene_id": "adversarial-employment-transition", "state_variant": "after", "base_revision": 8,
+      "output_hash": "c3680dc2bb26052e847f506b1d673ed86b8822122674281e3172ef9a7974ebac",
+      "evidence": [], "changes": [], "expected_outcomes": {}
+    },
+    {
+      "sample_id": "WR1P-08", "scene_id": "adversarial-employment-transition", "state_variant": "after", "base_revision": 8,
+      "output_hash": "6d75218b92415eb06a33fb6688abec91581b831da7ad88c8c4699f0a59783de5",
+      "evidence": [], "changes": [], "expected_outcomes": {}
+    }
+  ]
+}

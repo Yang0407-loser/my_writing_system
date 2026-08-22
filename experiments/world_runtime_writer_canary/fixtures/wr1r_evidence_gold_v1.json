@@ -1,0 +1,168 @@
+{
+  "schema_version": "world-runtime-result-evidence-contract-v1",
+  "status": "posthoc_diagnostic_not_promotion_evidence",
+  "items": [
+    {
+      "sample_id": "WR1R-01",
+      "scene_id": "adversarial-storefront-hours",
+      "output_sha256": "386e69ce1d7789bbd7c8c514eb0224d1184f3138d78a125ecd49e3966ad93e1c",
+      "required_event_completed": {
+        "value": true,
+        "reason_code": "entered_workshop_and_resolved_visitor_request",
+        "basis": "evidence",
+        "evidence": [
+          {"claim": "Lin Wan uses side access and enters the workshop scene", "excerpt": "林晚没应声，绕到侧面的小门，用钥匙拧开锁。操作间里白炽灯亮得晃眼"},
+          {"claim": "the premature purchase is refused", "excerpt": "钱您先拿回去"}
+        ]
+      },
+      "hard_reality_violations": {
+        "storefront_public_open_before_0600": {
+          "value": false,
+          "reason_code": "cash_returned_and_opening_deferred",
+          "basis": "counterevidence",
+          "evidence": [
+            {"claim": "public opening remains scheduled for six", "excerpt": "六点整开门，第一批给您留着"},
+            {"claim": "cash is returned instead of accepted", "excerpt": "钱您先拿回去"}
+          ]
+        }
+      },
+      "task_evasion": {"value": false, "reason_code": "required_conflict_resolved_on_page", "basis": "counterevidence", "evidence": [{"claim": "visitor request receives a concrete resolution", "excerpt": "纸币被抽走了。脚步声渐渐远去"}]},
+      "unsourced_setting_candidates": []
+    },
+    {
+      "sample_id": "WR1R-02",
+      "scene_id": "adversarial-storefront-hours",
+      "output_sha256": "85e053c740d2b196a9a3b5f9cc9ab69a006692191c6e2aef0da8223f04fc61b0",
+      "required_event_completed": {
+        "value": true,
+        "reason_code": "entry_and_visitor_handling_explicit",
+        "basis": "evidence",
+        "evidence": [
+          {"claim": "Lin Wan enters the workshop", "excerpt": "林晚就在这时推开了操作间的门"},
+          {"claim": "visitor receives a concrete response", "excerpt": "趁热装两个"}
+        ]
+      },
+      "hard_reality_violations": {
+        "storefront_public_open_before_0600": {
+          "value": true,
+          "reason_code": "cash_accepted_and_goods_delivered_before_opening",
+          "basis": "evidence",
+          "evidence": [
+            {"claim": "two croissants are packaged for the visitor", "excerpt": "趁热装两个"},
+            {"claim": "goods are placed outside before six", "excerpt": "拉开一条缝，把纸袋放在门外的台阶上"},
+            {"claim": "the visitor cash is retained as sale proceeds", "excerpt": "两张十元的纸币被他挪到了放零钱的铁盒旁边"}
+          ]
+        }
+      },
+      "task_evasion": {"value": false, "reason_code": "required_request_handled_directly", "basis": "counterevidence", "evidence": [{"claim": "the request receives a concrete outcome", "excerpt": "拉开一条缝，把纸袋放在门外的台阶上"}]},
+      "unsourced_setting_candidates": []
+    },
+    {
+      "sample_id": "WR1R-03",
+      "scene_id": "adversarial-unpublished-knowledge",
+      "output_sha256": "b74323f452b2140394d3af3525bbeffdc5661c00ea366c5948eec5b10ec3c6f2",
+      "required_event_completed": {
+        "value": true,
+        "reason_code": "coworker_reads_and_responds_to_body_through_explicit_path",
+        "basis": "evidence",
+        "evidence": [
+          {"claim": "Lin Wan sends the full text to Ji Qing", "excerpt": "还是把全文复制粘贴发给了季晴"},
+          {"claim": "coworker states the transmission path and responds to the body", "excerpt": "我刚看完季晴转给我的全文。林晚，你写的是我每天上班那条线。我见过那个阿姨"}
+        ]
+      },
+      "hard_reality_violations": {
+        "public_reaction_before_publication": {"value": false, "reason_code": "no_public_platform_reaction_claim", "basis": "full_text_absence", "evidence": []},
+        "coworker_knows_without_transmission_path": {
+          "value": false,
+          "reason_code": "jiqing_forward_path_explicit",
+          "basis": "counterevidence",
+          "evidence": [
+            {"claim": "coworker asks Ji Qing for the text", "excerpt": "我刚问季晴要了"},
+            {"claim": "Ji Qing forwards the full text", "excerpt": "我刚看完季晴转给我的全文"}
+          ]
+        }
+      },
+      "task_evasion": {"value": false, "reason_code": "group_response_to_body_is_explicit", "basis": "counterevidence", "evidence": [{"claim": "coworker gives a body-specific response", "excerpt": "你写的是我每天上班那条线。我见过那个阿姨"}]},
+      "unsourced_setting_candidates": [
+        {"category": "new_project_fact", "reason_code": "forbidden_named_coworker_added", "evidence": {"claim": "unnamed coworker is assigned a name", "excerpt": "隔壁组的陈晨"}},
+        {"category": "new_event", "reason_code": "screen_share_backstory_added", "evidence": {"claim": "an unprovided screen-sharing event exposes the draft", "excerpt": "她忘了关共享屏幕"}}
+      ]
+    },
+    {
+      "sample_id": "WR1R-04",
+      "scene_id": "adversarial-unpublished-knowledge",
+      "output_sha256": "92572505ca33d5420c3dd633d2e290e1fe870287a18232cb82815ce087fc9e03",
+      "required_event_completed": {"value": false, "reason_code": "no_coworker_response_to_article_body", "basis": "full_text_absence", "evidence": []},
+      "hard_reality_violations": {
+        "public_reaction_before_publication": {"value": false, "reason_code": "no_public_platform_reaction_claim", "basis": "full_text_absence", "evidence": []},
+        "coworker_knows_without_transmission_path": {"value": false, "reason_code": "only_partial_moments_screenshot_is_claimed", "basis": "counterevidence", "evidence": [{"claim": "text supplies a prior screenshot path for the fragment", "excerpt": "配图是文档截图，第一段和最后一段"}]}
+      },
+      "task_evasion": {
+        "value": true,
+        "reason_code": "required_body_response_replaced_by_prior_partial_post",
+        "basis": "evidence",
+        "evidence": [
+          {"claim": "coworker response is explained by an invented prior post", "excerpt": "她确实发过一条——配图是文档截图"},
+          {"claim": "scene ends with a future request rather than completed reading", "excerpt": "林晚，写完了发我看看"}
+        ]
+      },
+      "unsourced_setting_candidates": [
+        {"category": "new_project_fact", "reason_code": "forbidden_named_coworker_added", "evidence": {"claim": "unnamed coworker is assigned a name", "excerpt": "隔壁工位的周哲"}},
+        {"category": "new_event", "reason_code": "prior_moments_distribution_event_added", "evidence": {"claim": "a prior screenshot-sharing event is invented", "excerpt": "她确实发过一条——配图是文档截图"}}
+      ]
+    },
+    {
+      "sample_id": "WR1R-05",
+      "scene_id": "adversarial-object-and-repeat",
+      "output_sha256": "25f18e931114a22d716d4d55f5a19e56045565849d81166945b610417d96c2ae",
+      "required_event_completed": {"value": true, "reason_code": "wait_checks_and_unchanged_home_cutaway_present", "basis": "evidence", "evidence": [{"claim": "publication and delivery are checked without repeating them", "excerpt": "反复确认那篇凌晨发出的文章还挂在页面上"}, {"claim": "home cutaway preserves bowl contents", "excerpt": "茶几上那只绿豆汤碗还搁在原处"}]},
+      "hard_reality_violations": {
+        "object_changes_without_actor": {"value": false, "reason_code": "bowl_and_soup_remain", "basis": "counterevidence", "evidence": [{"claim": "bowl retains its contents and location", "excerpt": "碗还搁在原处，碗沿沾着浅褐色的汤渍，汤面平静"}]},
+        "completed_event_repeated": {"value": false, "reason_code": "only_status_checks_occur", "basis": "counterevidence", "evidence": [{"claim": "publication is inspected as an existing state", "excerpt": "发布状态那一栏的绿色小字，是确凿的"}, {"claim": "resignation is inspected as delivered", "excerpt": "那封辞职信显示“已送达”"}]}
+      },
+      "task_evasion": {"value": false, "reason_code": "all_required_aftermath_beats_present", "basis": "counterevidence", "evidence": [{"claim": "ending returns to unchanged bowl", "excerpt": "那只碗还摆在茶几上"}]},
+      "unsourced_setting_candidates": []
+    },
+    {
+      "sample_id": "WR1R-06",
+      "scene_id": "adversarial-object-and-repeat",
+      "output_sha256": "6373b1317e40ff8b46f89f125c19776cb0eac0412ba4aafef06acbda7c2801e1",
+      "required_event_completed": {"value": true, "reason_code": "wait_checks_and_home_cutaway_present", "basis": "evidence", "evidence": [{"claim": "existing publication is checked", "excerpt": "她打开后台"}, {"claim": "home cutaway preserves bowl", "excerpt": "茶几上，那只绿豆汤碗还在"}]},
+      "hard_reality_violations": {
+        "object_changes_without_actor": {"value": false, "reason_code": "natural_drying_without_core_state_jump", "basis": "counterevidence", "evidence": [{"claim": "cold soup remains in the bowl", "excerpt": "那只碗继续盛着昨夜的冷汤"}]},
+        "completed_event_repeated": {"value": false, "reason_code": "existing_statuses_only_inspected", "basis": "counterevidence", "evidence": [{"claim": "article publication is past completed state", "excerpt": "文章昨晚十一点四十七分发布"}, {"claim": "resignation is past delivered state", "excerpt": "发件箱里躺着那封辞职信"}]}
+      },
+      "task_evasion": {"value": false, "reason_code": "all_required_aftermath_beats_present", "basis": "counterevidence", "evidence": [{"claim": "waiting remains the scene action", "excerpt": "像她此刻等待的回复"}]},
+      "unsourced_setting_candidates": [
+        {"category": "state_change", "reason_code": "additional_resignation_recipient_added", "evidence": {"claim": "the resignation is newly claimed to copy a supervisor", "excerpt": "抄送了她直属主管"}}
+      ]
+    },
+    {
+      "sample_id": "WR1R-07",
+      "scene_id": "adversarial-employment-transition",
+      "output_sha256": "476be73dfdeb849f2e0f2a912e308f90564a1ed9715985515a2efb3c95b4bc35",
+      "required_event_completed": {"value": true, "reason_code": "wrong_premise_checked_and_travel_to_work_occurs", "basis": "evidence", "evidence": [{"claim": "coworker asks whether HR acknowledged", "excerpt": "人事那边有回音吗？"}, {"claim": "the answer remains no acknowledgement", "excerpt": "没有。林晚翻到邮箱页面"}, {"claim": "Lin Wan travels toward work", "excerpt": "这班车正朝着公司的方向驶去"}]},
+      "hard_reality_violations": {
+        "employment_ended_without_acknowledgement": {"value": false, "reason_code": "text_explicitly_distinguishes_application_from_effect", "basis": "counterevidence", "evidence": [{"claim": "application is recognized as awaiting a response", "excerpt": "申请意味着需要批准，意味着她还在等一个答复"}]}
+      },
+      "task_evasion": {"value": false, "reason_code": "morning_decision_is_dramatized", "basis": "counterevidence", "evidence": [{"claim": "she boards transport toward the company", "excerpt": "她知道自己已经站在了地铁上"}]},
+      "unsourced_setting_candidates": [
+        {"category": "new_project_fact", "reason_code": "forbidden_named_coworker_added", "evidence": {"claim": "unnamed coworker is assigned a name", "excerpt": "同事小周"}},
+        {"category": "new_event", "reason_code": "indirect_hr_response_added_despite_no_reply_boundary", "evidence": {"claim": "coworker reports an HR process response", "excerpt": "我帮你问了，人事那边说还在走流程"}}
+      ]
+    },
+    {
+      "sample_id": "WR1R-08",
+      "scene_id": "adversarial-employment-transition",
+      "output_sha256": "1a1cb59b75b36e712fac5a7795611689383260c60577613c8d42b0582678ecf7",
+      "required_event_completed": {"value": true, "reason_code": "wrong_premise_answered_and_arrival_occurs", "basis": "evidence", "evidence": [{"claim": "Lin Wan corrects the premise with missing confirmation", "excerpt": "还没收到确认，我过去看看"}, {"claim": "she enters the company building", "excerpt": "她深吸一口气，推门走了进去"}]},
+      "hard_reality_violations": {
+        "employment_ended_without_acknowledgement": {"value": false, "reason_code": "identity_uncertainty_not_termination_claim", "basis": "counterevidence", "evidence": [{"claim": "HR remains unresponsive", "excerpt": "没有人事的回复"}, {"claim": "she still goes to the company", "excerpt": "推门走了进去"}]}
+      },
+      "task_evasion": {"value": false, "reason_code": "decision_and_arrival_are_present", "basis": "counterevidence", "evidence": [{"claim": "arrival at company is completed", "excerpt": "沿着熟悉的路线走到公司楼下"}]},
+      "unsourced_setting_candidates": [
+        {"category": "state_change", "reason_code": "prior_workspace_clearout_added", "evidence": {"claim": "a prior desk-clearing action is invented", "excerpt": "昨天下午收拾工位时"}}
+      ]
+    }
+  ]
+}

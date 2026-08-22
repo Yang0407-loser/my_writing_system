@@ -1,0 +1,67 @@
+# Character State Update 状态传播断链修复
+
+日期：2026-07-21
+状态：`real_demo_passed_closed`
+
+## 原断点
+
+`CharacterManager.update_states` 的结果只替换 Writer 局部变量并写入 Blackboard。Writer 返回结果和自动节级 checkpoint 都没有携带 `character_arcs`；Coordinator 随后继续使用调用前的旧引用，交互 checkpoint 和 final Reviewer 因而可能读取旧状态。
+
+## 修复路径
+
+当前顺序为：小节正文提交完成 → 节末人物状态更新 → 正文与 `character_arcs` 写入同一节级 checkpoint payload → Writer 返回最终状态 → Coordinator 校验并采用 → 后续 phase checkpoint → final Reviewer。
+
+- CharacterManager 对一个调用实行全量接受：缺少任一预期人物、重复 ID、空状态或解析失败时，整批保留旧状态。
+- Writer 深拷贝输入，更新异常时 fail-open 到上一份有效状态。
+- 自动和交互 checkpoint 均携带对应状态；交互回调不再捕获旧的 Coordinator 状态。
+- Coordinator 对旧 Writer 返回、非法结构安全回退，不从 Blackboard 反向拼装持久状态。
+- final Reviewer 继续只读取 Coordinator state。
+
+Blackboard 仍负责运行时共享和观测，但不再是人物更新的唯一传播来源。没有新建数据库、状态模型或第二套状态仓库。
+
+## Checkpoint 与恢复
+
+未修改 checkpoint version 和幂等键。旧 checkpoint 不含传播元数据时继续按原有 `character_arcs` 恢复；旧 Writer 返回不含新字段时回退 Coordinator 输入状态。新 checkpoint 将整节已提交正文与对应人物状态放在同一 payload 中。
+
+底层向量库、ContextManager 和 Redis 仍沿用现有“有序副作用、无伪回滚”契约，本修复没有宣称跨存储事务能力。
+
+## 可观测性
+
+人物状态使用规范 JSON 的 SHA-256。记录仅包含 task ID hash、阶段位置、状态 hash、来源、fallback、checkpoint version 和 `production_effect=character_state_propagation_only`，不包含完整状态、正文、Prompt 或 messages。
+
+定向测试满足：
+
+`Writer updated state hash = Coordinator state hash = checkpoint state hash = final Reviewer state hash`
+
+## 验证
+
+- 定向 unit/integration：53 passed；受影响模块 compileall 通过。
+- Writer/LLM 新增调用：0。
+- Prompt、messages、生成参数、Mandatory Event、SceneSpec、Condense 和 Review 语义均未修改。
+- 修改后的真实任务尚未运行。
+
+## 首次真实运行结果
+
+Worker 中实际执行了两个任务。两者都完成了 Writer 人物状态更新并记录了新的 `updated_state_hash`，但随后在 Coordinator 记录传播事件时触发 `UnboundLocalError`。根因是 `_phase_writing` 后部原有的局部 `import json as _json` 遮蔽了模块级 `_json`，而新增观测日志在该局部导入执行前调用了 `_json.dumps`。
+
+因此，这两次运行均为无效 Demo：Coordinator、最终 checkpoint 和 Reviewer 链路没有完成，不能作为传播成功证据。该问题属于本次观测接入引入的 Python 作用域错误，不是人物状态内容或检测器问题。
+
+随后删除了函数内重复导入，并增加禁止 `_phase_writing` 局部遮蔽 `_json` 的回归测试；该回归修复经过重启后单任务复验。
+
+## 最终真实验收
+
+重启后只运行了一个任务，任务最终为 `completed`，Shared Post-Write Extraction 未运行，Mandatory Event 实际重试为 0。
+
+人物状态从上一轮 checkpoint 的 `e5a408...` 继续推进为 `4a3b725...`，说明恢复时没有退回 starting state。最终四个传播位置完全一致：
+
+```text
+updated_state_hash
+= checkpoint_state_hash
+= coordinator_state_hash
+= reviewer_state_hash
+= 4a3b7253bac0524ab1c8c155d4412d6f07d245b4eb352f98293a78b83bffe8ac
+```
+
+Character State Update 状态传播修复通过真实验收并正式关闭，不再追加同类 Demo。
+
+Review 阶段仍出现 `resolve_chapter` 混合类型导致的伏笔健康度摘要失败。任务正文、checkpoint 和最终状态仍成功完成；该问题与人物状态传播无关，应作为独立缺陷处理。

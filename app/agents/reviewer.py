@@ -13,10 +13,9 @@ class Reviewer(BaseAgent):
     def review_section(
         self, section_num: int, topic: str, style: dict, section_draft: str
     ) -> dict:
-        style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
-        style_summary = style_brief if style_brief else (
-            f"情感强度{style.get('emotion_intensity', 50)}/100"
-        )
+        from ..utils.llm_client import set_cost_label
+        set_cost_label("reviewer")
+        style_summary = f"情感{style.get('emotion_intensity', 50)}/100 句长{style.get('sentence_preference', 'balanced')}" if isinstance(style, dict) else ""
         style_structured = StyleSummarizer.for_reviewer(style) if isinstance(style, dict) else {}
         prompt = SECTION_REVIEW_PROMPT.format(
             section=section_num,
@@ -24,7 +23,7 @@ class Reviewer(BaseAgent):
             style_summary=style_summary,
             style_structured=json.dumps(style_structured, ensure_ascii=False),
             word_count=count_chinese_chars(section_draft),
-            draft=section_draft[:8000],
+            draft=section_draft[:4000],  # 前4000字足够判断局部质量
         )
         messages = [
             {"role": "system", "content": "你是一位专业审阅编辑，擅长发现文字亮点并给出建设性意见。请以 JSON 格式输出审阅结果。"},
@@ -61,10 +60,7 @@ class Reviewer(BaseAgent):
         relation_context: str = "",
         section_scores: str = "",
     ) -> dict:
-        style_brief = style.get("style_brief", "") if isinstance(style, dict) else ""
-        style_summary = style_brief if style_brief else (
-            f"情感强度{style.get('emotion_intensity', 50)}/100"
-        )
+        style_summary = f"情感{style.get('emotion_intensity', 50)}/100 句长{style.get('sentence_preference', 'balanced')}" if isinstance(style, dict) else ""
         style_structured = StyleSummarizer.for_reviewer(style) if isinstance(style, dict) else {}
 
         character_consistency_context = CharacterFormatter.build_context(characters, character_arcs)
@@ -73,7 +69,6 @@ class Reviewer(BaseAgent):
             topic=topic,
             style_summary=style_summary,
             style_structured=json.dumps(style_structured, ensure_ascii=False),
-            style_brief=style_brief,
             total_words=total_words,
             section_summaries=section_summaries,
             section_scores=section_scores or "（无分节评分数据）",

@@ -1,0 +1,81 @@
+{
+  "date": "2026-07-21",
+  "status": "engineering_canary_ready_default_off",
+  "only_variable": "append deterministic WriterExecutionContract to the final user message",
+  "default_mode": "off",
+  "modes": ["off", "shadow", "canary"],
+  "injection_position": "after_prompt_builder_before_generation_controller",
+  "token_cap": 450,
+  "baseline": {
+    "task_id": "92e1adcc-1ae5-4e68-932c-b718ec1a9217",
+    "target_characters": [1000, 1000, 1000, 1000],
+    "output_characters": [1124, 2399, 1720, 4273],
+    "output_to_target_ratio": [1.124, 2.399, 1.72, 4.273],
+    "main_draft_calls": 4,
+    "mandatory_event_retries": 0,
+    "task_completed": true
+  },
+  "contract": {
+    "reuses_scene_spec_provider": true,
+    "creates_second_planner": false,
+    "creates_state_store": false,
+    "required_event_order_preserved": true,
+    "events_silently_truncated": false,
+    "overplanned_threshold": 5,
+    "soft_min_ratio": 0.85,
+    "soft_max_ratio": 1.3,
+    "hard_text_truncation": false
+  },
+  "legacy_invariants": {
+    "off_provider_calls": 0,
+    "off_messages_unchanged": true,
+    "shadow_messages_unchanged": true,
+    "system_prompt_unchanged": true,
+    "legacy_context_unchanged": true,
+    "rag_and_order_unchanged": true,
+    "generation_parameters_unchanged": true,
+    "mandatory_event_mode": "warn",
+    "condense_mode": "warn",
+    "incremental_section_review": false,
+    "checkpoint_and_commit_order_unchanged": true,
+    "additional_llm_calls": 0
+  },
+  "fallback": {
+    "returns_original_prompt": true,
+    "blocks_writer": false,
+    "triggers_retry": false,
+    "injects_partial_contract": false,
+    "reasons": [
+      "current_outline_missing",
+      "next_outline_missing",
+      "current_target_missing",
+      "target_characters_invalid",
+      "execution_contract_empty",
+      "source_manifest_untraceable",
+      "contract_over_budget",
+      "contract_hash_unstable",
+      "provider_or_injection_error"
+    ]
+  },
+  "privacy": {
+    "full_prose_recorded": false,
+    "prompt_or_messages_recorded": false,
+    "scene_spec_source_text_recorded": false,
+    "credentials_recorded": false,
+    "database_or_chroma_content_recorded": false
+  },
+  "verification": {
+    "targeted_tests_passed": 74,
+    "compileall": "passed",
+    "writer_calls": 0,
+    "llm_calls": 0,
+    "real_canary_samples": 0
+  },
+  "stop_rule": {
+    "engineering_implementations_allowed": 1,
+    "real_four_subsection_canaries_allowed": 1,
+    "closeout_decisions_allowed": 1,
+    "additional_batches_authorized": false
+  },
+  "authorization": "one_explicit_real_canary_only"
+}

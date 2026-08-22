@@ -1,0 +1,150 @@
+{
+  "schema_version": "real_writing_llm_call_census.v1",
+  "date": "2026-07-21",
+  "task_id": "3454d80e-02b9-48b6-b160-da614768da9b",
+  "scope": {
+    "writer_llm_calls": 0,
+    "new_generation_runs": 0,
+    "source": "fixed Celery/application log and existing source call paths",
+    "private_prose_in_report": false
+  },
+  "reconciliation": {
+    "http_post_count": 25,
+    "logged_total_tokens": 39010,
+    "logged_agent_breakdown": {
+      "writer": 32442,
+      "continuity_editor": 263,
+      "reviewer": 6305
+    },
+    "logged_agent_breakdown_sum": 39010,
+    "writer_recovered_non_stream_tokens": 32442,
+    "known_per_call_input_tokens": 40925,
+    "known_per_call_output_tokens": 9097,
+    "known_per_call_token_lower_bound": 50022,
+    "stream_draft_token_samples_unavailable": 4,
+    "background_thread_tokens_excluded_from_logged_total": 11012,
+    "explanation": "The 39,010 counter reconciles exactly to the three logged agent buckets. Four streaming draft calls do not emit per-call token usage, while two background section reviews and one background experience extraction run without the task context and contribute 11,012 known tokens outside that total. Therefore 50,022 is a recoverable lower bound across HTTP calls, not a replacement total."
+  },
+  "invariants": {
+    "subsection_draft_calls": 4,
+    "one_draft_call_per_subsection": true,
+    "mandatory_event_retry_calls": 0,
+    "handover_brief_calls": 4,
+    "handover_extraction_calls": 4,
+    "length_condense_calls": 3,
+    "consistency_calls": 1,
+    "continuity_calls": 1,
+    "review_calls": 4,
+    "task_id_missing_calls": 3
+  },
+  "calls": [
+    {"call_index":1,"time":"15:18:23","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer","call_label":"style_behavior","version":"0.9.3","purpose":"style_behavior","section":2,"subsection":null,"estimated_input_tokens":2049,"actual_input_tokens":978,"output_tokens":335,"latency_seconds":10.2,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":null,"source_line":11},
+    {"call_index":2,"time":"15:18:37","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._build_handover_brief","call_label":"handover_brief","version":"0.9.1","purpose":"handover_brief","section":2,"subsection":1,"estimated_input_tokens":1252,"actual_input_tokens":592,"output_tokens":179,"latency_seconds":6.0,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Cache only when the normalized input hash is identical; equal token counts do not prove duplicate inputs.","source_line":18},
+    {"call_index":3,"time":"15:18:43","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.generate","call_label":"unlabeled_stream","version":null,"purpose":"subsection_draft","section":2,"subsection":1,"estimated_input_tokens":null,"actual_input_tokens":null,"output_tokens":null,"latency_seconds":9.4,"temperature":0.5,"json_mode":false,"stream_mode":true,"production_effect":true,"main_draft_call":true,"retry":false,"possibly_mergeable":false,"merge_note":null,"source_line":21},
+    {"call_index":4,"time":"15:18:52","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._extract_handover","call_label":"handover_extraction","version":"0.9.1","purpose":"handover_extraction","section":2,"subsection":1,"estimated_input_tokens":3408,"actual_input_tokens":1705,"output_tokens":343,"latency_seconds":8.0,"temperature":0.2,"json_mode":true,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Potentially share a typed extraction pass with section state updates; output contracts differ and require validation.","source_line":26},
+    {"call_index":5,"time":"15:19:12","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._build_handover_brief","call_label":"handover_brief","version":"0.9.1","purpose":"handover_brief","section":2,"subsection":2,"estimated_input_tokens":1252,"actual_input_tokens":592,"output_tokens":172,"latency_seconds":4.6,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Cache only when the normalized input hash is identical; equal token counts do not prove duplicate inputs.","source_line":29},
+    {"call_index":6,"time":"15:19:17","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.generate","call_label":"unlabeled_stream","version":null,"purpose":"subsection_draft","section":2,"subsection":2,"estimated_input_tokens":null,"actual_input_tokens":null,"output_tokens":null,"latency_seconds":20.3,"temperature":0.5,"json_mode":false,"stream_mode":true,"production_effect":true,"main_draft_call":true,"retry":false,"possibly_mergeable":false,"merge_note":null,"source_line":32},
+    {"call_index":7,"time":"15:19:39","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._extract_handover","call_label":"handover_extraction","version":"0.9.1","purpose":"handover_extraction","section":2,"subsection":2,"estimated_input_tokens":4202,"actual_input_tokens":2136,"output_tokens":272,"latency_seconds":5.5,"temperature":0.2,"json_mode":true,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Potentially share a typed extraction pass with section state updates; output contracts differ and require validation.","source_line":45},
+    {"call_index":8,"time":"15:19:45","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.adjust_length","call_label":"length_adjustment_condense","version":null,"purpose":"subsection_expansion","section":2,"subsection":2,"estimated_input_tokens":2568,"actual_input_tokens":1306,"output_tokens":1172,"latency_seconds":13.3,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Allowed purpose vocabulary groups length adjustment under subsection_expansion; this concrete call condensed an over-length draft.","source_line":48},
+    {"call_index":9,"time":"15:20:12","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._build_handover_brief","call_label":"handover_brief","version":"0.9.1","purpose":"handover_brief","section":2,"subsection":3,"estimated_input_tokens":1252,"actual_input_tokens":592,"output_tokens":142,"latency_seconds":4.2,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Cache only when the normalized input hash is identical; equal token counts do not prove duplicate inputs.","source_line":51},
+    {"call_index":10,"time":"15:20:17","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.generate","call_label":"unlabeled_stream","version":null,"purpose":"subsection_draft","section":2,"subsection":3,"estimated_input_tokens":null,"actual_input_tokens":null,"output_tokens":null,"latency_seconds":21.6,"temperature":0.5,"json_mode":false,"stream_mode":true,"production_effect":true,"main_draft_call":true,"retry":false,"possibly_mergeable":false,"merge_note":null,"source_line":54},
+    {"call_index":11,"time":"15:20:38","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._extract_handover","call_label":"handover_extraction","version":"0.9.1","purpose":"handover_extraction","section":2,"subsection":3,"estimated_input_tokens":3868,"actual_input_tokens":1963,"output_tokens":298,"latency_seconds":7.4,"temperature":0.2,"json_mode":true,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Potentially share a typed extraction pass with section state updates; output contracts differ and require validation.","source_line":59},
+    {"call_index":12,"time":"15:20:46","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.adjust_length","call_label":"length_adjustment_condense","version":null,"purpose":"subsection_expansion","section":2,"subsection":3,"estimated_input_tokens":2234,"actual_input_tokens":1133,"output_tokens":1001,"latency_seconds":10.4,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Allowed purpose vocabulary groups length adjustment under subsection_expansion; this concrete call condensed an over-length draft.","source_line":62},
+    {"call_index":13,"time":"15:20:56","task_id":null,"task_id_missing_reason":"Reviewer runs in Writer-created background thread; the task ContextVar is not propagated.","agent_module":"app.agents.reviewer.Reviewer.review_section","call_label":"unlabeled_background_section_review","version":null,"purpose":"review","section":2,"subsection":3,"estimated_input_tokens":6702,"actual_input_tokens":3382,"output_tokens":331,"latency_seconds":7.4,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Overlaps the later synchronous final section review for the same section.","source_line":65},
+    {"call_index":14,"time":"15:21:09","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._build_handover_brief","call_label":"handover_brief","version":"0.9.1","purpose":"handover_brief","section":2,"subsection":4,"estimated_input_tokens":1252,"actual_input_tokens":592,"output_tokens":150,"latency_seconds":3.9,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Cache only when the normalized input hash is identical; equal token counts do not prove duplicate inputs.","source_line":68},
+    {"call_index":15,"time":"15:21:12","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.generate","call_label":"unlabeled_stream","version":null,"purpose":"subsection_draft","section":2,"subsection":4,"estimated_input_tokens":null,"actual_input_tokens":null,"output_tokens":null,"latency_seconds":28.4,"temperature":0.5,"json_mode":false,"stream_mode":true,"production_effect":true,"main_draft_call":true,"retry":false,"possibly_mergeable":false,"merge_note":null,"source_line":71},
+    {"call_index":16,"time":"15:21:41","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.writer.Writer._extract_handover","call_label":"handover_extraction","version":"0.9.1","purpose":"handover_extraction","section":2,"subsection":4,"estimated_input_tokens":5110,"actual_input_tokens":2579,"output_tokens":312,"latency_seconds":6.5,"temperature":0.2,"json_mode":true,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Potentially share a typed extraction pass with section state updates; output contracts differ and require validation.","source_line":76},
+    {"call_index":17,"time":"15:21:47","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.writing.generation_controller.GenerationController.adjust_length","call_label":"length_adjustment_condense","version":null,"purpose":"subsection_expansion","section":2,"subsection":4,"estimated_input_tokens":3477,"actual_input_tokens":1749,"output_tokens":1371,"latency_seconds":15.8,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Allowed purpose vocabulary groups length adjustment under subsection_expansion; this concrete call condensed an over-length draft.","source_line":79},
+    {"call_index":18,"time":"15:22:03","task_id":null,"task_id_missing_reason":"Reviewer runs in Writer-created background thread; the task ContextVar is not propagated.","agent_module":"app.agents.reviewer.Reviewer.review_section","call_label":"unlabeled_background_section_review","version":null,"purpose":"review","section":2,"subsection":4,"estimated_input_tokens":6712,"actual_input_tokens":3399,"output_tokens":383,"latency_seconds":7.7,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Overlaps the later synchronous final section review for the same section.","source_line":82},
+    {"call_index":19,"time":"15:22:20","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.character_manager.CharacterManager.update_states","call_label":"unlabeled_character_state_update","version":null,"purpose":"character_state_update","section":2,"subsection":null,"estimated_input_tokens":11354,"actual_input_tokens":5578,"output_tokens":395,"latency_seconds":6.4,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Could consume a validated shared extraction result with handover extraction, but section-level semantics differ.","source_line":85},
+    {"call_index":20,"time":"15:22:27","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.character_relation_store.extract_relations_from_text","call_label":"unlabeled_relation_extraction","version":null,"purpose":"other_identified","section":2,"subsection":null,"estimated_input_tokens":655,"actual_input_tokens":291,"output_tokens":11,"latency_seconds":1.2,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Produces relationship-store updates; no equivalent consumer was identified in this run.","source_line":88},
+    {"call_index":21,"time":"15:22:28","task_id":null,"task_id_missing_reason":"Experience extraction runs in a Writer-created background thread; the task ContextVar is not propagated.","agent_module":"app.experience_timeline.extract_from_section","call_label":"unlabeled_experience_extraction","version":null,"purpose":"other_identified","section":2,"subsection":null,"estimated_input_tokens":6035,"actual_input_tokens":3043,"output_tokens":474,"latency_seconds":7.1,"temperature":0.2,"json_mode":true,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Could potentially share a typed section extraction pass; its long-term memory consumer must be preserved.","source_line":91},
+    {"call_index":22,"time":"15:22:28","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.coordinator._phase_consistency_check","call_label":"unlabeled_consistency_check","version":null,"purpose":"consistency_check","section":2,"subsection":null,"estimated_input_tokens":8838,"actual_input_tokens":4225,"output_tokens":278,"latency_seconds":6.2,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Supplies character consistency results; no equivalent deterministic output exists.","source_line":97},
+    {"call_index":23,"time":"15:22:34","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.continuity_editor.ContinuityEditor.run","call_label":"unlabeled_continuity_check","version":null,"purpose":"continuity_check","section":2,"subsection":null,"estimated_input_tokens":528,"actual_input_tokens":228,"output_tokens":35,"latency_seconds":1.3,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Produces the fix checklist; no critical fixes were applied in this run.","source_line":102},
+    {"call_index":24,"time":"15:22:36","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.reviewer.Reviewer.review_section","call_label":"unlabeled_final_section_review","version":null,"purpose":"review","section":2,"subsection":null,"estimated_input_tokens":6702,"actual_input_tokens":3382,"output_tokens":365,"latency_seconds":7.6,"temperature":0.3,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":true,"merge_note":"Reads the same section again after two background section reviews; consolidate review ownership before removal.","source_line":110},
+    {"call_index":25,"time":"15:22:43","task_id":"3454d80e-02b9-48b6-b160-da614768da9b","task_id_missing_reason":null,"agent_module":"app.agents.reviewer.Reviewer.review_global","call_label":"unlabeled_global_review","version":null,"purpose":"review","section":2,"subsection":null,"estimated_input_tokens":2998,"actual_input_tokens":1480,"output_tokens":1078,"latency_seconds":33.1,"temperature":0.4,"json_mode":false,"stream_mode":false,"production_effect":true,"main_draft_call":false,"retry":false,"possibly_mergeable":false,"merge_note":"Produces chapter/global review fields not supplied by section review.","source_line":114}
+  ],
+  "by_purpose": {
+    "style_behavior":{"calls":1,"actual_input_tokens":978,"output_tokens":335,"known_total_tokens":1313,"unavailable_token_calls":0,"latency_seconds":10.2},
+    "handover_brief":{"calls":4,"actual_input_tokens":2368,"output_tokens":643,"known_total_tokens":3011,"unavailable_token_calls":0,"latency_seconds":18.7},
+    "subsection_draft":{"calls":4,"actual_input_tokens":null,"output_tokens":null,"known_total_tokens":null,"unavailable_token_calls":4,"latency_seconds":79.7},
+    "handover_extraction":{"calls":4,"actual_input_tokens":8383,"output_tokens":1225,"known_total_tokens":9608,"unavailable_token_calls":0,"latency_seconds":27.4},
+    "subsection_expansion":{"calls":3,"actual_input_tokens":4188,"output_tokens":3544,"known_total_tokens":7732,"unavailable_token_calls":0,"latency_seconds":39.5},
+    "character_state_update":{"calls":1,"actual_input_tokens":5578,"output_tokens":395,"known_total_tokens":5973,"unavailable_token_calls":0,"latency_seconds":6.4},
+    "consistency_check":{"calls":1,"actual_input_tokens":4225,"output_tokens":278,"known_total_tokens":4503,"unavailable_token_calls":0,"latency_seconds":6.2},
+    "continuity_check":{"calls":1,"actual_input_tokens":228,"output_tokens":35,"known_total_tokens":263,"unavailable_token_calls":0,"latency_seconds":1.3},
+    "review":{"calls":4,"actual_input_tokens":11643,"output_tokens":2157,"known_total_tokens":13800,"unavailable_token_calls":0,"latency_seconds":55.8},
+    "other_identified":{"calls":2,"actual_input_tokens":3334,"output_tokens":485,"known_total_tokens":3819,"unavailable_token_calls":0,"latency_seconds":8.3}
+  },
+  "lifecycle": {
+    "generation_before":{"calls":1,"purposes":["style_behavior"]},
+    "per_subsection_loop":{"calls":17,"purposes":["handover_brief","subsection_draft","handover_extraction","subsection_expansion","review"]},
+    "generation_after":{"calls":7,"purposes":["character_state_update","other_identified","consistency_check","continuity_check","review"]}
+  },
+  "draft_vs_auxiliary": {
+    "draft_calls": 4,
+    "draft_call_share": 0.16,
+    "auxiliary_calls": 21,
+    "auxiliary_call_share": 0.84,
+    "token_share": "unavailable because all four streaming draft token samples are unavailable"
+  },
+  "call_utility": {
+    "confirmed_duplicate_calls": 0,
+    "potentially_mergeable": [
+      "two background section reviews versus the later final section review",
+      "handover briefs only when normalized input hashes match",
+      "handover, character-state and experience extraction only after a shared typed contract is validated"
+    ],
+    "not_safe_to_delete": [
+      "four subsection draft calls",
+      "handover extraction consumed by continuity state and event commits",
+      "character-state and relationship updates consumed by their stores",
+      "consistency and continuity outputs consumed by review/fix state",
+      "global review consumed by the final task result"
+    ]
+  },
+  "cost_rank_known_tokens": [
+    {"rank":1,"purpose":"review","known_total_tokens":13800,"note":"Includes two background section reviews, one final section review, and one global review."},
+    {"rank":2,"purpose":"handover_extraction","known_total_tokens":9608,"note":"Four per-subsection structured extractions."},
+    {"rank":3,"purpose":"subsection_expansion","known_total_tokens":7732,"note":"All three calls were actually whole-draft condensation passes."}
+  ],
+  "optimization_candidates": [
+    {"rank":1,"candidate":"Consolidate background and final section review ownership","expected_signal":"Three section-review reads account for 11,242 known tokens; two background calls overlap the later final section review.","single_variable":true,"not_executed":true},
+    {"rank":2,"candidate":"Cache handover briefs by normalized input hash","expected_signal":"Four calls cost 3,011 known tokens; only exact input-hash matches may be reused.","single_variable":true,"not_executed":true},
+    {"rank":3,"candidate":"Test one typed extraction shared by handover and character-state consumers","expected_signal":"Handover extraction plus character-state update cost 15,581 known tokens; consumer contracts must be validated before consolidation.","single_variable":true,"not_executed":true}
+  ],
+  "character_arc_contract_v2": {
+    "status":"experimental_not_promoted",
+    "configuration_effective":true,
+    "task_started_at_phase":"writing",
+    "new_v2_planner_ran":false,
+    "legacy_milestones":12,
+    "compatibility_classification":{"soft_arc_progress":12,"hard_arc_transition":0},
+    "source_id_coverage":"0/12",
+    "source_hash_coverage":"0/12",
+    "v1_theoretical_link_operations":73,
+    "v2_actual_edges":0,
+    "mandatory_event_retries":0,
+    "subsection_goal_completion":"approximately_3_of_4",
+    "fourth_subsection_missing_goal":"insomniac customer and baker first meeting",
+    "fourth_subsection_repeats_third_scene":true,
+    "writer_tokens_previous":33084,
+    "writer_tokens_current":32442,
+    "writer_token_change_percent":-1.94,
+    "token_change_attributable_to_v2":false,
+    "evidence_limit":"Shows that compatibility handling removes unsupported legacy edges during continuation; does not test V2 planner classification quality.",
+    "production_default":"v1",
+    "post_check_mode":"warn_only",
+    "mandatory_event_mode":"warn",
+    "future_revalidation":"Only with explicit authorization for a new task starting from character_arcs."
+  },
+  "foreshadowing_health_incident": {
+    "task_status":"completed",
+    "draft_saved":true,
+    "health_check_status":"failed",
+    "cause":"resolve_chapter mixed persisted type",
+    "caused_by_character_arc_v2":false,
+    "writer_retry_triggered":false,
+    "review_has_valid_foreshadowing_health_summary":false
+  }
+}

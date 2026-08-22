@@ -1,0 +1,252 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sqlite3
+from contextlib import closing
+from pathlib import Path
+from typing import Any
+
+from app.config import settings
+from app.utils.llm_client import get_llm_client
+
+from .builder import DEFAULT_OUTPUT, load_json, write_json
+
+
+class GenerationAlreadyAttemptedError(RuntimeError):
+    pass
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def validate_runtime(queue: list[dict[str, Any]]) -> None:
+    if not settings.LLM_API_KEY:
+        raise ValueError("LLM credential is unavailable")
+    for item in queue:
+        spec = item["provider_config"]
+        if settings.LLM_BASE_URL != "https://api.deepseek.com/v1":
+            raise ValueError("runtime base URL differs from canary contract")
+        if settings.LLM_MODEL != spec["model"]:
+            raise ValueError("runtime model differs from canary contract")
+        if spec["transport_max_retries"] != 0:
+            raise ValueError("canary transport retry must be zero")
+
+
+def reserve(ledger: Path, item: dict[str, Any]) -> None:
+    with closing(sqlite3.connect(ledger, isolation_level=None)) as db:
+        db.execute("BEGIN IMMEDIATE")
+        row = db.execute(
+            "SELECT request_sha256,status,attempt_count FROM generation_queue "
+            "WHERE generation_id=?",
+            (item["generation_id"],),
+        ).fetchone()
+        if row != (item["request_sha256"], "pending", 0):
+            db.execute("ROLLBACK")
+            raise GenerationAlreadyAttemptedError(item["generation_id"])
+        db.execute(
+            "UPDATE generation_queue SET status='reserved',attempt_count=1 "
+            "WHERE generation_id=?",
+            (item["generation_id"],),
+        )
+        db.execute(
+            "INSERT INTO generation_attempts("
+            "generation_id,attempt_number,request_attempted"
+            ") VALUES(?,1,0)",
+            (item["generation_id"],),
+        )
+        db.execute("COMMIT")
+
+
+def mark_attempted(ledger: Path, generation_id: str) -> None:
+    with closing(sqlite3.connect(ledger)) as db, db:
+        changed = db.execute(
+            "UPDATE generation_attempts SET request_attempted=1 "
+            "WHERE generation_id=? AND request_attempted=0",
+            (generation_id,),
+        ).rowcount
+        if changed != 1:
+            raise GenerationAlreadyAttemptedError(generation_id)
+
+
+def finalize(
+    ledger: Path,
+    generation_id: str,
+    outcome: str,
+    **values: Any,
+) -> None:
+    with closing(sqlite3.connect(ledger, isolation_level=None)) as db:
+        db.execute("BEGIN IMMEDIATE")
+        state = db.execute(
+            "SELECT status,attempt_count FROM generation_queue WHERE generation_id=?",
+            (generation_id,),
+        ).fetchone()
+        attempt = db.execute(
+            "SELECT request_attempted,outcome FROM generation_attempts "
+            "WHERE generation_id=?",
+            (generation_id,),
+        ).fetchone()
+        if state != ("reserved", 1) or attempt != (1, None):
+            db.execute("ROLLBACK")
+            raise GenerationAlreadyAttemptedError(generation_id)
+        db.execute(
+            "UPDATE generation_queue SET status=? WHERE generation_id=?",
+            (outcome, generation_id),
+        )
+        db.execute(
+            "UPDATE generation_attempts SET outcome=?,response_sha256=?,"
+            "finish_reason=?,input_tokens=?,output_tokens=?,error_type=?,"
+            "error_message_sha256=? WHERE generation_id=?",
+            (
+                outcome,
+                values.get("response_sha256"),
+                values.get("finish_reason"),
+                values.get("input_tokens"),
+                values.get("output_tokens"),
+                values.get("error_type"),
+                values.get("error_message_sha256"),
+                generation_id,
+            ),
+        )
+        db.execute("COMMIT")
+
+
+def basic_text_checks(text: str, finish_reason: str | None) -> dict[str, Any]:
+    stripped = text.strip()
+    return {
+        "nonempty": bool(stripped),
+        "character_count": len(stripped),
+        "within_target_band_650_1500": 650 <= len(stripped) <= 1500,
+        "finish_reason": finish_reason,
+        "truncation_detected": finish_reason not in (None, "stop"),
+        "heading_or_list_detected": bool(
+            re.search(r"(?m)^\s*(?:#{1,6}\s|[-*]\s|\d+[.、]\s)", stripped)
+        ),
+        "field_label_leakage_detected": any(
+            label in stripped
+            for label in (
+                "irreversible_micro_choice",
+                "must_remain_unsaid",
+                "relationship_pressure",
+                "forbidden_shortcut",
+                "ending_residue",
+                "ordered_realization_plan",
+                "mandatory_events",
+                "forbidden_events",
+            )
+        ),
+    }
+
+
+def execute_all(output_dir: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
+    queue = load_json(output_dir / "private/generation-queue.locked.json")
+    validate_runtime(queue)
+    ledger = output_dir / "private/generation-ledger.sqlite"
+    client = get_llm_client()
+    receipts = []
+    for item in sorted(queue, key=lambda value: value["ordinal"]):
+        generation_id = item["generation_id"]
+        reserve(ledger, item)
+        mark_attempted(ledger, generation_id)
+        metadata: dict[str, Any] = {}
+        try:
+            spec = item["provider_config"]
+            content = client.chat_completion(
+                messages=item["messages"],
+                temperature=spec["temperature"],
+                max_tokens=spec["max_tokens"],
+                max_retries=0,
+                json_mode=spec["json_mode"],
+                prompt_name="writer_sparse_kernel_canary_v0",
+                completion_metadata_sink=metadata.update,
+            )
+            response_hash = sha256_text(content)
+            finalize(
+                ledger,
+                generation_id,
+                "succeeded",
+                response_sha256=response_hash,
+                finish_reason=metadata.get("finish_reason"),
+                input_tokens=metadata.get("input_tokens"),
+                output_tokens=metadata.get("output_tokens"),
+            )
+            text_record = {
+                "schema_version": "writer-sparse-kernel-text-v0",
+                "generation_id": generation_id,
+                "canary_block_id": item["canary_block_id"],
+                "scene_id": item["scene_id"],
+                "repeat": item["repeat"],
+                "arm": item["arm"],
+                "text": content,
+                "text_sha256": response_hash,
+                "metadata": metadata,
+                "basic_checks": basic_text_checks(
+                    content,
+                    metadata.get("finish_reason"),
+                ),
+            }
+            write_json(
+                output_dir / f"private/texts/{generation_id}.json",
+                text_record,
+            )
+            receipt = {
+                "generation_id": generation_id,
+                "outcome": "succeeded",
+                "provider_request_attempt_count": 1,
+                "transport_retries": 0,
+                "response_sha256": response_hash,
+                "metadata": metadata,
+            }
+        except Exception as error:
+            error_hash = sha256_text(str(error))
+            finalize(
+                ledger,
+                generation_id,
+                "failed",
+                error_type=type(error).__name__,
+                error_message_sha256=error_hash,
+            )
+            receipt = {
+                "generation_id": generation_id,
+                "outcome": "failed",
+                "provider_request_attempt_count": 1,
+                "transport_retries": 0,
+                "error_type": type(error).__name__,
+                "error_message_sha256": error_hash,
+            }
+        receipts.append(receipt)
+        write_json(
+            output_dir / "private/generation-receipts.json",
+            receipts,
+        )
+        print(
+            json.dumps(
+                {
+                    "generation_id": generation_id,
+                    "arm": item["arm"],
+                    "outcome": receipt["outcome"],
+                },
+                ensure_ascii=False,
+            ),
+            flush=True,
+        )
+    succeeded = sum(item["outcome"] == "succeeded" for item in receipts)
+    summary = {
+        "schema_version": "writer-sparse-kernel-run-summary-v0",
+        "requested": len(queue),
+        "attempted": len(receipts),
+        "succeeded": succeeded,
+        "failed": len(receipts) - succeeded,
+        "transport_retries": 0,
+        "silent_reruns": 0,
+        "fiction_texts": succeeded,
+        "status": "complete" if len(receipts) == len(queue) else "incomplete",
+    }
+    write_json(output_dir / "run-summary.json", summary)
+    return summary
+
+
+if __name__ == "__main__":
+    print(json.dumps(execute_all(), ensure_ascii=False, indent=2))

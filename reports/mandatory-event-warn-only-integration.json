@@ -1,0 +1,84 @@
+{
+  "date": "2026-07-21",
+  "status": "integrated_default_warn_no_real_warn_only_samples",
+  "default_mode": "warn",
+  "modes": {
+    "off": "skip_detection_observation_and_retry",
+    "warn": "detect_final_candidate_and_record_redacted_observation_without_retry",
+    "retry": "legacy_max_two_retries_for_allowlisted_task_only"
+  },
+  "retry_scope": "exact_canonical_uuid_allowlist_only",
+  "default_writer_calls_without_other_rewrite_reasons": 1,
+  "default_mandatory_retry_calls": 0,
+  "detector": {
+    "version": "mandatory-event-literal-v1",
+    "algorithm_changed": false,
+    "keyword_extractor": "existing__extract_lock_keywords",
+    "maximum_keywords": 5,
+    "threshold": 0.5,
+    "set_order_stabilized": false,
+    "evaluation_target": "final_candidate_after_character_and_repetition_rewrites"
+  },
+  "observability": {
+    "includes": [
+      "task_id_hash",
+      "section_subsection",
+      "requested_and_effective_mode",
+      "candidate_output_sha256",
+      "contract_hash",
+      "event_and_keyword_hashes",
+      "keyword_hit_and_total_counts",
+      "would_have_retried",
+      "actual_retry_count",
+      "elapsed_ms",
+      "detector_version",
+      "production_effect"
+    ],
+    "excludes": [
+      "full_prose",
+      "full_mandatory_event_text",
+      "full_keywords",
+      "writer_messages",
+      "prompt",
+      "scene_spec_text",
+      "api_key",
+      "database_or_chroma_content"
+    ],
+    "arc_post_check_fields_included": false,
+    "detector_failure": "fail_open_with_short_error_type"
+  },
+  "unchanged": {
+    "writer_messages_except_removed_legacy_retry_branch": true,
+    "generation_parameters_except_removed_legacy_retry_calls": true,
+    "generation_artifact_contract": true,
+    "checkpoint_contract_and_order": true,
+    "mandatory_event_sources": true,
+    "character_arc_planning": true,
+    "arc_post_check": true,
+    "scene_spec": true,
+    "writer_prompt": true,
+    "rag": true,
+    "context_manager": true,
+    "style_system": true
+  },
+  "scope": {
+    "writer_llm_calls": 0,
+    "new_generation_runs": 0,
+    "repair_started": false,
+    "phase5_started": false,
+    "phase6_started": false
+  },
+  "verification": {
+    "targeted_tests_passed": 36,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "writer_llm_calls": 0
+  },
+  "real_warn_only_samples": 0,
+  "next_demo_observations": [
+    "would_have_retried_count",
+    "actual_mandatory_retry_count_must_be_zero",
+    "outline_goal_completion"
+  ],
+  "authorization": "normal_demo_observation_only_no_new_ab_experiment"
+}

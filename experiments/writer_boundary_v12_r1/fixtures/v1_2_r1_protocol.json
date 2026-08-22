@@ -1,0 +1,384 @@
+{
+  "schema_version": "1.2-r1",
+  "experiment_id": "writer-boundary-v1-2-r1",
+  "enabled": false,
+  "generation_authorized": false,
+  "arms": ["A", "B", "C"],
+  "repeats_per_scene": 3,
+  "reserve_repeats_per_scene": 1,
+  "base_seed": 20260910,
+  "model_config_prose": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "max_tokens": 3000,
+    "seed_supported": true,
+    "json_mode": false,
+    "thinking": "disabled"
+  },
+  "estimands": [
+    {
+      "estimand_id": "A_vs_B_decision_lock_effect",
+      "role": "primary",
+      "comparison": "A_vs_B",
+      "population": "白名单内完成 A 路线并在解盲前锁定 execution audit 的预注册 triplet",
+      "interpretation": "在完整合同暴露保持不变时，锁定中间决策并移除 Writer 选择责任对正文 realization 的影响。"
+    },
+    {
+      "estimand_id": "B_vs_C_contract_exposure_effect",
+      "role": "secondary",
+      "comparison": "B_vs_C",
+      "population": "消费同一锁定 Decision Ticket 的有效 B/C 文本",
+      "interpretation": "在选择结果相同且 Writer 都不负责选择时，完整合同暴露相对自然语言边界摘要的影响。"
+    },
+    {
+      "estimand_id": "A_vs_C_product_bundle_effect",
+      "role": "descriptive",
+      "comparison": "A_vs_C",
+      "population": "有效 triplet 中的 A/C 文本",
+      "interpretation": "决策锁定与 prompt diet 组合后的产品级方向信号；不得解释为单一机制效果。"
+    }
+  ],
+  "triplet_validity": {
+    "planned_triplets": 12,
+    "minimum_valid_triplets": 9,
+    "minimum_valid_per_scene": 2,
+    "invalid_anchor_values": ["unclear", "other"],
+    "silent_rerun_allowed": false,
+    "reserve_seed_per_scene": 1,
+    "fail_closed_when_below_threshold": true,
+    "invalid_triplets_reported_in_full": true
+  },
+  "scenes": [
+    {
+      "schema_version": "1.2-r1",
+      "scene_id": "SC9",
+      "topology": "scarce_resource_allocation",
+      "scene": "闭馆后的地方博物馆库房出现冷凝水。唯一一只合格的防潮转运箱只能完整保护一组材料：次日必须归还借展方的玻璃底片，或馆方自有的修复练习照片。两名值班员必须优先履行借展保管责任，并从白名单中为练习照片选择一个临时方案。库房除湿、墙面检查和长期修复留到天亮。",
+      "characters": {
+        "唐漪": "夜班藏品管理员，首先维护借展材料的保管责任。",
+        "罗平": "修复助理，熟悉库房物品，但不擅自增加处置资源。"
+      },
+      "world_facts": [
+        "库房内只有唐漪与罗平。",
+        "唯一防潮转运箱不能同时完整容纳两组材料。",
+        "干燥高层网架和一张现有无酸吸水纸已经在练习照片旁边。"
+      ],
+      "primary_obligation": "把唯一防潮转运箱用于借展玻璃底片。",
+      "decision_shape": "在不可复制的保护资源已经分配给首要义务后，为次要对象锁定一个且仅一个临时处理。",
+      "long_term_problem": "库房除湿、墙面检查和照片长期修复留到天亮。",
+      "mandatory_events": [
+        "M1 冷凝水使两组材料同时面临受潮风险。",
+        "M2 唯一防潮箱只能完整保护一组材料。",
+        "M3 两人优先把防潮箱用于借展玻璃底片。",
+        "M4 练习照片只采用一个获准临时方案。",
+        "M5 结尾保留库房和材料的长期问题。"
+      ],
+      "forbidden_events": [
+        "F1 不得让两组材料都获得同等级完整保护。",
+        "F2 不得出现第二只防潮箱或让冷凝自行消失。",
+        "F3 不得引入第三人或外部援助。",
+        "F4 不得引入白名单外的新保护方案。",
+        "F5 不得产生关系承诺、和解或责任转移。",
+        "F6 不得把处理过程写成说明书。",
+        "F7 不得在结尾解决长期除湿和修复问题。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，不使用长篇内心独白。",
+        "sentence_rhythm": "短句与中等长度句交替，取舍处允许停顿。",
+        "paragraph_rhythm": "沿水迹、材料移动和未完成状态推进。",
+        "dialogue_function": "对话服务现场协作，不朗读规则。",
+        "emotional_mediation": "压力通过手部动作、距离和停顿呈现。",
+        "diction_register": "克制、具体，避免主题总结。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-r1",
+        "scene_id": "SC9",
+        "decision_id": "practice_photos_temporary_handling",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "raised_dry_mesh_shelf",
+            "definition": "把练习照片平移到现有干燥高层网架，作为到天亮前唯一临时处理。",
+            "selected_summary": "练习照片只移到现有干燥高层网架临时避潮；不增加其他保护层，长期除湿和修复留到天亮。",
+            "allowed_implementation_details": [
+              "调整照片在网架上的间距。",
+              "确认网架表面干燥并远离墙面水迹。"
+            ]
+          },
+          {
+            "value": "single_acid_free_absorbent_sheet",
+            "definition": "用现场已有的一张无酸吸水纸单层覆盖练习照片，作为到天亮前唯一临时处理。",
+            "selected_summary": "练习照片只使用现场一张无酸吸水纸单层覆盖；不叠加其他材料，长期除湿和修复留到天亮。",
+            "allowed_implementation_details": [
+              "抚平吸水纸边角。",
+              "调整单层纸张位置但不得增加第二层。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选方案的放置、固定、折叠、数量或操作顺序，且不独立改变风险、资源、权限、处置路径或长期问题。",
+          "additional_candidate_definition": "出现至少一个超出已选白名单方案、能够独立改变处置结果的机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    },
+    {
+      "schema_version": "1.2-r1",
+      "scene_id": "SC10",
+      "topology": "reversible_action_ordering",
+      "scene": "闭馆后的水族馆小型培育室响起循环泵异常提示，自动备用增氧已经稳定启动。两名值班员必须在备用系统维持期间完成进水口和回水口两处人工确认；现场记录表明确两种检查顺序都符合夜间规程，但一旦开始就不能中途改序。两人需要锁定一种顺序并执行到临时确认结束，泵体拆检与恢复主循环留到天亮。",
+      "characters": {
+        "叶澄": "夜班饲养员，关注水体变化和连续观察。",
+        "杜衡": "设备值班员，重视操作次序和可追溯记录。"
+      },
+      "world_facts": [
+        "自动备用增氧已经运行，短时间内不存在立即缺氧风险。",
+        "进水口与回水口都必须检查，两种顺序均被夜间规程允许。",
+        "一旦开始检查就必须按锁定顺序完成，不能中途改序或并行。"
+      ],
+      "primary_obligation": "在不干扰备用增氧的前提下完成两处人工确认。",
+      "decision_shape": "两项必要且可逆的行动都要完成，只锁定先后顺序，不分配稀缺保护资源。",
+      "long_term_problem": "循环泵拆检、主循环恢复和长期水质确认留到天亮。",
+      "mandatory_events": [
+        "M1 循环泵异常且备用增氧已经稳定启动。",
+        "M2 两人确认进水口与回水口都必须检查。",
+        "M3 两种合法顺序中只锁定一种。",
+        "M4 两项检查按锁定顺序完成且不中途改序。",
+        "M5 临时确认不被写成永久修复。",
+        "M6 结尾保留泵体拆检和主循环恢复问题。"
+      ],
+      "forbidden_events": [
+        "F1 不得关闭或改造备用增氧。",
+        "F2 不得并行检查或中途改换顺序。",
+        "F3 不得出现维修人员或远程援助。",
+        "F4 不得把任一检查写成循环泵已经修好。",
+        "F5 不得产生关系承诺、和解或责任转移。",
+        "F6 不得把检查动作写成设备教程。",
+        "F7 不得在结尾恢复主循环或完成长期水质确认。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，视角随两人的检查移动。",
+        "sentence_rhythm": "设备声响间用短句，空间移动用中等长度句。",
+        "paragraph_rhythm": "按被锁定的行动顺序自然推进。",
+        "dialogue_function": "对话只承担必要确认，不朗读规程。",
+        "emotional_mediation": "紧张感通过水声、灯光和观察停顿呈现。",
+        "diction_register": "准确但不过度技术化。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-r1",
+        "scene_id": "SC10",
+        "decision_id": "manual_check_order",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "intake_then_return",
+            "definition": "先检查进水口，再检查回水口；两项都必须完成且不得中途改序。",
+            "selected_summary": "人工确认顺序已经锁定为先检查进水口、再检查回水口；两项都要完成，不能改序，主循环维修留到天亮。",
+            "allowed_implementation_details": [
+              "在进水口完成可见状态确认后再移动。",
+              "回水口检查结束后记录两处临时状态。"
+            ]
+          },
+          {
+            "value": "return_then_intake",
+            "definition": "先检查回水口，再检查进水口；两项都必须完成且不得中途改序。",
+            "selected_summary": "人工确认顺序已经锁定为先检查回水口、再检查进水口；两项都要完成，不能改序，主循环维修留到天亮。",
+            "allowed_implementation_details": [
+              "在回水口完成可见状态确认后再移动。",
+              "进水口检查结束后记录两处临时状态。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选行动顺序内部的观察、移动和记录动作，不增加第三项检查、不并行、不改序，也不解决长期故障。",
+          "additional_candidate_definition": "出现超出两项既定检查、能够独立改变设备状态或检查路径的机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    },
+    {
+      "schema_version": "1.2-r1",
+      "scene_id": "SC11",
+      "topology": "authority_bounded_response",
+      "scene": "闭馆后的巡查中，市立展厅一只借展密封陈列柜持续发出湿度报警。两名夜班人员无权开柜、移动借展品或改写恒湿控制参数，但值班规程允许他们在两种可逆响应中选择一种：关闭展厅并保持报警现场，或隔着玻璃维持定点观察并记录变化。两人必须锁定权限内的一种响应，专业人员检查与设备调整留到天亮。",
+      "characters": {
+        "孟岚": "展厅夜班主管，清楚借展权限和保管边界。",
+        "江屿": "巡查员，观察细致，不会把临时响应写成专业处置。"
+      },
+      "world_facts": [
+        "两人无权开柜、移动借展品或改变恒湿参数。",
+        "关闭展厅保持现场与隔玻璃定点观察都属于夜班授权范围。",
+        "报警没有显示破柜、积水或需要立即撤离的危险。"
+      ],
+      "primary_obligation": "在不越过借展与设备权限的前提下维持可追溯的临时响应。",
+      "decision_shape": "在两种均属授权范围的可逆响应中只锁定一种；核心约束是权限，不是资源争夺。",
+      "long_term_problem": "专业检查、开柜决定、恒湿设备调整和藏品状态确认留到天亮。",
+      "mandatory_events": [
+        "M1 密封陈列柜持续发出湿度报警。",
+        "M2 两人明确自己无权开柜、移物或改参数。",
+        "M3 两种授权响应中只锁定一种。",
+        "M4 临时响应被执行并留下可追溯状态。",
+        "M5 结尾保留专业检查和设备调整问题。"
+      ],
+      "forbidden_events": [
+        "F1 不得开柜、移动借展品或改变恒湿参数。",
+        "F2 不得同时执行两种白名单响应。",
+        "F3 不得引入馆长、修复师或外部远程指挥。",
+        "F4 不得让报警自行解除或宣布藏品安全无虞。",
+        "F5 不得产生关系承诺、和解或责任转移。",
+        "F6 不得把临时响应写成制度宣讲。",
+        "F7 不得在结尾完成专业检查或设备调整。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，保持人物权限所及的认知边界。",
+        "sentence_rhythm": "报警间隔与人物停顿形成节奏。",
+        "paragraph_rhythm": "围绕权限确认、响应锁定和可见状态推进。",
+        "dialogue_function": "对话用于核对权限，不宣讲制度。",
+        "emotional_mediation": "克制感通过不触碰、观察和退让呈现。",
+        "diction_register": "冷静、具体，避免官样表达。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-r1",
+        "scene_id": "SC11",
+        "decision_id": "authorized_alarm_response",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "close_gallery_preserve_alarm_state",
+            "definition": "关闭展厅入口并保持陈列柜与报警状态不动，记录交接信息，等待专业人员。",
+            "selected_summary": "夜间响应锁定为关闭展厅入口、保持陈列柜和报警状态不动并记录交接；不得开柜或改参数，专业处理留到天亮。",
+            "allowed_implementation_details": [
+              "确认入口关闭并保留观察窗可见。",
+              "记录报警时间和未触碰状态。"
+            ]
+          },
+          {
+            "value": "threshold_observation_log",
+            "definition": "不关闭观察路径，由两人在展厅门槛外隔玻璃定点观察并记录变化，等待专业人员。",
+            "selected_summary": "夜间响应锁定为在展厅门槛外隔玻璃定点观察并记录变化；不得开柜或改参数，专业处理留到天亮。",
+            "allowed_implementation_details": [
+              "保持固定观察位置，不进入陈列柜警戒线。",
+              "按现有时钟记录可见变化。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选授权响应中的关闭、观察和记录动作，不扩张权限、不叠加另一响应、不处理设备。",
+          "additional_candidate_definition": "出现超出夜班授权、改变陈列柜、藏品或恒湿设备状态的独立机制时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    },
+    {
+      "schema_version": "1.2-r1",
+      "scene_id": "SC12",
+      "topology": "uncertainty_preservation",
+      "scene": "社区声音档案室夜间接收整理时，一盘没有完整标签的旧录音带表面出现几处白色斑点。两名整理员无法在现场确认那是霉斑还是老化残留，也不能播放或清洁磁带。现有规程允许两种不确定性处理：按疑似污染隔离，或保持未确认状态放入观察套。两人必须选择一种口径并让标签、放置与记录保持一致，鉴定和修复留到天亮。",
+      "characters": {
+        "俞宁": "档案整理员，重视证据不足时不作过度结论。",
+        "魏川": "夜班助理，擅长保持标签、位置和记录一致。"
+      },
+      "world_facts": [
+        "现场条件无法判断白点是霉斑还是材料老化残留。",
+        "夜班人员无权播放、擦拭、取样或宣布污染结论。",
+        "疑似污染隔离盘和未确认观察套都已在工作台上，二者代表不同但均合法的临时口径。"
+      ],
+      "primary_obligation": "在证据不足时保持处置、标签和记录一致，不把临时判断写成事实。",
+      "decision_shape": "从两种合法的不确定性口径中锁定一种；核心是保存不确定性，而不是分配资源或安排先后。",
+      "long_term_problem": "白点鉴定、磁带播放、清洁修复和正式编目留到天亮。",
+      "mandatory_events": [
+        "M1 两人发现无完整标签磁带上的白色斑点。",
+        "M2 现场证据不足以确认污染或老化。",
+        "M3 两种合法临时口径中只锁定一种。",
+        "M4 标签、放置与记录遵循同一锁定口径。",
+        "M5 临时口径不被写成确定鉴定结论。",
+        "M6 结尾保留鉴定、播放和修复问题。"
+      ],
+      "forbidden_events": [
+        "F1 不得播放、擦拭、取样或修复磁带。",
+        "F2 不得同时使用两种互相冲突的临时口径。",
+        "F3 不得凭空确认白点一定是霉斑或一定不是霉斑。",
+        "F4 不得引入第三人、检测设备或远程鉴定。",
+        "F5 不得产生关系承诺、和解或责任转移。",
+        "F6 不得把处置写成档案规程说明书。",
+        "F7 不得在结尾完成正式鉴定和编目。"
+      ],
+      "style_signature": {
+        "narrative_distance": "第三人称近距离，不越过现场证据。",
+        "sentence_rhythm": "观察细节使用中短句，判断停在可见事实。",
+        "paragraph_rhythm": "围绕发现、犹疑、口径锁定与留待确认推进。",
+        "dialogue_function": "对话用于校准措辞，不替代动作。",
+        "emotional_mediation": "不确定感通过反复观察和收住判断呈现。",
+        "diction_register": "谨慎、具体，避免抽象知识宣讲。"
+      },
+      "target_chars": 1000,
+      "decision_contract": {
+        "schema_version": "1.2-r1",
+        "scene_id": "SC12",
+        "decision_id": "uncertain_tape_handling",
+        "choose_exactly": 1,
+        "allowed_values": [
+          {
+            "value": "suspected_contamination_isolation",
+            "definition": "按疑似污染但未确认的口径标记，放入现有隔离盘并记录等待鉴定。",
+            "selected_summary": "磁带按“疑似污染、尚未确认”的口径放入现有隔离盘，标签和记录不得写成确定结论；鉴定与修复留到天亮。",
+            "allowed_implementation_details": [
+              "标签明确同时保留“疑似”和“未确认”。",
+              "调整磁带在隔离盘中的位置但不增加容器。"
+            ]
+          },
+          {
+            "value": "unconfirmed_observation_sleeve",
+            "definition": "保持未确认口径，放入现有透明观察套并记录白点可见位置等待鉴定。",
+            "selected_summary": "磁带保持“原因未确认”的口径放入现有透明观察套，只记录白点位置而不判断性质；鉴定与修复留到天亮。",
+            "allowed_implementation_details": [
+              "只记录白点位置、数量等可见事实。",
+              "调整观察套方向以便天亮后查看但不播放磁带。"
+            ]
+          }
+        ],
+        "solution_boundary_policy": {
+          "allowed_detail_definition": "只具体化已选不确定性口径的标签、放置和事实记录，不得引入检测、清洁或确定性结论。",
+          "additional_candidate_definition": "出现独立鉴定、清洁、播放、取样或第三种处置口径时，记为 additional solution candidate。",
+          "confirmed_new_solution_min_signals": 2,
+          "confirmation_signals": [
+            "replaces_whitelist_solution",
+            "adds_independent_protection_layer",
+            "adds_resource_that_independently_changes_risk",
+            "creates_second_disposition_path",
+            "changes_resource_or_authority_boundary",
+            "resolves_long_term_problem"
+          ]
+        }
+      }
+    }
+  ]
+}

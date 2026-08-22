@@ -1,28 +1,75 @@
 """共享测试 fixtures。"""
 
-import pytest
-from unittest.mock import MagicMock
+import os
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+
+
+pytest_plugins = ["tests.support.pytest_suite_plugin"]
+
+
+_TEST_RUNTIME_DIR = Path(tempfile.mkdtemp(prefix="writer-tests-"))
+
+# These assignments must run before any app.* import. Tests are isolated from
+# developer .env files and from production/runtime stores by default.
+os.environ["WRITER_TESTING"] = "1"
+os.environ["WRITER_HANDOVER_CONTRACT_VERSION"] = "v1"
+os.environ["WRITER_WORLD_RUNTIME_MODE"] = "off"
+os.environ["RAG_PHASE3_SHADOW"] = "false"
+os.environ["RAG_RERANKER_ENABLED"] = "false"
+os.environ["CANONICAL_COMMIT_MODE"] = "legacy"
+os.environ["CANONICAL_DATABASE_URL"] = (
+    f"sqlite:///{(_TEST_RUNTIME_DIR / 'canonical.db').as_posix()}"
+)
+os.environ["TASK_DB_PATH"] = str(_TEST_RUNTIME_DIR / "tasks.db")
+os.environ["CHARACTER_DB_PATH"] = str(_TEST_RUNTIME_DIR / "characters.db")
+os.environ["CHROMA_DATA_PATH"] = str(_TEST_RUNTIME_DIR / "chroma")
+
+# Historical quality audits are read-only and resolve their approved local
+# fixture by hash. Keep the private database out of version control while
+# making it available inside the isolated per-session runtime when present.
+_LOCAL_TASK_FIXTURE = Path(__file__).resolve().parents[1] / "tasks.db"
+if _LOCAL_TASK_FIXTURE.exists():
+    shutil.copy2(_LOCAL_TASK_FIXTURE, _TEST_RUNTIME_DIR / "tasks.db")
+
+import pytest  # noqa: E402
+from unittest.mock import MagicMock  # noqa: E402
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Remove only the per-session test runtime directory owned above."""
+    task_store = sys.modules.get("app.task_store")
+    if task_store is not None:
+        store_class = getattr(task_store, "TaskStore", None)
+        if store_class is not None:
+            store_class.close_all()
+    dependencies = sys.modules.get("app.dependencies")
+    if dependencies is not None:
+        store = getattr(dependencies, "char_store", None)
+        connection = getattr(store, "_conn", None)
+        if connection is not None:
+            connection.close()
+    shutil.rmtree(_TEST_RUNTIME_DIR)
 
 
 @pytest.fixture
 def sample_style():
-    """中性风格预设（完整 50 维）。"""
+    """当前风格契约：4 个主旋钮 + 兼容字段。"""
     return {
-        "narrative_density": 0.7,
-        "primary_emotion": "中性", "emotion_intensity": 50, "emotion_subtlety": "含蓄",
-        "emotion_blend": {},
-        "emotion_curve": "平稳", "emotional_peaks": "均匀分布", "catharsis_style": "渐进式",
-        "narrative_empathy": "适度共情", "inner_monologue_ratio": 0.2, "show_vs_tell": "平衡",
-        "emotional_registry": "文学抒情", "emotional_contrast": "渐进演变",
-        "short_sentence_ratio": 0.3, "long_sentence_ratio": 0.2,
-        "sentence_pattern": "长短交替", "paragraph_rhythm": "均匀块状",
-        "paragraph_length_avg": 200, "dialogue_ratio": 0.3, "dialogue_tag_style": "稀疏标记",
-        "pacing": "中等", "scene_transition": "过渡铺垫", "tension_curve": "波浪起伏",
-        "metaphor_frequency": "适度", "personification": "适度",
-        "vocabulary_register": "文学化", "vocabulary_richness": "中等",
-        "chengyu_frequency": "适度", "adjective_density": 0.15, "adverb_policy": "适度",
-        "sensory_density": "适度", "sensory_spectrum": "视觉为主", "color_use": "暖色调",
-        "imagery_domain": "自然", "style_brief": "中性风格，均衡叙事",
+        "emotion_intensity": 50,
+        "dialogue_ratio": 0.3,
+        "sentence_preference": "balanced",
+        "sensory_density": "medium",
+        "narrative_density": 0.5,
+        "adjective_density": 0.15,
+        "paragraph_length_avg": 200,
+        "short_sentence_ratio": 0.33,
+        "medium_sentence_ratio": 0.34,
+        "long_sentence_ratio": 0.33,
+        "dialogue_tag_style": "动作替代",
+        "pacing": "中等",
         "preset_name": "中性",
     }
 
@@ -135,7 +182,7 @@ def mock_llm(mocker):
         mock_client.chat_completion.return_value = response_text
         mock_client.chat_completion_stream.return_value = [response_text]
 
-        def fake_init(self, llm_client=None):
+        def fake_init(self, llm_client=None, model=None):
             self.llm = mock_client
             self.last_raw_response = ""
 
@@ -153,8 +200,6 @@ def mock_redis_store(mocker):
     mocker.patch("app.blackboard.Blackboard._redis", new_callable=lambda: fr)
     # Also need to mock the connection in blackboard's __init__
     import app.blackboard
-    original = app.blackboard.Blackboard.__init__
-
     def mock_init(self):
         self._redis = fr
 

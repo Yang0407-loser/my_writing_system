@@ -1,0 +1,374 @@
+{
+  "title": "StateFrame V1 production quality baseline",
+  "schema_version": "state-frame-snapshot-v1",
+  "task_id_hash": "64acbb836e963a06716889f73fdeef9960e62dce43706d784842256a31fc13ba",
+  "task_selected_by": "latest_completed_task",
+  "task_updated_at": "2026-07-24 14:03:03",
+  "subsection_count": 4,
+  "writer_calls": 0,
+  "llm_calls": 0,
+  "database_writes": 0,
+  "production_effect": false,
+  "verification": {
+    "targeted_state_frame_tests_passed": 34,
+    "targeted_state_frame_tests_failed": 0,
+    "compileall": "passed"
+  },
+  "state_sources": {
+    "availability": {
+      "outline": true,
+      "handover": true,
+      "character_state": false,
+      "relationship_state": false,
+      "foreshadow_state": true,
+      "post_write_state_bundle": false,
+      "per_subsection_checkpoint_history": false
+    },
+    "available_source_count": 3,
+    "required_source_count": 7,
+    "source_coverage_rate": 0.4286
+  },
+  "summary": {
+    "frame_status_counts": {
+      "partial": 8
+    },
+    "fact_type_counts": {
+      "foreshadow_state": 36
+    },
+    "expectation_requiredness": {
+      "observational": 2,
+      "soft": 14
+    },
+    "source_traceability_rate": 1.0,
+    "state_conflict_count": 0,
+    "deterministic_rebuild": true,
+    "state_propagation_break_detected": true,
+    "state_propagation_break": "completed task history lacks per-subsection before/after checkpoints and post-write typed bundles"
+  },
+  "quality_baseline": {
+    "handover_continuity": "baseline_only",
+    "character_state_transition": "baseline_only",
+    "foreshadow_health": "baseline_only"
+  },
+  "scenes": [
+    {
+      "section": 1,
+      "subsection": 1,
+      "before_status": "partial",
+      "after_status": "partial",
+      "before_frame_hash": "96cccd52a0dc8c0a7e727e29a8524949675a152542dd737d7a8c5364e7b21a95",
+      "after_frame_hash": "c845703712be9f789d9468830fde0bd3e418ba8501819ba12644bf6650b08e40",
+      "delta_id": "statedelta:f01be0abd5ea0d5f3438e426",
+      "fact_count": 9,
+      "fact_type_counts": {
+        "foreshadow_state": 9
+      },
+      "expectation_count": 5,
+      "expectation_requiredness": {
+        "observational": 1,
+        "soft": 4
+      },
+      "source_manifest_count": 9,
+      "pending_source_types": [],
+      "unavailable_source_types": [
+        "historical_current_store_snapshots",
+        "post_write_state_bundle",
+        "relationship_state"
+      ],
+      "added_fact_count": 0,
+      "changed_fact_count": 0,
+      "resolved_fact_count": 0,
+      "quality_metrics": {
+        "handover_continuity": {
+          "counts": {
+            "handover_required_items": 0,
+            "handover_assessable_items": 0,
+            "handover_satisfied_items": 0,
+            "handover_partial_items": 0,
+            "handover_contradictions": 0,
+            "handover_unassessable_items": 0,
+            "handover_coverage": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "character_state_transition": {
+          "counts": {
+            "expected_state_transitions": 2,
+            "assessable_state_transitions": 0,
+            "supported_state_transitions": 0,
+            "partial_state_transitions": 0,
+            "contradicted_state_transitions": 0,
+            "unsupported_state_changes": 0,
+            "missing_state_transitions": 0,
+            "character_state_consistency": null,
+            "unassessable_state_transitions": 2
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "foreshadow_health": {
+          "counts": {
+            "planned_foreshadow_actions": 0,
+            "assessable_foreshadow_actions": 0,
+            "supported_foreshadow_actions": 0,
+            "newly_planted": 0,
+            "advanced": 0,
+            "resolved": 0,
+            "premature_resolutions": 0,
+            "overdue_foreshadows": 0,
+            "invalid_resolve_chapter_count": 0,
+            "foreshadow_lifecycle_consistency": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": [
+            "current_store_has_no_subsection_lifecycle_history"
+          ]
+        }
+      },
+      "source_traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "section": 1,
+      "subsection": 2,
+      "before_status": "partial",
+      "after_status": "partial",
+      "before_frame_hash": "552d0626fbc7ceca068cb0d26633f176a5ff7ea8abb2edab192ee80356b39216",
+      "after_frame_hash": "f22481668d2f59f733758d833193321f40f95170f070e4ec26cca5fcc064cf3b",
+      "delta_id": "statedelta:72ddda48d9cf397ed7e4a582",
+      "fact_count": 9,
+      "fact_type_counts": {
+        "foreshadow_state": 9
+      },
+      "expectation_count": 3,
+      "expectation_requiredness": {
+        "soft": 3
+      },
+      "source_manifest_count": 9,
+      "pending_source_types": [],
+      "unavailable_source_types": [
+        "historical_current_store_snapshots",
+        "post_write_state_bundle",
+        "relationship_state"
+      ],
+      "added_fact_count": 0,
+      "changed_fact_count": 0,
+      "resolved_fact_count": 0,
+      "quality_metrics": {
+        "handover_continuity": {
+          "counts": {
+            "handover_required_items": 0,
+            "handover_assessable_items": 0,
+            "handover_satisfied_items": 0,
+            "handover_partial_items": 0,
+            "handover_contradictions": 0,
+            "handover_unassessable_items": 0,
+            "handover_coverage": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "character_state_transition": {
+          "counts": {
+            "expected_state_transitions": 0,
+            "assessable_state_transitions": 0,
+            "supported_state_transitions": 0,
+            "partial_state_transitions": 0,
+            "contradicted_state_transitions": 0,
+            "unsupported_state_changes": 0,
+            "missing_state_transitions": 0,
+            "character_state_consistency": null,
+            "unassessable_state_transitions": 0
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "foreshadow_health": {
+          "counts": {
+            "planned_foreshadow_actions": 0,
+            "assessable_foreshadow_actions": 0,
+            "supported_foreshadow_actions": 0,
+            "newly_planted": 0,
+            "advanced": 0,
+            "resolved": 0,
+            "premature_resolutions": 0,
+            "overdue_foreshadows": 0,
+            "invalid_resolve_chapter_count": 0,
+            "foreshadow_lifecycle_consistency": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": [
+            "current_store_has_no_subsection_lifecycle_history"
+          ]
+        }
+      },
+      "source_traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "section": 1,
+      "subsection": 3,
+      "before_status": "partial",
+      "after_status": "partial",
+      "before_frame_hash": "61c7b30438cb4fc494daaadc1dd872010bd9918dafc79dd33a908fa7cf895231",
+      "after_frame_hash": "da0415e0c6af3039673a8261ec8eeb6be9b225ebd9e88e47d7e371d529c23cce",
+      "delta_id": "statedelta:99882021e702beb9fc341c48",
+      "fact_count": 9,
+      "fact_type_counts": {
+        "foreshadow_state": 9
+      },
+      "expectation_count": 3,
+      "expectation_requiredness": {
+        "observational": 1,
+        "soft": 2
+      },
+      "source_manifest_count": 9,
+      "pending_source_types": [],
+      "unavailable_source_types": [
+        "historical_current_store_snapshots",
+        "post_write_state_bundle",
+        "relationship_state"
+      ],
+      "added_fact_count": 0,
+      "changed_fact_count": 0,
+      "resolved_fact_count": 0,
+      "quality_metrics": {
+        "handover_continuity": {
+          "counts": {
+            "handover_required_items": 0,
+            "handover_assessable_items": 0,
+            "handover_satisfied_items": 0,
+            "handover_partial_items": 0,
+            "handover_contradictions": 0,
+            "handover_unassessable_items": 0,
+            "handover_coverage": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "character_state_transition": {
+          "counts": {
+            "expected_state_transitions": 0,
+            "assessable_state_transitions": 0,
+            "supported_state_transitions": 0,
+            "partial_state_transitions": 0,
+            "contradicted_state_transitions": 0,
+            "unsupported_state_changes": 0,
+            "missing_state_transitions": 0,
+            "character_state_consistency": null,
+            "unassessable_state_transitions": 0
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "foreshadow_health": {
+          "counts": {
+            "planned_foreshadow_actions": 0,
+            "assessable_foreshadow_actions": 0,
+            "supported_foreshadow_actions": 0,
+            "newly_planted": 0,
+            "advanced": 0,
+            "resolved": 0,
+            "premature_resolutions": 0,
+            "overdue_foreshadows": 0,
+            "invalid_resolve_chapter_count": 0,
+            "foreshadow_lifecycle_consistency": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": [
+            "current_store_has_no_subsection_lifecycle_history"
+          ]
+        }
+      },
+      "source_traceability_rate": 1.0,
+      "contains_story_text": false
+    },
+    {
+      "section": 1,
+      "subsection": 4,
+      "before_status": "partial",
+      "after_status": "partial",
+      "before_frame_hash": "d8efec0c930801f92070fbfc9d76d34962f60ccfcd90e37500f6f447b94a0434",
+      "after_frame_hash": "e08a9796c8708920800d31d5b7f034f4427c43a376b0ba758b3962ffc748aca6",
+      "delta_id": "statedelta:e5f34ec3a126916781dadcfe",
+      "fact_count": 9,
+      "fact_type_counts": {
+        "foreshadow_state": 9
+      },
+      "expectation_count": 5,
+      "expectation_requiredness": {
+        "soft": 5
+      },
+      "source_manifest_count": 9,
+      "pending_source_types": [],
+      "unavailable_source_types": [
+        "historical_current_store_snapshots",
+        "post_write_state_bundle",
+        "relationship_state"
+      ],
+      "added_fact_count": 0,
+      "changed_fact_count": 0,
+      "resolved_fact_count": 0,
+      "quality_metrics": {
+        "handover_continuity": {
+          "counts": {
+            "handover_required_items": 0,
+            "handover_assessable_items": 0,
+            "handover_satisfied_items": 0,
+            "handover_partial_items": 0,
+            "handover_contradictions": 0,
+            "handover_unassessable_items": 0,
+            "handover_coverage": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "character_state_transition": {
+          "counts": {
+            "expected_state_transitions": 0,
+            "assessable_state_transitions": 0,
+            "supported_state_transitions": 0,
+            "partial_state_transitions": 0,
+            "contradicted_state_transitions": 0,
+            "unsupported_state_changes": 0,
+            "missing_state_transitions": 0,
+            "character_state_consistency": null,
+            "unassessable_state_transitions": 0
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": []
+        },
+        "foreshadow_health": {
+          "counts": {
+            "planned_foreshadow_actions": 0,
+            "assessable_foreshadow_actions": 0,
+            "supported_foreshadow_actions": 0,
+            "newly_planted": 0,
+            "advanced": 0,
+            "resolved": 0,
+            "premature_resolutions": 0,
+            "overdue_foreshadows": 0,
+            "invalid_resolve_chapter_count": 0,
+            "foreshadow_lifecycle_consistency": null
+          },
+          "evaluation_basis": "insufficient_evidence",
+          "unavailable_reasons": [
+            "current_store_has_no_subsection_lifecycle_history"
+          ]
+        }
+      },
+      "source_traceability_rate": 1.0,
+      "contains_story_text": false
+    }
+  ],
+  "limitations": [
+    "Current-store character, relation and foreshadow records have no per-subsection history.",
+    "Section handover is an unstructured report and is not promoted to confirmed truth.",
+    "Task history does not persist post-write typed bundles.",
+    "Extractor-reported data is not independent quality ground truth."
+  ],
+  "can_recommend_writer_shadow_injection": false,
+  "recommendation": "do_not_inject_fix_single_subsection_snapshot_gap_first",
+  "contains_story_text": false
+}

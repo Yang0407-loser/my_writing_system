@@ -1,0 +1,263 @@
+{
+  "schema_version": "state-frame-real-four-subsection-acceptance-v1",
+  "date": "2026-07-25",
+  "status": "accepted",
+  "task": {
+    "task_id": "6e52740c-c959-4c84-8651-b46ceebfd88b",
+    "status": "completed",
+    "expected_subsections": 4,
+    "completed_subsections": 4,
+    "writer_retries": 0,
+    "commit_failures": 0,
+    "worker_failures": 0,
+    "state_frame_failures": 0,
+    "output_saved": true,
+    "checkpoint_saved": true
+  },
+  "scope": {
+    "code_baseline": "c1f3298",
+    "contains_code_baseline": true,
+    "writer_llm_calls_added_by_acceptance": 0,
+    "writer_messages_changed": false,
+    "writer_output_changed": false,
+    "generation_parameters_changed": false,
+    "retry_semantics_changed": false,
+    "commit_idempotency_changed": false,
+    "state_frame_injected_into_writer": false,
+    "database_schema_changed": false
+  },
+  "history": {
+    "schema_version": "state-frame-history-v1",
+    "before_frames": 4,
+    "after_frames": 4,
+    "deltas": 4,
+    "pending_before": 0,
+    "errors": 0,
+    "duplicate_record_ids": 0,
+    "production_effect_false": 4,
+    "persistence_status": {
+      "partial": 4,
+      "finalized": 0
+    },
+    "partial_reason": "The persisted boundary is valid, but handover, relationship, subsection-exact post-write state, and historical current-store snapshots were unavailable at capture time.",
+    "records": [
+      {
+        "section": 1,
+        "subsection": 1,
+        "record_id": "state-frame-history:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.1:92dd2c3c9dd4f1f14937c81760efcf3f227a4dedce7a05fc8d4ed649a1b00a34",
+        "before_frame_hash": "f4530fed362e91c3ca1b53d8fba0f888b472b79979885d4121aac2790e1d7167",
+        "after_frame_hash": "81d5a783b8003c192c0b82f15aab02b12b9da2739b947176aba0394900df9ecc",
+        "delta_id": "statedelta:8d5f5fc64cfde4fdda0a1874",
+        "output_sha256": "92dd2c3c9dd4f1f14937c81760efcf3f227a4dedce7a05fc8d4ed649a1b00a34",
+        "prompt_messages_hash": "02efec47b73dacc8c1cd5fc955d15ee58688d0fe15247c137c4c5a09d63ddbc4",
+        "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:1",
+        "persistence_status": "partial",
+        "unavailable_source_types": [
+          "handover",
+          "historical_current_store_snapshots",
+          "post_write_state_bundle",
+          "relationship_state"
+        ],
+        "pending_source_types": [],
+        "source_granularity": {
+          "foreshadowing_store": "current_store_snapshot",
+          "handover": "unavailable",
+          "historical_current_store_snapshots": "unavailable",
+          "post_write_state_bundle": "unavailable",
+          "relationship_state": "unavailable"
+        },
+        "production_effect": false
+      },
+      {
+        "section": 1,
+        "subsection": 2,
+        "record_id": "state-frame-history:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.2:069ed375cde47a3ac6234d1e6c1b811e40e4af81e8c1158577ec7ac5b8a11990",
+        "before_frame_hash": "c6485ed0a78e5e0f668cd6da4b3ed148658b47b166f1f683d1271893d587d30c",
+        "after_frame_hash": "5f714238f6d668f3e9f7cced780ab809583a01f2eb20eca6b64b7d8408d47fce",
+        "delta_id": "statedelta:b48d26ec72b11036d2495392",
+        "output_sha256": "069ed375cde47a3ac6234d1e6c1b811e40e4af81e8c1158577ec7ac5b8a11990",
+        "prompt_messages_hash": "e3006879f0832591d55fe3cea417a230eb332d15b83bc293189efc8f87681d63",
+        "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:2",
+        "persistence_status": "partial",
+        "unavailable_source_types": [
+          "handover",
+          "historical_current_store_snapshots",
+          "post_write_state_bundle",
+          "relationship_state"
+        ],
+        "pending_source_types": [],
+        "source_granularity": {
+          "foreshadowing_store": "current_store_snapshot",
+          "handover": "unavailable",
+          "historical_current_store_snapshots": "unavailable",
+          "post_write_state_bundle": "unavailable",
+          "relationship_state": "unavailable"
+        },
+        "production_effect": false
+      },
+      {
+        "section": 1,
+        "subsection": 3,
+        "record_id": "state-frame-history:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.3:d988d7bafa255c8ca404896820e8ef85d49cb940ff386c36c40d3f592f7ca692",
+        "before_frame_hash": "e4e5f5a38bc20220da26c36cbfad6084fb76206cabedc536657217eb6548736b",
+        "after_frame_hash": "24a687d83033b018a10589b194ce35e66de8e8417bc5149dd65c0dcafa5bbe5a",
+        "delta_id": "statedelta:e3c4ca7c808256093bf85a90",
+        "output_sha256": "d988d7bafa255c8ca404896820e8ef85d49cb940ff386c36c40d3f592f7ca692",
+        "prompt_messages_hash": "35e750b97b686d56b12271e2c1092346cabfb1609c3294631d97eb4102432554",
+        "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:3",
+        "persistence_status": "partial",
+        "unavailable_source_types": [
+          "handover",
+          "historical_current_store_snapshots",
+          "post_write_state_bundle",
+          "relationship_state"
+        ],
+        "pending_source_types": [],
+        "source_granularity": {
+          "foreshadowing_store": "current_store_snapshot",
+          "handover": "unavailable",
+          "historical_current_store_snapshots": "unavailable",
+          "post_write_state_bundle": "unavailable",
+          "relationship_state": "unavailable"
+        },
+        "production_effect": false
+      },
+      {
+        "section": 1,
+        "subsection": 4,
+        "record_id": "state-frame-history:73089dfe1a6760d33b7f535c98340a42fede727dfdc1ca9d2dc93f433f88b981:S1.4:adbb509cb9619dfca29e40b6cf69fa08fc1c8a21df4fcacd32b90cdc696abe4c",
+        "before_frame_hash": "a19971a95cbada09eda3eb00b08e7bbdeeca6d9e7ee6ba8d4555eac37cb493d9",
+        "after_frame_hash": "849db4974ddd1a8b435985b61a8c5b7120023416c1945573f4504848cac669b6",
+        "delta_id": "statedelta:54a389fc4a15c19ccbba1b21",
+        "output_sha256": "adbb509cb9619dfca29e40b6cf69fa08fc1c8a21df4fcacd32b90cdc696abe4c",
+        "prompt_messages_hash": "b3fa37ca6ee0f90b25d8ee8c94250d92cf7703ef7be13bb7cd1ede860fe3dc86",
+        "commit_idempotency_key": "6e52740c-c959-4c84-8651-b46ceebfd88b:1:4",
+        "persistence_status": "partial",
+        "unavailable_source_types": [
+          "handover",
+          "historical_current_store_snapshots",
+          "post_write_state_bundle",
+          "relationship_state"
+        ],
+        "pending_source_types": [],
+        "source_granularity": {
+          "foreshadowing_store": "current_store_snapshot",
+          "handover": "unavailable",
+          "historical_current_store_snapshots": "unavailable",
+          "post_write_state_bundle": "unavailable",
+          "relationship_state": "unavailable"
+        },
+        "production_effect": false
+      }
+    ]
+  },
+  "capture_order": {
+    "before_precedes_prompt_builder": true,
+    "before_precedes_writer_call": true,
+    "before_excludes_current_output": true,
+    "commit_precedes_after": true,
+    "post_commit_observers_precede_after": true,
+    "after_precedes_section_handover_summary": true,
+    "after_precedes_section_character_state_update": true,
+    "uncommitted_candidate_has_no_after": true,
+    "section_end_state_backfilled_to_early_subsections": false,
+    "commit_idempotency_key_pattern": "{task_id}:{section}:{subsection}"
+  },
+  "storage_consistency": {
+    "blackboard": {
+      "records": 4,
+      "pending_before": 0,
+      "errors": 0
+    },
+    "checkpoint": {
+      "records": 4,
+      "legacy_fields_preserved": [
+        "draft",
+        "handover_chain",
+        "character_arcs",
+        "section_texts"
+      ]
+    },
+    "task_store": {
+      "records": 4,
+      "namespace": "analysis_json.state_frame_history_v1",
+      "existing_analysis_fields_preserved": true,
+      "new_table_or_column": false
+    },
+    "record_ids_equal": true,
+    "before_hashes_equal": true,
+    "after_hashes_equal": true,
+    "delta_ids_equal": true
+  },
+  "worker_restart_recovery": {
+    "worker_restarted": true,
+    "queue": "writing,celery",
+    "worker_ready": true,
+    "task_rerun": false,
+    "new_model_calls": 0,
+    "records_after_restart": 4,
+    "record_ids_stable": true,
+    "before_hashes_stable": true,
+    "after_hashes_stable": true,
+    "delta_ids_stable": true,
+    "duplicate_records_created": 0
+  },
+  "redis_unavailable_fallback": {
+    "simulation": "isolated_empty_blackboard_in_fresh_process",
+    "redis_data_deleted": false,
+    "database_modified": false,
+    "source": "task_history",
+    "reconstructed": false,
+    "recovered_subsections": 4,
+    "expected_subsections": 4,
+    "recovery_rate": 1.0,
+    "record_ids_stable": true,
+    "before_hashes_stable": true,
+    "after_hashes_stable": true,
+    "delta_ids_stable": true,
+    "writer_or_llm_calls": 0
+  },
+  "traceability_and_privacy": {
+    "persisted_facts": 96,
+    "facts_with_source_id_and_hash": 96,
+    "source_hash_traceability_rate": 1.0,
+    "maximum_evidence_excerpt_characters": 0,
+    "full_story_text_present": false,
+    "full_prompt_present": false,
+    "messages_present": false,
+    "api_key_present": false,
+    "environment_contents_present": false,
+    "database_or_chroma_contents_present": false
+  },
+  "quality_assessability": {
+    "handover_continuity": {
+      "status": "unassessable",
+      "reason": "No structured subsection-scoped handover expectation was available."
+    },
+    "character_state_transition": {
+      "status": "partial",
+      "expected_transitions": 2,
+      "assessable_transitions": 0,
+      "reason": "The expectations exist, but no subsection-exact post-write state source was persisted for this task."
+    },
+    "foreshadow_health": {
+      "status": "unassessable",
+      "reason": "The current store snapshot has no subsection lifecycle history."
+    },
+    "unavailable_is_quality_failure": false,
+    "final_state_backfilled_to_earlier_subsections": false,
+    "quality_truth_claimed": false
+  },
+  "verification": {
+    "targeted_tests_passed": 16,
+    "targeted_tests_failed": 0,
+    "compileall": "passed",
+    "historical_phase_3_4_matrix_run": false
+  },
+  "acceptance": {
+    "all_mechanical_gates_passed": true,
+    "state_frame_persistence_accepted": true,
+    "writer_shadow_injection_authorized": false,
+    "next_step_automatic": false
+  }
+}

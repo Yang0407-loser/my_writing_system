@@ -1,0 +1,109 @@
+{
+  "schema_version": "2.0",
+  "experiment": {
+    "experiment_id": "style-contract-ablation-action-bridge-sc2-v1",
+    "purpose": "验证确定性行动场表达转换层能否提高 S3 在 SC2 的稳定性，且不取得内容或人物关系决策权。",
+    "enabled": false,
+    "target_style": "S3",
+    "arms": ["D2", "D2A"],
+    "production_candidate_arms": ["D2A"],
+    "diagnostic_only_arms": ["D2"],
+    "pair_baseline_arm": "D2",
+    "pair_candidate_arms": ["D2A"],
+    "repeats": 3,
+    "base_seed": 20260730,
+    "target_chars": 1000,
+    "model": "deepseek-v4-pro",
+    "temperature": 0.6,
+    "max_tokens": 3000,
+    "expected_output_tokens_per_sample": 1000,
+    "real_calls_require_explicit_enable": true
+  },
+  "shared_context": {
+    "characters": [
+      "许栀：旧书店合伙人，谨慎、直接，不替别人决定是否承担风险",
+      "沈闻：修复师，行动克制，遇到压力时先确认事实再承诺"
+    ],
+    "world_facts": [
+      "故事发生在连续降雨后的旧城区",
+      "两人共同经营一家带修复工坊的旧书店",
+      "仓库租约即将到期，店铺现金流紧张",
+      "许栀保管仓库钥匙，但没有权力单方面把全部责任转给沈闻"
+    ]
+  },
+  "styles": [
+    {
+      "id": "S3",
+      "label": "对话黑色",
+      "reference_path": "reference_dialogue_noir.txt"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "SC2",
+      "type": "action_introspection",
+      "prompt": "次日清晨，两人进入受潮仓库清点书箱。屋顶开始漏水，他们必须先抢救一箱顾客寄存的旧信，再决定其余货物如何转移。情绪通过选择和动作呈现。",
+      "mandatory_events": [
+        "两人进入受潮仓库并开始清点",
+        "屋顶漏水加剧",
+        "优先抢救顾客寄存的旧信",
+        "对其余货物的去向只形成临时方案"
+      ],
+      "forbidden_events": [
+        "不得让全部货物毫无代价地获救",
+        "不得用长篇心理独白替代抢救行动",
+        "不得让任何一方未经讨论擅自丢弃他人物品"
+      ],
+      "approved_state_deltas": [
+        {
+          "delta_id": "sc2-risk-leak-intensifies",
+          "domain": "risk",
+          "description": "屋顶漏水加剧",
+          "source": "mandatory_event",
+          "read_only": true
+        },
+        {
+          "delta_id": "sc2-object-letters-prioritized",
+          "domain": "object_state",
+          "description": "顾客寄存的旧信被优先抢救",
+          "source": "mandatory_event",
+          "read_only": true
+        },
+        {
+          "delta_id": "sc2-object-other-goods-temporary",
+          "domain": "object_state",
+          "description": "其余货物只形成临时转移方案",
+          "source": "mandatory_event",
+          "read_only": true
+        }
+      ],
+      "scene_modulation": "本节为行动场。保持对话主导；允许动作句略增，但动作必须改变抢救局面，不得形成搬运步骤清单。"
+    }
+  ],
+  "exception_regressions": [
+    {
+      "case": "S3__SC2",
+      "risk": "行动描写滑向流程日志，或风格层越权创造人物关系与内容事实",
+      "included_in_action_bridge_batch": true
+    },
+    {
+      "case": "S3__SC2__D2",
+      "risk": "完整反例仍可能挤压事实一致性",
+      "included_in_action_bridge_batch": true
+    }
+  ],
+  "acceptance": {
+    "decision_scope": "仅判断 D2A 是否值得进入跨场景确认，不直接批准生产接入",
+    "single_score_forbidden": true,
+    "target_style_recognition_min_percentage": 70,
+    "plot_or_character_errors_max": 0,
+    "core_task_misses_max": 0,
+    "severe_prompt_conflicts_max": 0,
+    "exact_sentence_copies_max": 0,
+    "shared_12grams_max": 0,
+    "truncations_max": 0,
+    "max_quality_drop_percentage_points": 10,
+    "unapproved_relationship_mutations_max": 0,
+    "new_content_facts_max": 0
+  }
+}

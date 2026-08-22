@@ -47,7 +47,7 @@ def test_get_prompt_info():
 def test_get_prompt_version():
     from app.utils.prompt_templates import get_prompt_version
     assert get_prompt_version("writing") == "0.9.1"
-    assert get_prompt_version("handover_brief") == "0.9.1"
+    assert get_prompt_version("handover_brief") == "0.9.2"
     assert get_prompt_version("nonexistent") == "unversioned"
     print("PASS: get_prompt_version() fallback OK")
 

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "summary": {
+    "item_count": 0,
+    "reviewed": 0,
+    "suppressed_new_candidates": 25,
+    "review_skipped_by_fixed_failure_proof": true,
+    "status": "complete"
+  },
+  "items": []
+}

@@ -1,9 +1,17 @@
-"""重复检测 —— jieba 分词 + TF-IDF + 轻量 LLM 节拍验证。
+"""重复检测 —— 确定性复制拦截 + jieba 分词 TF-IDF + 轻量 LLM 节拍验证。
 
 链路：
+0. 逐字节复制检测（全文、无分词依赖）→ 命中即拒，绝不询问 LLM
 1. jieba 分词 + 停用词过滤 → TF-IDF 余弦相似度
-2. 相似度 ≥ 0.85 → 轻量 LLM 判断情节是否有新进展（50 tokens）
-3. 低相似度或 LLM 判有进展 → 放行；LLM 判无进展 → 触发重试
+2. 相似度 ≥ EXACT_COPY_SIMILARITY(0.97) → 近似复制，确定性拒绝
+3. 相似度 0.85~0.97 灰区 → 轻量 LLM 判断情节是否有新进展（50 tokens）
+4. 低相似度或 LLM 判有进展 → 放行；LLM 判无进展 → 触发重试
+
+第 0/2 层的存在依据（2026-07-26，任务 `1f6581ee…`）：S1.4 正文为 S1.3 的
+逐字节复制。TF-IDF 层正确触发（相似度 1.0），但 LLM 节拍判定以
+prev_text[-300:] 对比 curr_text[:600]——头尾窗口对完整复制永不重叠，
+复制品的开头相对上一段的结尾天然表现为"新内容"，判定 advanced=true 放行。
+确定性层必须在 LLM 之前拦截，且其结论不可被 LLM 覆盖。
 """
 
 import re
@@ -81,6 +89,37 @@ def _cosine_sim(vec_a, vec_b) -> float:
 
 
 # ═══════════════════════════════════════════════════════════
+# 确定性复制拦截（先于一切 LLM 判定）
+# ═══════════════════════════════════════════════════════════
+
+# TF-IDF 相似度达到该值即判近似复制，直接拒绝，不再进入 LLM 灰区判定。
+# 0.85~0.97 仍是 LLM 节拍判定的合法灰区（高主题重合的正常续写）。
+EXACT_COPY_SIMILARITY = 0.97
+
+
+def check_exact_copy(sub_text: str, previous_texts: list[str]) -> dict:
+    """逐字节级复制检测——不依赖分词器，结论不可被 LLM 覆盖。
+
+    与 TF-IDF 层的三点关键差异：
+    - 全文比较，不做 [:2000] 截断（长文复制不会因截断漏检）；
+    - 不经过 jieba/TF-IDF 的 try/except 回退路径（分词器故障不会
+      让完整复制静默通过）；
+    - 命中后调用方必须直接拒绝，禁止再询问 LLM 节拍判定。
+
+    Returns:
+        {"copied": bool, "copy_of": int | None, "method": str | None}
+        copy_of 为 previous_texts 中命中项的列表下标。
+    """
+    normalized = (sub_text or "").strip()
+    if not normalized:
+        return {"copied": False, "copy_of": None, "method": None}
+    for index, prev in enumerate(previous_texts or []):
+        if (prev or "").strip() == normalized:
+            return {"copied": True, "copy_of": index, "method": "exact_text"}
+    return {"copied": False, "copy_of": None, "method": None}
+
+
+# ═══════════════════════════════════════════════════════════
 # 重复检测
 # ═══════════════════════════════════════════════════════════
 
@@ -138,8 +177,14 @@ def check_repetition(
 def llm_check_beat_advancement(prev_text: str, curr_text: str) -> dict:
     """轻量 LLM 判断情节是否有新进展。
 
-    仅在 TF-IDF ≥ 0.85 时由 check_subsection_quality 内部调用。
-    max_tokens=50, json_mode。
+    仅在 TF-IDF 落于 0.85~EXACT_COPY_SIMILARITY 灰区时由
+    check_subsection_quality 内部调用。max_tokens=50, json_mode。
+
+    已知盲区（勿删确定性前置层）：本判定以 prev_text[-300:] 对比
+    curr_text[:600]，两窗口对"整段复制上一节"的情况永不重叠——复制品
+    开头相对上一段结尾天然像新内容，会被误判 advanced=true。完整/近似
+    复制必须由 check_exact_copy 与 EXACT_COPY_SIMILARITY 在进入本函数
+    之前拦截；本函数只负责灰区的情节节拍判断。
     """
     try:
         from .utils.llm_client import get_llm_client
@@ -212,20 +257,49 @@ def check_subsection_quality(
     prev_sub_text: str = "",
     target_goal: str = "",
 ) -> dict:
-    """综合质量检查入口。纯代码 → LLM 两级递进。
+    """综合质量检查入口。确定性 → 纯代码 → LLM 三级递进。
 
     链路：
-    1. jieba + TF-IDF 与最近 3 节对比（阈值 0.85）
-    2. 高相似度 → 轻量 LLM 判断情节节拍（50 tokens）
-    3. 调用方只需看 result["pass"]
+    1. 逐字节复制检测（全文、无分词依赖）→ 命中即拒，不询问 LLM
+    2. jieba + TF-IDF 与最近 3 节对比（阈值 0.85）
+    3. 相似度 ≥ EXACT_COPY_SIMILARITY(0.97) → 近似复制，确定性拒绝
+    4. 0.85~0.97 灰区 → 轻量 LLM 判断情节节拍（50 tokens）
+    5. 调用方只需看 result["pass"]
 
     Returns:
-        {"pass": bool, "repetition": {...}, "beat_check": {...} | None}
+        {"pass": bool, "repetition": {...}, "beat_check": {...} | None,
+         "deterministic_reject": "exact_text" | "near_copy_similarity" | None}
     """
+    exact = check_exact_copy(sub_text, previous_texts)
+    if exact["copied"]:
+        logger.warning(
+            "确定性拦截: 当前小节为第 %s 项已写文本的逐字节复制，跳过 LLM 判定",
+            exact["copy_of"],
+        )
+        return {
+            "pass": False,
+            "repetition": {
+                "repeated": True,
+                "max_similarity": 1.0,
+                "similar_section": exact["copy_of"],
+            },
+            "beat_check": None,
+            "deterministic_reject": exact["method"],
+        }
+
     rep = check_repetition(sub_text, previous_texts)
 
     if not rep["repeated"]:
-        return {"pass": True, "repetition": rep, "beat_check": None}
+        return {"pass": True, "repetition": rep, "beat_check": None,
+                "deterministic_reject": None}
+
+    if rep["max_similarity"] >= EXACT_COPY_SIMILARITY:
+        logger.warning(
+            "确定性拦截: 与第 %s 项相似度 %.3f ≥ %.2f，判为近似复制，跳过 LLM 判定",
+            rep["similar_section"], rep["max_similarity"], EXACT_COPY_SIMILARITY,
+        )
+        return {"pass": False, "repetition": rep, "beat_check": None,
+                "deterministic_reject": "near_copy_similarity"}
 
     beat = llm_check_beat_advancement(prev_sub_text, sub_text)
 
@@ -233,4 +307,5 @@ def check_subsection_quality(
         "pass": beat.get("advanced", True),
         "repetition": rep,
         "beat_check": beat,
+        "deterministic_reject": None,
     }

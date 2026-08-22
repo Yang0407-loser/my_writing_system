@@ -1,0 +1,108 @@
+{
+  "schema_version": "style-root-cause-probe-v0",
+  "experiment_id": "style-root-cause-probe-v0",
+  "provider": {
+    "provider": "deepseek",
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-v4-pro",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 2600,
+    "json_mode": false,
+    "thinking": "disabled",
+    "transport_max_retries": 0
+  },
+  "target_characters": {
+    "minimum": 1000,
+    "maximum": 1500
+  },
+  "arms": {
+    "G": {
+      "private_name": "generic",
+      "instruction": "把材料写成一段自然、完整、质量较好的小说正文。根据人物处境选择细节，让行为合乎动机，让场景前后连贯；不追求特定市场类型，不刻意制造慢节奏或快节奏。不要重复解释动作或对白已经表达的意义。"
+    },
+    "L": {
+      "private_name": "literary",
+      "instruction": "这是传统文学叙事场景。让人物当下的感知、关系和未完成理解组织正文；允许慢拍与留白，但细节要改变读者对人物或处境的理解；不急于解释全部动机，不为推进而新增事件；结尾保留有意义的情绪、关系或认识余波。不要重复解释动作或对白已经表达的意义。"
+    },
+    "W": {
+      "private_name": "web_fiction",
+      "instruction": "这是商业网文叙事场景。尽快进入当前事件，让阻力迫使人物行动；优先用动作和对白推进，主角必须作出改变局面的决定；完成一次有效信息揭露或冲突升级；结尾发生状态变化，并留下具体的新压力、机会或问题。不要重复解释动作或对白已经表达的意义。"
+    }
+  },
+  "scenes": [
+    {
+      "scene_id": "RC-S1",
+      "scene_type": "static_relationship",
+      "title": "未寄出的信",
+      "premise": "父亲去世一个月后，林澈回到旧屋整理遗物。姑母邵琴在场，两人对父亲生前的选择一直有不同看法。",
+      "characters": [
+        {
+          "name": "林澈",
+          "role": "视点人物",
+          "current_goal": "整理完父亲的书桌，并带走属于自己的东西",
+          "known": "父亲晚年很少主动联系自己",
+          "unknown": "父亲为何留下未寄出的信"
+        },
+        {
+          "name": "邵琴",
+          "role": "林澈的姑母",
+          "current_goal": "尽快处理旧屋，不让林澈翻出更多往事",
+          "known": "她认得信封上的笔迹",
+          "unknown": "她是否知道信的内容"
+        }
+      ],
+      "must_happen": [
+        "林澈在父亲遗物中发现一封写给自己、但从未寄出的密封信",
+        "邵琴试图把信拿走",
+        "信在本场没有被完整读出",
+        "两人的关系因这封信出现新的裂缝"
+      ],
+      "forbidden_events": [
+        "揭露信件的完整内容",
+        "出现鬼魂、超自然显灵或第三名人物",
+        "以暴力伤害解决争夺",
+        "两人在结尾彻底和解"
+      ],
+      "allowed_end_state": "信仍由林澈或处于双方都无法忽视的位置；信的内容未知；两人的关系比开场更紧张。"
+    },
+    {
+      "scene_id": "RC-S2",
+      "scene_type": "dynamic_danger",
+      "title": "集市上的旧徽",
+      "premise": "边城集市里，少年沈砚替人修补灵器。他一直隐藏自己来自已被灭门的岐山沈氏。随身铜扣平时包在布下，外人不该看见。",
+      "characters": [
+        {
+          "name": "沈砚",
+          "role": "视点人物",
+          "current_goal": "卖完修好的灵器，安静离开集市",
+          "known": "铜扣上的旧徽会暴露家族来历",
+          "unknown": "谁仍在追查沈氏幸存者"
+        },
+        {
+          "name": "灰衣客",
+          "role": "追踪者",
+          "current_goal": "确认铜扣持有者的身份",
+          "known": "他认得旧徽的轮廓",
+          "unknown": "他的所属势力和最终目的"
+        }
+      ],
+      "must_happen": [
+        "铜扣在意外中露出旧徽",
+        "灰衣客注意到旧徽并开始逼近或跟踪",
+        "沈砚主动放弃原计划并离开当前地点",
+        "沈砚的真实身份在本场不能得到确认"
+      ],
+      "forbidden_events": [
+        "直接揭露灰衣客所属势力",
+        "沈砚公开承认真实身份",
+        "追踪者被彻底击败或死亡",
+        "新增强者出手替沈砚解围"
+      ],
+      "allowed_end_state": "沈砚已离开原摊位或原路线，灰衣客仍构成压力，身份疑问没有得到完整答案。"
+    }
+  ],
+  "repeats_per_scene": 2,
+  "randomization_seed": 18473
+}
+

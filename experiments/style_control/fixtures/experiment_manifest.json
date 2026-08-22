@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "experiment": {
+    "arms": ["A", "B", "C", "D"],
+    "repeats": 2,
+    "base_seed": 20260727,
+    "target_chars": 1000,
+    "model": "deepseek-v4-pro",
+    "temperature": 0.6,
+    "max_tokens": 2200
+  },
+  "shared_context": {
+    "characters": [
+      "许栀：旧书店合伙人，谨慎、直接，不替别人决定是否承担风险",
+      "沈闻：修复师，行动克制，遇到压力时先确认事实再承诺"
+    ],
+    "world_facts": [
+      "故事发生在连续降雨后的旧城区",
+      "两人共同经营一家带修复工坊的旧书店",
+      "仓库租约即将到期，店铺现金流紧张",
+      "许栀保管仓库钥匙，但没有权力单方面把全部责任转给沈闻"
+    ]
+  },
+  "styles": [
+    {
+      "id": "S1",
+      "label": "克制现实",
+      "reference_path": "reference_restrained_realism.txt"
+    },
+    {
+      "id": "S2",
+      "label": "感官抒情",
+      "reference_path": "reference_sensory_lyric.txt"
+    },
+    {
+      "id": "S3",
+      "label": "对话黑色",
+      "reference_path": "reference_dialogue_noir.txt"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "SC1",
+      "type": "dialogue",
+      "prompt": "傍晚关店前，许栀告诉沈闻仓库租约无法续签，并把钥匙放到两人之间。两人必须讨论明天谁去处理仓库，但任何一方都不能替另一方作出承诺。",
+      "mandatory_events": [
+        "许栀明确说出租约无法续签",
+        "仓库钥匙被放到两人之间",
+        "两人讨论次日处理仓库的分工",
+        "结尾保留沈闻是否正式接过全部责任的选择权"
+      ],
+      "forbidden_events": [
+        "不得让许栀替沈闻承诺承担全部损失",
+        "不得突然解决租约或资金问题",
+        "不得引入未说明的新人物替两人收拾残局"
+      ],
+      "style_modulation": "这是对话冲突场。允许对话承担主要压力，但不要用解释性旁白替人物下结论。"
+    },
+    {
+      "id": "SC2",
+      "type": "action_introspection",
+      "prompt": "次日清晨，两人进入受潮仓库清点书箱。屋顶开始漏水，他们必须先抢救一箱顾客寄存的旧信，再决定其余货物如何转移。情绪通过选择和动作呈现。",
+      "mandatory_events": [
+        "两人进入受潮仓库并开始清点",
+        "屋顶漏水加剧",
+        "优先抢救顾客寄存的旧信",
+        "对其余货物的去向只形成临时方案"
+      ],
+      "forbidden_events": [
+        "不得让全部货物毫无代价地获救",
+        "不得用长篇心理独白替代抢救行动",
+        "不得让任何一方未经讨论擅自丢弃他人物品"
+      ],
+      "style_modulation": "这是行动与内心压力并存的场景。节奏可以收紧，但情绪必须由物件取舍、动作停顿和环境反馈承载。"
+    }
+  ]
+}
+

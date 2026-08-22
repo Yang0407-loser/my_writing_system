@@ -1,0 +1,89 @@
+{
+  "schema_version": "outline-event-contract-report-v1",
+  "contract_version": "outline-event-contract-v1",
+  "status": "typed_outline_fact_layer_ready",
+  "date": "2026-07-24",
+  "writer_or_llm_calls": 0,
+  "authority": {
+    "active_outline_store": "Redis outline_tree plus outline_v2, mirrored into active checkpoint",
+    "historical_fallback": "tasks.db outline_json",
+    "subsection_fields": [
+      "title",
+      "description",
+      "key_points",
+      "target_words",
+      "optional event_contract"
+    ],
+    "writer_consumes_event_contract": false
+  },
+  "legacy_rules": {
+    "status": "proposed",
+    "user_confirmed": false,
+    "maximum_confidence": "medium",
+    "default_requiredness": "unspecified",
+    "description_fallback_confidence": "low",
+    "auto_hard": false,
+    "semantic_similarity_deduplication": false
+  },
+  "budget_advisor": {
+    "event_input": "SubsectionEventContract",
+    "independent_raw_outline_interpreter": false,
+    "formula_changed": false,
+    "provisional_advisory": true,
+    "chapter_budget_conserved": true
+  },
+  "fixed_real_case": {
+    "task_id": "019fc0c8-1a20-4be3-8252-54aaf1c5aa27",
+    "subsection_count": 4,
+    "all_contracts_generated": true,
+    "event_counts": [5, 3, 3, 5],
+    "time_jump_counts": [1, 2, 0, 0],
+    "preferred_characters": [1350, 850, 800, 950],
+    "allocated_characters": [1367, 861, 810, 962],
+    "chapter_budget": 4000,
+    "chapter_allocated_total": 4000,
+    "s1_1_event_count": 5,
+    "s1_2_time_jump_count": 2,
+    "s1_2_shooting_temporal_scope": "current",
+    "s1_3_events_deferred_from_s1_2": true,
+    "s1_3_complexity_not_above_s1_2": true,
+    "s1_4_requires_structure_review": true,
+    "source_traceability": 1.0,
+    "full_outline_or_prose_stored": false
+  },
+  "invalidation": {
+    "source_fields": ["title", "description", "key_points"],
+    "changed_confirmed_contract_status": "stale",
+    "affected_event_user_confirmed_reset": true,
+    "removed_event_status": "superseded",
+    "unchanged_confirmed_event_id_preserved": true,
+    "future_dependency_propagation_implemented": false
+  },
+  "ui": {
+    "surface": "existing outline budget popup",
+    "event_panel_collapsible": true,
+    "author_can_edit_temporal_scope": true,
+    "author_can_edit_requiredness": true,
+    "single_stop_after_event": true,
+    "confirm_and_apply_word_count_are_independent": true,
+    "unconfirmed_request_mutates_outline": false
+  },
+  "acceptance": {
+    "source_traceability": 1.0,
+    "duplicate_event_ids": 0,
+    "contract_hash_determinism": 1.0,
+    "current_next_boundary_expressible": true,
+    "legacy_auto_hard_count": 0,
+    "source_change_invalidates_confirmed": true,
+    "advisor_has_second_event_interpreter": false,
+    "writer_production_behavior_changed": false
+  },
+  "not_started": [
+    "CharacterArcProjection",
+    "StateFrame",
+    "SceneSpec consumption",
+    "BoundaryValidator consumption",
+    "Mandatory Event consumption"
+  ],
+  "next_step": "CharacterArcProjection requires separate authorization after this contract gate."
+}

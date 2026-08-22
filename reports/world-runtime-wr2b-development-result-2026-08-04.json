@@ -1,0 +1,758 @@
+{
+  "schema_version": "world-runtime-wr2b-development-audit-v1",
+  "status": "development_fit_complete",
+  "partition_role": "visible_development_not_holdout",
+  "fixture_sha256": "c380b880b7f3f4f61c6cef98230c29729643af16d0b63ad3a0f611e71d100bed",
+  "case_count": 27,
+  "event_candidate_count": 31,
+  "expected_change_count": 20,
+  "extracted_change_count": 20,
+  "matched_change_count": 20,
+  "semantic_precision": 1.0,
+  "semantic_recall": 1.0,
+  "matched_validation_accuracy": 1.0,
+  "invalid_transition_recall": 1.0,
+  "empty_delta_cases": 8,
+  "empty_delta_correct": 8,
+  "class_metrics": {
+    "clock_transition": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "control": {
+      "expected": 3,
+      "matched": 3,
+      "recall": 1.0
+    },
+    "cross_channel": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "cross_sentence": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "explicit_actor": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "implicit_violation": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "location_transition": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "natural_mechanism": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "paraphrase": {
+      "expected": 3,
+      "matched": 3,
+      "recall": 1.0
+    },
+    "private_record": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "unseen_entity": {
+      "expected": 1,
+      "matched": 1,
+      "recall": 1.0
+    },
+    "unseen_transition": {
+      "expected": 3,
+      "matched": 3,
+      "recall": 1.0
+    },
+    "valid_prerequisite": {
+      "expected": 2,
+      "matched": 2,
+      "recall": 1.0
+    }
+  },
+  "gates": {
+    "development_semantic_precision_complete": true,
+    "development_semantic_recall_complete": true,
+    "development_validation_accuracy_complete": true,
+    "development_invalid_recall_complete": true,
+    "development_empty_deltas_preserved": true,
+    "evidence_traceability_complete": true,
+    "commit_forbidden": true
+  },
+  "development_gate_passed": true,
+  "state_mutations": 0,
+  "commits": 0,
+  "model_calls": 0,
+  "production_promotion_eligible": false,
+  "next_gate": "sealed_unseen_holdout_not_created",
+  "cases": [
+    {
+      "case_id": "ADV-C-S01",
+      "class": "control",
+      "clause_count": 1,
+      "event_candidate_count": 2,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "storefront_public_sale",
+            "bakery:wild-bread:storefront",
+            "public_sale_event",
+            "\"occurred\"",
+            "cash_exchange"
+          ],
+          "expected_validation": "invalid",
+          "extracted": true,
+          "actual_validation": "invalid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-C-K01",
+      "class": "control",
+      "clause_count": 1,
+      "event_candidate_count": 2,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "knowledge_state",
+            "character:coworker",
+            "article_knowledge",
+            "\"perceived\"",
+            "explicit_group_send_and_body_response"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-C-O01",
+      "class": "control",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "resignation_acknowledgement",
+            "company:lin-wan",
+            "resignation_acknowledged",
+            "true",
+            "institutional_reply"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-S01",
+      "class": "negation",
+      "clause_count": 2,
+      "event_candidate_count": 1,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-S02",
+      "class": "unseen_transition",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "storefront_public_handoff",
+            "bakery:wild-bread:storefront",
+            "public_goods_handoff",
+            "\"occurred\"",
+            "free_handoff"
+          ],
+          "expected_validation": "invalid",
+          "extracted": true,
+          "actual_validation": "invalid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-S03",
+      "class": "future_plan",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-S04",
+      "class": "paraphrase",
+      "clause_count": 2,
+      "event_candidate_count": 2,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "storefront_public_sale",
+            "bakery:wild-bread:storefront",
+            "public_sale_event",
+            "\"occurred\"",
+            "digital_payment_exchange"
+          ],
+          "expected_validation": "invalid",
+          "extracted": true,
+          "actual_validation": "invalid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-K01",
+      "class": "cross_channel",
+      "clause_count": 2,
+      "event_candidate_count": 2,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "knowledge_state",
+            "character:ji-qing",
+            "article_knowledge",
+            "\"perceived\"",
+            "private_link_send_and_body_response"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-K02",
+      "class": "negation",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-K03",
+      "class": "cross_sentence",
+      "clause_count": 2,
+      "event_candidate_count": 2,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "knowledge_state",
+            "character:coworker",
+            "article_knowledge",
+            "\"perceived\"",
+            "group_file_send_and_body_response"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-K04",
+      "class": "future_plan",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-K05",
+      "class": "hearsay",
+      "clause_count": 2,
+      "event_candidate_count": 1,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-O01",
+      "class": "explicit_actor",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "object_state",
+            "object:green-bean-soup-bowl",
+            "content_state",
+            "\"empty\"",
+            "actor_pours_out"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-O02",
+      "class": "implicit_violation",
+      "clause_count": 2,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "object_state",
+            "object:green-bean-soup-bowl",
+            "content_state",
+            "\"clean_and_stored\"",
+            "missing_actor_or_event"
+          ],
+          "expected_validation": "invalid",
+          "extracted": true,
+          "actual_validation": "invalid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-O03",
+      "class": "natural_mechanism",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "object_state",
+            "object:green-bean-soup-bowl",
+            "temperature_state",
+            "\"warm\"",
+            "sunlight_warming"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-R01",
+      "class": "paraphrase",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "repeated_completed_event",
+            "article:lin-wan",
+            "publication_event",
+            "\"repeated\"",
+            "explicit_repeat_marker"
+          ],
+          "expected_validation": "invalid",
+          "extracted": true,
+          "actual_validation": "invalid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-R02",
+      "class": "state_check",
+      "clause_count": 1,
+      "event_candidate_count": 0,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-E01",
+      "class": "valid_prerequisite",
+      "clause_count": 2,
+      "event_candidate_count": 2,
+      "expected_change_count": 2,
+      "extracted_change_count": 2,
+      "matched_change_count": 2,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "resignation_acknowledgement",
+            "company:lin-wan",
+            "resignation_acknowledged",
+            "true",
+            "institutional_reply"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        },
+        {
+          "signature": [
+            "employment_state",
+            "employment:lin-wan",
+            "status",
+            "\"ended\"",
+            "acknowledged_effective_resignation"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-E02",
+      "class": "conditional",
+      "clause_count": 2,
+      "event_candidate_count": 1,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-E03",
+      "class": "paraphrase",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "employment_state",
+            "employment:lin-wan",
+            "status",
+            "\"ended\"",
+            "self_assumed_effective"
+          ],
+          "expected_validation": "invalid",
+          "extracted": true,
+          "actual_validation": "invalid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-U01",
+      "class": "unseen_entity",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "unsourced_project_fact",
+            "character:zhao-min",
+            "identity_role",
+            "\"bakery_scheduler\"",
+            "text_assertion"
+          ],
+          "expected_validation": "unresolved",
+          "extracted": true,
+          "actual_validation": "unresolved",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-U02",
+      "class": "fiction_within_fiction",
+      "clause_count": 1,
+      "event_candidate_count": 0,
+      "expected_change_count": 0,
+      "extracted_change_count": 0,
+      "matched_change_count": 0,
+      "unmatched_actual_change_ids": [],
+      "expected": [],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-P01",
+      "class": "unseen_transition",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "publication_state",
+            "article:lin-wan",
+            "publication_state",
+            "\"published\"",
+            "submit_and_platform_publish"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-D01",
+      "class": "unseen_transition",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "resignation_delivery",
+            "resignation:lin-wan",
+            "lifecycle_state",
+            "\"delivered\"",
+            "institutional_email_delivery"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-D02",
+      "class": "private_record",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "resignation_personal_record",
+            "resignation:lin-wan",
+            "personal_record_state",
+            "\"saved\"",
+            "private_email_copy"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-T01",
+      "class": "clock_transition",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "clock_state",
+            "world_clock",
+            "time",
+            "\"05:10\"",
+            "explicit_time_progression"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    },
+    {
+      "case_id": "ADV-L01",
+      "class": "location_transition",
+      "clause_count": 1,
+      "event_candidate_count": 1,
+      "expected_change_count": 1,
+      "extracted_change_count": 1,
+      "matched_change_count": 1,
+      "unmatched_actual_change_ids": [],
+      "expected": [
+        {
+          "signature": [
+            "location_state",
+            "character:lin-wan",
+            "location",
+            "\"bakery:wild-bread:workshop\"",
+            "explicit_entry"
+          ],
+          "expected_validation": "valid",
+          "extracted": true,
+          "actual_validation": "valid",
+          "validation_correct": true
+        }
+      ],
+      "traceability_complete": true,
+      "would_commit": false,
+      "state_mutated": false
+    }
+  ]
+}

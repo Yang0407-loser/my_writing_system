@@ -12,68 +12,20 @@
 # - WRITER_SYSTEM_PROMPT: 从 writer.py 迁移到此处统一管理
 # - 模块末尾 PromptRegistry
 
-STYLE_ANALYSIS_PROMPT = """你是一位资深的文学风格分析专家。请仔细阅读以下参考文本，从情感基调、句式节奏、修辞用词三个维度全面分析其写作风格。
+STYLE_ANALYSIS_PROMPT = """你是一位文学编辑。请分析以下参考文本的写作风格。
 
 参考文本：
 {reference_text}
 
-请以 JSON 对象格式输出全部字段（不要包含其他内容），字段说明和可选值如下：
+四个维度：
 
-A. 情感基调 (12项):
-- primary_emotion: 主情感 (温暖/冷峻/压抑/激昂/悲凉/恐惧/好奇/怀旧/荒诞/宁静/中性)
-- emotion_intensity: 情感强度 0-100 (克制30 → 浓烈90)
-- emotion_subtlety: 表达方式 (直白/含蓄/隐晦)
-- emotion_blend: 情感配比，如 {{"悲凉":0.6,"温暖":0.3,"冷峻":0.1}}，至多3个情感
-- emotion_curve: 情感曲线 (平稳/渐强/渐弱/波浪/突转)
-- emotional_peaks: 高潮频率 (每节1次/每节2-3次/集中在结尾/均匀分布)
-- catharsis_style: 释放方式 (爆发式/内敛式/渐进式)
-- narrative_empathy: 叙述共情度 (冷漠旁观/适度共情/深度代入)
-- inner_monologue_ratio: 内心独白占比 0-1
-- show_vs_tell: 展示vs讲述 (动作驱动/心理驱动/平衡)
-- emotional_registry: 情感语域 (日常口语/文学抒情/冷峻克制/诗化/新闻报道)
-- sensory_anchoring: 感官锚定，情感是否通过感官描写传达 (true/false)
-- emotional_contrast: 情感对比度 (高频切换/稳定持续/渐进演变)
+1. emotion_intensity (10-90): 情感强度。10=极度克制冷峻，50=温婉适度，90=激烈浓郁
+2. dialogue_ratio (0-1): 对话占比。0=纯叙述，0.3=适度对话，0.5+=对话驱动
+3. sentence_preference: 句长偏好。"short"=短句驱动节奏快，"balanced"=长短交替，"long"=长句铺陈
+4. sensory_density: 感官密度。"sparse"=留白简洁，"medium"=适度，"rich"=五感丰富
 
-B. 句式节奏 (16项):
-- short_sentence_ratio: 短句<15字占比 0-1
-- medium_sentence_ratio: 中句15-30字占比 0-1
-- long_sentence_ratio: 长句>30字占比 0-1
-- sentence_length_variance: 句长波动性 (稳定/适度波动/剧烈波动)
-- sentence_pattern: 句式偏好 (松散句/紧凑句/排比句/长短交替/倒装句/短句群)
-- sentence_opening_style: 句首多样性 (变化丰富/重复开头/主语开头为主/连词开头)
-- complex_sentence_ratio: 复合句占比 (简单句为主/复合句为主/平衡)
-- paragraph_rhythm: 段落节奏 (长→短交替/短→长交替/渐进式/均匀块状/跳跃式)
-- paragraph_length_avg: 平均段落字数 (整数)
-- paragraph_opening_style: 段落开头偏好 (场景描写/对话起头/动作起头/独白起头/混合)
-- dialogue_ratio: 对话占比 0-1
-- dialogue_mixing: 对话与叙述的交替方式 (独立成段/嵌入叙述/混合)
-- dialogue_tag_style: 对话标记风格 ("他说"密集/稀疏标记/零标记/动作替代)
-- pacing: 整体节奏 (舒缓/中等/紧凑/急促/变速)
-- scene_transition: 场景过渡 (直接切/过渡铺垫/蒙太奇/时间跳跃/倒叙插入)
-- time_dilation: 时间拉伸 (实时/加速/减速/静止/非线性)
-- tension_curve: 张力曲线 (持续上升/波浪起伏/突然爆发/缓慢释放)
-
-C. 修辞用词 (22项):
-- metaphor_frequency: 比喻频率 (极少/适度/密集)
-- simile_metaphor_ratio: 明喻vs暗喻 (明喻为主/暗喻为主/平衡)
-- personification: 拟人频率 (极少/适度/密集)
-- synesthesia: 通感频率 (极少/适度/密集)
-- rhetorical_devices: 常用修辞标签数组，如 ["排比","反问","反复"]
-- rhetorical_density: 修辞密度 0-1 (每千字修辞格数)
-- vocabulary_register: 用词层级 (口语化/文学化/学术化/古风化/新闻体)
-- vocabulary_richness: 词汇丰富度 (基础/中等/丰富/专业领域)
-- chengyu_frequency: 成语频率 (极少/适度/密集)
-- dialect_flavor: 方言色彩 (无/轻微/浓重)
-- foreign_loanwords: 外来词 (无/偶尔/频繁)
-- adjective_density: 形容词密度 0-1
-- adverb_policy: 副词策略 (克制/适度/丰富)
-- modifier_position: 修饰位置偏好 (前置为主/后置为主/平衡)
-- sensory_density: 感官描写密度 (极少/适度/丰富)
-- sensory_spectrum: 感官侧重 (视觉为主/听觉为主/多感官平衡/触觉突出/嗅觉突出/味觉突出)
-- color_use: 色彩使用 (黑白灰/暖色调/冷色调/高饱和/低饱和/金属色)
-- imagery_domain: 意象领域 (自然/城市/身体/机械/宗教/战争/家庭)
-
-请确保每个字段都填写，根据参考文本的实际特征给出准确的评估值。"""
+请输出 JSON（不要 markdown 代码块）：
+{{"emotion_intensity":50,"dialogue_ratio":0.3,"sentence_preference":"balanced","sensory_density":"medium"}}"""
 
 # ----------------------------------------------------------------
 # 大纲规划
@@ -90,9 +42,6 @@ PLANNING_PROMPT = """你是一位专业的文章策划编辑。根据以下设�
 
 风格参数：
 {style_structured}
-
-风格简报：
-{style_brief}
 
 请规划 3 个大节，每节包含 {subsections_per_section} 个小节。每小节应有一个描述故事进展的梗概（description 字段，1-2句话说明这一幕发生什么）。
 
@@ -169,6 +118,9 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 ========== 硬约束（代码会检查，缺失则重写）==========
 {mandatory_events}
 {character_constraints}
+{style_constraints}
+{narrative_integrity_constraints}
+{beat_reminder}
 
 {progress_context}
 ========== 写作指引（请尽量参考）==========
@@ -193,10 +145,9 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 ## 叙事密度
 {narrative_density_instruction}
 
-## 风格要求
-{style_brief}
+{style_examples}
 
-（参考数值：情感强度 {emotion_intensity}/100，形容词密度 {adjective_density}，参考段落长度 {paragraph_length_avg} 字）
+（风格：情感 {emotion_intensity}/100 | 句长 {sentence_preference} | 感官 {sensory_density} | 对话 {dialogue_ratio}%）
 
 ## 本节关键事件（按重要性排序，供参考融入）
 {ranked_events}
@@ -221,7 +172,7 @@ WRITING_PROMPT = """你是一位才华横溢的作家。请根据以下信息撰
 {summary_context}
 {retrieved_context}
 
-请输出本小节的纯正文，控制字数在 {target_words} 字左右。保持与前面内容的连贯性。
+{anti_ai_expression_constraints}请输出本小节的纯正文，控制字数在 {target_words} 字左右。保持与前面内容的连贯性。
 注意：只输出小说正文，不要附加任何标记、注释或元数据。"""
 
 # ----------------------------------------------------------------
@@ -232,6 +183,9 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 ========== 硬约束（代码会检查，缺失则重写）==========
 {mandatory_events}
 {character_constraints}
+{style_constraints}
+{narrative_integrity_constraints}
+{beat_reminder}
 
 {progress_context}
 ========== 写作指引（请尽量参考）==========
@@ -256,10 +210,9 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 ## 叙事密度
 {narrative_density_instruction}
 
-## 风格要求
-{style_brief}
+{style_examples}
 
-（参考数值：情感强度 {emotion_intensity}/100，形容词密度 {adjective_density}，参考段落长度 {paragraph_length_avg} 字）
+（风格：情感 {emotion_intensity}/100 | 句长 {sentence_preference} | 感官 {sensory_density} | 对话 {dialogue_ratio}%）
 
 ## 本节关键事件（按重要性排序，供参考融入）
 {ranked_events}
@@ -281,7 +234,7 @@ WRITING_SECTION1_PROMPT = """你是一位才华横溢的作家。请根据以下
 {summary_context}
 {retrieved_context}
 
-请输出本小节的纯正文，控制字数在 {target_words} 字左右。
+{anti_ai_expression_constraints}请输出本小节的纯正文，控制字数在 {target_words} 字左右。
 注意：只输出小说正文，不要附加任何标记、注释或元数据。"""
 
 # ----------------------------------------------------------------
@@ -295,10 +248,8 @@ WRITER_SYSTEM_PROMPT = """你是一位作家。请只输出小说正文。
 2. 禁止模板式神态：不要写"眼中闪过一丝XX""嘴角勾起一抹XX""眼底泛起XX""眸中XX"。神态描写要具体独特，与角色性格和当下场景挂钩。
 3. 禁止通用比喻：不要使用脱离场景的比喻如"像蝴蝶般轻盈""如同被雷击中""仿佛时间凝固"。比喻必须来自角色当下所处的环境——铁匠用铁的比喻，猎户用山的比喻。
 4. 禁止机械过渡：不要用"随着时间的推移""渐渐地""不知不觉中""与此同时"来填充段落。用具体事件、感官细节、角色动作推动时间线。
-5. 禁止句式雷同：禁止连续3句使用相同句式结构。长短句交替，描写与动作穿插。一段内最多两个比喻。
-6. 禁止空洞总结：不要在段落末尾写\"从此，XX开始了新的旅程\"\"这一切，都源于那个决定\"之类。故事自然收束，让读者自己感受。
-7. 禁止过度修饰：不要堆砌形容词（\"苍凉的、破败的、布满青苔的古旧石阶\"）。选一个最准确的，留白给读者。
-8. 情感表达通过动作和对话传递，禁止直接叙述\"他感到XX\"。参考信息供你判断融入，如与创作意图冲突可自行取舍。
+5. 禁止空洞总结：不要在段落末尾写"从此，XX开始了新的旅程""这一切，都源于那个决定"之类。故事自然收束，让读者自己感受。
+6. 禁止过度修饰：不要堆砌形容词（"苍凉的、破败的、布满青苔的古旧石阶"）。选一个最准确的，留白给读者。
 不要附加任何标记、注释或元数据。"""
 
 # ----------------------------------------------------------------
@@ -326,6 +277,170 @@ HANDOVER_EXTRACTION_PROMPT = """你是一位文学分析助手。请从以下正
   "arc_progress": {{"character_id": "done|deviated|pending"}}
 }}"""
 
+HANDOVER_EXTRACTION_PROMPT_V2 = """你是一位文学事实提取助手。只提取有精确来源证据的内容，不进行文学解释或心理推断。
+
+## 当前小节正文（最多前 3000 字）
+来源：{generated_source}
+{section_text}
+
+## 当前小节大纲
+来源：{current_outline_source}
+{current_outline}
+
+## 下一小节大纲
+来源：{next_outline_source}
+{next_outline}
+
+## 可用角色弧里程碑来源
+{arc_sources}
+
+## 代码已确定性编译的下一场景边界（只供理解，不要改写）
+{compiled_boundary}
+
+请只输出 JSON：
+{{
+  "claims": [
+    {{
+      "claim_id": "稳定ID",
+      "category": "time_state|location_state|character_state|relationship_state|known_fact|object_or_resource_state|foreshadow_state",
+      "subject": "证据中明确出现的主体",
+      "predicate": "证据中明确出现的动作或状态",
+      "object": "证据中明确出现的对象，可为空",
+      "temporal_status": "current|past|planned|conditional|unknown",
+      "certainty": "confirmed|explicit_unknown",
+      "evidence": [{{
+        "source_type": "generated_subsection|current_outline|next_outline|arc_milestone",
+        "source_id": "上方提供的来源ID",
+        "source_hash": "上方提供的来源hash",
+        "start": 0,
+        "end": 1,
+        "excerpt": "必须与来源[start:end]逐字一致，最长140字"
+      }}],
+      "claim_hash": "",
+      "provenance": "handover_extractor_v2"
+    }}
+  ],
+  "open_events": [
+    {{
+      "event_id": "稳定ID",
+      "actors": ["人物"],
+      "action": "尚未完成的动作",
+      "object": "对象",
+      "completion_status": "open|partially_completed|completed|unknown",
+      "evidence": [],
+      "source_hash": "正文来源hash"
+    }}
+  ],
+  "arc_progress": [
+    {{
+      "character_id": "人物ID",
+      "event_id": "里程碑event ID",
+      "completion_status": "completed|partially_completed|unknown",
+      "milestone_source_id": "里程碑来源ID",
+      "milestone_source_hash": "里程碑来源hash",
+      "evidence": []
+    }}
+  ]
+}}
+
+规则：
+- 只写小节结束时仍成立的状态、本小节明确发生的新事实、尚未完成事件和明确 unknown。
+- 停顿、观察、递水或动作变化只能记录可观察动作，不能推导“内心触动、理解加深、产生好奇”等心理结论。
+- 计划、回忆、条件、否定或推测不得写成已完成事实。
+- 已完成事件不得作为 open_event；没有可追溯里程碑来源不得输出 arc_progress。
+- 不要输出 next boundary；它由代码根据大纲确定性生成。"""
+
+HANDOVER_EXTRACTION_PROMPT_V21 = """你是文学事实提取助手。只输出一行紧凑 JSON，不要 Markdown、解释或额外字段。
+
+来源注册表每行格式：[索引,类型,里程碑event_id,角色ID,原文]：
+{source_registry}
+
+输出格式：{{"v":"2.1","s":[],"o":[],"f":[],"a":[]}}
+
+s（节尾状态，最多4条）：[来源索引,start,end,类别,时间,确定性,"主体|动作/状态|对象"]
+f（新事实，最多3条）：[来源索引,start,end,类别,时间,确定性,"主体|动作/状态|对象"]
+o（未完成事件，最多3条）：[来源索引,start,end,状态,"人物,人物|动作|对象"]
+a（角色弧，最多2条）：[里程碑来源索引,证据来源索引,start,end,状态]
+
+类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔；s只用ts/ls/cs/rs/os/fs，f只用ts/ls/kf/os/fs。
+时间：c当前、p过去、pl计划、co条件、u未知。确定性：c已确认、u明确未知。
+事件状态：o未完成、p部分完成、c已完成、u未知。角色弧状态只用p/c/u。
+
+规则：
+- 来源索引与start/end输出为JSON数字，不加引号，不用小数。
+- start/end必须精确引用对应来源原文，0<=start<end；三段短语合计不超过16字（不含|分隔符），主体、动作和非空对象都必须在证据中逐字出现。
+- 只保留下一小节直接需要的状态、未完成事件、持久变化和有里程碑来源的弧线进展。
+- 计划、回忆、条件、否定或推测不得写成已完成事实。
+- 不推断心理，不输出source ID/hash、证据原文、边界、验证结果或拒绝理由。
+- 没有内容时保留空数组，不得凑数。"""
+
+
+# V2.2：证据锚定由字符偏移改为原文短引。两次真实 Demo 证明模型无法数出
+# 精确字符位置（33/37 invalid_span），但逐字引用是模型擅长的任务。
+HANDOVER_EXTRACTION_PROMPT_V22 = """你是文学事实提取助手。只输出一行紧凑 JSON，不要 Markdown、解释或额外字段。
+
+来源注册表每行格式：[索引,类型,里程碑event_id,角色ID,原文]：
+{source_registry}
+
+输出格式：{{"v":"2.2","s":[],"o":[],"f":[],"a":[]}}
+
+s（节尾状态，最多4条）：[来源索引,"原文短引",类别,时间,确定性,"主体|动作/状态|对象"]
+f（新事实，最多3条）：[来源索引,"原文短引",类别,时间,确定性,"主体|动作/状态|对象"]
+o（未完成事件，最多3条）：[来源索引,"原文短引",状态,"人物,人物|动作|对象"]
+a（角色弧，最多2条）：[里程碑来源索引,证据来源索引,"原文短引",状态]
+
+示例——若来源0的原文包含"林晚放下相机，仍在等待周野的回应。"，则一个合法输出是：
+{{"v":"2.2","s":[[0,"林晚放下相机","cs","c","c","林晚|放下|相机"]],"o":[[0,"林晚放下相机，仍在等待周野的回应","o","林晚|等待|回应"]],"f":[],"a":[]}}
+
+反例——若来源0的原文是"林晚把相机递给周野，转身走进面包店。"，短引写"相机被递给了周野"无效：改写后的句子在原文中逐字搜不到。合法短引必须逐字复制原文，如"林晚把相机递给周野"。
+
+类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔；s只用ts/ls/cs/rs/os/fs，f只用ts/ls/kf/os/fs。
+时间：c当前、p过去、pl计划、co条件、u未知。确定性：c已确认、u明确未知。
+事件状态：o未完成、p部分完成、c已完成、u未知。角色弧状态只用p/c/u。
+
+规则：
+- 每个item都是定长JSON数组：s和f恰好6项，o恰好4项，a恰好4项，不得增减、合并或改用对象。
+- 来源注册表中没有类型为arc_milestone的行时，a必须为空数组。
+- 原文短引：从对应来源的原文中逐字复制4~20个连续字符，不得改写、增删、拼接或跨句合并；短语的主体、动作和非空对象都必须逐字出现在短引之内。
+- 先选引文，后写短语：每条item先在原文中选定并逐字复制短引，再用短引内出现的字词组成短语各段；不得先想结论再造引文。
+- 来源索引输出为JSON数字，不加引号，不用小数。
+- 三段短语合计不超过16字（不含|分隔符）。
+- 只保留下一小节直接需要的状态、未完成事件、持久变化和有里程碑来源的弧线进展。
+- 计划、回忆、条件、否定或推测不得写成已完成事实。
+- 不推断心理，不输出start/end、source ID/hash、边界、验证结果或拒绝理由。
+- 没有内容时保留空数组，不得凑数。"""
+
+HANDOVER_EXTRACTION_PROMPT_V23 = """你是文学事实提取助手。只输出一行紧凑 JSON，不要 Markdown、解释或额外字段。
+
+来源注册表每行格式：[索引,类型,里程碑event_id,角色ID,原文]：
+{source_registry}
+
+输出格式：{{"v":"2.3","s":[],"o":[],"f":[],"a":[]}}
+
+s（节尾状态，最多4条）：[来源索引,"原文短引",类别,时间,确定性]
+f（新事实，最多3条）：[来源索引,"原文短引",类别,时间,确定性]
+o（未完成事件，最多3条）：[来源索引,"原文短引",状态]
+a（角色弧，最多2条）：[里程碑来源索引,证据来源索引,"原文短引",状态]
+
+示例——若来源0的原文包含"林晚放下相机，仍在等待周野的回应。"，则一个合法输出是：
+{{"v":"2.3","s":[[0,"林晚放下相机","cs","c","c"]],"o":[[0,"林晚放下相机，仍在等待周野的回应","o"]],"f":[],"a":[]}}
+
+反例——若来源0的原文是"林晚把相机递给周野，转身走进面包店。"，短引写"相机被递给了周野"无效：改写后的句子在原文中逐字搜不到。合法短引必须逐字复制原文，如"林晚把相机递给周野"。
+
+类别：ts时间、ls地点、cs人物状态、rs关系、kf事实、os物品/资源、fs伏笔；s只用ts/ls/cs/rs/os/fs，f只用ts/ls/kf/os/fs。
+时间：c当前、p过去、pl计划、co条件、u未知。确定性：c已确认、u明确未知。
+事件状态：o未完成、p部分完成、c已完成、u未知。角色弧状态只用p/c/u。
+
+规则：
+- 每个item都是定长JSON数组：s和f恰好5项，o恰好3项，a恰好4项，不得增减、合并或改用对象。
+- 来源注册表中没有类型为arc_milestone的行时，a必须为空数组。
+- 原文短引：从对应来源的原文中逐字复制4~20个连续字符，不得改写、增删、拼接或跨句合并；优先选包含事实核心的完整片段。
+- 来源索引输出为JSON数字，不加引号，不用小数。
+- 只保留下一小节直接需要的状态、未完成事件和持久变化。
+- 计划、回忆、条件或推测不得标为当前(c)。
+- 不推断心理，不输出start/end、source ID/hash、边界、验证结果或拒绝理由。
+- 没有内容时保留空数组，不得凑数。"""
+
 # ----------------------------------------------------------------
 # 交接 JSON → 自然语言简报（对标风格简报的二次 LLM 翻译模式）
 # [v0.9.1] 解决"结构化 JSON 对 LLM 生成无效"在交接笔记链的同款问题
@@ -339,7 +454,9 @@ HANDOVER_BRIEF_PROMPT = """你是一位资深的小说编辑。请把以下结�
 - 120-200 字自然语言，编辑口吻
 - 只写"作家需要知道什么才能接上"，不写模板、不写客套
 - 如果某个字段为空，直接跳过不提
-- 重点突出"读者还不知道但作家需要记得"的伏笔"""
+- 重点突出"读者还不知道但作家需要记得"的伏笔
+- next_boundary 中 must_not_repeat_events 是已完成事件，不得写成再次发生
+- next_boundary 中 allowed_start_events 是下一小节允许承接的目标，不得提前越过"""
 
 # ----------------------------------------------------------------
 # Continuity Editor — 汇总回溯修正，生成修正清单
@@ -436,7 +553,6 @@ GLOBAL_REVIEW_PROMPT = """你是一位资深文学评论家。请对以下长文
 {style_structured}
 
 风格参考：{style_summary}
-风格简报：{style_brief}
 总字数：约 {total_words} 字
 
 各节摘要：
@@ -569,6 +685,55 @@ CHARACTER_ARC_PROMPT = """你是一位故事结构专家。请根据人物设定
 3. 每个角色覆盖大纲所有小节中他/她出场的部分
 4. location 和 time 要具体、有画面感
 5. emotional_shift 要渐进合理，避免突兀跳跃"""
+
+
+CHARACTER_ARC_PROMPT_V2 = """你是一位克制的故事结构编辑。请只规划真正属于人物变化弧线的节点，不要把普通剧情动作或环境活动包装成强制里程碑。
+
+人物设定：
+{characters_json}
+
+大纲（含小节结构）：
+{outline_json}
+
+请严格输出 JSON 数组，每个角色一个元素。每个 milestone 使用本角色内唯一的 milestone_id：
+[
+  {{
+    "character_id": "必须与输入一致",
+    "starting_state": "起点状态",
+    "ending_state": "终点状态",
+    "key_milestones": [
+      {{
+        "milestone_id": "角色内唯一ID，如 char1-m1",
+        "section": 1,
+        "subsection": 1,
+        "event": "具体事件",
+        "location": "地点",
+        "time": "时间",
+        "emotional_shift": "状态A→状态B",
+        "classification": "hard_arc_transition|soft_arc_progress|observational_texture|ordinary_plot_event|unsupported_planning_inference",
+        "before_state": "事件前状态；非hard可为空",
+        "trigger": "触发变化的事件；非hard可为空",
+        "after_state": "事件后状态；非hard可为空",
+        "observable_evidence": "正文中可观察到的变化证据；非hard可为空",
+        "rationale": "为何属于此分类",
+        "depends_on": ["明确依赖的同角色milestone_id"],
+        "dependency_rationale": "依赖依据；无依赖则为空",
+        "causes": ["明确导致的同角色milestone_id"],
+        "causal_rationale": "因果依据；无因果则为空"
+      }}
+    ]
+  }}
+]
+
+分类规则：
+1. hard_arc_transition 只用于人物内部状态、关系立场、长期目标或关键选择发生显著变化；每个角色每章最多2个，也可以为0个。
+2. hard 必须完整填写 before_state、trigger、after_state、observable_evidence 和 rationale。
+3. soft_arc_progress 可以改写、延后或被其他事件替代，不得表述为本节必须发生。
+4. 日常动作、神态、环境互动和配角氛围活动属于 observational_texture。
+5. 已由 outline/key_points 管理的剧情事件属于 ordinary_plot_event，不要重复升级为角色弧硬约束。
+6. 缺少人物设定或大纲依据的推断属于 unsupported_planning_inference。
+7. 只有文本明确表达依赖或因果时才能填写 depends_on/causes；不得仅因处在同一小节建立关系。
+8. section 和 subsection 必须来自输入大纲，character_id 必须与输入一致。"""
 
 # ----------------------------------------------------------------
 # 角色状态更新
@@ -976,7 +1141,7 @@ PROMPT_REGISTRY = {
     "writing":          {"version":"0.9.1","used_by":["Writer"],"changelog":"v0.9.0 6-source fusion / v0.9.1 sys prompt migrated"},
     "writer_system":    {"version":"0.9.1","used_by":["Writer"],"changelog":"v0.9.1 migrated from writer.py"},
     "handover_extraction":{"version":"0.9.1","used_by":["Writer"],"changelog":"v0.8.0 initial / v0.9.1 brief added"},
-    "handover_brief":   {"version":"0.9.1","used_by":["Writer"],"changelog":"v0.9.1 JSON->NL mirrors style_brief"},
+    "handover_brief":   {"version":"0.9.2","used_by":["Writer"],"changelog":"v0.9.2 preserves deterministic subsection continuity boundaries"},
     "character_extraction":{"version":"0.9.0","used_by":["CharacterManager"],"changelog":"v0.9.0 NL->16-field card"},
     "character_arc":    {"version":"0.9.0","used_by":["CharacterManager"],"changelog":"v0.9.0 milestones to subsection"},
     "character_consistency":{"version":"0.8.0","used_by":["ConsistencyChecker"],"changelog":"v0.8.0 text vs card cross-check"},
@@ -984,7 +1149,26 @@ PROMPT_REGISTRY = {
     "global_review":    {"version":"0.7.0","used_by":["Reviewer"],"changelog":"v0.7.0 global final review"},
     "continuity_editor":{"version":"0.6.0","used_by":["ContinuityEditor"],"changelog":"v0.6.0 backref classification"},
     "card_draw":        {"version":"0.9.0","used_by":["CardDrawer"],"changelog":"v0.9.0 45+ inspirations"},
+    "style_behavior":   {"version":"0.9.3","used_by":["Writer"],"changelog":"v0.9.3 fuzzy params -> concrete instructions"},
 }
+
+# ── 风格参数 -> 写作行为翻译 ──────────────────────────────────────
+STYLE_BEHAVIOR_PROMPT = """你是一位写作教练。将以下风格参数翻译为 5-8 条具体写作行为指令。
+
+风格参数：
+{style_params}
+
+参数定义：
+- emotion_intensity: 10-30=克制(环境折射，不命名情绪) | 30-50=温婉(可提情绪，用感官传递) | 50-70=浓郁(可直述内心) | 70-90=激烈
+- dialogue_ratio: 对话占比，生成时控制对话段落比例
+- sentence_preference: short=短句驱动节奏快 | balanced=长短交替 | long=长句铺陈
+- sensory_density: sparse=留白简洁 | medium=适度描写 | rich=多感官交织
+
+输出规则：
+- 每条以【句式】/【情感】/【对话】/【感官】开头
+- 祈使句，直接告诉作家该做什么
+- 数值参数给出具体阈值
+- 输出 5-8 条，按重要性排序"""
 
 
 def get_prompt_info(name: str) -> dict | None:
